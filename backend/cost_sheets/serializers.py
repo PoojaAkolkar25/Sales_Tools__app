@@ -2,7 +2,7 @@ from rest_framework import serializers
 from decimal import Decimal
 from .models import (
     CostSheet, LicenseItem, ServiceImplementationItem, 
-    ServiceSupportItem, InfrastructureItem
+    ServiceSupportItem, InfrastructureItem, CostSheetAttachment, OtherItem
 )
 
 class LicenseItemSerializer(serializers.ModelSerializer):
@@ -55,14 +55,28 @@ class InfrastructureItemSerializer(serializers.ModelSerializer):
         data['estimated_price'] = data['estimated_cost'] + data['estimated_margin_amount']
         return data
 
+class CostSheetAttachmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CostSheetAttachment
+        fields = '__all__'
+
+class OtherItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OtherItem
+        fields = '__all__'
+
 class CostSheetSerializer(serializers.ModelSerializer):
     license_items = LicenseItemSerializer(many=True, required=False)
     implementation_items = ServiceImplementationItemSerializer(many=True, required=False)
     support_items = ServiceSupportItemSerializer(many=True, required=False)
     infra_items = InfrastructureItemSerializer(many=True, required=False)
+    other_items = OtherItemSerializer(many=True, required=False)
+    attachments = CostSheetAttachmentSerializer(many=True, read_only=True)
     lead_no = serializers.CharField(source='lead.lead_no', read_only=True)
     customer_name = serializers.CharField(source='lead.customer_name', read_only=True)
     project_name = serializers.CharField(source='lead.project_name', read_only=True)
+    project_manager = serializers.CharField(source='lead.project_manager', read_only=True)
+    sales_person = serializers.CharField(source='lead.sales_person', read_only=True)
     lead_details = serializers.SerializerMethodField()
 
     class Meta:
@@ -75,7 +89,9 @@ class CostSheetSerializer(serializers.ModelSerializer):
             'id': obj.lead.id,
             'lead_no': obj.lead.lead_no,
             'customer_name': obj.lead.customer_name,
-            'project_name': obj.lead.project_name
+            'project_name': obj.lead.project_name,
+            'project_manager': obj.lead.project_manager,
+            'sales_person': obj.lead.sales_person
         }
 
     def create(self, validated_data):
@@ -83,6 +99,7 @@ class CostSheetSerializer(serializers.ModelSerializer):
         impl_data = validated_data.pop('implementation_items', [])
         support_data = validated_data.pop('support_items', [])
         infra_data = validated_data.pop('infra_items', [])
+        other_data = validated_data.pop('other_items', [])
 
         cost_sheet = CostSheet.objects.create(**validated_data)
 
@@ -94,6 +111,8 @@ class CostSheetSerializer(serializers.ModelSerializer):
             ServiceSupportItem.objects.create(cost_sheet=cost_sheet, **item)
         for item in infra_data:
             InfrastructureItem.objects.create(cost_sheet=cost_sheet, **item)
+        for item in other_data:
+            OtherItem.objects.create(cost_sheet=cost_sheet, **item)
 
         self.update_totals(cost_sheet)
         return cost_sheet
@@ -103,6 +122,7 @@ class CostSheetSerializer(serializers.ModelSerializer):
         impl_data = validated_data.pop('implementation_items', None)
         support_data = validated_data.pop('support_items', None)
         infra_data = validated_data.pop('infra_items', None)
+        other_data = validated_data.pop('other_items', None)
 
         # Update core fields
         for attr, value in validated_data.items():
@@ -129,6 +149,11 @@ class CostSheetSerializer(serializers.ModelSerializer):
             instance.infra_items.all().delete()
             for item in infra_data:
                 InfrastructureItem.objects.create(cost_sheet=instance, **item)
+        
+        if other_data is not None:
+            instance.other_items.all().delete()
+            for item in other_data:
+                OtherItem.objects.create(cost_sheet=instance, **item)
 
         self.update_totals(instance)
         return instance
@@ -151,7 +176,11 @@ class CostSheetSerializer(serializers.ModelSerializer):
         infra_marg = sum(i.estimated_margin_amount for i in instance.infra_items.all())
         infra_price = sum(i.estimated_price for i in instance.infra_items.all())
 
-        instance.total_estimated_cost = lic_cost + impl_cost + supp_cost + infra_cost
-        instance.total_estimated_margin = lic_marg + impl_marg + supp_marg + infra_marg
-        instance.total_estimated_price = lic_price + impl_price + supp_price + infra_price
+        other_cost = sum(i.estimated_cost for i in instance.other_items.all())
+        other_marg = sum(i.estimated_margin_amount for i in instance.other_items.all())
+        other_price = sum(i.estimated_price for i in instance.other_items.all())
+
+        instance.total_estimated_cost = lic_cost + impl_cost + supp_cost + infra_cost + other_cost
+        instance.total_estimated_margin = lic_marg + impl_marg + supp_marg + infra_marg + other_marg
+        instance.total_estimated_price = lic_price + impl_price + supp_price + infra_price + other_price
         instance.save()

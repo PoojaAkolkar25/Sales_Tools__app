@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Eye, CheckCircle, XCircle, Clock, FileText, Search, Calendar } from 'lucide-react';
+import { Eye, Search, Calendar } from 'lucide-react';
 import api from '../api';
 
 interface CostSheet {
@@ -54,18 +54,13 @@ const CostSheetDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView
         });
     }, [costSheets, filters]);
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'APPROVED':
-                return <span className="flex items-center gap-1 text-[#00C853] bg-[#00C853]/10 px-2 py-1 rounded text-[10px] font-bold ring-1 ring-[#00C853]/20"><CheckCircle size={10} /> Approved</span>;
-            case 'REJECTED':
-                return <span className="flex items-center gap-1 text-[#EF4444] bg-[#EF4444]/10 px-2 py-1 rounded text-[10px] font-bold ring-1 ring-[#EF4444]/20"><XCircle size={10} /> Rejected</span>;
-            case 'SUBMITTED':
-                return <span className="flex items-center gap-1 text-[#0066CC] bg-[#0066CC]/10 px-2 py-1 rounded text-[10px] font-bold ring-1 ring-[#0066CC]/20"><Clock size={10} /> Pending</span>;
-            default:
-                return <span className="flex items-center gap-1 text-[#718096] bg-[#F5F7FA] px-2 py-1 rounded text-[10px] font-bold ring-1 ring-[#E0E6ED]"><FileText size={10} /> Draft</span>;
-        }
-    };
+    const statusFlow = [
+        { label: 'All', value: '' },
+        { label: 'Draft', value: 'PENDING' },
+        { label: 'Pending', value: 'SUBMITTED' },
+        { label: 'Approved', value: 'APPROVED' },
+        { label: 'Rejected', value: 'REJECTED' }
+    ];
 
     if (loading) return <div className="text-center p-20 text-[#718096] font-medium">Loading cost sheets...</div>;
 
@@ -75,18 +70,37 @@ const CostSheetDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView
                 <h2 className="text-3xl font-extrabold text-[#1a1f36]">Cost Sheet Dashboard</h2>
             </div>
 
+            {/* Status Flow Navigation */}
+            <div className="flex items-center gap-2 bg-white p-1 rounded-xl shadow-sm border border-[#E0E6ED] w-fit">
+                {statusFlow.map((flow, index) => (
+                    <React.Fragment key={flow.value}>
+                        <button
+                            onClick={() => setFilters({ ...filters, status: flow.value })}
+                            className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${filters.status === flow.value
+                                ? 'bg-[#0066CC] text-white shadow-md'
+                                : 'text-[#718096] hover:bg-[#F5F7FA] hover:text-[#2D3748]'
+                                }`}
+                        >
+                            {flow.label}
+                        </button>
+                        {index < statusFlow.length - 1 && (
+                            <span className="text-[#A0AEC0] font-bold mx-2">{'>>'}</span>
+                        )}
+                    </React.Fragment>
+                ))}
+            </div>
+
             <div className="bg-white rounded-xl shadow-sm border border-[#E0E6ED] overflow-hidden">
                 <table className="w-full text-left table-fixed">
                     <thead className="bg-[#FAFBFC] border-b border-[#E0E6ED] uppercase text-[10px] font-bold tracking-widest text-[#718096]">
                         <tr>
-                            <th className="py-4 px-4 w-[12%]">Lead Number</th>
-                            <th className="py-4 px-4 w-[16%]">Customer Name</th>
-                            <th className="py-4 px-4 w-[16%]">Project Name</th>
+                            <th className="py-4 px-4 w-[16%]">Lead Number</th>
+                            <th className="py-2 px-4 w-[20%]">Customer Name</th>
+                            <th className="py-4 px-4 w-[20%]">Project Name</th>
                             <th className="py-4 px-4 w-[12%]">Cost Sheet No.</th>
-                            <th className="py-4 px-4 w-[10%]">Cost Sheet Date</th>
-                            <th className="py-4 px-4 w-[12%]">Total Price</th>
-                            <th className="py-4 px-4 w-[12%]">Status</th>
-                            <th className="py-4 px-4 w-[10%] text-right">Actions</th>
+                            <th className="py-4 px-4 w-[12%]">Cost Sheet Date</th>
+                            <th className="py-4 px-4 w-[14%]">Total Price</th>
+                            <th className="py-4 px-4 w-[6%] text-right">Actions</th>
                         </tr>
                         <tr className="bg-[#F5F7FA]/50 border-b border-[#E0E6ED]">
                             <th className="py-2 px-2">
@@ -147,19 +161,6 @@ const CostSheetDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView
                             <th className="py-2 px-2">
                                 <div className="h-8"></div>
                             </th>
-                            <th className="py-2 px-2">
-                                <select
-                                    className="bg-white border-[#E0E6ED] text-[#2D3748] rounded px-2 py-1 w-full text-[10px] h-8 outline-none focus:border-[#0066CC] focus:ring-1 focus:ring-[#0066CC]/10"
-                                    value={filters.status}
-                                    onChange={e => setFilters({ ...filters, status: e.target.value })}
-                                >
-                                    <option value="">All</option>
-                                    <option value="PENDING">Draft</option>
-                                    <option value="SUBMITTED">Pending</option>
-                                    <option value="APPROVED">Approved</option>
-                                    <option value="REJECTED">Rejected</option>
-                                </select>
-                            </th>
                             <th className="py-2 px-4 text-right">
                                 <button
                                     onClick={() => setFilters({ csNumber: '', leadNo: '', customerName: '', projectName: '', status: '', date: '' })}
@@ -188,7 +189,6 @@ const CostSheetDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView
                                         {new Date(cs.created_at).toLocaleDateString()}
                                     </td>
                                     <td className="py-4 px-4 font-bold text-[#2D3748] font-mono text-[11px] whitespace-nowrap">${parseFloat(cs.total_estimated_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                    <td className="py-4 px-4">{getStatusBadge(cs.status)}</td>
                                     <td className="py-4 px-4 text-right">
                                         <button
                                             onClick={() => onView(cs.id)}

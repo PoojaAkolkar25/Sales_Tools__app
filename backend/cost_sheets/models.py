@@ -83,3 +83,22 @@ class InfrastructureItem(models.Model):
     estimated_cost = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     estimated_margin_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     estimated_price = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+
+class CostSheetAttachment(models.Model):
+    cost_sheet = models.ForeignKey(CostSheet, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='cost_sheet_attachments/')
+    filename = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.filename
+
+class OtherItem(models.Model):
+    cost_sheet = models.ForeignKey(CostSheet, on_delete=models.CASCADE, related_name='other_items')
+    description = models.CharField(max_length=500, blank=True, default='')
+    
+    margin_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    
+    estimated_cost = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    estimated_margin_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    estimated_price = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
