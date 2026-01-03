@@ -9,7 +9,7 @@ class CostSheetStatus(models.TextChoices):
     REJECTED = 'REJECTED', 'Rejected'
 
 class CostSheet(models.Model):
-    cost_sheet_no = models.CharField(max_length=100, unique=True)
+    cost_sheet_no = models.CharField(max_length=100, unique=True, blank=True)
     cost_sheet_date = models.DateField(null=True, blank=True)
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='cost_sheets')
     status = models.CharField(
@@ -25,6 +25,27 @@ class CostSheet(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.cost_sheet_no:
+            import re
+            # Get all cost sheet numbers
+            all_nos = CostSheet.objects.values_list('cost_sheet_no', flat=True)
+            
+            max_num = 0
+            for no in all_nos:
+                # Look for digits after "CS-" (case-insensitive)
+                match = re.search(r'CS-(\d+)', no, re.IGNORECASE)
+                if match:
+                    try:
+                        num = int(match.group(1))
+                        if num > max_num:
+                            max_num = num
+                    except ValueError:
+                        continue
+            
+            self.cost_sheet_no = f"CS-{max_num + 1:03d}"
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.cost_sheet_no} ({self.status})"

@@ -24,10 +24,13 @@ interface Props {
 }
 
 const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
+    const [localId, setLocalId] = useState<number | null>(id || null);
     const [leadNo, setLeadNo] = useState('');
     const [lead, setLead] = useState<Lead | null>(null);
     const [selectedCustomerName, setSelectedCustomerName] = useState('');
     const [leads, setLeads] = useState<Lead[]>([]);
+    const [projectManager, setProjectManager] = useState('');
+    const [salesPerson, setSalesPerson] = useState('');
     const [costSheetNo, setCostSheetNo] = useState('');
     const [costSheetDate, setCostSheetDate] = useState(new Date().toISOString().split('T')[0]);
     const [status, setStatus] = useState('PENDING');
@@ -48,6 +51,7 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
     const isReadOnly = status !== 'PENDING';
 
     useEffect(() => {
+        setLocalId(id || null);
         if (id) {
             const fetchDetails = async () => {
                 try {
@@ -56,6 +60,8 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                     setCostSheetNo(data.cost_sheet_no);
                     setCostSheetDate(data.cost_sheet_date);
                     setStatus(data.status);
+                    setProjectManager(data.project_manager || '');
+                    setSalesPerson(data.sales_person || '');
                     setApprovalComments(data.approval_comments || '');
                     setLicenseItems(data.license_items);
                     setImplementationItems(data.implementation_items);
@@ -74,6 +80,14 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                 }
             };
             fetchDetails();
+        } else {
+            // Reset form for fresh creation
+            setCostSheetNo('');
+            setStatus('PENDING');
+            setProjectManager('');
+            setSalesPerson('');
+            setLicenseItems([{ name: '', type: '', rate: 0, qty: 1, period: '', margin_percentage: 0 }]);
+            // ... (could reset others too but these are the main ones)
         }
     }, [id]);
 
@@ -94,6 +108,8 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
         if (!customerName) {
             setLead(null);
             setLeadNo('');
+            setProjectManager('');
+            setSalesPerson('');
             return;
         }
 
@@ -102,6 +118,8 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
         if (customerLeads.length === 1) {
             setLead(customerLeads[0]);
             setLeadNo(customerLeads[0].lead_no);
+            setProjectManager(customerLeads[0].project_manager || '');
+            setSalesPerson(customerLeads[0].sales_person || '');
         } else {
             // Multiple leads, let user pick Lead No.
             setLead(null);
@@ -115,9 +133,13 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
             setLead(selected);
             setLeadNo(selected.lead_no);
             setSelectedCustomerName(selected.customer_name);
+            setProjectManager(selected.project_manager || '');
+            setSalesPerson(selected.sales_person || '');
         } else {
             setLead(null);
             setLeadNo('');
+            setProjectManager('');
+            setSalesPerson('');
         }
     };
 
@@ -138,6 +160,8 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
             if (response.data.length > 0) {
                 setLead(response.data[0]);
                 setSelectedCustomerName(response.data[0].customer_name);
+                setProjectManager(response.data[0].project_manager || '');
+                setSalesPerson(response.data[0].sales_person || '');
             } else {
                 alert('Lead No. not found');
             }
@@ -214,12 +238,12 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        let activeId = id;
+        let activeId = localId;
 
         // If no ID yet, auto-save as draft first
         if (!activeId) {
             if (!lead) return alert('Please select a lead first by searching for a Lead No. before attaching documents.');
-            if (!costSheetNo) return alert('Please enter a Cost Sheet Number before attaching documents.');
+            // costSheetNo is now auto-generated, so no check here
 
             try {
                 const draftResponse = await handleSave('PENDING', true);
@@ -263,48 +287,90 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
 
     const handleSave = async (newStatus: string = 'PENDING', isAutoDraft: boolean = false) => {
         if (!lead) return alert('Please select a lead first by searching for a Lead No.');
-        if (!costSheetNo) return alert('Please enter a Cost Sheet Number before saving.');
+        // costSheetNo is now auto-generated, so no check here
 
-        const cleanItems = (items: any[]) => items.map(({ id, cost_sheet, estimated_cost, estimated_margin_amount, estimated_price, total_days, ...rest }) => rest);
+        const cleanItems = (items: any[], type: 'license' | 'implementation' | 'support' | 'infra' | 'other') =>
+            items
+                .filter(item => {
+                    if (type === 'license' || type === 'infra') return item.name?.trim() !== '';
+                    if (type === 'implementation' || type === 'support') return item.category?.trim() !== '';
+                    if (type === 'other') return item.description?.trim() !== '';
+                    return true;
+                })
+                .map(({ id, cost_sheet, estimated_cost, estimated_margin_amount, estimated_price, total_days, ...rest }) => ({
+                    ...rest,
+                    // Ensure numeric fields are indeed numbers
+                    ...(rest.rate !== undefined && { rate: parseFloat(rest.rate) || 0 }),
+                    ...(rest.qty !== undefined && { qty: parseInt(rest.qty) || 0 }),
+                    ...(rest.num_resources !== undefined && { num_resources: parseInt(rest.num_resources) || 0 }),
+                    ...(rest.num_days !== undefined && { num_days: parseInt(rest.num_days) || 0 }),
+                    ...(rest.rate_per_day !== undefined && { rate_per_day: parseFloat(rest.rate_per_day) || 0 }),
+                    ...(rest.rate_per_month !== undefined && { rate_per_month: parseFloat(rest.rate_per_month) || 0 }),
+                    ...(rest.months !== undefined && { months: parseInt(rest.months) || 0 }),
+                    ...(rest.estimated_cost !== undefined && { estimated_cost: parseFloat(rest.estimated_cost) || 0 }),
+                    ...(rest.margin_percentage !== undefined && { margin_percentage: parseFloat(rest.margin_percentage) || 0 }),
+                }));
 
-        const payload = {
-            cost_sheet_no: costSheetNo,
+        const payload: any = {
             cost_sheet_date: costSheetDate,
             lead: lead.id,
             status: newStatus,
-            license_items: cleanItems(licenseItems),
-            implementation_items: cleanItems(implementationItems),
-            support_items: cleanItems(supportItems),
-            infra_items: cleanItems(infraItems),
-            other_items: cleanItems(otherItems),
+            project_manager: projectManager,
+            sales_person: salesPerson,
+            license_items: cleanItems(licenseItems, 'license'),
+            implementation_items: cleanItems(implementationItems, 'implementation'),
+            support_items: cleanItems(supportItems, 'support'),
+            infra_items: cleanItems(infraItems, 'infra'),
+            other_items: cleanItems(otherItems, 'other'),
         };
+
+        if (costSheetNo && id) {
+            payload.cost_sheet_no = costSheetNo;
+        }
 
         try {
             let response;
-            if (id) {
-                response = await api.put(`/cost-sheets/${id}/`, payload);
+            if (localId) {
+                response = await api.put(`/cost-sheets/${localId}/`, payload);
             } else {
                 response = await api.post('/cost-sheets/', payload);
+                if (response.data.id) {
+                    setLocalId(response.data.id);
+                    setCostSheetNo(response.data.cost_sheet_no);
+                }
             }
 
             if (!isAutoDraft) {
                 alert(newStatus === 'PENDING' ? 'Cost Sheet saved as Draft.' : 'Cost Sheet submitted for approval!');
-                if (onBack) onBack();
+                if (newStatus === 'PENDING') {
+                    setActiveTab('summary');
+                } else if (onBack) {
+                    onBack();
+                }
             }
             return response.data;
         } catch (error: any) {
             console.error('Error saving cost sheet', error.response?.data);
-            const errorMsg = error.response?.data
-                ? JSON.stringify(error.response.data, null, 2)
-                : 'Failed to save cost sheet. Please check your inputs.';
-            alert(`Error: ${errorMsg}`);
+            let errorMsg = 'Failed to save cost sheet. Please check your inputs.';
+
+            if (error.response?.data) {
+                if (typeof error.response.data === 'object') {
+                    errorMsg = Object.entries(error.response.data)
+                        .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : JSON.stringify(errors)}`)
+                        .join('\n');
+                } else {
+                    errorMsg = JSON.stringify(error.response.data, null, 2);
+                }
+            }
+
+            alert(`Validation Error:\n\n${errorMsg}`);
             return null;
         }
     };
 
     const handleApprove = async () => {
         try {
-            await api.post(`/cost-sheets/${id}/approve/`);
+            await api.post(`/cost-sheets/${localId}/approve/`);
             alert('Cost Sheet Approved!');
             if (onBack) onBack();
         } catch (error: any) {
@@ -315,7 +381,7 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
     const handleReject = async () => {
         if (!rejectComment) return alert('Please provide rejection comments');
         try {
-            await api.post(`/cost-sheets/${id}/reject/`, { comments: rejectComment });
+            await api.post(`/cost-sheets/${localId}/reject/`, { comments: rejectComment });
             alert('Cost Sheet Rejected');
             if (onBack) onBack();
         } catch (error: any) {
@@ -461,15 +527,32 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                         </div>
                         <div className="form-group">
                             <label>Project Manager</label>
-                            <input value={lead?.project_manager || ''} readOnly className="bg-[#FAFBFC] font-semibold text-[#4A5568]" />
+                            <input
+                                value={projectManager}
+                                onChange={e => setProjectManager(e.target.value)}
+                                readOnly={isReadOnly}
+                                className={`${isReadOnly ? 'bg-[#FAFBFC]' : 'bg-white'} font-semibold text-[#4A5568]`}
+                                placeholder="Enter Project Manager"
+                            />
                         </div>
                         <div className="form-group">
                             <label>Sales Person</label>
-                            <input value={lead?.sales_person || ''} readOnly className="bg-[#FAFBFC] font-semibold text-[#4A5568]" />
+                            <input
+                                value={salesPerson}
+                                onChange={e => setSalesPerson(e.target.value)}
+                                readOnly={isReadOnly}
+                                className={`${isReadOnly ? 'bg-[#FAFBFC]' : 'bg-white'} font-semibold text-[#4A5568]`}
+                                placeholder="Enter Sales Person"
+                            />
                         </div>
                         <div className="form-group">
                             <label>Cost Sheet No.</label>
-                            <input value={costSheetNo} onChange={e => setCostSheetNo(e.target.value)} placeholder="Enter CS Number" readOnly={isReadOnly} />
+                            <input
+                                value={costSheetNo}
+                                readOnly
+                                className="bg-[#FAFBFC] font-semibold text-[#4A5568]"
+                                placeholder="Auto-generated"
+                            />
                         </div>
                         <div className="form-group">
                             <label>Cost Sheet Date</label>

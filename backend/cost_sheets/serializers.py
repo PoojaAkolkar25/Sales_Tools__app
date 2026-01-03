@@ -9,11 +9,20 @@ class LicenseItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = LicenseItem
         fields = '__all__'
-        read_only_fields = ('estimated_cost', 'estimated_margin_amount', 'estimated_price')
+        read_only_fields = ('cost_sheet', 'estimated_cost', 'estimated_margin_amount', 'estimated_price')
+        extra_kwargs = {
+            'rate': {'required': False},
+            'qty': {'required': False},
+            'margin_percentage': {'required': False},
+        }
 
     def validate(self, data):
-        data['estimated_cost'] = data['rate'] * data['qty']
-        data['estimated_margin_amount'] = data['estimated_cost'] * (data['margin_percentage'] / Decimal('100'))
+        rate = data.get('rate', Decimal('0.00'))
+        qty = data.get('qty', 1)
+        margin_percentage = data.get('margin_percentage', Decimal('0.00'))
+        
+        data['estimated_cost'] = rate * qty
+        data['estimated_margin_amount'] = data['estimated_cost'] * (margin_percentage / Decimal('100'))
         data['estimated_price'] = data['estimated_cost'] + data['estimated_margin_amount']
         return data
 
@@ -21,12 +30,23 @@ class ServiceImplementationItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceImplementationItem
         fields = '__all__'
-        read_only_fields = ('total_days', 'estimated_cost', 'estimated_margin_amount', 'estimated_price')
+        read_only_fields = ('cost_sheet', 'total_days', 'estimated_cost', 'estimated_margin_amount', 'estimated_price')
+        extra_kwargs = {
+            'num_resources': {'required': False},
+            'num_days': {'required': False},
+            'rate_per_day': {'required': False},
+            'margin_percentage': {'required': False},
+        }
 
     def validate(self, data):
-        data['total_days'] = data['num_resources'] * data['num_days']
-        data['estimated_cost'] = Decimal(data['total_days']) * data['rate_per_day']
-        data['estimated_margin_amount'] = data['estimated_cost'] * (data['margin_percentage'] / Decimal('100'))
+        num_resources = data.get('num_resources', 1)
+        num_days = data.get('num_days', 1)
+        rate_per_day = data.get('rate_per_day', Decimal('0.00'))
+        margin_percentage = data.get('margin_percentage', Decimal('0.00'))
+
+        data['total_days'] = num_resources * num_days
+        data['estimated_cost'] = Decimal(data['total_days']) * rate_per_day
+        data['estimated_margin_amount'] = data['estimated_cost'] * (margin_percentage / Decimal('100'))
         data['estimated_price'] = data['estimated_cost'] + data['estimated_margin_amount']
         return data
 
@@ -34,12 +54,23 @@ class ServiceSupportItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceSupportItem
         fields = '__all__'
-        read_only_fields = ('total_days', 'estimated_cost', 'estimated_margin_amount', 'estimated_price')
+        read_only_fields = ('cost_sheet', 'total_days', 'estimated_cost', 'estimated_margin_amount', 'estimated_price')
+        extra_kwargs = {
+            'num_resources': {'required': False},
+            'num_days': {'required': False},
+            'rate_per_day': {'required': False},
+            'margin_percentage': {'required': False},
+        }
 
     def validate(self, data):
-        data['total_days'] = data['num_resources'] * data['num_days']
-        data['estimated_cost'] = Decimal(data['total_days']) * data['rate_per_day']
-        data['estimated_margin_amount'] = data['estimated_cost'] * (data['margin_percentage'] / Decimal('100'))
+        num_resources = data.get('num_resources', 1)
+        num_days = data.get('num_days', 1)
+        rate_per_day = data.get('rate_per_day', Decimal('0.00'))
+        margin_percentage = data.get('margin_percentage', Decimal('0.00'))
+
+        data['total_days'] = num_resources * num_days
+        data['estimated_cost'] = Decimal(data['total_days']) * rate_per_day
+        data['estimated_margin_amount'] = data['estimated_cost'] * (margin_percentage / Decimal('100'))
         data['estimated_price'] = data['estimated_cost'] + data['estimated_margin_amount']
         return data
 
@@ -47,11 +78,22 @@ class InfrastructureItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = InfrastructureItem
         fields = '__all__'
-        read_only_fields = ('estimated_cost', 'estimated_margin_amount', 'estimated_price')
+        read_only_fields = ('cost_sheet', 'estimated_cost', 'estimated_margin_amount', 'estimated_price')
+        extra_kwargs = {
+            'qty': {'required': False},
+            'months': {'required': False},
+            'rate_per_month': {'required': False},
+            'margin_percentage': {'required': False},
+        }
 
     def validate(self, data):
-        data['estimated_cost'] = (data['qty'] * data['rate_per_month']) * Decimal(data['months'])
-        data['estimated_margin_amount'] = data['estimated_cost'] * (data['margin_percentage'] / Decimal('100'))
+        qty = data.get('qty', 1)
+        months = data.get('months', 1)
+        rate_per_month = data.get('rate_per_month', Decimal('0.00'))
+        margin_percentage = data.get('margin_percentage', Decimal('0.00'))
+
+        data['estimated_cost'] = (qty * rate_per_month) * Decimal(months)
+        data['estimated_margin_amount'] = data['estimated_cost'] * (margin_percentage / Decimal('100'))
         data['estimated_price'] = data['estimated_cost'] + data['estimated_margin_amount']
         return data
 
@@ -64,6 +106,21 @@ class OtherItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OtherItem
         fields = '__all__'
+        read_only_fields = ('cost_sheet', 'estimated_cost', 'estimated_margin_amount', 'estimated_price')
+        extra_kwargs = {
+            'margin_percentage': {'required': False},
+            'estimated_cost': {'required': False},
+        }
+
+    def validate(self, data):
+        # For 'Other', estimated_cost is typically passed directly from frontend
+        estimated_cost = data.get('estimated_cost', Decimal('0.00'))
+        margin_percentage = data.get('margin_percentage', Decimal('0.00'))
+
+        data['estimated_cost'] = estimated_cost 
+        data['estimated_margin_amount'] = estimated_cost * (margin_percentage / Decimal('100'))
+        data['estimated_price'] = estimated_cost + data['estimated_margin_amount']
+        return data
 
 class CostSheetSerializer(serializers.ModelSerializer):
     license_items = LicenseItemSerializer(many=True, required=False)
@@ -75,14 +132,14 @@ class CostSheetSerializer(serializers.ModelSerializer):
     lead_no = serializers.CharField(source='lead.lead_no', read_only=True)
     customer_name = serializers.CharField(source='lead.customer_name', read_only=True)
     project_name = serializers.CharField(source='lead.project_name', read_only=True)
-    project_manager = serializers.CharField(source='lead.project_manager', read_only=True)
-    sales_person = serializers.CharField(source='lead.sales_person', read_only=True)
+    project_manager = serializers.CharField(required=False, allow_blank=True)
+    sales_person = serializers.CharField(required=False, allow_blank=True)
     lead_details = serializers.SerializerMethodField()
 
     class Meta:
         model = CostSheet
         fields = '__all__'
-        read_only_fields = ('total_estimated_cost', 'total_estimated_margin', 'total_estimated_price', 'lead_details')
+        read_only_fields = ('cost_sheet_no', 'total_estimated_cost', 'total_estimated_margin', 'total_estimated_price', 'lead_details')
 
     def get_lead_details(self, obj):
         return {
@@ -101,7 +158,17 @@ class CostSheetSerializer(serializers.ModelSerializer):
         infra_data = validated_data.pop('infra_items', [])
         other_data = validated_data.pop('other_items', [])
 
+        pm = validated_data.pop('project_manager', None)
+        sp = validated_data.pop('sales_person', None)
+
         cost_sheet = CostSheet.objects.create(**validated_data)
+        
+        # Update associated lead
+        if pm is not None or sp is not None:
+            lead = cost_sheet.lead
+            if pm is not None: lead.project_manager = pm
+            if sp is not None: lead.sales_person = sp
+            lead.save()
 
         for item in license_data:
             LicenseItem.objects.create(cost_sheet=cost_sheet, **item)
@@ -124,10 +191,20 @@ class CostSheetSerializer(serializers.ModelSerializer):
         infra_data = validated_data.pop('infra_items', None)
         other_data = validated_data.pop('other_items', None)
 
+        pm = validated_data.pop('project_manager', None)
+        sp = validated_data.pop('sales_person', None)
+
         # Update core fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
+
+        # Update associated lead
+        if pm is not None or sp is not None:
+            lead = instance.lead
+            if pm is not None: lead.project_manager = pm
+            if sp is not None: lead.sales_person = sp
+            lead.save()
 
         # Update nested items
         if license_data is not None:
