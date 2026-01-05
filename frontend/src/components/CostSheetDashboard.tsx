@@ -279,7 +279,7 @@ const CostSheetDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView
                                         transition: 'background 0.2s'
                                     }}
                                 >
-                                    Reset
+                                    Preview
                                 </button>
                             </th>
                         </tr>
