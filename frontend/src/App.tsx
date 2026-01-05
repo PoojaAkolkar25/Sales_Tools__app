@@ -176,6 +176,7 @@ const AppContent: React.FC = () => {
         user ? (
           <ModuleWrapper>
             <div className="space-y-6">
+<<<<<<< HEAD
               <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
                 <button
                   onClick={() => setCostSheetView('dashboard')}
@@ -194,11 +195,18 @@ const AppContent: React.FC = () => {
                     color: costSheetView === 'dashboard' ? 'white' : '#2D3748',
                     boxShadow: costSheetView === 'dashboard' ? '0 4px 12px rgba(255, 107, 0, 0.3)' : '0 1px 3px rgba(0,0,0,0.1)'
                   }}
+=======
+              <div className="flex gap-4 mb-6">
+                <button
+                  onClick={() => setCostSheetView('dashboard')}
+                  className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-semibold transition-all ${costSheetView === 'dashboard' ? 'bg-[#0066CC] text-white shadow-lg' : 'bg-white text-[#2D3748] border border-[#E0E6ED] hover:bg-[#FAFBFC]'}`}
+>>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                 >
                   <LayoutDashboard size={18} /> Dashboard
                 </button>
                 <button
                   onClick={handleCreateNew}
+<<<<<<< HEAD
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -214,6 +222,9 @@ const AppContent: React.FC = () => {
                     color: costSheetView === 'form' && !editingId ? 'white' : '#2D3748',
                     boxShadow: costSheetView === 'form' && !editingId ? '0 4px 12px rgba(255, 107, 0, 0.3)' : '0 1px 3px rgba(0,0,0,0.1)'
                   }}
+=======
+                  className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-semibold transition-all ${costSheetView === 'form' && !editingId ? 'bg-[#0066CC] text-white shadow-lg' : 'bg-white text-[#2D3748] border border-[#E0E6ED] hover:bg-[#FAFBFC]'}`}
+>>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                 >
                   <PlusCircle size={18} /> Create New
                 </button>
