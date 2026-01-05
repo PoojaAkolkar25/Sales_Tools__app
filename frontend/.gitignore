@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+
+# Excel temp files
+.~lock.*
+
+# Django media (optional)
+backend/media/
+
+# Node
+node_modules/
