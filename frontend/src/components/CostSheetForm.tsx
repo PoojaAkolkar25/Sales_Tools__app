@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-<<<<<<< HEAD
 import { Trash2, Search, Save, CheckCircle, XCircle, Clock, ArrowLeft, Upload, File, Eye as EyeIcon, Paperclip, X, Download } from 'lucide-react';
-=======
-import { Trash2, Search, Save, CheckCircle, XCircle, Clock, ArrowLeft, Upload, File, Eye as EyeIcon } from 'lucide-react';
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
 import api from '../api';
 
 interface Lead {
@@ -43,12 +39,9 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [uploading, setUploading] = useState(false);
-<<<<<<< HEAD
     const [isDragHover, setIsDragHover] = useState(false);
     const [previewFile, setPreviewFile] = useState<Attachment | null>(null);
     const [customAlert, setCustomAlert] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
-=======
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
 
     // Category States
     const [licenseItems, setLicenseItems] = useState<any[]>([{ name: '', type: '', rate: 0, qty: 1, period: '', margin_percentage: 0 }]);
@@ -252,11 +245,7 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
 
         // If no ID yet, auto-save as draft first
         if (!activeId) {
-<<<<<<< HEAD
             if (!lead) return setCustomAlert({ message: 'Please select a lead first by searching for a Lead No. before attaching documents.', type: 'error' });
-=======
-            if (!lead) return alert('Please select a lead first by searching for a Lead No. before attaching documents.');
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
             // costSheetNo is now auto-generated, so no check here
 
             try {
@@ -283,11 +272,7 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
             setAttachments([...attachments, response.data]);
         } catch (error) {
             console.error('Error uploading file', error);
-<<<<<<< HEAD
             setCustomAlert({ message: 'Failed to upload file', type: 'error' });
-=======
-            alert('Failed to upload file');
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
         } finally {
             setUploading(false);
         }
@@ -299,20 +284,12 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
             setAttachments(attachments.filter(a => a.id !== attachmentId));
         } catch (error) {
             console.error('Error deleting attachment', error);
-<<<<<<< HEAD
             setCustomAlert({ message: 'Failed to delete attachment', type: 'error' });
-=======
-            alert('Failed to delete attachment');
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
         }
     };
 
     const handleSave = async (newStatus: string = 'PENDING', isAutoDraft: boolean = false) => {
-<<<<<<< HEAD
         if (!lead) return setCustomAlert({ message: 'Please select a lead first by searching for a Lead No.', type: 'error' });
-=======
-        if (!lead) return alert('Please select a lead first by searching for a Lead No.');
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
         // costSheetNo is now auto-generated, so no check here
 
         const cleanItems = (items: any[], type: 'license' | 'implementation' | 'support' | 'infra' | 'other') =>
@@ -367,11 +344,7 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
             }
 
             if (!isAutoDraft) {
-<<<<<<< HEAD
                 setCustomAlert({ message: newStatus === 'PENDING' ? 'Cost Sheet saved as Draft.' : 'Cost Sheet submitted for approval!', type: 'success' });
-=======
-                alert(newStatus === 'PENDING' ? 'Cost Sheet saved as Draft.' : 'Cost Sheet submitted for approval!');
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                 if (newStatus === 'PENDING') {
                     setActiveTab('summary');
                 } else if (onBack) {
@@ -393,11 +366,7 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                 }
             }
 
-<<<<<<< HEAD
             setCustomAlert({ message: `Validation Error:\n\n${errorMsg}`, type: 'error' });
-=======
-            alert(`Validation Error:\n\n${errorMsg}`);
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
             return null;
         }
     };
@@ -405,22 +374,14 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
     const handleApprove = async () => {
         try {
             await api.post(`/cost-sheets/${localId}/approve/`);
-<<<<<<< HEAD
             setCustomAlert({ message: 'Cost Sheet Approved!', type: 'success' });
             if (onBack) onBack();
         } catch (error: any) {
             setCustomAlert({ message: error.response?.data?.error || 'Failed to approve', type: 'error' });
-=======
-            alert('Cost Sheet Approved!');
-            if (onBack) onBack();
-        } catch (error: any) {
-            alert(error.response?.data?.error || 'Failed to approve');
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
         }
     };
 
     const handleReject = async () => {
-<<<<<<< HEAD
         if (!rejectComment) return setCustomAlert({ message: 'Please provide rejection comments', type: 'error' });
         try {
             await api.post(`/cost-sheets/${localId}/reject/`, { comments: rejectComment });
@@ -428,21 +389,11 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
             if (onBack) onBack();
         } catch (error: any) {
             setCustomAlert({ message: error.response?.data?.error || 'Failed to reject', type: 'error' });
-=======
-        if (!rejectComment) return alert('Please provide rejection comments');
-        try {
-            await api.post(`/cost-sheets/${localId}/reject/`, { comments: rejectComment });
-            alert('Cost Sheet Rejected');
-            if (onBack) onBack();
-        } catch (error: any) {
-            alert(error.response?.data?.error || 'Failed to reject');
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
         }
     };
 
     const TableHeader = ({ columns }: { columns: string[] }) => (
         <thead>
-<<<<<<< HEAD
             <tr style={{ background: '#F8FAFC' }}>
                 {columns.map((col, i) => (
                     <th key={i} style={{
@@ -458,11 +409,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                     }}>{col}</th>
                 ))}
                 {!isReadOnly && <th style={{ padding: '14px 12px', width: '50px', borderBottom: '2px solid #E0E6ED' }}></th>}
-=======
-            <tr className="text-[#718096] text-[10px] uppercase font-bold tracking-widest border-b border-[#E0E6ED]">
-                {columns.map((col, i) => <th key={i} className="py-4 px-3 text-left">{col}</th>)}
-                {!isReadOnly && <th className="py-4 px-3"></th>}
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
             </tr>
         </thead>
     );
@@ -488,7 +434,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
     };
 
     const InputCell = ({ value, onChange, type = "text" }: any) => (
-<<<<<<< HEAD
         <td style={{ padding: '10px 8px' }}>
             <input
                 style={{
@@ -503,11 +448,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                     outline: 'none',
                     transition: 'border-color 0.2s'
                 }}
-=======
-        <td className="py-4 px-2">
-            <input
-                className="bg-transparent border-none p-0 text-sm font-medium focus:ring-0 w-full text-[#2D3748]"
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                 type={type}
                 value={value}
                 readOnly={isReadOnly}
@@ -517,7 +457,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
     );
 
     const ReadOnlyCell = ({ value, bold = false }: any) => (
-<<<<<<< HEAD
         <td style={{
             padding: '10px 8px',
             fontSize: bold ? '0.9rem' : '0.8rem',
@@ -527,15 +466,11 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
             background: 'rgba(0,0,0,0.02)',
             textAlign: 'right'
         }}>
-=======
-        <td className={`py-4 px-2 text-[#718096] font-mono text-xs ${bold ? 'font-extrabold text-sm text-[#2D3748]' : 'font-bold'}`}>
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
             {typeof value === 'number' ? value.toLocaleString(undefined, { minimumFractionDigits: 2 }) : value}
         </td>
     );
 
     return (
-<<<<<<< HEAD
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '180px' }}>
             {/* Hero Header */}
             <div className="ae-hero" style={{ padding: '20px 32px', maxWidth: '100%' }}>
@@ -574,28 +509,11 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                         color: activeTab === 'form' ? 'white' : '#718096',
                         boxShadow: activeTab === 'form' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
                     }}
-=======
-        <div className="space-y-8 pb-60">
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="p-2 hover:bg-[#F5F7FA] rounded-full text-[#718096] transition-colors"><ArrowLeft size={20} /></button>
-                    <h2 className="text-3xl font-extrabold text-[#1a1f36] m-0">Cost Sheet {id ? `#${id}` : 'Creation'}</h2>
-                </div>
-                {getStatusDisplay()}
-            </div>
-
-            {/* Tabs */}
-            <div className="flex gap-8 border-b border-[#E2E8F0] mb-8">
-                <button
-                    onClick={() => setActiveTab('form')}
-                    className={`pb-4 px-2 text-sm font-bold transition-all border-b-2 ${activeTab === 'form' ? 'border-[#0066CC] text-[#0066CC]' : 'border-transparent text-[#718096] hover:text-[#2D3748]'}`}
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                 >
                     Cost Sheet
                 </button>
                 <button
                     onClick={() => setActiveTab('summary')}
-<<<<<<< HEAD
                     style={{
                         padding: '10px 24px',
                         borderRadius: '8px',
@@ -608,20 +526,13 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                         color: activeTab === 'summary' ? 'white' : '#718096',
                         boxShadow: activeTab === 'summary' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
                     }}
-=======
-                    className={`pb-4 px-2 text-sm font-bold transition-all border-b-2 ${activeTab === 'summary' ? 'border-[#0066CC] text-[#0066CC]' : 'border-transparent text-[#718096] hover:text-[#2D3748]'}`}
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                 >
                     Cost Summary
                 </button>
             </div>
 
             {activeTab === 'form' ? (
-<<<<<<< HEAD
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-=======
-                <div className="space-y-8">
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                     {status === 'REJECTED' && approvalComments && (
                         <div className="bg-[#EF4444]/5 border border-[#EF4444]/20 rounded-xl p-6">
                             <h4 className="text-[#EF4444] font-bold mb-2 flex items-center gap-2"><XCircle size={16} /> Rejection Comments</h4>
@@ -637,7 +548,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                     )}
 
                     {/* Lead & Metadata Section */}
-<<<<<<< HEAD
                     <section className="section-panel" style={{
                         padding: '24px',
                         opacity: isReadOnly ? 0.7 : 1,
@@ -953,119 +863,20 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                         transition: 'background 0.2s'
                                     }}
                                 >
-=======
-                    <section className={`glass-card grid grid-cols-3 gap-8 ${isReadOnly ? 'opacity-70 pointer-events-none grayscale-[0.3]' : ''}`}>
-                        <div className="form-group">
-                            <label>Customer Name</label>
-                            {!isReadOnly ? (
-                                <select
-                                    className="w-full p-3 bg-white border border-[#E0E6ED] rounded-lg font-semibold text-[#1a1f36] focus:border-[#0066CC] focus:ring-1 focus:ring-[#0066CC] outline-none transition-all cursor-pointer"
-                                    value={selectedCustomerName}
-                                    onChange={e => handleCustomerChange(e.target.value)}
-                                >
-                                    <option value="">Select Customer</option>
-                                    {uniqueCustomers.map(name => (
-                                        <option key={name} value={name}>{name}</option>
-                                    ))}
-                                </select>
-                            ) : (
-                                <input value={lead?.customer_name || ''} readOnly className="bg-[#FAFBFC] font-semibold text-[#4A5568]" />
-                            )}
-                        </div>
-                        <div className="form-group">
-                            <label>Lead No.</label>
-                            <div className="flex gap-2">
-                                {!isReadOnly ? (
-                                    <select
-                                        className="w-full p-3 bg-white border border-[#E0E6ED] rounded-lg font-semibold text-[#1a1f36] focus:border-[#0066CC] focus:ring-1 focus:ring-[#0066CC] outline-none transition-all cursor-pointer"
-                                        value={lead?.id || ''}
-                                        onChange={e => handleLeadChange(e.target.value)}
-                                    >
-                                        <option value="">Select Lead No.</option>
-                                        {(selectedCustomerName ? leads.filter(l => l.customer_name === selectedCustomerName) : leads).map(l => (
-                                            <option key={l.id} value={l.id}>{l.lead_no}</option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    <input value={leadNo} readOnly className="bg-[#FAFBFC] font-semibold text-[#4A5568]" />
-                                )}
-                                {!isReadOnly && !lead && (
-                                    <button onClick={fetchLeadByNo} className="btn-primary !bg-[#0066CC] !p-3 !shadow-none hover:!bg-[#0052CC]">
-                                        <Search size={18} />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label>Project Name</label>
-                            <input value={lead?.project_name || ''} readOnly className="bg-[#FAFBFC] font-semibold text-[#4A5568]" />
-                        </div>
-                        <div className="form-group">
-                            <label>Project Manager</label>
-                            <input
-                                value={projectManager}
-                                onChange={e => setProjectManager(e.target.value)}
-                                readOnly={isReadOnly}
-                                className={`${isReadOnly ? 'bg-[#FAFBFC]' : 'bg-white'} font-semibold text-[#4A5568]`}
-                                placeholder="Enter Project Manager"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Sales Person</label>
-                            <input
-                                value={salesPerson}
-                                onChange={e => setSalesPerson(e.target.value)}
-                                readOnly={isReadOnly}
-                                className={`${isReadOnly ? 'bg-[#FAFBFC]' : 'bg-white'} font-semibold text-[#4A5568]`}
-                                placeholder="Enter Sales Person"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Cost Sheet No.</label>
-                            <input
-                                value={costSheetNo}
-                                readOnly
-                                className="bg-[#FAFBFC] font-semibold text-[#4A5568]"
-                                placeholder="Auto-generated"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Cost Sheet Date</label>
-                            <input type="date" value={costSheetDate} onChange={e => setCostSheetDate(e.target.value)} readOnly={isReadOnly} />
-                        </div>
-                    </section>
-
-                    {/* License Section */}
-                    <section className="glass-card !p-0 overflow-hidden">
-                        <div className="flex justify-between items-center p-6 bg-[#FAFBFC] border-b border-[#E0E6ED]">
-                            <h3 className="text-lg font-bold m-0 text-[#0066CC]">License</h3>
-                            {!isReadOnly && (
-                                <button onClick={() => addItem('license')} className="text-xs font-bold text-white px-4 py-2 rounded bg-[#0066CC] hover:bg-[#0052CC] transition-colors">
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                     + Add Item
                                 </button>
                             )}
                         </div>
-<<<<<<< HEAD
                         <div style={{ overflowX: 'auto', padding: '16px' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px', minWidth: '1000px' }}>
                                 <TableHeader columns={['License Name', 'License Type', 'Rate', 'Qty', 'Period', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price']} />
-=======
-                        <div className="overflow-x-auto p-4">
-                            <table className="w-full text-left min-w-[1000px]">
-                                <TableHeader columns={['License Name', 'License Type', 'Rate', 'Qty', 'Period', 'Estimated Cost', 'Estimated Amount', 'Estimated Margin %', 'Estimated Price']} />
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                 <tbody>
                                     {licenseItems.map((item, idx) => {
                                         const cost = item.rate * item.qty;
                                         const marginAmount = cost * (item.margin_percentage / 100);
                                         const price = cost + marginAmount;
                                         return (
-<<<<<<< HEAD
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
-=======
-                                            <tr key={idx} className="border-b border-[#E0E6ED] last:border-0 hover:bg-[#F5F7FA]">
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                                 <InputCell value={item.name} onChange={(v: string) => updateItem(idx, 'name', v, licenseItems, setLicenseItems)} />
                                                 <InputCell value={item.type} onChange={(v: string) => updateItem(idx, 'type', v, licenseItems, setLicenseItems)} />
                                                 <InputCell value={item.rate} onChange={(v: number) => updateItem(idx, 'rate', v, licenseItems, setLicenseItems)} type="number" />
@@ -1075,7 +886,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                                 <ReadOnlyCell value={marginAmount} />
                                                 <InputCell value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, licenseItems, setLicenseItems)} type="number" />
                                                 <ReadOnlyCell value={price} bold />
-<<<<<<< HEAD
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1093,9 +903,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                                         </button>
                                                     </td>
                                                 )}
-=======
-                                                {!isReadOnly && <td className="py-4 px-2 text-right"><button onClick={() => setLicenseItems(licenseItems.filter((_, i) => i !== idx))} className="text-[#EF4444]/40 hover:text-[#EF4444] p-1"><Trash2 size={16} /></button></td>}
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                             </tr>
                                         );
                                     })}
@@ -1105,7 +912,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                     </section>
 
                     {/* Implementation Section */}
-<<<<<<< HEAD
                     <section className="section-panel">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#0066CC', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1127,26 +933,13 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                         transition: 'background 0.2s'
                                     }}
                                 >
-=======
-                    <section className="glass-card !p-0 overflow-hidden">
-                        <div className="flex justify-between items-center p-6 bg-[#FAFBFC] border-b border-[#E0E6ED]">
-                            <h3 className="text-lg font-bold m-0 text-[#00C853]">Services - Impelmentation</h3>
-                            {!isReadOnly && (
-                                <button onClick={() => addItem('implementation')} className="text-xs font-bold text-white px-4 py-2 rounded bg-[#0066CC] hover:bg-[#0052CC] transition-colors">
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                     + Add Item
                                 </button>
                             )}
                         </div>
-<<<<<<< HEAD
                         <div style={{ overflowX: 'auto', padding: '16px' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px', minWidth: '1000px' }}>
                                 <TableHeader columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price']} />
-=======
-                        <div className="overflow-x-auto p-4">
-                            <table className="w-full text-left min-w-[1000px]">
-                                <TableHeader columns={['Resource categorises', 'No. of resoruces', 'No. of days', 'Total days', 'Rate per days', 'Estimated Cost', 'Estimated Amount', 'Estimated Margin %', 'Estimated Price']} />
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                 <tbody>
                                     {implementationItems.map((item, idx) => {
                                         const totalDays = item.num_resources * item.num_days;
@@ -1154,11 +947,7 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                         const marginAmount = cost * (item.margin_percentage / 100);
                                         const price = cost + marginAmount;
                                         return (
-<<<<<<< HEAD
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
-=======
-                                            <tr key={idx} className="border-b border-[#E0E6ED] last:border-0 hover:bg-[#F5F7FA]">
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                                 <InputCell value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, implementationItems, setImplementationItems)} />
                                                 <InputCell value={item.num_resources} onChange={(v: number) => updateItem(idx, 'num_resources', v, implementationItems, setImplementationItems)} type="number" />
                                                 <InputCell value={item.num_days} onChange={(v: number) => updateItem(idx, 'num_days', v, implementationItems, setImplementationItems)} type="number" />
@@ -1168,7 +957,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                                 <ReadOnlyCell value={marginAmount} />
                                                 <InputCell value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, implementationItems, setImplementationItems)} type="number" />
                                                 <ReadOnlyCell value={price} bold />
-<<<<<<< HEAD
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1186,9 +974,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                                         </button>
                                                     </td>
                                                 )}
-=======
-                                                {!isReadOnly && <td className="py-4 px-2 text-right"><button onClick={() => setImplementationItems(implementationItems.filter((_, i) => i !== idx))} className="text-[#EF4444]/40 hover:text-[#EF4444] p-1"><Trash2 size={16} /></button></td>}
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                             </tr>
                                         );
                                     })}
@@ -1198,7 +983,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                     </section>
 
                     {/* Support Section */}
-<<<<<<< HEAD
                     <section className="section-panel">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1220,26 +1004,13 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                         transition: 'background 0.2s'
                                     }}
                                 >
-=======
-                    <section className="glass-card !p-0 overflow-hidden">
-                        <div className="flex justify-between items-center p-6 bg-[#FAFBFC] border-b border-[#E0E6ED]">
-                            <h3 className="text-lg font-bold m-0 text-[#FF6B00]">Services - Support</h3>
-                            {!isReadOnly && (
-                                <button onClick={() => addItem('support')} className="text-xs font-bold text-white px-4 py-2 rounded bg-[#0066CC] hover:bg-[#0052CC] transition-colors">
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                     + Add Item
                                 </button>
                             )}
                         </div>
-<<<<<<< HEAD
                         <div style={{ overflowX: 'auto', padding: '16px' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px', minWidth: '1000px' }}>
                                 <TableHeader columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price']} />
-=======
-                        <div className="overflow-x-auto p-4">
-                            <table className="w-full text-left min-w-[1000px]">
-                                <TableHeader columns={['Resource categorises', 'No. of resoruces', 'No. of days', 'Total days', 'Rate per days', 'Estimated Cost', 'Estimated Amount', 'Estimated Margin %', 'Estimated Price']} />
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                 <tbody>
                                     {supportItems.map((item, idx) => {
                                         const totalDays = item.num_resources * item.num_days;
@@ -1247,11 +1018,7 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                         const marginAmount = cost * (item.margin_percentage / 100);
                                         const price = cost + marginAmount;
                                         return (
-<<<<<<< HEAD
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
-=======
-                                            <tr key={idx} className="border-b border-[#E0E6ED] last:border-0 hover:bg-[#F5F7FA]">
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                                 <InputCell value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, supportItems, setSupportItems)} />
                                                 <InputCell value={item.num_resources} onChange={(v: number) => updateItem(idx, 'num_resources', v, supportItems, setSupportItems)} type="number" />
                                                 <InputCell value={item.num_days} onChange={(v: number) => updateItem(idx, 'num_days', v, supportItems, setSupportItems)} type="number" />
@@ -1261,7 +1028,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                                 <ReadOnlyCell value={marginAmount} />
                                                 <InputCell value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, supportItems, setSupportItems)} type="number" />
                                                 <ReadOnlyCell value={price} bold />
-<<<<<<< HEAD
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1279,9 +1045,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                                         </button>
                                                     </td>
                                                 )}
-=======
-                                                {!isReadOnly && <td className="py-4 px-2 text-right"><button onClick={() => setSupportItems(supportItems.filter((_, i) => i !== idx))} className="text-[#EF4444]/40 hover:text-[#EF4444] p-1"><Trash2 size={16} /></button></td>}
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                             </tr>
                                         );
                                     })}
@@ -1291,7 +1054,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                     </section>
 
                     {/* Infrastructure Section */}
-<<<<<<< HEAD
                     <section className="section-panel">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#0066CC', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1313,37 +1075,20 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                         transition: 'background 0.2s'
                                     }}
                                 >
-=======
-                    <section className="glass-card !p-0 overflow-hidden">
-                        <div className="flex justify-between items-center p-6 bg-[#FAFBFC] border-b border-[#E0E6ED]">
-                            <h3 className="text-lg font-bold m-0 text-[#2D3748]">Infrastructure cost</h3>
-                            {!isReadOnly && (
-                                <button onClick={() => addItem('infra')} className="text-xs font-bold text-white px-4 py-2 rounded bg-[#0066CC] hover:bg-[#0052CC] transition-colors">
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                     + Add Item
                                 </button>
                             )}
                         </div>
-<<<<<<< HEAD
                         <div style={{ overflowX: 'auto', padding: '16px' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px', minWidth: '900px' }}>
                                 <TableHeader columns={['Infra Name', 'Qty', 'Months', 'Rate/Month', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price']} />
-=======
-                        <div className="overflow-x-auto p-4">
-                            <table className="w-full text-left min-w-[1000px]">
-                                <TableHeader columns={['Infra Name', 'Qty', 'Moths', 'Rate / Mths', 'Estimated Cost', 'Estimated Amount', 'Estimated Margin %', 'Estimated Price']} />
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                 <tbody>
                                     {infraItems.map((item, idx) => {
                                         const cost = item.qty * item.months * item.rate_per_month;
                                         const marginAmount = cost * (item.margin_percentage / 100);
                                         const price = cost + marginAmount;
                                         return (
-<<<<<<< HEAD
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
-=======
-                                            <tr key={idx} className="border-b border-[#E0E6ED] last:border-0 hover:bg-[#F5F7FA]">
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                                 <InputCell value={item.name} onChange={(v: string) => updateItem(idx, 'name', v, infraItems, setInfraItems)} />
                                                 <InputCell value={item.qty} onChange={(v: number) => updateItem(idx, 'qty', v, infraItems, setInfraItems)} type="number" />
                                                 <InputCell value={item.months} onChange={(v: number) => updateItem(idx, 'months', v, infraItems, setInfraItems)} type="number" />
@@ -1352,7 +1097,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                                 <ReadOnlyCell value={marginAmount} />
                                                 <InputCell value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, infraItems, setInfraItems)} type="number" />
                                                 <ReadOnlyCell value={price} bold />
-<<<<<<< HEAD
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1370,9 +1114,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                                         </button>
                                                     </td>
                                                 )}
-=======
-                                                {!isReadOnly && <td className="py-4 px-2 text-right"><button onClick={() => setInfraItems(infraItems.filter((_, i) => i !== idx))} className="text-[#EF4444]/40 hover:text-[#EF4444] p-1"><Trash2 size={16} /></button></td>}
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                             </tr>
                                         );
                                     })}
@@ -1382,7 +1123,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                     </section>
 
                     {/* Other Category Section */}
-<<<<<<< HEAD
                     <section className="section-panel">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1404,43 +1144,25 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                         transition: 'background 0.2s'
                                     }}
                                 >
-=======
-                    <section className="glass-card !p-0 overflow-hidden">
-                        <div className="flex justify-between items-center p-6 bg-[#FAFBFC] border-b border-[#E0E6ED]">
-                            <h3 className="text-lg font-bold m-0 text-[#6B46C1]">Other Category</h3>
-                            {!isReadOnly && (
-                                <button onClick={() => addItem('other')} className="text-xs font-bold text-white px-4 py-2 rounded bg-[#0066CC] hover:bg-[#0052CC] transition-colors">
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                     + Add Item
                                 </button>
                             )}
                         </div>
-<<<<<<< HEAD
                         <div style={{ overflowX: 'auto', padding: '16px' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px', minWidth: '700px' }}>
                                 <TableHeader columns={['Description', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price']} />
-=======
-                        <div className="overflow-x-auto p-4">
-                            <table className="w-full text-left min-w-[1000px]">
-                                <TableHeader columns={['Description', 'Estimated Cost', 'Estimated Amount', 'Estimated Margin %', 'Estimated Price']} />
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                 <tbody>
                                     {otherItems.map((item, idx) => {
                                         const cost = item.estimated_cost;
                                         const marginAmount = cost * (item.margin_percentage / 100);
                                         const price = cost + marginAmount;
                                         return (
-<<<<<<< HEAD
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
-=======
-                                            <tr key={idx} className="border-b border-[#E0E6ED] last:border-0 hover:bg-[#F5F7FA]">
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                                 <InputCell value={item.description} onChange={(v: string) => updateItem(idx, 'description', v, otherItems, setOtherItems)} />
                                                 <InputCell value={item.estimated_cost} onChange={(v: number) => updateItem(idx, 'estimated_cost', v, otherItems, setOtherItems)} type="number" />
                                                 <ReadOnlyCell value={marginAmount} />
                                                 <InputCell value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, otherItems, setOtherItems)} type="number" />
                                                 <ReadOnlyCell value={price} bold />
-<<<<<<< HEAD
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1458,9 +1180,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                                         </button>
                                                     </td>
                                                 )}
-=======
-                                                {!isReadOnly && <td className="py-4 px-2 text-right"><button onClick={() => setOtherItems(otherItems.filter((_, i) => i !== idx))} className="text-[#EF4444]/40 hover:text-[#EF4444] p-1"><Trash2 size={16} /></button></td>}
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                             </tr>
                                         );
                                     })}
@@ -1470,7 +1189,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                     </section>
 
                     {/* Document Attachments Section */}
-<<<<<<< HEAD
                     <section className="section-panel" style={{ padding: '24px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
                             <Paperclip size={18} style={{ color: '#0066CC' }} />
@@ -1631,72 +1349,11 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                                     <X size={16} />
                                                 </button>
                                             )}
-=======
-                    <section className="glass-card">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-bold m-0 text-[#1a1f36]">Document Attachments</h3>
-                            {!isReadOnly && (
-                                <div className="flex items-center gap-4">
-                                    <input
-                                        type="file"
-                                        onChange={handleFileUpload}
-                                        className="block w-full text-sm text-[#718096]
-                                    file:mr-4 file:py-2 file:px-4
-                                    file:rounded-full file:border-0
-                                    file:text-sm file:font-bold
-                                    file:bg-[#004A99]/10 file:text-[#004A99]
-                                    hover:file:bg-[#004A99]/20
-                                    cursor-pointer"
-                                        accept=".pdf,.doc,.docx,.xls,.xlsx"
-                                        disabled={uploading}
-                                    />
-                                    {uploading && <span className="text-xs font-bold text-[#004A99] animate-pulse">Uploading...</span>}
-                                </div>
-                            )}
-                        </div>
-
-                        {attachments.length === 0 && (
-                            <div className="bg-[#F5F7FA] rounded-xl p-8 text-center border-2 border-dashed border-[#E0E6ED]">
-                                <p className="text-[#718096] font-medium">No documents attached yet.</p>
-                            </div>
-                        )}
-
-                        {attachments.length > 0 && (
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {attachments.map((att) => (
-                                    <div key={att.id} className="group relative bg-[#F8FAFC] border border-[#E0E6ED] rounded-xl p-4 transition-all hover:shadow-lg hover:border-[#0066CC]">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <div className="w-12 h-12 bg-[#0066CC]/10 rounded-lg flex items-center justify-center text-[#0066CC]">
-                                                <File size={24} />
-                                            </div>
-                                            <p className="text-xs font-bold text-[#1a1f36] text-center line-clamp-2">{att.filename}</p>
-                                            <div className="flex gap-2">
-                                                <a
-                                                    href={att.file.startsWith('http') ? att.file : `http://localhost:8000${att.file}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center gap-1 px-3 py-1.5 bg-white text-[#0066CC] rounded-lg border border-[#E0E6ED] hover:bg-[#0066CC] hover:text-white transition-all shadow-sm text-xs font-bold"
-                                                    title="Preview/Open"
-                                                >
-                                                    <EyeIcon size={14} /> Preview
-                                                </a>
-                                                {!isReadOnly && (
-                                                    <button
-                                                        onClick={() => handleDeleteAttachment(att.id)}
-                                                        className="p-1.5 bg-white text-[#EF4444] rounded-lg border border-[#E0E6ED] hover:bg-[#EF4444] hover:text-white transition-all shadow-sm"
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                )}
-                                            </div>
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         )}
-<<<<<<< HEAD
 
                         {/* Read-only state with no files */}
                         {isReadOnly && attachments.length === 0 && (
@@ -1828,10 +1485,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                         </div>
                     )}
 
-=======
-                    </section>
-
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                 </div>
             ) : (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -1873,7 +1526,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                         <div className="flex gap-4">
                             {status === 'PENDING' && (
                                 <>
-<<<<<<< HEAD
                                     <div style={{ display: 'flex', gap: '16px' }}>
                                         <button
                                             onClick={() => handleSave('PENDING')}
@@ -1930,14 +1582,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                                             Submit for Approval
                                         </button>
                                     </div>
-=======
-                                    <button onClick={() => handleSave('PENDING')} className="bg-[#FFFFFF] text-[#FF6B00] border-2 border-[#FF6B00] px-10 py-4 rounded-md font-bold hover:bg-[#FF6B00] hover:text-white transition-all shadow-md active:scale-95 flex items-center gap-2">
-                                        <Save size={20} /> Save as Draft
-                                    </button>
-                                    <button onClick={() => handleSave('SUBMITTED')} className="bg-[#0066CC] text-white border-none px-10 py-4 rounded-md font-bold hover:bg-[#0052CC] transition-all shadow-xl shadow-[#0066CC]/20 active:scale-95">
-                                        Submit for Approval
-                                    </button>
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
                                 </>
                             )}
 
@@ -1956,7 +1600,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                 </div>
             )}
 
-<<<<<<< HEAD
             {/* Custom Alert Modal */}
             {customAlert && (
                 <div
@@ -2075,8 +1718,6 @@ const CostSheetForm: React.FC<Props> = ({ id, onBack }) => {
                 </div>
             )}
 
-=======
->>>>>>> 4846736be912594f6da7d7e0182cf99c8a2fc7f6
             {/* Reject Modal */}
             {showRejectModal && (
                 <div className="fixed inset-0 bg-[#1a1f36]/80 backdrop-blur-md flex items-center justify-center z-[100] p-6">
