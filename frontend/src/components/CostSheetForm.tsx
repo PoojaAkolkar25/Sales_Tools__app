@@ -300,6 +300,34 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
         return { totalCost, totalMarginAmount, totalMarginPercent, totalPrice };
     };
 
+    // Calculate category-specific totals
+    const calculateCategoryTotals = (items: any[], type: 'license' | 'implementation' | 'support' | 'infra' | 'other') => {
+        let catCost = 0;
+        let catMarginAmount = 0;
+        let catPrice = 0;
+
+        items.forEach(item => {
+            let cost = 0;
+            if (type === 'license') {
+                cost = Number(item.rate) * Number(item.qty);
+            } else if (type === 'implementation' || type === 'support') {
+                cost = Number(item.num_resources) * Number(item.num_days) * Number(item.rate_per_day);
+            } else if (type === 'infra') {
+                cost = Number(item.qty) * Number(item.months) * Number(item.rate_per_month);
+            } else if (type === 'other') {
+                cost = Number(item.estimated_cost);
+            }
+            const marginAmount = cost * (Number(item.margin_percentage) / 100);
+            const price = cost + marginAmount;
+            catCost += cost;
+            catMarginAmount += marginAmount;
+            catPrice += price;
+        });
+
+        const catMarginPercent = catCost > 0 ? (catMarginAmount / catCost) * 100 : 0;
+        return { catCost, catMarginAmount, catMarginPercent, catPrice };
+    };
+
     const totals = calculateTotals();
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -677,7 +705,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                                         >
                                             <option value="">Select Lead No.</option>
                                             {(selectedCustomerName ? leads.filter(l => l.customer_name === selectedCustomerName) : leads).map(l => (
-                                                <option key={l.id} value={l.id}>{l.lead_no}</option>
+                                                <option key={l.id} value={l.id}>{l.lead_no} ({l.project_name})</option>
                                             ))}
                                         </select>
                                     ) : (
@@ -1417,7 +1445,8 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
 
                 </div>
             ) : (
-                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    {/* Overall Totals */}
                     <div className="glass-card bg-[#FAFBFC]">
                         <h3 className="text-xl font-bold mb-0 text-[#1a1f36]">Cost Summary Breakdown</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -1445,6 +1474,166 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                                 <div className="mt-4 h-1 w-full bg-[#0066CC]/20 rounded-full"></div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Category Breakdown Tables */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1a1f36', margin: 0 }}>Category Breakdown</h3>
+
+                        {/* License Category */}
+                        {licenseItems.length > 0 && (() => {
+                            const licenseTotals = calculateCategoryTotals(licenseItems, 'license');
+                            return (
+                                <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E0E6ED', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
+                                        License
+                                    </h4>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <tbody>
+                                            <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px', width: '40%' }}>Category</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Cost</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Amount</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Margin %</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Price</td>
+                                            </tr>
+                                            <tr style={{ background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 600, color: '#1a1f36' }}>License</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${licenseTotals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${licenseTotals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>{licenseTotals.catMarginPercent.toFixed(2)}%</td>
+                                                <td style={{ padding: '16px', fontSize: '1rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>${licenseTotals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Implementation Category */}
+                        {implementationItems.length > 0 && (() => {
+                            const implTotals = calculateCategoryTotals(implementationItems, 'implementation');
+                            return (
+                                <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E0E6ED', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
+                                        Services - Implementation
+                                    </h4>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <tbody>
+                                            <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px', width: '40%' }}>Category</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Cost</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Amount</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Margin %</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Price</td>
+                                            </tr>
+                                            <tr style={{ background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 600, color: '#1a1f36' }}>Implementation</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${implTotals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${implTotals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>{implTotals.catMarginPercent.toFixed(2)}%</td>
+                                                <td style={{ padding: '16px', fontSize: '1rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>${implTotals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Support Category */}
+                        {supportItems.length > 0 && (() => {
+                            const supportTotals = calculateCategoryTotals(supportItems, 'support');
+                            return (
+                                <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E0E6ED', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
+                                        Services - Support
+                                    </h4>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <tbody>
+                                            <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px', width: '40%' }}>Category</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Cost</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Amount</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Margin %</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Price</td>
+                                            </tr>
+                                            <tr style={{ background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 600, color: '#1a1f36' }}>Support</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${supportTotals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${supportTotals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>{supportTotals.catMarginPercent.toFixed(2)}%</td>
+                                                <td style={{ padding: '16px', fontSize: '1rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>${supportTotals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Infrastructure Category */}
+                        {infraItems.length > 0 && (() => {
+                            const infraTotals = calculateCategoryTotals(infraItems, 'infra');
+                            return (
+                                <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E0E6ED', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
+                                        Infrastructure Cost
+                                    </h4>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <tbody>
+                                            <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px', width: '40%' }}>Category</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Cost</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Amount</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Margin %</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Price</td>
+                                            </tr>
+                                            <tr style={{ background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 600, color: '#1a1f36' }}>Infrastructure</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${infraTotals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${infraTotals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>{infraTotals.catMarginPercent.toFixed(2)}%</td>
+                                                <td style={{ padding: '16px', fontSize: '1rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>${infraTotals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Other Category */}
+                        {otherItems.length > 0 && (() => {
+                            const otherTotals = calculateCategoryTotals(otherItems, 'other');
+                            return (
+                                <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E0E6ED', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
+                                        Other Category
+                                    </h4>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <tbody>
+                                            <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px', width: '40%' }}>Category</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Cost</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Amount</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Margin %</td>
+                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Price</td>
+                                            </tr>
+                                            <tr style={{ background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 600, color: '#1a1f36' }}>Other</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${otherTotals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${otherTotals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>{otherTotals.catMarginPercent.toFixed(2)}%</td>
+                                                <td style={{ padding: '16px', fontSize: '1rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>${otherTotals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
             )
