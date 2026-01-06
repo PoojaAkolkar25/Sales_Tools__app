@@ -21,6 +21,8 @@ import Login from './components/Login';
 import UserManagement from './components/UserManagement';
 import Home from './components/Home';
 import Navbar from './components/Navbar';
+import Payment from './components/Payment';
+import InvoiceDashboard from './components/InvoiceDashboard';
 import api from './api';
 import './index.css';
 
@@ -282,7 +284,21 @@ const AppContent: React.FC = () => {
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
-      {baseNavItems.filter(item => item.id !== 'cost-sheet').map(item => (
+      <Route path="/invoice" element={
+        user ? (
+          <ModuleWrapper>
+            <InvoiceDashboard />
+          </ModuleWrapper>
+        ) : <Navigate to="/login" />
+      } />
+      <Route path="/payment" element={
+        user ? (
+          <ModuleWrapper>
+            <Payment />
+          </ModuleWrapper>
+        ) : <Navigate to="/login" />
+      } />
+      {baseNavItems.filter(item => !['cost-sheet', 'invoice', 'payment'].includes(item.id)).map(item => (
         <Route key={item.id} path={item.path} element={
           user ? (
             <ModuleWrapper>
