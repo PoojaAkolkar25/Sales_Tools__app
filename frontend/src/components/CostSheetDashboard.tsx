@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Eye, Search, Calendar, FileSpreadsheet, RefreshCw } from 'lucide-react';
-import api from '../api';
 
 interface CostSheet {
     id: number;
@@ -13,10 +12,13 @@ interface CostSheet {
     created_at: string;
 }
 
-const CostSheetDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }) => {
-    const [costSheets, setCostSheets] = useState<CostSheet[]>([]);
-    const [loading, setLoading] = useState(true);
+interface CostSheetDashboardProps {
+    costSheets: CostSheet[];
+    loading: boolean;
+    onView: (id: number) => void;
+}
 
+const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loading, onView }) => {
     // Filter States
     const [filters, setFilters] = useState({
         csNumber: '',
@@ -26,20 +28,6 @@ const CostSheetDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView
         status: '',
         date: ''
     });
-
-    useEffect(() => {
-        const fetchCostSheets = async () => {
-            try {
-                const response = await api.get('/cost-sheets/');
-                setCostSheets(response.data);
-            } catch (error) {
-                console.error('Error fetching cost sheets', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchCostSheets();
-    }, []);
 
     const filteredCostSheets = useMemo(() => {
         return costSheets.filter(cs => {
@@ -54,12 +42,20 @@ const CostSheetDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView
         });
     }, [costSheets, filters]);
 
+    const counts = useMemo(() => ({
+        all: costSheets.length,
+        draft: costSheets.filter(cs => cs.status === 'PENDING').length,
+        pending: costSheets.filter(cs => cs.status === 'SUBMITTED').length,
+        approved: costSheets.filter(cs => cs.status === 'APPROVED').length,
+        rejected: costSheets.filter(cs => cs.status === 'REJECTED').length
+    }), [costSheets]);
+
     const statusFlow = [
-        { label: 'All', value: '', color: '#718096' },
-        { label: 'Draft', value: 'PENDING', color: '#718096' },
-        { label: 'Pending', value: 'SUBMITTED', color: '#FF6B00' },
-        { label: 'Approved', value: 'APPROVED', color: '#00C853' },
-        { label: 'Rejected', value: 'REJECTED', color: '#E53E3E' }
+        { label: `All (${counts.all})`, value: '', color: '#718096' },
+        { label: `Draft (${counts.draft})`, value: 'PENDING', color: '#718096' },
+        { label: `Pending (${counts.pending})`, value: 'SUBMITTED', color: '#FF6B00' },
+        { label: `Approved (${counts.approved})`, value: 'APPROVED', color: '#00C853' },
+        { label: `Rejected (${counts.rejected})`, value: 'REJECTED', color: '#E53E3E' }
     ];
 
     const getStatusBadge = (status: string) => {
@@ -89,63 +85,7 @@ const CostSheetDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-            {/* Hero Header */}
-            <div className="ae-hero" style={{ padding: '24px 32px', maxWidth: '100%' }}>
-                <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '12px',
-                            background: 'rgba(255, 107, 0, 0.2)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}>
-                            <FileSpreadsheet size={24} color="#FF6B00" />
-                        </div>
-                        <div>
-                            <h1 style={{
-                                fontSize: '1.5rem',
-                                fontWeight: 800,
-                                color: '#FF6B00',
-                                margin: 0,
-                                textTransform: 'uppercase',
-                                letterSpacing: '-0.02em'
-                            }}>
-                                Cost Sheet
-                            </h1>
-                            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
-                                Manage and track all cost estimations
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Stats with separators */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0' }}>
-                        <div style={{ textAlign: 'center', padding: '0 24px' }}>
-                            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'white' }}>{costSheets.length}</div>
-                            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Total</div>
-                        </div>
-                        <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.15)' }}></div>
-                        <div style={{ textAlign: 'center', padding: '0 24px' }}>
-                            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#00C853' }}>
-                                {costSheets.filter(cs => cs.status === 'APPROVED').length}
-                            </div>
-                            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Approved</div>
-                        </div>
-                        <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.15)' }}></div>
-                        <div style={{ textAlign: 'center', padding: '0 24px' }}>
-                            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FF6B00' }}>
-                                {costSheets.filter(cs => cs.status === 'SUBMITTED').length}
-                            </div>
-                            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Pending</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
             {/* Status Flow Navigation */}
             <div style={{
@@ -172,7 +112,7 @@ const CostSheetDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
                                 background: filters.status === flow.value ? '#FF6B00' : 'transparent',
-                                color: filters.status === flow.value ? 'white' : '#718096',
+                                color: filters.status === flow.value ? 'white' : 'black',
                                 boxShadow: filters.status === flow.value ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
                             }}
                         >
@@ -305,7 +245,7 @@ const CostSheetDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView
                                         <td style={{ color: '#2D3748', fontSize: '13px', fontWeight: 500 }}>
                                             {cs.customer_name || '—'}
                                         </td>
-                                        <td style={{ color: '#718096', fontSize: '12px' }}>
+                                        <td style={{ color: 'black', fontSize: '12px' }}>
                                             {cs.project_name || '—'}
                                         </td>
                                         <td style={{ fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace', fontSize: '12px' }}>

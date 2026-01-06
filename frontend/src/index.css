@@ -34,8 +34,7 @@ body {
   background-color: var(--ae-gray-50);
   color: var(--ae-gray-900);
   line-height: 1.5;
-  overflow: hidden;
-  /* Prevent body scroll, content will scroll */
+  overflow-y: auto;
 }
 
 /* --- Custom Scrollbar Styling (App Store Theme) --- */
@@ -135,10 +134,9 @@ body {
 .main-content {
   flex: 1;
   margin-left: var(--sidebar-width);
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .content-inner {
@@ -147,8 +145,6 @@ body {
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
-  overflow-y: auto;
-  height: calc(100vh - var(--nav-height));
 }
 
 
@@ -578,7 +574,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-secondary);
+  color: black;
   border-bottom: 1px solid var(--ae-gray-100);
 }
 
@@ -656,7 +652,30 @@ body {
 
 .ae-btn-secondary:hover {
   background-color: var(--ae-gray-50);
-  color: var(--text-primary);
+  color: var(--ae-primary);
+}
+
+.ae-btn-add {
+  background-color: var(--ae-orange);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 700;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(255, 107, 0, 0.2);
+}
+
+.ae-btn-add:hover {
+  background-color: var(--ae-orange-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 107, 0, 0.3);
+}
+
+.ae-btn-add:active {
+  transform: translateY(0);
 }
 
 /* --- Section Panel Cards (Cost Sheet Form) --- */
@@ -1047,4 +1066,15 @@ body {
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
+}
+
+/* --- Utility: Hide Spin Buttons --- */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-spinner {
+  -moz-appearance: textfield;
 }

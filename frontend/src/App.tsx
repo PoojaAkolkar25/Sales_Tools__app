@@ -32,6 +32,8 @@ const AppContent: React.FC = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [costSheets, setCostSheets] = useState<any[]>([]);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -39,10 +41,22 @@ const AppContent: React.FC = () => {
     const token = localStorage.getItem('token');
     if (token) {
       checkAuth();
+      fetchCostSheets();
     } else {
       setAuthLoading(false);
     }
   }, []);
+
+  const fetchCostSheets = async () => {
+    try {
+      const response = await api.get('/cost-sheets/');
+      setCostSheets(response.data);
+    } catch (error) {
+      console.error('Error fetching cost sheets', error);
+    } finally {
+      setDashboardLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading) {
@@ -58,6 +72,7 @@ const AppContent: React.FC = () => {
     try {
       const response = await api.get('auth/me/');
       setUser(response.data);
+      fetchCostSheets();
     } catch (err) {
       localStorage.removeItem('token');
       setUser(null);
@@ -176,56 +191,85 @@ const AppContent: React.FC = () => {
         user ? (
           <ModuleWrapper>
             <div className="space-y-6">
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                <button
-                  onClick={() => setCostSheetView('dashboard')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 20px',
-                    borderRadius: '8px',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    background: costSheetView === 'dashboard' ? '#FF6B00' : 'white',
-                    color: costSheetView === 'dashboard' ? 'white' : '#2D3748',
-                    boxShadow: costSheetView === 'dashboard' ? '0 4px 12px rgba(255, 107, 0, 0.3)' : '0 1px 3px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  <LayoutDashboard size={18} /> Dashboard
-                </button>
-                <button
-                  onClick={handleCreateNew}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 20px',
-                    borderRadius: '8px',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    background: costSheetView === 'form' && !editingId ? '#FF6B00' : 'white',
-                    color: costSheetView === 'form' && !editingId ? 'white' : '#2D3748',
-                    boxShadow: costSheetView === 'form' && !editingId ? '0 4px 12px rgba(255, 107, 0, 0.3)' : '0 1px 3px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  <PlusCircle size={18} /> Create New
-                </button>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px 24px',
+                background: 'white',
+                borderRadius: '12px',
+                border: '1px solid #E0E6ED',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                marginBottom: '8px'
+              }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <button
+                    onClick={() => setCostSheetView('dashboard')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 20px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      background: costSheetView === 'dashboard' ? '#FF6B00' : '#F7FAFC',
+                      color: costSheetView === 'dashboard' ? 'white' : '#718096',
+                      boxShadow: costSheetView === 'dashboard' ? '0 4px 12px rgba(255, 107, 0, 0.3)' : 'none'
+                    }}
+                  >
+                    <LayoutDashboard size={18} /> Dashboard
+                  </button>
+                  <button
+                    onClick={handleCreateNew}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 24px',
+                      height: '42px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      background: costSheetView === 'form' && !editingId ? '#FF6B00' : '#F7FAFC',
+                      color: costSheetView === 'form' && !editingId ? 'white' : '#718096',
+                      boxShadow: costSheetView === 'form' && !editingId ? '0 4px 12px rgba(255, 107, 0, 0.3)' : 'none'
+                    }}
+                  >
+                    <PlusCircle size={18} /> Create New
+                  </button>
+                </div>
+
+                {/* Global Stats bar on the right */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#4A5568', textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.05em', marginBottom: '2px' }}>Total</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a1f36' }}>{costSheets.length}</div>
+                  </div>
+                </div>
               </div>
 
               {costSheetView === 'form' ? (
                 <CostSheetForm
                   id={editingId}
-                  onBack={() => setCostSheetView('dashboard')}
+                  onBack={() => {
+                    setCostSheetView('dashboard');
+                    fetchCostSheets();
+                  }}
+                  onSave={() => fetchCostSheets()}
                 />
               ) : (
-                <CostSheetDashboard onView={handleViewDetails} />
+                <CostSheetDashboard
+                  costSheets={costSheets}
+                  loading={dashboardLoading}
+                  onView={handleViewDetails}
+                />
               )}
             </div>
           </ModuleWrapper>

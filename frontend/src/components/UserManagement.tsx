@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2 } from 'lucide-react';
+import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const UserManagement: React.FC = () => {
@@ -74,134 +74,227 @@ const UserManagement: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-2xl font-bold text-[#1a1f36]">User Management</h2>
-                    <p className="text-[#718096]">Manage application users and roles</p>
+            <div style={{ marginBottom: '24px' }}>
+                <div className="flex items-center gap-4">
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>User Management</h2>
+                    <button
+                        onClick={() => setShowForm(!showForm)}
+                        className="ae-create-btn"
+                        style={{
+                            height: '28px',
+                            fontSize: '0.8rem',
+                            background: showForm ? 'white' : '#FF6B00',
+                            color: showForm ? '#E53E3E' : 'white',
+                            border: showForm ? '1px solid #E53E3E' : 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '0 12px',
+                            borderRadius: '4px',
+                            transition: 'all 0.2s',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        {showForm ? <X size={14} /> : <UserPlus size={14} />}
+                        {showForm ? 'Cancel' : 'Create New User'}
+                    </button>
                 </div>
-                <button
-                    onClick={() => setShowForm(!showForm)}
-                    className="flex items-center gap-2 bg-[#0066CC] text-white px-4 py-2 rounded-md hover:bg-[#0052a3] transition-colors"
-                >
-                    <UserPlus size={18} />
-                    {showForm ? 'Cancel' : 'Create User'}
-                </button>
+                <p style={{ color: '#718096', marginTop: '4px' }}>Manage application users and roles</p>
             </div>
 
             {showForm && (
-                <div className="glass-card !bg-white p-6 border border-[#E0E6ED] rounded-xl shadow-sm">
-                    <form onSubmit={handleCreateUser} className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-sm font-semibold text-[#4A5568]">Username</label>
+                <div className="section-panel" style={{ padding: '24px', marginBottom: '24px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1a1f36', marginBottom: '20px' }}>
+                        {success ? 'Success' : 'Add New User'}
+                    </h3>
+                    <form onSubmit={handleCreateUser} className="grid grid-cols-2 gap-x-8 gap-y-6">
+                        <div className="space-y-2">
+                            <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
+                                Username
+                            </label>
                             <input
                                 type="text"
                                 value={formData.username}
                                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                className="w-full px-4 py-2 border border-[#E0E6ED] rounded-md focus:ring-2 focus:ring-[#0066CC] outline-none"
+                                className="ae-input"
+                                placeholder="Enter username"
                                 required
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-sm font-semibold text-[#4A5568]">Email</label>
+                            <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
+                                Email
+                            </label>
                             <input
                                 type="email"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                className="w-full px-4 py-2 border border-[#E0E6ED] rounded-md focus:ring-2 focus:ring-[#0066CC] outline-none"
+                                className="ae-input"
+                                placeholder="Enter email address"
                                 required
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-sm font-semibold text-[#4A5568]">First Name</label>
+                            <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
+                                First Name
+                            </label>
                             <input
                                 type="text"
                                 value={formData.first_name}
                                 onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                className="w-full px-4 py-2 border border-[#E0E6ED] rounded-md focus:ring-2 focus:ring-[#0066CC] outline-none"
+                                className="ae-input"
+                                placeholder="Enter first name"
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-sm font-semibold text-[#4A5568]">Last Name</label>
+                            <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
+                                Last Name
+                            </label>
                             <input
                                 type="text"
                                 value={formData.last_name}
                                 onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                className="w-full px-4 py-2 border border-[#E0E6ED] rounded-md focus:ring-2 focus:ring-[#0066CC] outline-none"
+                                className="ae-input"
+                                placeholder="Enter last name"
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-sm font-semibold text-[#4A5568]">Password</label>
+                            <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
+                                Password
+                            </label>
                             <input
                                 type="password"
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                className="w-full px-4 py-2 border border-[#E0E6ED] rounded-md focus:ring-2 focus:ring-[#0066CC] outline-none"
+                                className="ae-input"
+                                placeholder="Enter password"
                                 required
                             />
                         </div>
-                        <div className="col-span-2 flex justify-end gap-3 mt-4">
-                            {error && <span className="text-red-500 text-sm mt-2">{error}</span>}
-                            {success && <span className="text-green-500 text-sm mt-2">{success}</span>}
+                        <div className="flex items-end justify-end gap-4 h-full">
+                            {error && <span className="text-red-500 text-sm flex items-center font-medium mr-auto mb-3">{error}</span>}
+                            {success && <span className="text-green-500 text-sm flex items-center font-medium mr-auto mb-3">{success}</span>}
+
+                            <button
+                                type="button"
+                                onClick={() => setShowForm(false)}
+                                className="px-5 py-2.5 rounded-lg font-semibold transition-all duration-200"
+                                style={{
+                                    background: 'white',
+                                    border: '1px solid #E2E8F0',
+                                    color: '#718096',
+                                    cursor: 'pointer',
+                                    height: '42px'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#FFF5F5';
+                                    e.currentTarget.style.color = '#E53E3E';
+                                    e.currentTarget.style.borderColor = '#FEB2B2';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'white';
+                                    e.currentTarget.style.color = '#718096';
+                                    e.currentTarget.style.borderColor = '#E2E8F0';
+                                }}
+                            >
+                                Cancel
+                            </button>
                             <button
                                 type="submit"
-                                className="bg-[#0066CC] text-white px-6 py-2 rounded-md font-semibold"
+                                className="px-5 py-2.5 rounded-lg font-semibold text-white shadow-lg transition-all duration-200 flex items-center gap-2"
+                                style={{
+                                    background: '#FF6B00',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 14px 0 rgba(255, 107, 0, 0.39)',
+                                    height: '42px'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#E65100'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#FF6B00'}
                             >
-                                Create User
+                                <UserPlus size={18} /> Create User
                             </button>
                         </div>
                     </form>
                 </div>
             )}
 
-            <div className="overflow-hidden bg-white border border-[#E0E6ED] rounded-xl shadow-sm">
-                <table className="min-w-full divide-y divide-[#E0E6ED]">
-                    <thead className="bg-[#FAFBFC]">
+            <div className="ae-table-container">
+                <table className="ae-table">
+                    <thead>
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-[#718096] uppercase tracking-wider">User</th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-[#718096] uppercase tracking-wider">Email</th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-[#718096] uppercase tracking-wider">Role</th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-[#718096] uppercase tracking-wider">Status</th>
-                            <th className="px-6 py-3 text-right text-xs font-semibold text-[#718096] uppercase tracking-wider">Actions</th>
+                            <th style={{ width: '30%' }}>User</th>
+                            <th style={{ width: '25%' }}>Email</th>
+                            <th style={{ width: '15%' }}>Role</th>
+                            <th style={{ width: '15%' }}>Status</th>
+                            <th style={{ width: '15%', textAlign: 'right' }}>Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E0E6ED]">
+                    <tbody>
                         {users.map((user) => (
-                            <tr key={user.id} className="hover:bg-[#FAFBFC] transition-colors">
-                                <td className="px-6 py-4 whitespace-nowrap">
+                            <tr key={user.id}>
+                                <td>
                                     <div className="flex items-center">
                                         <div className="h-10 w-10 flex-shrink-0 bg-[#0066CC]/10 text-[#0066CC] rounded-full flex items-center justify-center">
                                             <UserIcon size={20} />
                                         </div>
                                         <div className="ml-4">
-                                            <div className="text-sm font-bold text-[#2D3748]">{user.username}</div>
-                                            <div className="text-xs text-[#718096]">{user.first_name} {user.last_name}</div>
+                                            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{user.username}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{user.first_name} {user.last_name}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-2 text-sm text-[#4A5568]">
-                                        <Mail size={14} /> {user.email}
+                                <td>
+                                    <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
+                                        <Mail size={14} className="text-gray-400" /> {user.email}
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${user.role === 'app_admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                                        }`}>
+                                <td>
+                                    <span style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        background: user.role === 'app_admin' ? 'rgba(159, 122, 234, 0.1)' : 'rgba(0, 102, 204, 0.1)',
+                                        color: user.role === 'app_admin' ? '#9F7AEA' : '#0066CC'
+                                    }}>
                                         <Shield size={12} />
                                         {user.role === 'app_admin' ? 'Admin' : 'User'}
-                                    </div>
+                                    </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                <td>
+                                    <span style={{
+                                        display: 'inline-block',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        background: 'rgba(0, 200, 83, 0.1)',
+                                        color: '#00C853'
+                                    }}>
                                         Active
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <td style={{ textAlign: 'right' }}>
                                     <button
                                         onClick={() => handleDeleteUser(user.id)}
-                                        className="text-red-600 hover:text-red-900 transition-colors p-2 hover:bg-red-50 rounded-lg"
+                                        style={{
+                                            padding: '8px',
+                                            color: '#E53E3E',
+                                            border: 'none',
+                                            background: 'rgba(229, 62, 62, 0.1)',
+                                            cursor: 'pointer',
+                                            borderRadius: '6px',
+                                            transition: 'all 0.2s'
+                                        }}
                                         title="Delete User"
                                     >
-                                        <Trash2 size={18} />
+                                        <Trash2 size={16} />
                                     </button>
                                 </td>
                             </tr>
