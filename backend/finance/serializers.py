@@ -47,15 +47,12 @@ class ReceiptVoucherSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         
-        # Use the stored customer_name if available
-        result_name = instance.customer_name
-        
-        # If stored name is empty, try the linked lead
-        if not result_name and instance.lead:
-            result_name = instance.lead.customer_name
+        # Priority: 1. Model's customer_name, 2. Linked lead's customer_name
+        customer_name = instance.customer_name
+        if not customer_name and instance.lead:
+            customer_name = instance.lead.customer_name
             
-        # Final fallback
-        representation['customer_name'] = result_name or "Unknown"
+        representation['customer_name'] = customer_name or "Unknown"
         return representation
 
  

@@ -254,16 +254,24 @@ class ReceiptVoucherViewSet(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser, FormParser]
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     filterset_fields = ['status', 'payment_date', 'customer_name']
-    search_fields = ['receipt_no', 'lead__customer_name', 'reference_number']
+    search_fields = ['receipt_no', 'lead__customer_name', 'customer_name', 'reference_number']
 
     parser_classes = [MultiPartParser, FormParser]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['receipt_no', 'lead__customer_name', 'reference_number']
+    search_fields = ['receipt_no', 'lead__customer_name', 'customer_name', 'reference_number']
 
     def perform_create(self, serializer):
         from decimal import Decimal
         import json
-        receipt = serializer.save()
+        from leads.models import Lead
+
+        # Try to find a matching lead if customer_name is provided
+        customer_name = self.request.data.get('customer_name')
+        lead = None
+        if customer_name:
+            lead = Lead.objects.filter(customer_name=customer_name).first()
+
+        receipt = serializer.save(lead=lead)
         # Handle adjustments
         adjustments_data = self.request.data.get('adjustments', [])
         if isinstance(adjustments_data, str):

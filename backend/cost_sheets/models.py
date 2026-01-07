@@ -19,6 +19,14 @@ class CostSheet(models.Model):
     )
     approval_comments = models.TextField(null=True, blank=True)
     
+    # Remark fields for each category
+    license_remarks = models.TextField(blank=True, default='')
+    implementation_remarks = models.TextField(blank=True, default='')
+    support_remarks = models.TextField(blank=True, default='')
+    infra_remarks = models.TextField(blank=True, default='')
+    other_remarks = models.TextField(blank=True, default='')
+    overall_remarks = models.TextField(blank=True, default='')
+    
     total_estimated_cost = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     total_estimated_margin = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     total_estimated_price = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
@@ -57,6 +65,7 @@ class LicenseItem(models.Model):
     rate = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     qty = models.IntegerField(default=1, validators=[MinValueValidator(0)])
     period = models.CharField(max_length=100, blank=True, default='')
+    remark = models.TextField(blank=True, default='')
     
     margin_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     
@@ -70,6 +79,7 @@ class ServiceImplementationItem(models.Model):
     num_resources = models.IntegerField(default=1, validators=[MinValueValidator(0)])
     num_days = models.IntegerField(default=1, validators=[MinValueValidator(0)])
     rate_per_day = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    remark = models.TextField(blank=True, default='')
     
     margin_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     
@@ -84,6 +94,7 @@ class ServiceSupportItem(models.Model):
     num_resources = models.IntegerField(default=1, validators=[MinValueValidator(0)])
     num_days = models.IntegerField(default=1, validators=[MinValueValidator(0)])
     rate_per_day = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    remark = models.TextField(blank=True, default='')
     
     margin_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     
@@ -98,6 +109,7 @@ class InfrastructureItem(models.Model):
     qty = models.IntegerField(default=1, validators=[MinValueValidator(0)])
     months = models.IntegerField(default=1, validators=[MinValueValidator(0)])
     rate_per_month = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    remark = models.TextField(blank=True, default='')
     
     margin_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     
@@ -117,6 +129,7 @@ class CostSheetAttachment(models.Model):
 class OtherItem(models.Model):
     cost_sheet = models.ForeignKey(CostSheet, on_delete=models.CASCADE, related_name='other_items')
     description = models.CharField(max_length=500, blank=True, default='')
+    remark = models.TextField(blank=True, default='')
     
     margin_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     

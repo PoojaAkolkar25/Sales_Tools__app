@@ -136,8 +136,36 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
     const [uploadFeedback, setUploadFeedback] = useState<{ type: 'success' | 'error' | ''; message: string }>({ type: '', message: '' });
     const [activeTab, setActiveTab] = useState<'form' | 'summary'>('form');
 
+    // Remark States
+    const [overallRemarks, setOverallRemarks] = useState('');
+
 
     const isReadOnly = status !== 'PENDING';
+
+    const RemarkRow = ({ label, value, onChange, isReadOnly }: any) => (
+        <div style={{ marginTop: '16px', padding: '0 8px' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', display: 'block', marginBottom: '8px' }}>{label}</label>
+            <textarea
+                style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: 'white',
+                    border: '1px solid #E0E6ED',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    fontWeight: 500,
+                    color: '#2D3748',
+                    outline: 'none',
+                    minHeight: '80px',
+                    resize: 'vertical'
+                }}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                readOnly={isReadOnly}
+                placeholder={`Add remarks for ${label}...`}
+            />
+        </div>
+    );
 
     useEffect(() => {
         setLocalId(id || null);
@@ -159,6 +187,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                     setOtherItems(data.other_items || [{ description: '', estimated_cost: 0, margin_percentage: 0 }]);
                     setAttachments(data.attachments || []);
 
+                    // Set Remark states
+                    setOverallRemarks(data.overall_remarks || '');
+
                     if (data.lead_details) {
                         setLead(data.lead_details);
                         setLeadNo(data.lead_details.lead_no);
@@ -178,6 +209,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
             setSalesPerson('');
             setProjectName('');
             setLicenseItems([{ name: '', type: '', rate: 0, qty: 0, period: '', margin_percentage: 0 }]);
+            setOverallRemarks('');
             // ... (could reset others too but these are the main ones)
         }
     }, [id]);
@@ -247,19 +279,19 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
         if (isReadOnly) return;
         switch (category) {
             case 'license':
-                setLicenseItems([...licenseItems, { name: '', type: '', rate: 0, qty: 0, period: '', margin_percentage: 0 }]);
+                setLicenseItems([...licenseItems, { name: '', type: '', rate: 0, qty: 0, period: '', margin_percentage: 0, remark: '' }]);
                 break;
             case 'implementation':
-                setImplementationItems([...implementationItems, { category: '', num_resources: 0, num_days: 0, rate_per_day: 0, margin_percentage: 0 }]);
+                setImplementationItems([...implementationItems, { category: '', num_resources: 0, num_days: 0, rate_per_day: 0, margin_percentage: 0, remark: '' }]);
                 break;
             case 'support':
-                setSupportItems([...supportItems, { category: '', num_resources: 0, num_days: 0, rate_per_day: 0, margin_percentage: 0 }]);
+                setSupportItems([...supportItems, { category: '', num_resources: 0, num_days: 0, rate_per_day: 0, margin_percentage: 0, remark: '' }]);
                 break;
             case 'infra':
-                setInfraItems([...infraItems, { name: '', qty: 0, months: 0, rate_per_month: 0, margin_percentage: 0 }]);
+                setInfraItems([...infraItems, { name: '', qty: 0, months: 0, rate_per_month: 0, margin_percentage: 0, remark: '' }]);
                 break;
             case 'other':
-                setOtherItems([...otherItems, { description: '', estimated_cost: 0, margin_percentage: 0 }]);
+                setOtherItems([...otherItems, { description: '', estimated_cost: 0, margin_percentage: 0, remark: '' }]);
                 break;
         }
     };
@@ -267,42 +299,37 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
     const calculateTotals = () => {
         let totalCost = 0;
         let totalMarginAmount = 0;
-        let totalPrice = 0;
+        let totalMarginPercent = 0;
 
-        const calc = (cost: number, marginPercent: number) => {
-            const safeCost = Number(cost) || 0;
-            const safeMargin = Number(marginPercent) || 0;
-            const marginAmount = safeCost * (safeMargin / 100);
-            const price = safeCost + marginAmount;
-            return { cost: safeCost, marginAmount, price };
+        const processItems = (items: any[], type: string) => {
+            items.forEach(item => {
+                let cost = 0;
+                const safeMargin = parseFloat(item.margin_percentage) || 0;
+
+                if (type === 'license') {
+                    cost = (parseFloat(item.rate) || 0) * (parseFloat(item.qty) || 0);
+                } else if (type === 'implementation' || type === 'support') {
+                    cost = (parseFloat(item.num_resources) || 0) * (parseFloat(item.num_days) || 0) * (parseFloat(item.rate_per_day) || 0);
+                } else if (type === 'infra') {
+                    cost = (parseFloat(item.qty) || 0) * (parseFloat(item.months) || 0) * (parseFloat(item.rate_per_month) || 0);
+                } else if (type === 'other') {
+                    cost = parseFloat(item.estimated_cost) || 0;
+                }
+
+                const marginAmount = cost * (safeMargin / 100);
+                totalCost += cost;
+                totalMarginAmount += marginAmount;
+                totalMarginPercent += safeMargin;
+            });
         };
 
-        licenseItems.forEach(item => {
-            const { cost, marginAmount, price } = calc(Number(item.rate) * Number(item.qty), item.margin_percentage);
-            totalCost += cost; totalMarginAmount += marginAmount; totalPrice += price;
-        });
+        processItems(licenseItems, 'license');
+        processItems(implementationItems, 'implementation');
+        processItems(supportItems, 'support');
+        processItems(infraItems, 'infra');
+        processItems(otherItems, 'other');
 
-        implementationItems.forEach(item => {
-            const { cost, marginAmount, price } = calc(Number(item.num_resources) * Number(item.num_days) * Number(item.rate_per_day), item.margin_percentage);
-            totalCost += cost; totalMarginAmount += marginAmount; totalPrice += price;
-        });
-
-        supportItems.forEach(item => {
-            const { cost, marginAmount, price } = calc(Number(item.num_resources) * Number(item.num_days) * Number(item.rate_per_day), item.margin_percentage);
-            totalCost += cost; totalMarginAmount += marginAmount; totalPrice += price;
-        });
-
-        infraItems.forEach(item => {
-            const { cost, marginAmount, price } = calc(Number(item.qty) * Number(item.months) * Number(item.rate_per_month), item.margin_percentage);
-            totalCost += cost; totalMarginAmount += marginAmount; totalPrice += price;
-        });
-
-        otherItems.forEach(item => {
-            const { cost, marginAmount, price } = calc(item.estimated_cost, item.margin_percentage);
-            totalCost += cost; totalMarginAmount += marginAmount; totalPrice += price;
-        });
-
-        const totalMarginPercent = totalCost > 0 ? (totalMarginAmount / totalCost) * 100 : 0;
+        const totalPrice = totalCost + totalMarginAmount;
 
         return { totalCost, totalMarginAmount, totalMarginPercent, totalPrice };
     };
@@ -311,27 +338,29 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
     const calculateCategoryTotals = (items: any[], type: 'license' | 'implementation' | 'support' | 'infra' | 'other') => {
         let catCost = 0;
         let catMarginAmount = 0;
-        let catPrice = 0;
+        let catMarginPercent = 0;
 
         items.forEach(item => {
             let cost = 0;
+            const safeMargin = parseFloat(item.margin_percentage) || 0;
+
             if (type === 'license') {
-                cost = Number(item.rate) * Number(item.qty);
+                cost = (parseFloat(item.rate) || 0) * (parseFloat(item.qty) || 0);
             } else if (type === 'implementation' || type === 'support') {
-                cost = Number(item.num_resources) * Number(item.num_days) * Number(item.rate_per_day);
+                cost = (parseFloat(item.num_resources) || 0) * (parseFloat(item.num_days) || 0) * (parseFloat(item.rate_per_day) || 0);
             } else if (type === 'infra') {
-                cost = Number(item.qty) * Number(item.months) * Number(item.rate_per_month);
+                cost = (parseFloat(item.qty) || 0) * (parseFloat(item.months) || 0) * (parseFloat(item.rate_per_month) || 0);
             } else if (type === 'other') {
-                cost = Number(item.estimated_cost);
+                cost = parseFloat(item.estimated_cost) || 0;
             }
-            const marginAmount = cost * (Number(item.margin_percentage) / 100);
-            const price = cost + marginAmount;
+
+            const marginAmount = cost * (safeMargin / 100);
             catCost += cost;
             catMarginAmount += marginAmount;
-            catPrice += price;
+            catMarginPercent += safeMargin;
         });
 
-        const catMarginPercent = catCost > 0 ? (catMarginAmount / catCost) * 100 : 0;
+        const catPrice = catCost + catMarginAmount;
         return { catCost, catMarginAmount, catMarginPercent, catPrice };
     };
 
@@ -439,16 +468,16 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                     if (type === 'other') return item.description?.trim() !== '';
                     return true;
                 })
-                .map(({ id, cost_sheet, estimated_cost, estimated_margin_amount, estimated_price, total_days, ...rest }) => ({
+                .map(({ id, cost_sheet, estimated_margin_amount, estimated_price, total_days, ...rest }) => ({
                     ...rest,
                     // Ensure numeric fields are indeed numbers
                     ...(rest.rate !== undefined && { rate: parseFloat(rest.rate) || 0 }),
-                    ...(rest.qty !== undefined && { qty: parseInt(rest.qty) || 0 }),
-                    ...(rest.num_resources !== undefined && { num_resources: parseInt(rest.num_resources) || 0 }),
-                    ...(rest.num_days !== undefined && { num_days: parseInt(rest.num_days) || 0 }),
+                    ...(rest.qty !== undefined && { qty: parseFloat(rest.qty) || 0 }),
+                    ...(rest.num_resources !== undefined && { num_resources: parseFloat(rest.num_resources) || 0 }),
+                    ...(rest.num_days !== undefined && { num_days: parseFloat(rest.num_days) || 0 }),
                     ...(rest.rate_per_day !== undefined && { rate_per_day: parseFloat(rest.rate_per_day) || 0 }),
                     ...(rest.rate_per_month !== undefined && { rate_per_month: parseFloat(rest.rate_per_month) || 0 }),
-                    ...(rest.months !== undefined && { months: parseInt(rest.months) || 0 }),
+                    ...(rest.months !== undefined && { months: parseFloat(rest.months) || 0 }),
                     ...(rest.estimated_cost !== undefined && { estimated_cost: parseFloat(rest.estimated_cost) || 0 }),
                     ...(rest.margin_percentage !== undefined && { margin_percentage: parseFloat(rest.margin_percentage) || 0 }),
                 }));
@@ -464,7 +493,8 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
             implementation_items: cleanItems(implementationItems, 'implementation'),
             support_items: cleanItems(supportItems, 'support'),
             infra_items: cleanItems(infraItems, 'infra'),
-            other_items: cleanItems(other_items, 'other'),
+            other_items: cleanItems(otherItems, 'other'),
+            overall_remarks: overallRemarks,
         };
 
         if (costSheetNo && id) {
@@ -819,12 +849,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                             )}
                         </div>
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1000px' }}>
-                                <TableHeader isReadOnly={isReadOnly} columns={['License Name', 'License Type', 'Rate', 'Qty', 'Period', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price']} />
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
+                                <TableHeader isReadOnly={isReadOnly} columns={['License Name', 'License Type', 'Rate', 'Qty', 'Period', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {licenseItems.map((item, idx) => {
-                                        const cost = item.rate * item.qty;
-                                        const marginAmount = cost * (item.margin_percentage / 100);
+                                        const cost = (parseFloat(item.rate) || 0) * (parseFloat(item.qty) || 0);
+                                        const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
@@ -837,6 +867,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                                                 <ReadOnlyCell value={marginAmount} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, licenseItems, setLicenseItems)} type="number" />
                                                 <ReadOnlyCell value={price} bold />
+                                                <InputCell isReadOnly={isReadOnly} value={item.remark} onChange={(v: string) => updateItem(idx, 'remark', v, licenseItems, setLicenseItems)} />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         <button
@@ -879,13 +910,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                             )}
                         </div>
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1000px' }}>
-                                <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price']} />
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
+                                <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {implementationItems.map((item, idx) => {
-                                        const totalDays = item.num_resources * item.num_days;
-                                        const cost = totalDays * item.rate_per_day;
-                                        const marginAmount = cost * (item.margin_percentage / 100);
+                                        const totalDays = (parseFloat(item.num_resources) || 0) * (parseFloat(item.num_days) || 0);
+                                        const cost = totalDays * (parseFloat(item.rate_per_day) || 0);
+                                        const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
@@ -898,6 +929,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                                                 <ReadOnlyCell value={marginAmount} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, implementationItems, setImplementationItems)} type="number" />
                                                 <ReadOnlyCell value={price} bold />
+                                                <InputCell isReadOnly={isReadOnly} value={item.remark} onChange={(v: string) => updateItem(idx, 'remark', v, implementationItems, setImplementationItems)} />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         <button
@@ -940,13 +972,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                             )}
                         </div>
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1000px' }}>
-                                <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price']} />
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
+                                <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {supportItems.map((item, idx) => {
-                                        const totalDays = item.num_resources * item.num_days;
-                                        const cost = totalDays * item.rate_per_day;
-                                        const marginAmount = cost * (item.margin_percentage / 100);
+                                        const totalDays = (parseFloat(item.num_resources) || 0) * (parseFloat(item.num_days) || 0);
+                                        const cost = totalDays * (parseFloat(item.rate_per_day) || 0);
+                                        const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
@@ -959,6 +991,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                                                 <ReadOnlyCell value={marginAmount} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, supportItems, setSupportItems)} type="number" />
                                                 <ReadOnlyCell value={price} bold />
+                                                <InputCell isReadOnly={isReadOnly} value={item.remark} onChange={(v: string) => updateItem(idx, 'remark', v, supportItems, setSupportItems)} />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1001,12 +1034,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                             )}
                         </div>
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '900px' }}>
-                                <TableHeader isReadOnly={isReadOnly} columns={['Infra Name', 'Qty', 'Months', 'Rate/Month', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price']} />
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1000px' }}>
+                                <TableHeader isReadOnly={isReadOnly} columns={['Infra Name', 'Qty', 'Months', 'Rate/Month', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {infraItems.map((item, idx) => {
-                                        const cost = item.qty * item.months * item.rate_per_month;
-                                        const marginAmount = cost * (item.margin_percentage / 100);
+                                        const cost = (parseFloat(item.qty) || 0) * (parseFloat(item.months) || 0) * (parseFloat(item.rate_per_month) || 0);
+                                        const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
@@ -1018,6 +1051,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                                                 <ReadOnlyCell value={marginAmount} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, infraItems, setInfraItems)} type="number" />
                                                 <ReadOnlyCell value={price} bold />
+                                                <InputCell isReadOnly={isReadOnly} value={item.remark} onChange={(v: string) => updateItem(idx, 'remark', v, infraItems, setInfraItems)} />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1060,12 +1094,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                             )}
                         </div>
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '700px' }}>
-                                <TableHeader isReadOnly={isReadOnly} columns={['Description', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price']} />
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '800px' }}>
+                                <TableHeader isReadOnly={isReadOnly} columns={['Description', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {otherItems.map((item, idx) => {
-                                        const cost = item.estimated_cost;
-                                        const marginAmount = cost * (item.margin_percentage / 100);
+                                        const cost = parseFloat(item.estimated_cost) || 0;
+                                        const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
@@ -1074,6 +1108,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                                                 <ReadOnlyCell value={marginAmount} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, otherItems, setOtherItems)} type="number" />
                                                 <ReadOnlyCell value={price} bold />
+                                                <InputCell isReadOnly={isReadOnly} value={item.remark} onChange={(v: string) => updateItem(idx, 'remark', v, otherItems, setOtherItems)} />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1097,6 +1132,33 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                                 </tbody>
                             </table>
                         </div>
+                    </section>
+
+                    {/* Overall Remarks Section */}
+                    <section className="section-panel" style={{ padding: '24px' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 16px 0', color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
+                            Overall Remarks
+                        </h3>
+                        <textarea
+                            style={{
+                                width: '100%',
+                                padding: '16px',
+                                background: 'white',
+                                border: '1px solid #E0E6ED',
+                                borderRadius: '12px',
+                                fontSize: '0.9rem',
+                                fontWeight: 500,
+                                color: '#2D3748',
+                                outline: 'none',
+                                minHeight: '120px',
+                                resize: 'vertical'
+                            }}
+                            value={overallRemarks}
+                            onChange={(e) => setOverallRemarks(e.target.value)}
+                            readOnly={isReadOnly}
+                            placeholder="Add overall remarks for this cost sheet..."
+                        />
                     </section>
 
                     {/* Document Attachments & Actions Layout - Standalone Row */}
@@ -1492,7 +1554,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                                 },
                                 {
                                     label: 'Total Estimated Margin %',
-                                    value: `${totals.totalMarginPercent.toFixed(1)}%`,
+                                    value: `${totals.totalMarginPercent.toFixed(2)}%`,
                                     icon: <Percent size={24} style={{ color: '#00C853' }} />,
                                     bgColor: '#E8FBF0',
                                     accentColor: '#00C853'
