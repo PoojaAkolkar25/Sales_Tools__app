@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { CreditCard, CheckCircle, XCircle, RefreshCw, Upload, Cloud } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, Upload, Cloud } from 'lucide-react';
 import api from '../api';
+import { useNotification } from '../context/NotificationContext';
 
 interface BankTransaction {
     id: number;
@@ -23,6 +24,7 @@ interface BankTransaction {
 }
 
 const BankTransactionsDashboard: React.FC = () => {
+    const { showNotification } = useNotification();
     const [transactions, setTransactions] = useState<BankTransaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'FOR_REVIEW' | 'CATEGORIZED' | 'EXCLUDED'>('FOR_REVIEW');
@@ -112,10 +114,10 @@ const BankTransactionsDashboard: React.FC = () => {
         setSyncing(true);
         try {
             const response = await api.post('/finance/bank-transactions/sync/');
-            alert(`Synced ${response.data.count} transactions successfully`);
+            showNotification(`Synced ${response.data.count} transactions successfully`, 'success');
             fetchTransactions();
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Error syncing transactions');
+            showNotification(error.response?.data?.error || 'Error syncing transactions', 'error');
         } finally {
             setSyncing(false);
         }
@@ -137,10 +139,10 @@ const BankTransactionsDashboard: React.FC = () => {
             const response = await api.post('/finance/bank-transactions/upload/', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert(`Uploaded ${response.data.count} transactions successfully`);
+            showNotification(`Uploaded ${response.data.count} transactions successfully`, 'success');
             fetchTransactions();
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Error uploading file');
+            showNotification(error.response?.data?.error || 'Error uploading file', 'error');
         } finally {
             setUploading(false);
             if (fileInputRef.current) {
@@ -159,7 +161,8 @@ const BankTransactionsDashboard: React.FC = () => {
             .reduce((sum, r) => sum + parseFloat(r.amount_received), 0);
 
         if (totalSelected !== parseFloat(selectedTransaction.amount_received)) {
-            alert(`Selected receipts total (${totalSelected}) must match transaction amount (${selectedTransaction.amount_received})`);
+            const amt = parseFloat(selectedTransaction.amount_received);
+            showNotification(`Selected receipts total (${totalSelected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) must match transaction amount (${amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`, 'warning');
             return;
         }
 
@@ -169,11 +172,11 @@ const BankTransactionsDashboard: React.FC = () => {
                 receipt_ids: selectedReceipts,
                 reconciliation_date: selectedTransaction.transaction_date
             });
-            alert('Matched successfully');
+            showNotification('Matched successfully', 'success');
             setSelectedTransaction(null);
             fetchTransactions();
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Error matching transaction');
+            showNotification(error.response?.data?.error || 'Error matching transaction', 'error');
         } finally {
             setMatchingLoading(false);
         }
@@ -213,50 +216,94 @@ const BankTransactionsDashboard: React.FC = () => {
                 onChange={handleFileChange}
             />
 
-            {/* Header */}
-            <div className="ae-hero" style={{ padding: '24px 32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '12px',
-                            background: 'rgba(255, 107, 0, 0.2)',
+            {/* Header & Actions */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                        Bank Transactions
+                    </h1>
+                </div>
+
+                <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    background: 'white',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                }}>
+                    <button
+                        onClick={handleSync}
+                        disabled={syncing}
+                        style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center'
-                        }}>
-                            <CreditCard size={24} color="#FF6B00" />
-                        </div>
-                        <div>
-                            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FF6B00', margin: 0 }}>
-                                Bank Transactions
-                            </h1>
-                            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
-                                Review and reconcile bank entries
-                            </p>
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                            onClick={handleSync}
-                            disabled={syncing}
-                            className="ae-btn-secondary"
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}
-                        >
-                            {syncing ? <RefreshCw className="animate-spin" size={18} /> : <Cloud size={18} />}
-                            Sync Bank Feed
-                        </button>
-                        <button
-                            onClick={handleUploadClick}
-                            disabled={uploading}
-                            className="ae-btn-primary"
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                        >
-                            {uploading ? <RefreshCw className="animate-spin" size={18} /> : <Upload size={18} />}
-                            Upload Statement
-                        </button>
-                    </div>
+                            gap: '8px',
+                            padding: '10px 20px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: syncing ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s',
+                            background: '#F7FAFC',
+                            color: '#4A5568'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!syncing) {
+                                e.currentTarget.style.background = '#FF6B00';
+                                e.currentTarget.style.color = 'white';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!syncing) {
+                                e.currentTarget.style.background = '#F7FAFC';
+                                e.currentTarget.style.color = '#4A5568';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }
+                        }}
+                    >
+                        {syncing ? <RefreshCw className="animate-spin" size={18} /> : <Cloud size={18} />}
+                        Sync Bank Feed
+                    </button>
+                    <button
+                        onClick={handleUploadClick}
+                        disabled={uploading}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 20px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: uploading ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s',
+                            background: '#F7FAFC',
+                            color: '#4A5568'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!uploading) {
+                                e.currentTarget.style.background = '#FF6B00';
+                                e.currentTarget.style.color = 'white';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!uploading) {
+                                e.currentTarget.style.background = '#F7FAFC';
+                                e.currentTarget.style.color = '#4A5568';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }
+                        }}
+                    >
+                        {uploading ? <RefreshCw className="animate-spin" size={18} /> : <Upload size={18} />}
+                        Upload Statement
+                    </button>
                 </div>
             </div>
 
@@ -293,20 +340,20 @@ const BankTransactionsDashboard: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: selectedTransaction ? '1fr 400px' : '1fr', gap: '20px' }}>
                 {/* Main Table */}
-                <div style={{ overflowX: 'auto', border: '1px solid #E0E6ED', borderRadius: '12px' }}>
-                    <table className="ae-table" style={{ minWidth: '1500px' }}>
+                <div className="ae-table-container">
+                    <table className="ae-table">
                         <thead>
                             <tr>
-                                <th style={{ width: '50px' }}>S.N.</th>
-                                <th>Tran. Id</th>
+                                <th style={{ width: '50px' }}>#</th>
+                                <th>Trans. Id</th>
                                 <th>Value Date</th>
-                                <th>Transaction Date</th>
-                                <th>Transaction Posted Date</th>
-                                <th>Cheque. No./Ref. No.</th>
-                                <th>Transaction Remarks</th>
-                                <th>Withdrawal Amt (INR)</th>
-                                <th>Deposit Amt (INR)</th>
-                                <th>Balance (INR)</th>
+                                <th>Trans. Date</th>
+                                <th>Posted Date</th>
+                                <th>Ref. No.</th>
+                                <th>Transaction Remark</th>
+                                <th style={{ textAlign: 'right' }}>Withdrawal</th>
+                                <th style={{ textAlign: 'right' }}>Deposit</th>
+                                <th style={{ textAlign: 'right' }}>Balance</th>
                                 <th style={{ textAlign: 'right', position: 'sticky', right: 0, background: '#F7FAFC', zIndex: 1 }}>Action</th>
                             </tr>
                         </thead>
@@ -338,14 +385,14 @@ const BankTransactionsDashboard: React.FC = () => {
                                         <td style={{ fontSize: '0.85rem', color: '#4A5568', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.transaction_remarks || t.description}>
                                             {t.transaction_remarks || t.description}
                                         </td>
-                                        <td style={{ color: '#E53E3E' }}>
+                                        <td style={{ textAlign: 'right', color: '#E53E3E' }}>
                                             {parseFloat(t.withdrawal_amount || '0') > 0 ?
                                                 `$${parseFloat(t.withdrawal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
                                         </td>
-                                        <td style={{ color: '#38A169', fontWeight: 600 }}>
+                                        <td style={{ textAlign: 'right', color: '#38A169', fontWeight: 600 }}>
                                             {parseFloat(t.deposit_amount || t.amount_received).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
-                                        <td style={{ fontWeight: 700 }}>
+                                        <td style={{ textAlign: 'right', fontWeight: 700 }}>
                                             {t.balance ? `$${parseFloat(t.balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
                                         </td>
                                         <td style={{ textAlign: 'right', position: 'sticky', right: 0, background: selectedTransaction?.id === t.id ? '#FFF8F2' : 'white', boxShadow: '-2px 0 5px rgba(0,0,0,0.05)' }}>
@@ -354,7 +401,24 @@ const BankTransactionsDashboard: React.FC = () => {
                                                     <button
                                                         onClick={() => handleMatchClick(t)}
                                                         className="ae-btn-secondary"
-                                                        style={{ padding: '6px 12px', fontSize: '11px' }}
+                                                        style={{
+                                                            padding: '6px 12px',
+                                                            fontSize: '11px',
+                                                            background: 'transparent',
+                                                            border: '1px solid #718096',
+                                                            color: '#718096',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'black';
+                                                            e.currentTarget.style.color = 'white';
+                                                            e.currentTarget.style.borderColor = 'black';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'transparent';
+                                                            e.currentTarget.style.color = '#718096';
+                                                            e.currentTarget.style.borderColor = '#718096';
+                                                        }}
                                                     >
                                                         Match
                                                     </button>
@@ -412,6 +476,8 @@ const BankTransactionsDashboard: React.FC = () => {
                                         </div>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '0.75rem', color: '#718096' }}>Customer:</div>
+                                        <div style={{ fontWeight: 700, color: '#2D3748', marginBottom: '4px' }}>{selectedTransaction.customer_name || '—'}</div>
                                         <div style={{ fontSize: '0.75rem', color: '#718096' }}>Tx Date:</div>
                                         <div style={{ fontWeight: 700, color: '#2D3748' }}>{selectedTransaction.transaction_date}</div>
                                         {selectedTransaction.value_date && selectedTransaction.value_date !== selectedTransaction.transaction_date && (
@@ -428,7 +494,7 @@ const BankTransactionsDashboard: React.FC = () => {
                         <div style={{ padding: '20px', flex: 1, maxHeight: '400px', overflowY: 'auto' }}>
 
                             <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '12px', color: '#4A5568' }}>
-                                Select Unreconciled Receipts:
+                                Select Unreconciled Receipt Voucher:
                             </div>
                             {receiptsForMatching.length === 0 ? (
                                 <div style={{ textAlign: 'center', padding: '20px', color: '#718096', fontSize: '0.85rem' }}>

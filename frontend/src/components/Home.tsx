@@ -21,7 +21,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
     const navigate = useNavigate();
 
     return (
-        <div style={{ paddingBottom: '48px' }}>
+        <div style={{ paddingBottom: '16px' }}>
 
             {/* Hero Section */}
             <div className="ae-hero">
@@ -32,10 +32,6 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                     <h1 className="ae-hero-title">
                         SALES TOOL
                     </h1>
-
-                    <h2 className="ae-hero-subtitle">
-                        AI-Powered Sales Command Center
-                    </h2>
 
                     <p className="ae-hero-text">
                         Streamline your workflow, manage leads, and close deals faster with intelligent insights.
@@ -59,7 +55,15 @@ const Home: React.FC<HomeProps> = ({ user }) => {
             </div>
 
             {/* Main Content Area */}
-            <div style={{ background: 'white', border: '1px solid #E0E6ED', borderRadius: '12px', padding: '32px' }}>
+            <div style={{
+                background: 'white',
+                border: '1px solid #E0E6ED',
+                borderRadius: '12px',
+                padding: '32px',
+                maxWidth: '90%',
+                margin: '0 auto',
+                boxShadow: 'var(--shadow-card)'
+            }}>
 
                 <div style={{ textAlign: 'center', marginBottom: '40px' }}>
                     <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1a1f36', marginBottom: '8px' }}>Performance Overview</h3>
@@ -67,7 +71,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                 </div>
 
                 {/* KPI Cards Grid */}
-                <div className="ae-grid-4" style={{ marginBottom: '48px' }}>
+                <div className="ae-grid-4" style={{ marginBottom: '32px' }}>
                     {[
                         { label: 'Total Revenue', value: '$124,500', icon: TrendingUp, color: 'text-green', bg: 'bg-green-soft', trend: '+12.5%' },
                         { label: 'Active Leads', value: '42', icon: Users, color: 'text-blue', bg: 'bg-blue-soft', trend: '+5 new' },
@@ -90,7 +94,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                 </div>
 
                 {/* Lower Section */}
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
 
                     {/* Activity Feed */}
                     <div className="ae-panel">

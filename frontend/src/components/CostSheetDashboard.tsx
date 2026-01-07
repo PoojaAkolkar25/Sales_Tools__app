@@ -130,18 +130,18 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                 <table className="ae-table">
                     <thead>
                         <tr>
-                            <th style={{ width: '14%' }}>Lead Number</th>
-                            <th style={{ width: '18%' }}>Customer Name</th>
-                            <th style={{ width: '18%' }}>Project Name</th>
-                            <th style={{ width: '12%' }}>Cost Sheet No.</th>
-                            <th style={{ width: '10%' }}>Date</th>
-                            <th style={{ width: '10%' }}>Status</th>
-                            <th style={{ width: '12%' }}>Total Price</th>
-                            <th style={{ width: '6%', textAlign: 'right' }}>Actions</th>
+                            <th style={{ width: '14%', top: 0 }}>Lead Number</th>
+                            <th style={{ width: '18%', top: 0 }}>Customer Name</th>
+                            <th style={{ width: '18%', top: 0 }}>Project Name</th>
+                            <th style={{ width: '12%', top: 0 }}>Cost Sheet No.</th>
+                            <th style={{ width: '10%', top: 0 }}>Date</th>
+                            <th style={{ width: '10%', top: 0 }}>Status</th>
+                            <th style={{ width: '12%', top: 0 }}>Total Price</th>
+                            <th style={{ width: '6%', textAlign: 'right', top: 0 }}>Actions</th>
                         </tr>
                         {/* Filter Row */}
                         <tr style={{ background: '#F7FAFC' }}>
-                            <th style={{ padding: '8px' }}>
+                            <th style={{ padding: '8px', top: '51px' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -153,7 +153,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                     />
                                 </div>
                             </th>
-                            <th style={{ padding: '8px' }}>
+                            <th style={{ padding: '8px', top: '51px' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -165,7 +165,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                     />
                                 </div>
                             </th>
-                            <th style={{ padding: '8px' }}>
+                            <th style={{ padding: '8px', top: '51px' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -177,7 +177,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                     />
                                 </div>
                             </th>
-                            <th style={{ padding: '8px' }}>
+                            <th style={{ padding: '8px', top: '51px' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -189,21 +189,21 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                     />
                                 </div>
                             </th>
-                            <th style={{ padding: '8px' }}>
+                            <th style={{ padding: '8px', top: '51px' }}>
                                 <div className="ae-input-group">
                                     <Calendar className="ae-search-icon" size={12} />
                                     <input
                                         type="date"
-                                        className="ae-input"
+                                        className="ae-input ae-date-filter"
                                         value={filters.date}
                                         onChange={e => setFilters({ ...filters, date: e.target.value })}
-                                        style={{ height: '32px', fontSize: '11px' }}
+                                        style={{ height: '32px', fontSize: '11px', paddingLeft: '36px' }}
                                     />
                                 </div>
                             </th>
-                            <th style={{ padding: '8px' }}></th>
-                            <th style={{ padding: '8px' }}></th>
-                            <th style={{ padding: '8px', textAlign: 'right' }}>
+                            <th style={{ padding: '8px', top: '51px' }}></th>
+                            <th style={{ padding: '8px', top: '51px' }}></th>
+                            <th style={{ padding: '8px', textAlign: 'right', top: '51px' }}>
                                 <button
                                     onClick={() => setFilters({ csNumber: '', leadNo: '', customerName: '', projectName: '', status: '', date: '' })}
                                     style={{

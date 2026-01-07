@@ -41,49 +41,137 @@ const Payment: React.FC = () => {
     };
 
     return (
-        <div className="ae-container" style={{ display: 'flex' }}>
-            {/* Sidebar Navigation */}
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100%' }}>
+            {/* Horizontal Header Navigation */}
             <div style={{
-                width: '280px',
-                background: 'white',
-                borderRight: '1px solid #E2E8F0',
-                padding: '24px',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                height: 'calc(100vh - 100px)',
-                position: 'sticky',
-                top: '0'
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px 32px',
+                borderBottom: '1px solid #E2E8F0',
+                background: '#F8FAFC'
             }}>
-                <h2 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#A0AEC0', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', paddingLeft: '12px' }}>
-                    Payment Module
-                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                    <h2 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1a1f36', textTransform: 'uppercase', letterSpacing: '1.5px', margin: 0 }}>
+                        Payment Module
+                    </h2>
 
-                <button
-                    onClick={() => { setActiveTab('BANK_TX'); setReceiptView('DASHBOARD'); }}
-                    className={`ae-nav-item ${activeTab === 'BANK_TX' ? 'active' : ''}`}
-                >
-                    <CreditCard size={18} /> Bank Transactions
-                </button>
+                    <div style={{
+                        display: 'flex',
+                        gap: '4px',
+                        background: 'white',
+                        padding: '4px',
+                        borderRadius: '12px',
+                        border: '1px solid #E2E8F0',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                    }}>
+                        <button
+                            onClick={() => { setActiveTab('BANK_TX'); setReceiptView('DASHBOARD'); }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 20px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: activeTab === 'BANK_TX' ? '#FF6B00' : 'transparent',
+                                color: activeTab === 'BANK_TX' ? 'white' : '#718096',
+                                boxShadow: activeTab === 'BANK_TX' ? '0 4px 12px rgba(255, 107, 0, 0.25)' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (activeTab !== 'BANK_TX') {
+                                    e.currentTarget.style.background = '#F7FAFC';
+                                    e.currentTarget.style.color = '#FF6B00';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (activeTab !== 'BANK_TX') {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = '#718096';
+                                }
+                            }}
+                        >
+                            <CreditCard size={18} /> Bank Transactions
+                        </button>
 
-                <button
-                    onClick={() => { setActiveTab('RECEIPT'); setReceiptView('DASHBOARD'); }}
-                    className={`ae-nav-item ${activeTab === 'RECEIPT' ? 'active' : ''}`}
-                >
-                    <FileText size={18} /> Receipt Vouchers
-                </button>
+                        <button
+                            onClick={() => { setActiveTab('RECEIPT'); setReceiptView('DASHBOARD'); }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 20px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: activeTab === 'RECEIPT' ? '#FF6B00' : 'transparent',
+                                color: activeTab === 'RECEIPT' ? 'white' : '#718096',
+                                boxShadow: activeTab === 'RECEIPT' ? '0 4px 12px rgba(255, 107, 0, 0.25)' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (activeTab !== 'RECEIPT') {
+                                    e.currentTarget.style.background = '#F7FAFC';
+                                    e.currentTarget.style.color = '#FF6B00';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (activeTab !== 'RECEIPT') {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = '#718096';
+                                }
+                            }}
+                        >
+                            <FileText size={18} /> Receipt Vouchers
+                        </button>
 
-                <button
-                    onClick={() => { setActiveTab('BANK_SETUP'); setReceiptView('DASHBOARD'); }}
-                    className={`ae-nav-item ${activeTab === 'BANK_SETUP' ? 'active' : ''}`}
-                >
-                    <Settings size={18} /> Bank Setup
-                </button>
+                        <button
+                            onClick={() => { setActiveTab('BANK_SETUP'); setReceiptView('DASHBOARD'); }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 20px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: activeTab === 'BANK_SETUP' ? '#FF6B00' : 'transparent',
+                                color: activeTab === 'BANK_SETUP' ? 'white' : '#718096',
+                                boxShadow: activeTab === 'BANK_SETUP' ? '0 4px 12px rgba(255, 107, 0, 0.25)' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (activeTab !== 'BANK_SETUP') {
+                                    e.currentTarget.style.background = '#F7FAFC';
+                                    e.currentTarget.style.color = '#FF6B00';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (activeTab !== 'BANK_SETUP') {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = '#718096';
+                                }
+                            }}
+                        >
+                            <Settings size={18} /> Bank Setup
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* Main Content Area */}
-            <div style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
-                {renderContent()}
+            <div style={{ flex: 1, padding: '32px', overflowY: 'auto', background: 'white' }}>
+                <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+                    {renderContent()}
+                </div>
             </div>
         </div>
     );

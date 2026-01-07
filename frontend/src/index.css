@@ -140,8 +140,8 @@ body {
 }
 
 .content-inner {
-  padding: 32px;
-  padding-top: calc(var(--nav-height) + 24px);
+  padding: 20px;
+  padding-top: calc(var(--nav-height) + 16px);
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
@@ -227,14 +227,14 @@ body {
 .ae-hero {
   background-color: var(--ae-navy);
   color: white;
-  padding: 12px 32px;
+  padding: 18px 32px;
   border-radius: 16px;
   text-align: center;
   position: relative;
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   max-width: 90%;
-  margin: 0 auto 8px auto;
+  margin: 0 auto 20px auto;
   /* Further reduced bottom margin */
 }
 
@@ -388,10 +388,10 @@ body {
 }
 
 .ae-panel-title {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--ae-navy);
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -399,8 +399,8 @@ body {
 
 .ae-activity-item {
   display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 16px;
   position: relative;
 }
 
@@ -558,6 +558,9 @@ body {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--shadow-card);
+  max-height: 65vh;
+  overflow-y: auto;
+  position: relative;
 }
 
 .ae-table {
@@ -576,6 +579,9 @@ body {
   letter-spacing: 0.05em;
   color: black;
   border-bottom: 1px solid var(--ae-gray-100);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .ae-table td {
@@ -626,25 +632,34 @@ body {
 
 .ae-search-icon {
   position: absolute;
-  left: 10px;
-  color: var(--text-secondary);
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #A0AEC0;
   pointer-events: none;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+}
+
+.ae-input-group .ae-input {
+  padding-left: 36px !important;
 }
 
 /* --- Buttons --- */
 .ae-btn-primary {
-  background-color: var(--ae-blue);
+  background-color: var(--ae-orange);
   color: white;
   padding: 8px 16px;
   border-radius: 6px;
   border: none;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .ae-btn-primary:hover {
-  background-color: #0056b3;
+  background-color: var(--ae-orange-dark);
 }
 
 .ae-btn-secondary {

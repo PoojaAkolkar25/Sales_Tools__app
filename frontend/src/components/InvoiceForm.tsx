@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Save, DollarSign, FileText } from 'lucide-react';
 import api from '../api';
+import { useNotification } from '../context/NotificationContext';
 
 const InvoiceForm: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+    const { showNotification } = useNotification();
     const [leads, setLeads] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -37,11 +39,11 @@ const InvoiceForm: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 open_balance: formData.open_balance || formData.total_amount
             };
             await api.post('/finance/invoices/', submissionData);
-            alert('Invoice created successfully');
+            showNotification('Invoice created successfully', 'success');
             onBack();
         } catch (error) {
             console.error('Error creating invoice', error);
-            alert('Error creating invoice');
+            showNotification('Error creating invoice', 'error');
         } finally {
             setLoading(false);
         }

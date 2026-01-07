@@ -25,6 +25,7 @@ import Payment from './components/Payment';
 import InvoiceDashboard from './components/InvoiceDashboard';
 import api from './api';
 import './index.css';
+import { NotificationProvider } from './context/NotificationContext';
 
 
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
@@ -197,30 +198,35 @@ const AppContent: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '16px 24px',
-                background: 'white',
-                borderRadius: '12px',
-                border: '1px solid #E0E6ED',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                marginBottom: '8px'
+                padding: '0 8px',
+                marginBottom: '16px'
               }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  alignItems: 'center',
+                  background: 'white',
+                  padding: '6px',
+                  borderRadius: '12px',
+                  border: '1px solid #E0E6ED',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                }}>
                   <button
                     onClick={() => setCostSheetView('dashboard')}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      padding: '10px 20px',
+                      padding: '8px 20px',
                       borderRadius: '8px',
                       fontSize: '0.85rem',
                       fontWeight: 600,
                       border: 'none',
                       cursor: 'pointer',
                       transition: 'all 0.2s',
-                      background: costSheetView === 'dashboard' ? '#FF6B00' : '#F7FAFC',
+                      background: costSheetView === 'dashboard' ? '#FF6B00' : 'transparent',
                       color: costSheetView === 'dashboard' ? 'white' : '#718096',
-                      boxShadow: costSheetView === 'dashboard' ? '0 4px 12px rgba(255, 107, 0, 0.3)' : 'none'
+                      boxShadow: costSheetView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
                     }}
                   >
                     <LayoutDashboard size={18} /> Dashboard
@@ -231,29 +237,21 @@ const AppContent: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      padding: '10px 24px',
-                      height: '42px',
+                      padding: '8px 24px',
+                      height: '38px',
                       borderRadius: '8px',
                       fontSize: '0.85rem',
                       fontWeight: 700,
                       border: 'none',
                       cursor: 'pointer',
                       transition: 'all 0.2s',
-                      background: costSheetView === 'form' && !editingId ? '#FF6B00' : '#F7FAFC',
-                      color: costSheetView === 'form' && !editingId ? 'white' : '#718096',
-                      boxShadow: costSheetView === 'form' && !editingId ? '0 4px 12px rgba(255, 107, 0, 0.3)' : 'none'
+                      background: (costSheetView === 'form' && !editingId) ? '#FF6B00' : 'transparent',
+                      color: (costSheetView === 'form' && !editingId) ? 'white' : '#718096',
+                      boxShadow: (costSheetView === 'form' && !editingId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
                     }}
                   >
                     <PlusCircle size={18} /> Create New
                   </button>
-                </div>
-
-                {/* Global Stats bar on the right */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.75rem', color: '#4A5568', textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.05em', marginBottom: '2px' }}>Total</div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a1f36' }}>{costSheets.length}</div>
-                  </div>
                 </div>
               </div>
 
@@ -327,7 +325,9 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <AppContent />
+      <NotificationProvider>
+        <AppContent />
+      </NotificationProvider>
     </BrowserRouter>
   );
 };

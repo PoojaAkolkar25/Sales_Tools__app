@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import { useNotification } from '../context/NotificationContext';
 import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const UserManagement: React.FC = () => {
+    const { showNotification, showConfirm } = useNotification();
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -54,14 +56,20 @@ const UserManagement: React.FC = () => {
     };
 
     const handleDeleteUser = async (userId: number) => {
-        if (!window.confirm('Are you sure you want to delete this user?')) return;
-
-        try {
-            await api.delete(`auth/users/${userId}/`);
-            fetchUsers();
-        } catch (err: any) {
-            setError('Error deleting user');
-        }
+        showConfirm({
+            title: 'Delete User',
+            message: 'Are you sure you want to delete this user? This action cannot be undone.',
+            onConfirm: async () => {
+                try {
+                    await api.delete(`auth/users/${userId}/`);
+                    fetchUsers();
+                    showNotification('User deleted successfully', 'success');
+                } catch (err: any) {
+                    console.error('Error deleting user', err);
+                    showNotification('Error deleting user', 'error');
+                }
+            }
+        });
     };
 
     if (loading) {

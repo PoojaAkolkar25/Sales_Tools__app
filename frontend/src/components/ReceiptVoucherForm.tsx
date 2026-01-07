@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Save, Receipt as ReceiptIcon, Calendar, DollarSign, Upload } from 'lucide-react';
 import api from '../api';
+import { useNotification } from '../context/NotificationContext';
 
 interface ReceiptVoucherFormProps {
     id: number | null;
@@ -9,6 +10,7 @@ interface ReceiptVoucherFormProps {
 }
 
 const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) => {
+    const { showNotification } = useNotification();
     const [leads, setLeads] = useState<any[]>([]);
     const [bankConnections, setBankConnections] = useState<any[]>([]);
     const [invoices, setInvoices] = useState<any[]>([]);
@@ -95,7 +97,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
             });
         } catch (error) {
             console.error('Error fetching voucher', error);
-            alert('Error loading receipt voucher');
+            showNotification('Error loading receipt voucher', 'error');
         }
     };
 
@@ -117,7 +119,6 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
             data.append('exchange_rate', formData.exchange_rate);
 
             // Adjustments need to be sent as JSON string due to FormData limitations with nested arrays
-            // Backend views.py needs to JSON parse this if it receives a string
             data.append('adjustments', JSON.stringify(formData.adjustments));
 
             formData.attachments.forEach(file => {
@@ -127,11 +128,11 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
             await api.post('/finance/receipt-vouchers/', data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert('Receipt Voucher created successfully');
+            showNotification('Receipt Voucher created successfully', 'success');
             onBack();
         } catch (error) {
             console.error('Error creating receipt voucher', error);
-            alert('Error creating receipt voucher');
+            showNotification('Error creating receipt voucher', 'error');
         } finally {
             setLoading(false);
         }
@@ -273,21 +274,21 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                 <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '32px' }}>
                     <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#2D3748', marginBottom: '20px' }}>Outstanding Transactions</h3>
 
-                    <div style={{ overflowX: 'auto', width: '100%', border: '1px solid var(--ae-gray-100)', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)' }}>
-                        <table className="ae-table" style={{ minWidth: '1200px', background: 'white' }}>
+                    <div className="ae-table-container">
+                        <table className="ae-table" style={{ background: 'white' }}>
                             <thead>
                                 <tr>
-                                    <th style={{ width: '60px', textAlign: 'center' }}>Select</th>
-                                    <th>Invoice No</th>
+                                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                                    <th>Inv. No</th>
                                     <th>Project</th>
                                     <th>Date</th>
                                     <th>Due Date</th>
-                                    <th>Original Amount</th>
-                                    <th>Open Balance</th>
-                                    <th style={{ width: '150px' }}>Payment Amount</th>
-                                    <th style={{ width: '150px' }}>TDS Amount</th>
-                                    <th style={{ width: '150px' }}>Bank Charges</th>
-                                    <th style={{ width: '150px' }}>Remaining Balance</th>
+                                    <th style={{ textAlign: 'right' }}>Orig. Amt</th>
+                                    <th style={{ textAlign: 'right' }}>Open Bal.</th>
+                                    <th style={{ width: '120px', textAlign: 'right' }}>Payment</th>
+                                    <th style={{ width: '120px', textAlign: 'right' }}>TDS</th>
+                                    <th style={{ width: '120px', textAlign: 'right' }}>Charges</th>
+                                    <th style={{ width: '120px', textAlign: 'right' }}>Balance</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -315,10 +316,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                         checked={isSelected}
                                                         onChange={(e) => {
                                                             if (e.target.checked) {
-                                                                // Add adjustment with default values
                                                                 handleAdjustmentChange(inv.id, 'payment_amount', '0');
                                                             } else {
-                                                                // Remove adjustment
                                                                 setFormData({
                                                                     ...formData,
                                                                     adjustments: formData.adjustments.filter(a => a.invoice !== inv.id)
@@ -332,13 +331,13 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                 <td style={{ fontSize: '0.85rem' }}>{inv.project_name}</td>
                                                 <td>{inv.invoice_date}</td>
                                                 <td>{inv.due_date}</td>
-                                                <td>${parseFloat(inv.total_amount).toLocaleString()}</td>
-                                                <td style={{ fontWeight: 700, color: '#E53E3E' }}>${parseFloat(inv.open_balance).toLocaleString()}</td>
+                                                <td style={{ textAlign: 'right' }}>${parseFloat(inv.total_amount).toLocaleString()}</td>
+                                                <td style={{ textAlign: 'right', fontWeight: 700, color: '#E53E3E' }}>${parseFloat(inv.open_balance).toLocaleString()}</td>
                                                 <td>
                                                     <input
                                                         type="number"
                                                         className="ae-input"
-                                                        style={{ height: '32px', fontSize: '12px' }}
+                                                        style={{ height: '32px', fontSize: '12px', textAlign: 'right' }}
                                                         placeholder="0.00"
                                                         value={adjustment?.payment_amount || ''}
                                                         onChange={e => handleAdjustmentChange(inv.id, 'payment_amount', e.target.value)}
@@ -348,7 +347,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                     <input
                                                         type="number"
                                                         className="ae-input"
-                                                        style={{ height: '32px', fontSize: '12px' }}
+                                                        style={{ height: '32px', fontSize: '12px', textAlign: 'right' }}
                                                         placeholder="0.00"
                                                         value={adjustment?.tds_amount || ''}
                                                         onChange={e => handleAdjustmentChange(inv.id, 'tds_amount', e.target.value)}
@@ -358,13 +357,13 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                     <input
                                                         type="number"
                                                         className="ae-input"
-                                                        style={{ height: '32px', fontSize: '12px' }}
+                                                        style={{ height: '32px', fontSize: '12px', textAlign: 'right' }}
                                                         placeholder="0.00"
                                                         value={adjustment?.bank_charges || ''}
                                                         onChange={e => handleAdjustmentChange(inv.id, 'bank_charges', e.target.value)}
                                                     />
                                                 </td>
-                                                <td style={{ fontWeight: 700, color: remainingBalance <= 0 ? '#00C853' : '#4A5568' }}>
+                                                <td style={{ textAlign: 'right', fontWeight: 700, color: remainingBalance <= 0 ? '#00C853' : '#4A5568' }}>
                                                     ${remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </td>
                                             </tr>
@@ -375,10 +374,11 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                             {invoices.length > 0 && (
                                 <tfoot>
                                     <tr style={{ background: '#F7FAFC' }}>
-                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700 }}>Totals:</td>
-                                        <td style={{ fontWeight: 800, color: '#FF6B00' }}>${totalAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                        <td style={{ fontWeight: 800, color: '#FF6B00' }}>${totalTdsAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                        <td style={{ fontWeight: 800, color: '#FF6B00' }}>
+                                        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 700 }}>Totals:</td>
+                                        <td></td>
+                                        <td style={{ fontWeight: 800, color: '#FF6B00', textAlign: 'right' }}>${totalAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                        <td style={{ fontWeight: 800, color: '#FF6B00', textAlign: 'right' }}>${totalTdsAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                        <td style={{ fontWeight: 800, color: '#FF6B00', textAlign: 'right' }}>
                                             ${formData.adjustments.reduce((sum, a) => sum + parseFloat(a.bank_charges || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                         <td></td>
@@ -415,7 +415,6 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                     </div>
                 </div>
 
-                {/* Totals Summary */}
                 <div style={{
                     marginTop: '32px',
                     padding: '24px',
@@ -447,7 +446,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 };
 

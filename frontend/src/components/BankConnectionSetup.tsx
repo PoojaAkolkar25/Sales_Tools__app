@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Plus, RefreshCw, Trash2, ShieldCheck } from 'lucide-react';
 import api from '../api';
+import { useNotification } from '../context/NotificationContext';
 
 const BankConnectionSetup: React.FC = () => {
+    const { showNotification, showConfirm } = useNotification();
     const [connections, setConnections] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -48,10 +50,10 @@ const BankConnectionSetup: React.FC = () => {
         try {
             if (editingId) {
                 await api.patch(`/finance/bank-connections/${editingId}/`, formData);
-                alert('Bank connection updated successfully');
+                showNotification('Bank connection updated successfully', 'success');
             } else {
                 await api.post('/finance/bank-connections/', formData);
-                alert('Bank connection added successfully');
+                showNotification('Bank connection added successfully', 'success');
             }
             setShowForm(false);
             setEditingId(null);
@@ -68,24 +70,22 @@ const BankConnectionSetup: React.FC = () => {
         }
     };
 
-    // ... (rest of code) ...
-
-    <button
-        onClick={() => handleReconnect(conn)}
-        className="ae-btn-secondary"
-        style={{ fontSize: '11px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
-    >
-        <RefreshCw size={12} /> Reconnect
-    </button>
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm('Are you sure you want to delete this connection?')) return;
-        try {
-            await api.delete(`/finance/bank-connections/${id}/`);
-            fetchConnections();
-        } catch (error) {
-            console.error('Error deleting bank connection', error);
-        }
+        showConfirm({
+            title: 'Delete Connection',
+            message: 'Are you sure you want to delete this bank connection? This action cannot be undone.',
+            onConfirm: async () => {
+                try {
+                    await api.delete(`/finance/bank-connections/${id}/`);
+                    fetchConnections();
+                    showNotification('Bank connection deleted successfully', 'success');
+                } catch (error) {
+                    console.error('Error deleting bank connection', error);
+                    showNotification('Error deleting bank connection', 'error');
+                }
+            }
+        });
     };
 
     return (

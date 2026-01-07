@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Receipt, Plus, Search, RefreshCw, CheckCircle, Clock, Eye } from 'lucide-react';
+import { Plus, RefreshCw, CheckCircle, Clock, Eye } from 'lucide-react';
 import api from '../api';
 
 interface ReceiptVoucher {
@@ -50,30 +50,50 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div className="ae-hero" style={{ padding: '24px 32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '12px',
-                            background: 'rgba(255, 107, 0, 0.2)',
+            {/* Header & Actions */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                        Receipt Vouchers
+                    </h1>
+                </div>
+
+                <div style={{
+                    display: 'flex',
+                    background: 'white',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                }}>
+                    <button
+                        onClick={onCreateNew}
+                        style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center'
-                        }}>
-                            <Receipt size={24} color="#FF6B00" />
-                        </div>
-                        <div>
-                            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FF6B00', margin: 0 }}>
-                                Receipt Vouchers
-                            </h1>
-                            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
-                                Manage and review customer receipts
-                            </p>
-                        </div>
-                    </div>
-                    <button onClick={onCreateNew} className="ae-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            gap: '8px',
+                            padding: '10px 24px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: '#F7FAFC',
+                            color: '#4A5568'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#FF6B00';
+                            e.currentTarget.style.color = 'white';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#F7FAFC';
+                            e.currentTarget.style.color = '#4A5568';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
                         <Plus size={18} /> Create Receipt
                     </button>
                 </div>

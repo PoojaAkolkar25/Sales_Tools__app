@@ -160,14 +160,16 @@ class CostSheetSerializer(serializers.ModelSerializer):
 
         pm = validated_data.pop('project_manager', None)
         sp = validated_data.pop('sales_person', None)
+        pn = validated_data.pop('project_name', None)
 
         cost_sheet = CostSheet.objects.create(**validated_data)
         
         # Update associated lead
-        if pm is not None or sp is not None:
+        if pm is not None or sp is not None or pn is not None:
             lead = cost_sheet.lead
             if pm is not None: lead.project_manager = pm
             if sp is not None: lead.sales_person = sp
+            if pn is not None: lead.project_name = pn
             lead.save()
 
         for item in license_data:
@@ -193,6 +195,7 @@ class CostSheetSerializer(serializers.ModelSerializer):
 
         pm = validated_data.pop('project_manager', None)
         sp = validated_data.pop('sales_person', None)
+        pn = validated_data.pop('project_name', None)
 
         # Update core fields
         for attr, value in validated_data.items():
@@ -200,10 +203,11 @@ class CostSheetSerializer(serializers.ModelSerializer):
         instance.save()
 
         # Update associated lead
-        if pm is not None or sp is not None:
+        if pm is not None or sp is not None or pn is not None:
             lead = instance.lead
             if pm is not None: lead.project_manager = pm
             if sp is not None: lead.sales_person = sp
+            if pn is not None: lead.project_name = pn
             lead.save()
 
         # Update nested items

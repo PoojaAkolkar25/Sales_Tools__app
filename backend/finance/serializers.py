@@ -36,10 +36,26 @@ class ReceiptAttachmentSerializer(serializers.ModelSerializer):
 class ReceiptVoucherSerializer(serializers.ModelSerializer):
     adjustments = ReceiptAdjustmentSerializer(many=True, read_only=True)
     attachments = ReceiptAttachmentSerializer(many=True, read_only=True)
-    customer_name = serializers.CharField(source='lead.customer_name', read_only=True)
+    customer_name = serializers.CharField(required=False, allow_blank=True)
     bank_name = serializers.CharField(source='deposit_to.bank_name', read_only=True)
     reconciliation_date = serializers.DateField(source='bank_transaction.reconciliation_date', read_only=True)
 
     class Meta:
         model = ReceiptVoucher
         fields = '__all__'
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        
+        # Use the stored customer_name if available
+        result_name = instance.customer_name
+        
+        # If stored name is empty, try the linked lead
+        if not result_name and instance.lead:
+            result_name = instance.lead.customer_name
+            
+        # Final fallback
+        representation['customer_name'] = result_name or "Unknown"
+        return representation
+
+ 

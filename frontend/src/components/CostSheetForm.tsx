@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle } from 'lucide-react';
+import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, TrendingUp, Percent, Wallet, BarChart4 } from 'lucide-react';
 import api from '../api';
 
 interface Lead {
@@ -117,6 +117,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
     const [projectManager, setProjectManager] = useState('');
     const [salesPerson, setSalesPerson] = useState('');
     const [costSheetNo, setCostSheetNo] = useState('');
+    const [projectName, setProjectName] = useState('');
     const [costSheetDate, setCostSheetDate] = useState(new Date().toISOString().split('T')[0]);
     const [status, setStatus] = useState('PENDING');
     const [approvalComments, setApprovalComments] = useState('');
@@ -162,6 +163,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                         setLead(data.lead_details);
                         setLeadNo(data.lead_details.lead_no);
                         setSelectedCustomerName(data.lead_details.customer_name);
+                        setProjectName(data.lead_details.project_name || '');
                     }
                 } catch (error) {
                     console.error('Error fetching cost sheet details', error);
@@ -174,6 +176,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
             setStatus('PENDING');
             setProjectManager('');
             setSalesPerson('');
+            setProjectName('');
             setLicenseItems([{ name: '', type: '', rate: 0, qty: 0, period: '', margin_percentage: 0 }]);
             // ... (could reset others too but these are the main ones)
         }
@@ -208,10 +211,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
             setLeadNo(customerLeads[0].lead_no);
             setProjectManager(customerLeads[0].project_manager || '');
             setSalesPerson(customerLeads[0].sales_person || '');
+            setProjectName(customerLeads[0].project_name || '');
         } else {
             // Multiple leads, let user pick Lead No.
             setLead(null);
             setLeadNo('');
+            setProjectName('');
         }
     };
 
@@ -223,11 +228,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
             setSelectedCustomerName(selected.customer_name);
             setProjectManager(selected.project_manager || '');
             setSalesPerson(selected.sales_person || '');
+            setProjectName(selected.project_name || '');
         } else {
             setLead(null);
             setLeadNo('');
             setProjectManager('');
             setSalesPerson('');
+            setProjectName('');
         }
     };
 
@@ -452,11 +459,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
             status: newStatus,
             project_manager: projectManager,
             sales_person: salesPerson,
+            project_name: projectName,
             license_items: cleanItems(licenseItems, 'license'),
             implementation_items: cleanItems(implementationItems, 'implementation'),
             support_items: cleanItems(supportItems, 'support'),
             infra_items: cleanItems(infraItems, 'infra'),
-            other_items: cleanItems(otherItems, 'other'),
+            other_items: cleanItems(other_items, 'other'),
         };
 
         if (costSheetNo && id) {
@@ -534,6 +542,21 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
         setter(newItems);
     };
 
+    const formatDateDisplay = (dateStr: string) => {
+        if (!dateStr) return '—';
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return dateStr;
+            const day = date.getDate().toString().padStart(2, '0');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const month = months[date.getMonth()];
+            const year = date.getFullYear();
+            return `${day} ${month} ${year}`;
+        } catch (e) {
+            return dateStr;
+        }
+    };
+
 
 
     return (
@@ -545,7 +568,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
             {/* Tabs */}
             <div style={{
                 display: 'flex',
-                gap: '8px',
+                gap: '4px',
                 background: 'white',
                 padding: '6px',
                 borderRadius: '12px',
@@ -630,76 +653,41 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                             Lead & Project Details
                         </h3>
                         <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(4, 1fr)',
+                            display: 'flex',
+                            flexDirection: 'column',
                             gap: '20px'
                         }}>
-                            {/* Customer Name */}
+                            {/* Row 1: Customer Name, Lead No, Project Name */}
                             <div style={{
-                                padding: '4px',
-                                transition: 'all 0.2s',
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr 1fr',
+                                gap: '20px'
                             }}>
-                                <label style={{
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    display: 'block',
-                                    marginBottom: '4px'
-                                }}>Customer Name</label>
-                                {!isReadOnly ? (
-                                    <select
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px 12px',
-                                            background: 'white',
-                                            border: '1px solid #E0E6ED',
-                                            borderRadius: '8px',
-                                            fontSize: '0.9rem',
-                                            fontWeight: 500,
-                                            color: '#1a1f36',
-                                            cursor: 'pointer',
-                                            outline: 'none'
-                                        }}
-                                        value={selectedCustomerName}
-                                        onChange={e => handleCustomerChange(e.target.value)}
-                                    >
-                                        <option value="">Select Customer</option>
-                                        {uniqueCustomers.map(name => (
-                                            <option key={name} value={name}>{name}</option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748' }}>{lead?.customer_name || '—'}</div>
-                                )}
-                            </div>
-
-                            {/* Lead No */}
-                            <div style={{
-                                padding: '4px',
-                                transition: 'all 0.2s',
-                            }}>
-                                <label style={{
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    display: 'block',
-                                    marginBottom: '4px'
-                                }}>Lead No.</label>
-                                <div style={{ display: 'flex', gap: '8px' }}>
+                                {/* Customer Name */}
+                                <div style={{ padding: '4px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Name</label>
                                     {!isReadOnly ? (
                                         <select
-                                            style={{
-                                                flex: 1,
-                                                padding: '10px 12px',
-                                                background: 'white',
-                                                border: '1px solid #E0E6ED',
-                                                borderRadius: '8px',
-                                                fontSize: '0.9rem',
-                                                fontWeight: 500,
-                                                color: '#1a1f36',
-                                                cursor: 'pointer',
-                                                outline: 'none'
-                                            }}
+                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', cursor: 'pointer', outline: 'none' }}
+                                            value={selectedCustomerName}
+                                            onChange={e => handleCustomerChange(e.target.value)}
+                                        >
+                                            <option value="">Select Customer</option>
+                                            {uniqueCustomers.map(name => (
+                                                <option key={name} value={name}>{name}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{lead?.customer_name || '—'}</div>
+                                    )}
+                                </div>
+
+                                {/* Lead No */}
+                                <div style={{ padding: '4px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead No.</label>
+                                    {!isReadOnly ? (
+                                        <select
+                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', cursor: 'pointer', outline: 'none' }}
                                             value={lead?.id || ''}
                                             onChange={e => handleLeadChange(e.target.value)}
                                         >
@@ -709,144 +697,107 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                                             ))}
                                         </select>
                                     ) : (
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748' }}>{leadNo || '—'}</div>
+                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{leadNo || '—'}</div>
                                     )}
+                                </div>
 
+                                {/* Project Name */}
+                                <div style={{ padding: '4px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Name</label>
+                                    {!isReadOnly ? (
+                                        <input
+                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            value={projectName}
+                                            onChange={e => setProjectName(e.target.value)}
+                                            placeholder=""
+                                        />
+                                    ) : (
+                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{projectName || '—'}</div>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Project Name */}
+                            {/* Row 2: Cost Sheet No, Project Manager, Sales Person, Cost Sheet Date */}
                             <div style={{
-                                padding: '4px',
-                                transition: 'all 0.2s',
+                                display: 'grid',
+                                gridTemplateColumns: 'minmax(150px, 1fr) 1.5fr 1.5fr 1fr',
+                                gap: '20px'
                             }}>
-                                <label style={{
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    display: 'block',
-                                    marginBottom: '4px'
-                                }}>Project Name</label>
-                                <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748' }}>{lead?.project_name || '—'}</div>
-                            </div>
-
-                            {/* Cost Sheet No */}
-                            <div style={{
-                                padding: '4px',
-                                transition: 'all 0.2s',
-                            }}>
-                                <label style={{
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    display: 'block',
-                                    marginBottom: '4px'
-                                }}>Cost Sheet No.</label>
-                                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace' }}>
-                                    {costSheetNo || 'Auto-generated'}
+                                {/* Cost Sheet No */}
+                                <div style={{ padding: '4px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet No.</label>
+                                    {!isReadOnly ? (
+                                        <div style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            background: '#F7FAFC',
+                                            border: '1px solid #E0E6ED',
+                                            borderRadius: '8px',
+                                            height: '42px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            cursor: 'default'
+                                        }}>
+                                            <span style={{
+                                                fontSize: '0.95rem',
+                                                fontWeight: 700,
+                                                color: '#FF6B00',
+                                                fontFamily: 'monospace'
+                                            }}>
+                                                {costSheetNo || 'Auto-generated'}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace', padding: '10px 0' }}>
+                                            {costSheetNo || 'Auto-generated'}
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
 
-                            {/* Project Manager */}
-                            <div style={{
-                                padding: '4px',
-                                transition: 'all 0.2s',
-                            }}>
-                                <label style={{
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    display: 'block',
-                                    marginBottom: '4px'
-                                }}>Project Manager</label>
-                                {!isReadOnly ? (
-                                    <input
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px 12px',
-                                            background: 'white',
-                                            border: '1px solid #E0E6ED',
-                                            borderRadius: '8px',
-                                            fontSize: '0.9rem',
-                                            fontWeight: 500,
-                                            color: '#1a1f36',
-                                            outline: 'none'
-                                        }}
-                                        value={projectManager}
-                                        onChange={e => setProjectManager(e.target.value)}
-                                        placeholder="Enter Project Manager"
-                                    />
-                                ) : (
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748' }}>{projectManager || '—'}</div>
-                                )}
-                            </div>
+                                {/* Project Manager */}
+                                <div style={{ padding: '4px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Manager</label>
+                                    {!isReadOnly ? (
+                                        <input
+                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            value={projectManager}
+                                            onChange={e => setProjectManager(e.target.value)}
+                                            placeholder="Enter Project Manager"
+                                        />
+                                    ) : (
+                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{projectManager || '—'}</div>
+                                    )}
+                                </div>
 
-                            {/* Sales Person */}
-                            <div style={{
-                                padding: '4px',
-                                transition: 'all 0.2s',
-                            }}>
-                                <label style={{
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    display: 'block',
-                                    marginBottom: '4px'
-                                }}>Sales Person</label>
-                                {!isReadOnly ? (
-                                    <input
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px 12px',
-                                            background: 'white',
-                                            border: '1px solid #E0E6ED',
-                                            borderRadius: '8px',
-                                            fontSize: '0.9rem',
-                                            fontWeight: 500,
-                                            color: '#1a1f36',
-                                            outline: 'none'
-                                        }}
-                                        value={salesPerson}
-                                        onChange={e => setSalesPerson(e.target.value)}
-                                        placeholder="Enter Sales Person"
-                                    />
-                                ) : (
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748' }}>{salesPerson || '—'}</div>
-                                )}
-                            </div>
+                                {/* Sales Person */}
+                                <div style={{ padding: '4px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Person</label>
+                                    {!isReadOnly ? (
+                                        <input
+                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            value={salesPerson}
+                                            onChange={e => setSalesPerson(e.target.value)}
+                                            placeholder="Enter Sales Person"
+                                        />
+                                    ) : (
+                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{salesPerson || '—'}</div>
+                                    )}
+                                </div>
 
-                            {/* Cost Sheet Date */}
-                            <div style={{
-                                padding: '4px',
-                                transition: 'all 0.2s',
-                            }}>
-                                <label style={{
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    display: 'block',
-                                    marginBottom: '4px'
-                                }}>Cost Sheet Date</label>
-                                {!isReadOnly ? (
-                                    <input
-                                        type="date"
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px 12px',
-                                            background: 'white',
-                                            border: '1px solid #E0E6ED',
-                                            borderRadius: '8px',
-                                            fontSize: '0.9rem',
-                                            fontWeight: 500,
-                                            color: '#1a1f36',
-                                            outline: 'none'
-                                        }}
-                                        value={costSheetDate}
-                                        onChange={e => setCostSheetDate(e.target.value)}
-                                    />
-                                ) : (
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748' }}>{costSheetDate || '—'}</div>
-                                )}
+                                {/* Cost Sheet Date */}
+                                <div style={{ padding: '4px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet Date</label>
+                                    {!isReadOnly ? (
+                                        <input
+                                            type="date"
+                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            value={costSheetDate}
+                                            onChange={e => setCostSheetDate(e.target.value)}
+                                        />
+                                    ) : (
+                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{formatDateDisplay(costSheetDate)}</div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -1446,194 +1397,186 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                    {/* Overall Totals */}
-                    <div className="glass-card bg-[#FAFBFC]">
-                        <h3 className="text-xl font-bold mb-0 text-[#1a1f36]">Cost Summary Breakdown</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            <div className="p-8 bg-white rounded-2xl shadow-sm border border-[#E2E8F0]">
-                                <label className="text-xs uppercase font-extrabold tracking-widest text-[#718096] mb-4 block">Total Estimated Cost</label>
-                                <p className="text-3xl font-extrabold text-[#1a1f36] tracking-tight">${totals.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                                <div className="mt-4 h-1 w-12 bg-[#0066CC] rounded-full"></div>
-                            </div>
+                    {/* Consolidated Category Breakdown Table */}
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '20px',
+                        padding: '32px',
+                        border: '1px solid #E2E8F0',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
+                        transition: 'all 0.3s ease'
+                    }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.08)';
+                            e.currentTarget.style.transform = 'translateY(-4px)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.04)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                        }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                            <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Category Breakdown Summary</h3>
+                        </div>
 
-                            <div className="p-8 bg-white rounded-2xl shadow-sm border border-[#E2E8F0]">
-                                <label className="text-xs uppercase font-extrabold tracking-widest text-[#FF6B00] mb-4 block">Total Estimated Amount</label>
-                                <p className="text-3xl font-extrabold text-[#FF6B00] tracking-tight">${totals.totalMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                                <div className="mt-4 h-1 w-12 bg-[#FF6B00] rounded-full"></div>
-                            </div>
-
-                            <div className="p-8 bg-white rounded-2xl shadow-sm border border-[#E2E8F0]">
-                                <label className="text-xs uppercase font-extrabold tracking-widest text-[#00C853] mb-4 block">Total Estimated Margin %</label>
-                                <p className="text-3xl font-extrabold text-[#00C853] tracking-tight">{totals.totalMarginPercent.toFixed(1)}%</p>
-                                <div className="mt-4 h-1 w-12 bg-[#00C853] rounded-full"></div>
-                            </div>
-
-                            <div className="p-8 bg-white rounded-2xl shadow-sm border border-[#0066CC]/20 bg-gradient-to-br from-white to-[#0066CC]/5">
-                                <label className="text-xs uppercase font-extrabold tracking-widest text-[#0066CC] mb-4 block">Total Estimated Price</label>
-                                <p className="text-3xl font-extrabold text-[#0066CC] tracking-tight">${totals.totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                                <div className="mt-4 h-1 w-full bg-[#0066CC]/20 rounded-full"></div>
-                            </div>
+                        <div style={{ overflow: 'hidden', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
+                                        <th style={{ padding: '16px 20px', fontSize: '0.8rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'left', width: '30%' }}>Category</th>
+                                        <th style={{ padding: '16px 20px', fontSize: '0.8rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'right' }}>Total Est. Cost</th>
+                                        <th style={{ padding: '16px 20px', fontSize: '0.8rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'right' }}>Total Est. Amount</th>
+                                        <th style={{ padding: '16px 20px', fontSize: '0.8rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'right' }}>Total Est. Margin %</th>
+                                        <th style={{ padding: '16px 20px', fontSize: '0.8rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'right' }}>Total Est. Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {[
+                                        { label: 'License', totals: calculateCategoryTotals(licenseItems, 'license') },
+                                        { label: 'Services - Implementation', totals: calculateCategoryTotals(implementationItems, 'implementation') },
+                                        { label: 'Services - Support', totals: calculateCategoryTotals(supportItems, 'support') },
+                                        { label: 'Infrastructure Cost', totals: calculateCategoryTotals(infraItems, 'infra') },
+                                        { label: 'Other Category', totals: calculateCategoryTotals(otherItems, 'other') }
+                                    ].map((row, idx) => (
+                                        <tr
+                                            key={row.label}
+                                            style={{
+                                                background: idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC',
+                                                borderBottom: idx === 4 ? 'none' : '1px solid #E2E8F0',
+                                                transition: 'background 0.2s ease'
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = '#FFF5EB'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'; }}
+                                        >
+                                            <td style={{ padding: '18px 20px', fontSize: '0.95rem', fontWeight: 700, color: '#1a1f36' }}>{row.label}</td>
+                                            <td style={{ padding: '18px 20px', fontSize: '0.95rem', fontWeight: 600, color: '#4A5568', fontFamily: 'monospace', textAlign: 'right' }}>
+                                                ${row.totals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td style={{ padding: '18px 20px', fontSize: '0.95rem', fontWeight: 600, color: '#4A5568', fontFamily: 'monospace', textAlign: 'right' }}>
+                                                ${row.totals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td style={{ padding: '18px 20px', fontSize: '0.95rem', fontWeight: 700, color: row.totals.catMarginPercent >= 0 ? '#00C853' : '#EF4444', fontFamily: 'monospace', textAlign: 'right' }}>
+                                                {row.totals.catMarginPercent.toFixed(2)}%
+                                            </td>
+                                            <td style={{ padding: '18px 20px', fontSize: '1.05rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>
+                                                ${row.totals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
-                    {/* Category Breakdown Tables */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1a1f36', margin: 0 }}>Category Breakdown</h3>
-
-                        {/* License Category */}
-                        {licenseItems.length > 0 && (() => {
-                            const licenseTotals = calculateCategoryTotals(licenseItems, 'license');
-                            return (
-                                <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E0E6ED', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                                        License
-                                    </h4>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                        <tbody>
-                                            <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px', width: '40%' }}>Category</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Cost</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Amount</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Margin %</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Price</td>
-                                            </tr>
-                                            <tr style={{ background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 600, color: '#1a1f36' }}>License</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${licenseTotals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${licenseTotals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>{licenseTotals.catMarginPercent.toFixed(2)}%</td>
-                                                <td style={{ padding: '16px', fontSize: '1rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>${licenseTotals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                    {/* Overall Totals Section (Moved Below Table) */}
+                    <div style={{ marginTop: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                            <div style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></div>
+                            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Cost Summary Breakdown</h3>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                            {[
+                                {
+                                    label: 'Total Estimated Cost',
+                                    value: `$${totals.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+                                    icon: <BarChart4 size={24} style={{ color: '#0066CC' }} />,
+                                    bgColor: '#EEF6FF',
+                                    accentColor: '#0066CC'
+                                },
+                                {
+                                    label: 'Total Estimated Amount',
+                                    value: `$${totals.totalMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+                                    icon: <Wallet size={24} style={{ color: '#FF6B00' }} />,
+                                    bgColor: '#FFF2EB',
+                                    accentColor: '#FF6B00'
+                                },
+                                {
+                                    label: 'Total Estimated Margin %',
+                                    value: `${totals.totalMarginPercent.toFixed(1)}%`,
+                                    icon: <Percent size={24} style={{ color: '#00C853' }} />,
+                                    bgColor: '#E8FBF0',
+                                    accentColor: '#00C853'
+                                },
+                                {
+                                    label: 'Total Estimated Price',
+                                    value: `$${totals.totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+                                    icon: <TrendingUp size={24} style={{ color: '#6B46C1' }} />,
+                                    bgColor: '#F3E8FF',
+                                    accentColor: '#6B46C1'
+                                }
+                            ].map((stat, i) => (
+                                <div
+                                    key={i}
+                                    style={{
+                                        background: 'white',
+                                        borderRadius: '16px',
+                                        padding: '24px',
+                                        border: '1px solid #E2E8F0',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between',
+                                        minHeight: '140px',
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-6px)';
+                                        e.currentTarget.style.boxShadow = `0 12px 24px ${stat.accentColor}15`;
+                                        e.currentTarget.style.borderColor = stat.accentColor;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03)';
+                                        e.currentTarget.style.borderColor = '#E2E8F0';
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <div style={{
+                                            width: '44px',
+                                            height: '44px',
+                                            borderRadius: '12px',
+                                            background: stat.bgColor,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}>
+                                            {stat.icon}
+                                        </div>
+                                        <div style={{
+                                            padding: '4px 8px',
+                                            borderRadius: '6px',
+                                            background: stat.bgColor,
+                                            fontSize: '0.65rem',
+                                            fontWeight: 800,
+                                            color: stat.accentColor,
+                                            textTransform: 'uppercase'
+                                        }}>
+                                            Metrics
+                                        </div>
+                                    </div>
+                                    <div style={{ marginTop: '16px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#718096', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                            {stat.label}
+                                        </label>
+                                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a1f36', letterSpacing: '-0.02em' }}>
+                                            {stat.value}
+                                        </div>
+                                    </div>
+                                    <div style={{
+                                        position: 'absolute',
+                                        right: '-10px',
+                                        bottom: '-10px',
+                                        width: '60px',
+                                        height: '60px',
+                                        borderRadius: '50%',
+                                        background: `${stat.accentColor}05`,
+                                        zIndex: 0
+                                    }} />
                                 </div>
-                            );
-                        })()}
-
-                        {/* Implementation Category */}
-                        {implementationItems.length > 0 && (() => {
-                            const implTotals = calculateCategoryTotals(implementationItems, 'implementation');
-                            return (
-                                <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E0E6ED', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                                        Services - Implementation
-                                    </h4>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                        <tbody>
-                                            <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px', width: '40%' }}>Category</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Cost</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Amount</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Margin %</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Price</td>
-                                            </tr>
-                                            <tr style={{ background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 600, color: '#1a1f36' }}>Implementation</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${implTotals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${implTotals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>{implTotals.catMarginPercent.toFixed(2)}%</td>
-                                                <td style={{ padding: '16px', fontSize: '1rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>${implTotals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            );
-                        })()}
-
-                        {/* Support Category */}
-                        {supportItems.length > 0 && (() => {
-                            const supportTotals = calculateCategoryTotals(supportItems, 'support');
-                            return (
-                                <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E0E6ED', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                                        Services - Support
-                                    </h4>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                        <tbody>
-                                            <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px', width: '40%' }}>Category</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Cost</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Amount</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Margin %</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Price</td>
-                                            </tr>
-                                            <tr style={{ background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 600, color: '#1a1f36' }}>Support</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${supportTotals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${supportTotals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>{supportTotals.catMarginPercent.toFixed(2)}%</td>
-                                                <td style={{ padding: '16px', fontSize: '1rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>${supportTotals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            );
-                        })()}
-
-                        {/* Infrastructure Category */}
-                        {infraItems.length > 0 && (() => {
-                            const infraTotals = calculateCategoryTotals(infraItems, 'infra');
-                            return (
-                                <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E0E6ED', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                                        Infrastructure Cost
-                                    </h4>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                        <tbody>
-                                            <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px', width: '40%' }}>Category</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Cost</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Amount</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Margin %</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Price</td>
-                                            </tr>
-                                            <tr style={{ background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 600, color: '#1a1f36' }}>Infrastructure</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${infraTotals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${infraTotals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>{infraTotals.catMarginPercent.toFixed(2)}%</td>
-                                                <td style={{ padding: '16px', fontSize: '1rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>${infraTotals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            );
-                        })()}
-
-                        {/* Other Category */}
-                        {otherItems.length > 0 && (() => {
-                            const otherTotals = calculateCategoryTotals(otherItems, 'other');
-                            return (
-                                <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E0E6ED', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                                        Other Category
-                                    </h4>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                        <tbody>
-                                            <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px', width: '40%' }}>Category</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Cost</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Amount</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Margin %</td>
-                                                <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'white', textAlign: 'right' }}>Total Est. Price</td>
-                                            </tr>
-                                            <tr style={{ background: '#FAFBFC', borderBottom: '1px solid #E0E6ED' }}>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 600, color: '#1a1f36' }}>Other</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${otherTotals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>${otherTotals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td style={{ padding: '16px', fontSize: '0.95rem', fontWeight: 700, color: '#2D3748', fontFamily: 'monospace', textAlign: 'right' }}>{otherTotals.catMarginPercent.toFixed(2)}%</td>
-                                                <td style={{ padding: '16px', fontSize: '1rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>${otherTotals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            );
-                        })()}
+                            ))}
+                        </div>
                     </div>
                 </div>
             )
