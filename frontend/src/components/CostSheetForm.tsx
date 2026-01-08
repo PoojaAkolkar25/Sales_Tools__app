@@ -108,7 +108,7 @@ const ReadOnlyCell = ({ value, bold = false }: any) => (
     </td>
 );
 
-const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => {
+const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const [localId, setLocalId] = useState<number | null>(id || null);
     const [leadNo, setLeadNo] = useState('');
     const [lead, setLead] = useState<Lead | null>(null);
@@ -142,30 +142,6 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
 
     const isReadOnly = status !== 'PENDING';
 
-    const RemarkRow = ({ label, value, onChange, isReadOnly }: any) => (
-        <div style={{ marginTop: '16px', padding: '0 8px' }}>
-            <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', display: 'block', marginBottom: '8px' }}>{label}</label>
-            <textarea
-                style={{
-                    width: '100%',
-                    padding: '12px',
-                    background: 'white',
-                    border: '1px solid #E0E6ED',
-                    borderRadius: '8px',
-                    fontSize: '0.85rem',
-                    fontWeight: 500,
-                    color: '#2D3748',
-                    outline: 'none',
-                    minHeight: '80px',
-                    resize: 'vertical'
-                }}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                readOnly={isReadOnly}
-                placeholder={`Add remarks for ${label}...`}
-            />
-        </div>
-    );
 
     useEffect(() => {
         setLocalId(id || null);
@@ -1135,30 +1111,34 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack, onSave }) => 
                     </section>
 
                     {/* Overall Remarks Section */}
-                    <section className="section-panel" style={{ padding: '24px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 16px 0', color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                            Overall Remarks
-                        </h3>
-                        <textarea
-                            style={{
-                                width: '100%',
-                                padding: '16px',
-                                background: 'white',
-                                border: '1px solid #E0E6ED',
-                                borderRadius: '12px',
-                                fontSize: '0.9rem',
-                                fontWeight: 500,
-                                color: '#2D3748',
-                                outline: 'none',
-                                minHeight: '120px',
-                                resize: 'vertical'
-                            }}
-                            value={overallRemarks}
-                            onChange={(e) => setOverallRemarks(e.target.value)}
-                            readOnly={isReadOnly}
-                            placeholder="Add overall remarks for this cost sheet..."
-                        />
+                    <section className="section-panel" style={{ padding: '12px 24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', minHeight: '32px' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
+                                Overall Remarks
+                            </h3>
+                        </div>
+                        <div style={{ padding: '0 8px' }}>
+                            <textarea
+                                style={{
+                                    width: '100%',
+                                    padding: '16px',
+                                    background: 'white',
+                                    border: '1px solid #E0E6ED',
+                                    borderRadius: '12px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 500,
+                                    color: '#2D3748',
+                                    outline: 'none',
+                                    minHeight: '60px',
+                                    resize: 'vertical'
+                                }}
+                                value={overallRemarks}
+                                onChange={(e) => setOverallRemarks(e.target.value)}
+                                readOnly={isReadOnly}
+                                placeholder="Add overall remarks for this cost sheet..."
+                            />
+                        </div>
                     </section>
 
                     {/* Document Attachments & Actions Layout - Standalone Row */}
