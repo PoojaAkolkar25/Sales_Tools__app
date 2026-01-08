@@ -121,8 +121,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const [costSheetDate, setCostSheetDate] = useState(new Date().toISOString().split('T')[0]);
     const [status, setStatus] = useState('PENDING');
     const [approvalComments, setApprovalComments] = useState('');
+    const [revertComments, setRevertComments] = useState('');
     const [rejectComment, setRejectComment] = useState('');
+    const [revertComment, setRevertComment] = useState('');
     const [showRejectModal, setShowRejectModal] = useState(false);
+    const [showRevertModal, setShowRevertModal] = useState(false);
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [uploading, setUploading] = useState(false);
     const [customAlert, setCustomAlert] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
@@ -140,7 +143,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const [overallRemarks, setOverallRemarks] = useState('');
 
 
-    const isReadOnly = status !== 'PENDING';
+    const isReadOnly = status !== 'PENDING' && status !== 'REVERTED';
 
 
     useEffect(() => {
@@ -156,6 +159,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     setProjectManager(data.project_manager || '');
                     setSalesPerson(data.sales_person || '');
                     setApprovalComments(data.approval_comments || '');
+                    setRevertComments(data.revert_comments || '');
                     setLicenseItems(data.license_items);
                     setImplementationItems(data.implementation_items);
                     setSupportItems(data.support_items);
@@ -275,7 +279,6 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const calculateTotals = () => {
         let totalCost = 0;
         let totalMarginAmount = 0;
-        let totalMarginPercent = 0;
 
         const processItems = (items: any[], type: string) => {
             items.forEach(item => {
@@ -295,7 +298,6 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 const marginAmount = cost * (safeMargin / 100);
                 totalCost += cost;
                 totalMarginAmount += marginAmount;
-                totalMarginPercent += safeMargin;
             });
         };
 
@@ -306,6 +308,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         processItems(otherItems, 'other');
 
         const totalPrice = totalCost + totalMarginAmount;
+        const totalMarginPercent = totalCost > 0 ? (totalMarginAmount / totalCost) * 100 : 0;
 
         return { totalCost, totalMarginAmount, totalMarginPercent, totalPrice };
     };
@@ -314,7 +317,6 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const calculateCategoryTotals = (items: any[], type: 'license' | 'implementation' | 'support' | 'infra' | 'other') => {
         let catCost = 0;
         let catMarginAmount = 0;
-        let catMarginPercent = 0;
 
         items.forEach(item => {
             let cost = 0;
@@ -333,10 +335,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             const marginAmount = cost * (safeMargin / 100);
             catCost += cost;
             catMarginAmount += marginAmount;
-            catMarginPercent += safeMargin;
         });
 
         const catPrice = catCost + catMarginAmount;
+        const catMarginPercent = catCost > 0 ? (catMarginAmount / catCost) * 100 : 0;
         return { catCost, catMarginAmount, catMarginPercent, catPrice };
     };
 
@@ -538,6 +540,17 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         }
     };
 
+    const handleRevert = async () => {
+        if (!revertComment) return setCustomAlert({ message: 'Please provide revert comments', type: 'error' });
+        try {
+            await api.post(`/cost-sheets/${localId}/revert/`, { comments: revertComment });
+            setCustomAlert({ message: 'Cost Sheet Reverted to User', type: 'success' });
+            if (onBack) onBack();
+        } catch (error: any) {
+            setCustomAlert({ message: error.response?.data?.error || 'Failed to revert', type: 'error' });
+        }
+    };
+
 
 
 
@@ -625,6 +638,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         <div className="bg-[#EF4444]/5 border border-[#EF4444]/20 rounded-xl p-6">
                             <h4 className="text-[#EF4444] font-bold mb-2 flex items-center gap-2"><XCircle size={16} /> Rejection Comments</h4>
                             <p className="text-[#2D3748] italic font-medium">"{approvalComments}"</p>
+                        </div>
+                    )}
+
+                    {status === 'REVERTED' && revertComments && (
+                        <div className="bg-[#FFFBEB] border border-[#D69E2E]/20 rounded-xl p-6">
+                            <h4 className="text-[#D69E2E] font-bold mb-2 flex items-center gap-2"><Clock size={16} /> Reversion Remarks</h4>
+                            <p className="text-[#2D3748] italic font-medium">"{revertComments}"</p>
                         </div>
                     )}
 
@@ -1348,7 +1368,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                         {/* RIGHT: Standalone Actions (No background container) */}
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', paddingLeft: '12px' }}>
-                            {status === 'PENDING' && (
+                            {(status === 'PENDING' || status === 'REVERTED') && (
                                 <>
                                     <button
                                         onClick={() => handleSave('PENDING')}
@@ -1425,6 +1445,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 <>
                                     <button onClick={handleApprove} style={{ background: '#00C853', color: 'white', border: 'none', padding: '0 20px', height: '40px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                                         Approve
+                                    </button>
+                                    <button onClick={() => setShowRevertModal(true)} style={{ background: '#FFF5F0', color: '#D69E2E', border: '1px solid rgba(214, 158, 46, 0.2)', padding: '0 20px', height: '40px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                        Revert
                                     </button>
                                     <button onClick={() => setShowRejectModal(true)} style={{ background: '#FCCCCC', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '0 20px', height: '40px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                                         Reject
@@ -1762,6 +1785,26 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             <div className="flex justify-end gap-4 mt-8">
                                 <button onClick={() => setShowRejectModal(false)} className="px-6 py-3 text-[#718096] font-bold hover:text-[#1a1f36]">Cancel</button>
                                 <button onClick={handleReject} className="bg-[#EF4444] text-white px-10 py-3 rounded-lg font-bold hover:bg-[#D32F2F] shadow-lg shadow-[#EF4444]/20">Confirm Rejection</button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+            {
+                showRevertModal && (
+                    <div className="fixed inset-0 bg-[#1a1f36]/80 backdrop-blur-md flex items-center justify-center z-[100] p-6">
+                        <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 border border-[#D69E2E]/20">
+                            <h3 className="text-2xl font-bold mb-4 text-[#1a1f36]">Revert Cost Sheet</h3>
+                            <p className="text-[#718096] text-sm mb-6">Explain why this cost sheet is being sent back to the user for modifications.</p>
+                            <textarea
+                                value={revertComment}
+                                onChange={e => setRevertComment(e.target.value)}
+                                placeholder="Type reversion reason here..."
+                                className="w-full h-40 bg-[#FAFBFC] border border-[#E0E6ED] rounded-xl p-4 text-[#2D3748] focus:border-[#D69E2E] focus:ring-4 focus:ring-[#D69E2E]/5 outline-none transition-all"
+                            />
+                            <div className="flex justify-end gap-4 mt-8">
+                                <button onClick={() => setShowRevertModal(false)} className="px-6 py-3 text-[#718096] font-bold hover:text-[#1a1f36]">Cancel</button>
+                                <button onClick={handleRevert} className="bg-[#D69E2E] text-white px-10 py-3 rounded-lg font-bold hover:bg-[#B45309] shadow-lg shadow-[#D69E2E]/20">Confirm Revert</button>
                             </div>
                         </div>
                     </div>
