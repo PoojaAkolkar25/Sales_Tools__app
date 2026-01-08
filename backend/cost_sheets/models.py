@@ -7,6 +7,7 @@ class CostSheetStatus(models.TextChoices):
     SUBMITTED = 'SUBMITTED', 'Pending for Approval'
     APPROVED = 'APPROVED', 'Approved'
     REJECTED = 'REJECTED', 'Rejected'
+    REVERTED = 'REVERTED', 'Reverted'
 
 class CostSheet(models.Model):
     cost_sheet_no = models.CharField(max_length=100, unique=True, blank=True)
@@ -18,6 +19,7 @@ class CostSheet(models.Model):
         default=CostSheetStatus.PENDING
     )
     approval_comments = models.TextField(null=True, blank=True)
+    revert_comments = models.TextField(null=True, blank=True)
     
     # Remark fields for each category
     license_remarks = models.TextField(blank=True, default='')

@@ -24,6 +24,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
         deposit_to: '',
         amount_received: '0',
         tds_receivable: '0',
+        tds_percentage: '0',
+        bank_charges: '0',
         exchange_rate: '1',
         adjustments: [] as any[],
         attachments: [] as File[]
@@ -44,6 +46,83 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
             setInvoices([]);
         }
     }, [formData.customer_name]);
+
+    useEffect(() => {
+        if (invoices.length > 0) {
+            const amountReceived = parseFloat(formData.amount_received || '0');
+            const totalBankCharges = parseFloat(formData.bank_charges || '0');
+            const tdsPercent = parseFloat(formData.tds_percentage || '0');
+
+            let remainingPool = amountReceived + totalBankCharges;
+            let totalTds = 0;
+            const newAdjustments: any[] = [];
+
+            // Proportion factors to split allocated pool back into payment and charges
+            const totalRemittance = amountReceived + totalBankCharges;
+            const paymentRatio = totalRemittance > 0 ? amountReceived / totalRemittance : 1;
+            const chargesRatio = totalRemittance > 0 ? totalBankCharges / totalRemittance : 0;
+
+            // Sort invoices by date (FIFO)
+            const sortedInvoices = [...invoices].sort((a, b) =>
+                new Date(a.invoice_date).getTime() - new Date(b.invoice_date).getTime()
+            );
+
+            for (const inv of sortedInvoices) {
+                if (remainingPool <= 0 && tdsPercent === 0) break;
+                if (remainingPool <= 0 && newAdjustments.length >= sortedInvoices.length) break;
+
+                const openBalance = parseFloat(inv.open_balance);
+                const totalAmount = parseFloat(inv.total_amount);
+                const tdsFactor = tdsPercent / 100;
+
+                // Calculate the target TDS for the ENTIRE invoice
+                const fullInvoiceTds = totalAmount * tdsFactor;
+
+                // The amount of TDS we can still take for this invoice is limited by the open balance
+                const targetTds = Math.min(openBalance, fullInvoiceTds);
+                const targetNet = openBalance - targetTds;
+
+                let allocatedPool = 0;
+                let allocatedTds = 0;
+
+                if (remainingPool >= targetNet) {
+                    allocatedPool = targetNet;
+                    allocatedTds = targetTds;
+                } else {
+                    allocatedPool = remainingPool;
+                    // Pro-rate the TDS if we can't even cover the target net
+                    if (targetNet > 0) {
+                        allocatedTds = (allocatedPool / targetNet) * targetTds;
+                    } else {
+                        // If targetNet is 0, it means openBalance is entirely TDS
+                        allocatedTds = targetTds;
+                    }
+                }
+
+                if (allocatedPool > 0 || allocatedTds > 0) {
+                    // Split allocatedPool into payment and charges based on ratios
+                    const paymentPart = allocatedPool * paymentRatio;
+                    const chargesPart = allocatedPool * chargesRatio;
+
+                    newAdjustments.push({
+                        invoice: inv.id,
+                        payment_amount: paymentPart.toFixed(2),
+                        tds_amount: allocatedTds.toFixed(2),
+                        bank_charges: chargesPart.toFixed(2)
+                    });
+                }
+
+                remainingPool -= allocatedPool;
+                totalTds += allocatedTds;
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                adjustments: newAdjustments,
+                tds_receivable: totalTds.toFixed(2)
+            }));
+        }
+    }, [formData.amount_received, formData.tds_percentage, formData.bank_charges, invoices]);
 
     const fetchLeads = async () => {
         try {
@@ -91,6 +170,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                 deposit_to: voucher.deposit_to || '',
                 amount_received: voucher.amount_received || '0',
                 tds_receivable: voucher.tds_receivable || '0',
+                tds_percentage: '0',
+                bank_charges: '0',
                 exchange_rate: voucher.exchange_rate || '1',
                 adjustments: voucher.adjustments || [],
                 attachments: [] // Attachments not loaded for now, can be added if API supports
@@ -153,6 +234,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
 
     const totalAdjusted = formData.adjustments.reduce((sum, a) => sum + parseFloat(a.payment_amount || 0), 0);
     const totalTdsAdjusted = formData.adjustments.reduce((sum, a) => sum + parseFloat(a.tds_amount || 0), 0);
+    const totalChargesAdjusted = formData.adjustments.reduce((sum, a) => sum + parseFloat(a.bank_charges || 0), 0);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -247,17 +329,39 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         </div>
                     </div>
                     <div className="ae-input-group">
-                        <label className="ae-label">TDS Receivable</label>
+                        <label className="ae-label">Bank Charges</label>
                         <div style={{ position: 'relative' }}>
                             <DollarSign size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
                             <input
                                 type="number"
                                 className="ae-input"
                                 style={{ paddingLeft: '44px' }}
-                                value={formData.tds_receivable}
-                                onChange={e => setFormData({ ...formData, tds_receivable: e.target.value })}
+                                value={formData.bank_charges}
+                                onChange={e => setFormData({ ...formData, bank_charges: e.target.value })}
                             />
                         </div>
+                    </div>
+                    <div className="ae-input-group">
+                        <label className="ae-label">TDS Receivable</label>
+                        <div style={{ position: 'relative' }}>
+                            <DollarSign size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
+                            <input
+                                type="number"
+                                className="ae-input"
+                                style={{ paddingLeft: '44px', background: '#F7FAFC' }}
+                                value={formData.tds_receivable}
+                                readOnly
+                            />
+                        </div>
+                    </div>
+                    <div className="ae-input-group">
+                        <label className="ae-label">TDS (%)</label>
+                        <input
+                            type="number"
+                            className="ae-input"
+                            value={formData.tds_percentage}
+                            onChange={e => setFormData({ ...formData, tds_percentage: e.target.value })}
+                        />
                     </div>
                     <div className="ae-input-group">
                         <label className="ae-label">Exchange Rate</label>
@@ -287,14 +391,13 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                     <th style={{ textAlign: 'right' }}>Open Bal.</th>
                                     <th style={{ width: '120px', textAlign: 'right' }}>Payment</th>
                                     <th style={{ width: '120px', textAlign: 'right' }}>TDS</th>
-                                    <th style={{ width: '120px', textAlign: 'right' }}>Charges</th>
                                     <th style={{ width: '120px', textAlign: 'right' }}>Balance</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {invoices.length === 0 ? (
                                     <tr>
-                                        <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>
+                                        <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>
                                             {formData.customer_name ? 'No outstanding invoices for this customer.' : 'Select a customer to see invoices.'}
                                         </td>
                                     </tr>
@@ -353,16 +456,6 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                         onChange={e => handleAdjustmentChange(inv.id, 'tds_amount', e.target.value)}
                                                     />
                                                 </td>
-                                                <td>
-                                                    <input
-                                                        type="number"
-                                                        className="ae-input"
-                                                        style={{ height: '32px', fontSize: '12px', textAlign: 'right' }}
-                                                        placeholder="0.00"
-                                                        value={adjustment?.bank_charges || ''}
-                                                        onChange={e => handleAdjustmentChange(inv.id, 'bank_charges', e.target.value)}
-                                                    />
-                                                </td>
                                                 <td style={{ textAlign: 'right', fontWeight: 700, color: remainingBalance <= 0 ? '#00C853' : '#4A5568' }}>
                                                     ${remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </td>
@@ -374,13 +467,9 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                             {invoices.length > 0 && (
                                 <tfoot>
                                     <tr style={{ background: '#F7FAFC' }}>
-                                        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 700 }}>Totals:</td>
-                                        <td></td>
+                                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 700 }}>Totals:</td>
                                         <td style={{ fontWeight: 800, color: '#FF6B00', textAlign: 'right' }}>${totalAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                         <td style={{ fontWeight: 800, color: '#FF6B00', textAlign: 'right' }}>${totalTdsAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                        <td style={{ fontWeight: 800, color: '#FF6B00', textAlign: 'right' }}>
-                                            ${formData.adjustments.reduce((sum, a) => sum + parseFloat(a.bank_charges || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                        </td>
                                         <td></td>
                                     </tr>
                                 </tfoot>
@@ -424,6 +513,16 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                     justifyContent: 'flex-end',
                     gap: '40px'
                 }}>
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#718096', marginBottom: '4px' }}>Bank Charges Diff:</div>
+                        <div style={{
+                            fontSize: '1rem',
+                            fontWeight: 700,
+                            color: Math.abs(parseFloat(formData.bank_charges) - totalChargesAdjusted) < 0.01 ? '#00C853' : '#E53E3E'
+                        }}>
+                            ${(parseFloat(formData.bank_charges) - totalChargesAdjusted).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </div>
+                    </div>
                     <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '0.75rem', color: '#718096', marginBottom: '4px' }}>TDS Difference:</div>
                         <div style={{

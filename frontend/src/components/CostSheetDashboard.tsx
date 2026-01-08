@@ -26,8 +26,53 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
         customerName: '',
         projectName: '',
         status: '',
-        date: ''
+        period: '',
+        startDate: '',
+        endDate: ''
     });
+
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const handleDownloadReport = async () => {
+        setIsDownloading(true);
+        try {
+            let queryParams = `period=${filters.period}`;
+            if (filters.period === 'custom') {
+                queryParams += `&start_date=${filters.startDate}&end_date=${filters.endDate}`;
+            }
+
+            // Align with src/api.ts configuration
+            const baseUrl = 'http://localhost:8000/api';
+            const fullUrl = `${baseUrl}/cost-sheets/export_report/?${queryParams}`;
+
+            const token = localStorage.getItem('token');
+
+            const response = await fetch(fullUrl, {
+                headers: {
+                    'Authorization': token ? `Token ${token}` : ''
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Download failed');
+            }
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.setAttribute('download', `cost_sheets_report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error: any) {
+            console.error('Error downloading report:', error);
+            alert(error.message || 'Failed to download report. Please try again.');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
 
     const filteredCostSheets = useMemo(() => {
         return costSheets.filter(cs => {
@@ -36,7 +81,47 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
             const matchesCustomer = (cs.customer_name || '').toLowerCase().includes(filters.customerName.toLowerCase());
             const matchesProject = (cs.project_name || '').toLowerCase().includes(filters.projectName.toLowerCase());
             const matchesStatus = filters.status === '' || cs.status === filters.status;
-            const matchesDate = filters.date === '' || new Date(cs.created_at).toLocaleDateString() === new Date(filters.date).toLocaleDateString();
+
+            // Date Selection Logic
+            let matchesDate = true;
+            if (filters.period) {
+                const rawDate = cs.cost_sheet_date || cs.created_at;
+                const csDate = new Date(rawDate);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (filters.period === 'last_month') {
+                    const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                    const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1);
+                    const firstOfLastMonth = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1);
+                    matchesDate = csDate >= firstOfLastMonth && csDate <= lastOfLastMonth;
+                } else if (filters.period === 'last_3_months') {
+                    const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                    const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1);
+                    const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+                    matchesDate = csDate >= threeMonthsAgo && csDate <= lastOfLastMonth;
+                } else if (filters.period === 'last_6_months') {
+                    const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, 1);
+                    matchesDate = csDate >= sixMonthsAgo && csDate < new Date(today.getFullYear(), today.getMonth(), 1);
+                } else if (filters.period === 'last_year') {
+                    const lastYear = today.getFullYear() - 1;
+                    const startOfYear = new Date(lastYear, 0, 1);
+                    const endOfYear = new Date(lastYear, 11, 31, 23, 59, 59);
+                    matchesDate = csDate >= startOfYear && csDate <= endOfYear;
+                } else if (filters.period === 'last_financial_year') {
+                    let startYear = today.getFullYear();
+                    if (today.getMonth() < 3) startYear -= 1; // Financial year starts in April
+                    startYear -= 1;
+                    const startOfFY = new Date(startYear, 3, 1);
+                    const endOfFY = new Date(startYear + 1, 2, 31, 23, 59, 59);
+                    matchesDate = csDate >= startOfFY && csDate <= endOfFY;
+                } else if (filters.period === 'custom' && filters.startDate && filters.endDate) {
+                    const start = new Date(filters.startDate);
+                    const end = new Date(filters.endDate);
+                    end.setHours(23, 59, 59, 999);
+                    matchesDate = csDate >= start && csDate <= end;
+                }
+            }
 
             return matchesCs && matchesLead && matchesCustomer && matchesProject && matchesStatus && matchesDate;
         });
@@ -46,6 +131,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
         all: costSheets.length,
         draft: costSheets.filter(cs => cs.status === 'PENDING').length,
         pending: costSheets.filter(cs => cs.status === 'SUBMITTED').length,
+        reverted: costSheets.filter(cs => cs.status === 'REVERTED').length,
         approved: costSheets.filter(cs => cs.status === 'APPROVED').length,
         rejected: costSheets.filter(cs => cs.status === 'REJECTED').length
     }), [costSheets]);
@@ -54,6 +140,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
         { label: `All (${counts.all})`, value: '', color: '#718096' },
         { label: `Draft (${counts.draft})`, value: 'PENDING', color: '#718096' },
         { label: `Pending (${counts.pending})`, value: 'SUBMITTED', color: '#FF6B00' },
+        { label: `Reverted (${counts.reverted})`, value: 'REVERTED', color: '#D69E2E' },
         { label: `Approved (${counts.approved})`, value: 'APPROVED', color: '#00C853' },
         { label: `Rejected (${counts.rejected})`, value: 'REJECTED', color: '#E53E3E' }
     ];
@@ -62,6 +149,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
         const statusMap: { [key: string]: { bg: string; color: string; label: string } } = {
             'PENDING': { bg: 'rgba(113, 128, 150, 0.1)', color: '#718096', label: 'Draft' },
             'SUBMITTED': { bg: 'rgba(255, 107, 0, 0.1)', color: '#FF6B00', label: 'Pending' },
+            'REVERTED': { bg: 'rgba(214, 158, 46, 0.1)', color: '#D69E2E', label: 'Reverted' },
             'APPROVED': { bg: 'rgba(0, 200, 83, 0.1)', color: '#00C853', label: 'Approved' },
             'REJECTED': { bg: 'rgba(229, 62, 62, 0.1)', color: '#E53E3E', label: 'Rejected' }
         };
@@ -87,42 +175,84 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
-            {/* Status Flow Navigation */}
+            {/* Status Flow Navigation & Download */}
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                background: 'white',
-                padding: '6px',
-                borderRadius: '12px',
-                border: '1px solid #E0E6ED',
-                width: 'fit-content',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                justifyContent: 'space-between',
+                paddingRight: '8px'
             }}>
-                {statusFlow.map((flow, index) => (
-                    <React.Fragment key={flow.value}>
-                        <button
-                            onClick={() => setFilters({ ...filters, status: flow.value })}
-                            style={{
-                                padding: '8px 20px',
-                                borderRadius: '8px',
-                                fontSize: '0.75rem',
-                                fontWeight: 700,
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                background: filters.status === flow.value ? '#FF6B00' : 'transparent',
-                                color: filters.status === flow.value ? 'white' : 'black',
-                                boxShadow: filters.status === flow.value ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                            }}
-                        >
-                            {flow.label}
-                        </button>
-                        {index < statusFlow.length - 1 && (
-                            <span style={{ color: '#CBD5E0', fontSize: '12px' }}>›</span>
-                        )}
-                    </React.Fragment>
-                ))}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    background: 'white',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid #E0E6ED',
+                    width: 'fit-content',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                }}>
+                    {statusFlow.map((flow, index) => (
+                        <React.Fragment key={flow.value}>
+                            <button
+                                onClick={() => setFilters({ ...filters, status: flow.value })}
+                                style={{
+                                    padding: '8px 20px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    background: filters.status === flow.value ? '#FF6B00' : 'transparent',
+                                    color: filters.status === flow.value ? 'white' : 'black',
+                                    boxShadow: filters.status === flow.value ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                                }}
+                            >
+                                {flow.label}
+                            </button>
+                            {index < statusFlow.length - 1 && (
+                                <span style={{ color: '#CBD5E0', fontSize: '12px' }}>›</span>
+                            )}
+                        </React.Fragment>
+                    ))}
+                </div>
+
+                <button
+                    onClick={handleDownloadReport}
+                    disabled={isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate))}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 24px',
+                        background: (isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate))) ? '#A0AEC0' : '#0066CC',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        cursor: (isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate))) ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 4px 12px rgba(0, 102, 204, 0.2)'
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!(isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate)))) {
+                            e.currentTarget.style.background = '#0052A3';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (!(isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate)))) {
+                            e.currentTarget.style.background = '#0066CC';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                        }
+                    }}
+                >
+                    {isDownloading ? <RefreshCw size={18} className="animate-spin" /> : <FileSpreadsheet size={18} />}
+                    {isDownloading ? 'Downloading...' : 'Download Report'}
+                </button>
             </div>
 
             {/* Table Container */}
@@ -190,22 +320,48 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                 </div>
                             </th>
                             <th style={{ padding: '8px', top: '51px' }}>
-                                <div className="ae-input-group">
-                                    <Calendar className="ae-search-icon" size={12} />
-                                    <input
-                                        type="date"
-                                        className="ae-input ae-date-filter"
-                                        value={filters.date}
-                                        onChange={e => setFilters({ ...filters, date: e.target.value })}
-                                        style={{ height: '32px', fontSize: '11px', paddingLeft: '36px' }}
-                                    />
+                                <div className="ae-input-group" style={{ flexDirection: 'column', gap: '4px', background: 'transparent', border: 'none', padding: 0 }}>
+                                    <select
+                                        className="ae-input"
+                                        value={filters.period}
+                                        onChange={e => setFilters({ ...filters, period: e.target.value })}
+                                        style={{ height: '32px', fontSize: '11px', width: '100%', borderRadius: '8px' }}
+                                    >
+                                        <option value="">All Periods</option>
+                                        <option value="last_month">Last Month</option>
+                                        <option value="last_3_months">Last 3 Months</option>
+                                        <option value="last_6_months">Last 6 Months</option>
+                                        <option value="last_year">Last Year</option>
+                                        <option value="last_financial_year">Last FY</option>
+                                        <option value="custom">Custom Range</option>
+                                    </select>
+                                    {filters.period === 'custom' && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
+                                            <input
+                                                type="date"
+                                                className="ae-input"
+                                                value={filters.startDate}
+                                                onChange={e => setFilters({ ...filters, startDate: e.target.value })}
+                                                style={{ height: '28px', fontSize: '10px', borderRadius: '6px' }}
+                                                placeholder="Start"
+                                            />
+                                            <input
+                                                type="date"
+                                                className="ae-input"
+                                                value={filters.endDate}
+                                                onChange={e => setFilters({ ...filters, endDate: e.target.value })}
+                                                style={{ height: '28px', fontSize: '10px', borderRadius: '6px' }}
+                                                placeholder="End"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </th>
                             <th style={{ padding: '8px', top: '51px' }}></th>
                             <th style={{ padding: '8px', top: '51px' }}></th>
                             <th style={{ padding: '8px', textAlign: 'right', top: '51px' }}>
                                 <button
-                                    onClick={() => setFilters({ csNumber: '', leadNo: '', customerName: '', projectName: '', status: '', date: '' })}
+                                    onClick={() => setFilters({ csNumber: '', leadNo: '', customerName: '', projectName: '', status: '', period: '', startDate: '', endDate: '' })}
                                     style={{
                                         fontSize: '10px',
                                         color: '#FF6B00',
@@ -219,7 +375,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                         transition: 'background 0.2s'
                                     }}
                                 >
-                                    Preview
+                                    Reset
                                 </button>
                             </th>
                         </tr>
@@ -252,7 +408,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                             {cs.cost_sheet_no}
                                         </td>
                                         <td style={{ color: '#4A5568', fontSize: '12px', fontWeight: 500 }}>
-                                            {new Date(cs.created_at).toLocaleDateString()}
+                                            {cs.cost_sheet_date ? new Date(cs.cost_sheet_date).toLocaleDateString() : new Date(cs.created_at).toLocaleDateString()}
                                         </td>
                                         <td>
                                             <span style={{
