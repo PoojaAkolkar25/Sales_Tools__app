@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, RefreshCw, Upload, Cloud } from 'lucide-react';
 import api from '../api';
@@ -34,24 +35,12 @@ const BankTransactionsDashboard: React.FC = () => {
     const [matchingLoading, setMatchingLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [bankType, setBankType] = useState<string>('generic');
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         fetchTransactions();
     }, []);
-
-    useEffect(() => {
-        if (selectedTransaction) {
-            // This useEffect is now only for reacting to selectedTransaction changes,
-            // but fetchReceiptsForMatching is called directly in handleMatchClick
-            // because reconciliationDate is no longer a filter for fetching receipts.
-            // If we wanted to refetch receipts when selectedTransaction changes,
-            // this useEffect would be `useEffect(() => { if (selectedTransaction) { fetchReceiptsForMatching(); } }, [selectedTransaction]);`
-            // However, the instruction implies removing the dependency on date and the manual call in handleMatchClick handles the initial fetch.
-            // So, this useEffect can be simplified or removed if its only purpose was to react to filterDate.
-            // For now, keeping it as per instruction's implied change.
-        }
-    }, []); // No dependency on date anymore
 
     const fetchTransactions = async () => {
         setLoading(true);
@@ -65,12 +54,9 @@ const BankTransactionsDashboard: React.FC = () => {
         }
     };
 
-    // ... (handleSync, handleUploadClick, handleFileChange) ...
-
     const fetchReceiptsForMatching = async () => {
         try {
             let url = '/finance/receipt-vouchers/?status=UNRECONCILED';
-            // No filtering by date
             const response = await api.get(url);
             setReceiptsForMatching(response.data);
         } catch (error) {
@@ -81,34 +67,8 @@ const BankTransactionsDashboard: React.FC = () => {
     const handleMatchClick = (transaction: BankTransaction) => {
         setSelectedTransaction(transaction);
         setSelectedReceipts([]);
-        // fitler logic handled by manual call below
-        // fetchReceiptsForMatching called by useEffect because selectedTransaction changes (actually useEffect above only watches filterDate, I should adding selectedTransaction to it or manual call)
-        // Better: Manual call in handleMatchClick is fine, but if I want useEffect to trigger on filterDate change, I need logic.
-        // Let's rely on the manual call here for initial load, and useEffect for filter updates.
-        // Wait, handleMatchClick sets selectedTransaction. If I put `fetchReceiptsForMatching` in useEffect([selectedTransaction, filterDate]), it handles both.
-        // Let's do that.
         fetchReceiptsForMatching();
     };
-
-    // Actually, to avoid complexity with previous edits, I'll keep it simple:
-    // 1. Add filterDate state.
-    // 2. Update fetchReceiptsForMatching.
-    // 3. Add useEffect([filterDate]) to refetch if selectedTransaction is active.
-
-    // In handleMatchClick, I call fetchReceiptsForMatching(), which uses the *current* filterDate state.
-    // But setFilterDate('') is async. So calling fetchReceiptsForMatching immediately after might use old date.
-    // Better to use useEffect for all fetching logic related to matching?
-    // Let's change handleMatchClick to just set transaction and reset date.
-    // And add another useEffect.
-
-    /* 
-    useEffect(() => {
-        if (selectedTransaction) {
-            fetchReceiptsForMatching();
-        }
-    }, [selectedTransaction, filterDate]);
-    */
-    // I will implement this logic.
 
     const handleSync = async () => {
         setSyncing(true);
@@ -133,6 +93,7 @@ const BankTransactionsDashboard: React.FC = () => {
 
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('bank_type', bankType);
 
         setUploading(true);
         try {
@@ -150,8 +111,6 @@ const BankTransactionsDashboard: React.FC = () => {
             }
         }
     };
-
-
 
     const handleConfirmMatch = async () => {
         if (!selectedTransaction) return;
@@ -207,7 +166,6 @@ const BankTransactionsDashboard: React.FC = () => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Hidden File Input */}
             <input
                 type="file"
                 ref={fileInputRef}
@@ -216,7 +174,6 @@ const BankTransactionsDashboard: React.FC = () => {
                 onChange={handleFileChange}
             />
 
-            {/* Header & Actions */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
@@ -227,13 +184,38 @@ const BankTransactionsDashboard: React.FC = () => {
 
                 <div style={{
                     display: 'flex',
-                    gap: '4px',
+                    alignItems: 'center',
+                    gap: '12px',
                     background: 'white',
-                    padding: '6px',
+                    padding: '6px 12px',
                     borderRadius: '12px',
                     border: '1px solid #E0E6ED',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
                 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>Format:</label>
+                        <select
+                            value={bankType}
+                            onChange={(e) => setBankType(e.target.value)}
+                            style={{
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid #E0E6ED',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                outline: 'none',
+                                color: '#2D3748'
+                            }}
+                        >
+                            <option value="generic">Generic (CSV)</option>
+                            <option value="icici">ICICI Bank</option>
+                            <option value="idfc">IDFC Bank</option>
+                            <option value="bofa">Bank of America</option>
+                        </select>
+                    </div>
+
+                    <div style={{ width: '1px', height: '20px', background: '#E0E6ED' }}></div>
+
                     <button
                         onClick={handleSync}
                         disabled={syncing}
@@ -241,7 +223,7 @@ const BankTransactionsDashboard: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            padding: '10px 20px',
+                            padding: '10px 16px',
                             borderRadius: '8px',
                             fontSize: '0.85rem',
                             fontWeight: 700,
@@ -255,14 +237,12 @@ const BankTransactionsDashboard: React.FC = () => {
                             if (!syncing) {
                                 e.currentTarget.style.background = '#FF6B00';
                                 e.currentTarget.style.color = 'white';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
                             }
                         }}
                         onMouseLeave={(e) => {
                             if (!syncing) {
                                 e.currentTarget.style.background = '#F7FAFC';
                                 e.currentTarget.style.color = '#4A5568';
-                                e.currentTarget.style.boxShadow = 'none';
                             }
                         }}
                     >
@@ -276,7 +256,7 @@ const BankTransactionsDashboard: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            padding: '10px 20px',
+                            padding: '10px 16px',
                             borderRadius: '8px',
                             fontSize: '0.85rem',
                             fontWeight: 700,
@@ -290,14 +270,12 @@ const BankTransactionsDashboard: React.FC = () => {
                             if (!uploading) {
                                 e.currentTarget.style.background = '#FF6B00';
                                 e.currentTarget.style.color = 'white';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
                             }
                         }}
                         onMouseLeave={(e) => {
                             if (!uploading) {
                                 e.currentTarget.style.background = '#F7FAFC';
                                 e.currentTarget.style.color = '#4A5568';
-                                e.currentTarget.style.boxShadow = 'none';
                             }
                         }}
                     >
@@ -307,7 +285,6 @@ const BankTransactionsDashboard: React.FC = () => {
                 </div>
             </div>
 
-            {/* Tabs */}
             <div style={{
                 display: 'flex',
                 gap: '8px',
@@ -339,7 +316,6 @@ const BankTransactionsDashboard: React.FC = () => {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: selectedTransaction ? '1fr 400px' : '1fr', gap: '20px' }}>
-                {/* Main Table */}
                 <div className="ae-table-container">
                     <table className="ae-table">
                         <thead>
@@ -447,7 +423,6 @@ const BankTransactionsDashboard: React.FC = () => {
                     </table>
                 </div>
 
-                {/* Matching Panel */}
                 {selectedTransaction && (
                     <div style={{
                         background: 'white',
@@ -480,19 +455,12 @@ const BankTransactionsDashboard: React.FC = () => {
                                         <div style={{ fontWeight: 700, color: '#2D3748', marginBottom: '4px' }}>{selectedTransaction.customer_name || '—'}</div>
                                         <div style={{ fontSize: '0.75rem', color: '#718096' }}>Tx Date:</div>
                                         <div style={{ fontWeight: 700, color: '#2D3748' }}>{selectedTransaction.transaction_date}</div>
-                                        {selectedTransaction.value_date && selectedTransaction.value_date !== selectedTransaction.transaction_date && (
-                                            <>
-                                                <div style={{ fontSize: '0.75rem', color: '#718096', marginTop: '4px' }}>Value Date:</div>
-                                                <div style={{ fontWeight: 700, color: '#2D3748' }}>{selectedTransaction.value_date}</div>
-                                            </>
-                                        )}
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div style={{ padding: '20px', flex: 1, maxHeight: '400px', overflowY: 'auto' }}>
-
                             <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '12px', color: '#4A5568' }}>
                                 Select Unreconciled Receipt Voucher:
                             </div>

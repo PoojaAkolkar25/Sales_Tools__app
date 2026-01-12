@@ -83,10 +83,11 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
     def upload(self, request):
         file_obj = request.FILES.get('file')
+        bank_type = request.data.get('bank_type', 'generic')
+        
         if not file_obj:
             return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Support CSV and Excel
         valid_extensions = ['.csv', '.xlsx', '.xls']
         if not any(file_obj.name.endswith(ext) for ext in valid_extensions):
              return Response({'error': 'Only CSV, XLSX, and XLS files are supported'}, status=status.HTTP_400_BAD_REQUEST)
@@ -94,20 +95,21 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
         try:
             data = []
             if file_obj.name.endswith('.csv'):
-                decoded_file = file_obj.read().decode('utf-8-sig') # Handle BOM
+                decoded_file = file_obj.read().decode('utf-8-sig')
                 io_string = io.StringIO(decoded_file)
                 reader = csv.DictReader(io_string)
                 data = list(reader)
             else:
                 import pandas as pd
-                # User specified headers start at row 17 (index 16)
-                # We read skipping 16 rows, so row 17 becomes header
-                df = pd.read_excel(file_obj, header=16)
-                # Replace NaN with None or empty string for safer get() operations
+                # Adjust header based on bank_type
+                header_row = 0
+                if bank_type == 'icici' and file_obj.name.endswith('.xlsx'):
+                    header_row = 16 # ICICI typically has headers at row 17
+                
+                df = pd.read_excel(file_obj, header=header_row)
                 df = df.where(pd.notnull(df), None)
                 data = df.to_dict('records')
             
-            # Use first active connection
             connection = BankConnection.objects.filter(is_active=True).first()
             if not connection:
                 return Response({'error': 'No active bank connections found'}, status=status.HTTP_400_BAD_REQUEST)
@@ -115,27 +117,25 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
             created_count = 0
             
             def parse_decimal(value):
-                if value is None:
-                    return 0
-                val_str = str(value).strip().lower()
-                if val_str == '' or val_str == 'nan' or val_str == 'none':
-                    return 0
+                if value is None: return 0
+                val_str = str(value).strip().replace(',', '')
+                if val_str.lower() in ['', 'nan', 'none']: return 0
                 try:
-                    return float(value)
+                    return float(val_str)
                 except (ValueError, TypeError):
                     return 0
                     
             def parse_date(date_val):
-                if not date_val:
-                    return None
-                if hasattr(date_val, 'date'): # pandas Timestamp
-                    return date_val.date()
+                if not date_val: return None
+                if hasattr(date_val, 'date'): return date_val.date()
                 
                 date_str = str(date_val).strip()
-                if date_str.lower() == 'nan' or date_str.lower() == 'nat':
-                    return None
+                if date_str.lower() in ['nan', 'nat', 'none', '']: return None
 
-                formats = ['%d/%b/%Y', '%d-%b-%Y', '%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%d-%b-%y']
+                formats = [
+                    '%d/%b/%Y', '%d-%b-%Y', '%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', 
+                    '%d-%b-%y', '%m/%d/%Y', '%m-%d-%Y', '%b %d, %Y'
+                ]
                 for fmt in formats:
                     try:
                         from datetime import datetime
@@ -146,53 +146,83 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
 
             for row in data:
                 try:
-                    # Check for generic 'Amount' or specific 'Deposit Amt (INR)'
-                    if 'Deposit Amt (INR)' in row or 'Withdrawal Amt (INR)' in row:
-                        deposit = parse_decimal(row.get('Deposit Amt (INR)'))
+                    deposit = 0
+                    withdrawal = 0
+                    tx_date = None
+                    remarks = ''
+                    tx_id = ''
+                    val_date = None
+                    post_date = None
+                    cheque_ref = ''
+                    balance = 0
+
+                    if bank_type == 'icici':
+                        tx_date = parse_date(row.get('Transaction Date'))
+                        val_date = parse_date(row.get('Value Date'))
+                        tx_id = str(row.get('Tran. Id') or '')
+                        cheque_ref = str(row.get('Cheque. No./Ref. No.') or '')
+                        remarks = str(row.get('Transaction Remarks') or '')
                         withdrawal = parse_decimal(row.get('Withdrawal Amt (INR)'))
-                    else:
+                        deposit = parse_decimal(row.get('Deposit Amt (INR)'))
+                        balance = parse_decimal(row.get('Balance (INR)'))
+                    
+                    elif bank_type == 'idfc':
+                        tx_date = parse_date(row.get('Date') or row.get('Transaction Date'))
+                        remarks = str(row.get('Narration') or row.get('Description') or '')
+                        withdrawal = parse_decimal(row.get('Debit'))
+                        deposit = parse_decimal(row.get('Credit'))
+                        balance = parse_decimal(row.get('Balance'))
+                        tx_id = str(row.get('Ref No./Cheque No.') or '')
+                    
+                    elif bank_type == 'bofa':
+                        tx_date = parse_date(row.get('Date'))
+                        remarks = str(row.get('Description') or '')
                         amount = parse_decimal(row.get('Amount'))
                         deposit = amount if amount > 0 else 0
                         withdrawal = abs(amount) if amount < 0 else 0
-                        
-                except (ValueError, TypeError):
-                    continue
-                
-                # Parse dates
-                tx_date = parse_date(row.get('Transaction Date') or row.get('Date'))
-                if not tx_date:
-                     from datetime import date
-                     tx_date = date.today()
-                     
-                value_date = parse_date(row.get('Value Date')) or tx_date
-                posted_date = parse_date(row.get('Transaction Posted Date')) or tx_date
+                        balance = parse_decimal(row.get('Running Bal.') or row.get('Balance'))
 
-                remarks = row.get('Transaction Remarks') or row.get('Description') or ''
-                
-                # Simple customer extraction attempt
-                customer_name = str(remarks).split(' ')[0] if remarks else 'Unknown'
-                
-                BankTransaction.objects.create(
-                    bank_connection=connection,
-                    transaction_date=tx_date,
-                    description=remarks,
-                    amount_received=deposit, # Used for matching logic (Receipts assume deposits)
+                    else: # Generic
+                        tx_date = parse_date(row.get('Date') or row.get('Transaction Date'))
+                        remarks = str(row.get('Description') or row.get('Remarks') or '')
+                        if 'Deposit' in row or 'Withdrawal' in row:
+                            deposit = parse_decimal(row.get('Deposit'))
+                            withdrawal = parse_decimal(row.get('Withdrawal'))
+                        else:
+                            amount = parse_decimal(row.get('Amount'))
+                            deposit = amount if amount > 0 else 0
+                            withdrawal = abs(amount) if amount < 0 else 0
+                        balance = parse_decimal(row.get('Balance'))
+
+                    if not tx_date:
+                        continue
+                     
+                    val_date = val_date or tx_date
+                    post_date = post_date or tx_date
                     
-                    # New fields
-                    transaction_id=row.get('Tran. Id'),
-                    value_date=value_date,
-                    posted_date=posted_date,
-                    cheque_ref_no=row.get('Cheque. No./Ref. No.'),
-                    transaction_remarks=remarks,
-                    withdrawal_amount=withdrawal,
-                    deposit_amount=deposit,
-                    balance=parse_decimal(row.get('Balance (INR)')),
+                    customer_name = str(remarks).split(' ')[0] if remarks else 'Unknown'
                     
-                    customer_name=customer_name,
-                    source=BankTransactionSource.MANUAL,
-                    status=BankTransactionStatus.FOR_REVIEW
-                )
-                created_count += 1
+                    BankTransaction.objects.create(
+                        bank_connection=connection,
+                        transaction_date=tx_date,
+                        description=remarks,
+                        amount_received=deposit,
+                        transaction_id=tx_id,
+                        value_date=val_date,
+                        posted_date=post_date,
+                        cheque_ref_no=cheque_ref,
+                        transaction_remarks=remarks,
+                        withdrawal_amount=withdrawal,
+                        deposit_amount=deposit,
+                        balance=balance,
+                        customer_name=customer_name,
+                        source=BankTransactionSource.MANUAL,
+                        status=BankTransactionStatus.FOR_REVIEW
+                    )
+                    created_count += 1
+                except Exception as row_err:
+                    print(f"Error parsing row: {row_err}")
+                    continue
                 
             return Response({'status': 'Uploaded successfully', 'count': created_count})
             
