@@ -206,7 +206,7 @@ const BankTransactionsDashboard: React.FC = () => {
     const filteredTransactions = transactions.filter(t => t.status === activeTab);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: 'calc(100vh - 85px)', overflow: 'hidden' }}>
             {/* Hidden File Input */}
             <input
                 type="file"
@@ -217,10 +217,10 @@ const BankTransactionsDashboard: React.FC = () => {
             />
 
             {/* Header & Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                    <div style={{ width: '4px', height: '18px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
                         Bank Transactions
                     </h1>
                 </div>
@@ -241,9 +241,9 @@ const BankTransactionsDashboard: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            padding: '10px 20px',
+                            padding: '6px 14px',
                             borderRadius: '8px',
-                            fontSize: '0.85rem',
+                            fontSize: '0.8rem',
                             fontWeight: 700,
                             border: 'none',
                             cursor: syncing ? 'not-allowed' : 'pointer',
@@ -266,7 +266,7 @@ const BankTransactionsDashboard: React.FC = () => {
                             }
                         }}
                     >
-                        {syncing ? <RefreshCw className="animate-spin" size={18} /> : <Cloud size={18} />}
+                        {syncing ? <RefreshCw className="animate-spin" size={16} /> : <Cloud size={16} />}
                         Sync Bank Feed
                     </button>
                     <button
@@ -276,9 +276,9 @@ const BankTransactionsDashboard: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            padding: '10px 20px',
+                            padding: '6px 14px',
                             borderRadius: '8px',
-                            fontSize: '0.85rem',
+                            fontSize: '0.8rem',
                             fontWeight: 700,
                             border: 'none',
                             cursor: uploading ? 'not-allowed' : 'pointer',
@@ -301,7 +301,7 @@ const BankTransactionsDashboard: React.FC = () => {
                             }
                         }}
                     >
-                        {uploading ? <RefreshCw className="animate-spin" size={18} /> : <Upload size={18} />}
+                        {uploading ? <RefreshCw className="animate-spin" size={16} /> : <Upload size={16} />}
                         Upload Statement
                     </button>
                 </div>
@@ -312,7 +312,7 @@ const BankTransactionsDashboard: React.FC = () => {
                 display: 'flex',
                 gap: '8px',
                 background: 'white',
-                padding: '6px',
+                padding: '4px',
                 borderRadius: '12px',
                 border: '1px solid #E0E6ED',
                 width: 'fit-content'
@@ -322,9 +322,9 @@ const BankTransactionsDashboard: React.FC = () => {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         style={{
-                            padding: '10px 24px',
+                            padding: '6px 16px',
                             borderRadius: '8px',
-                            fontSize: '0.8rem',
+                            fontSize: '0.75rem',
                             fontWeight: 700,
                             border: 'none',
                             cursor: 'pointer',
@@ -338,9 +338,9 @@ const BankTransactionsDashboard: React.FC = () => {
                 ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: selectedTransaction ? '1fr 400px' : '1fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: selectedTransaction ? '1fr 400px' : '1fr', gap: '12px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
                 {/* Main Table */}
-                <div className="ae-table-container">
+                <div className="ae-table-container" style={{ height: '100%', maxHeight: 'none' }}>
                     <table className="ae-table">
                         <thead>
                             <tr>
@@ -382,7 +382,7 @@ const BankTransactionsDashboard: React.FC = () => {
                                         <td style={{ fontWeight: 600 }}>{t.transaction_date}</td>
                                         <td>{t.posted_date || '—'}</td>
                                         <td>{t.cheque_ref_no || '—'}</td>
-                                        <td style={{ fontSize: '0.85rem', color: '#4A5568', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.transaction_remarks || t.description}>
+                                        <td style={{ fontSize: '0.75rem', color: '#4A5568', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.transaction_remarks || t.description}>
                                             {t.transaction_remarks || t.description}
                                         </td>
                                         <td style={{ textAlign: 'right', color: '#E53E3E' }}>
@@ -424,7 +424,7 @@ const BankTransactionsDashboard: React.FC = () => {
                                                     </button>
                                                     <button
                                                         onClick={() => handleExclude(t)}
-                                                        style={{ background: 'none', border: 'none', color: '#E53E3E', cursor: 'pointer' }}
+                                                        style={{ background: 'none', border: 'none', color: '#E53E3E', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}
                                                     >
                                                         Exclude
                                                     </button>
@@ -456,9 +456,10 @@ const BankTransactionsDashboard: React.FC = () => {
                         display: 'flex',
                         flexDirection: 'column',
                         overflow: 'hidden',
-                        height: 'fit-content',
-                        position: 'sticky',
-                        top: '20px'
+                        height: '100%',
+                        maxHeight: 'none',
+                        position: 'relative',
+                        top: 0
                     }}>
                         <div style={{ padding: '20px', background: '#F7FAFC', borderBottom: '1px solid #E0E6ED' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -491,7 +492,7 @@ const BankTransactionsDashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        <div style={{ padding: '20px', flex: 1, maxHeight: '400px', overflowY: 'auto' }}>
+                        <div style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
 
                             <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '12px', color: '#4A5568' }}>
                                 Select Unreconciled Receipt Voucher:

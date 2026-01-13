@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, RefreshCw, CheckCircle, Clock, Eye } from 'lucide-react';
+import { Plus, RefreshCw, Eye } from 'lucide-react';
 import api from '../api';
 
 interface ReceiptVoucher {
@@ -49,18 +49,18 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Header & Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {/* Header Area */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                    <div style={{ width: '4px', height: '18px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
                         Receipt Vouchers
                     </h1>
                 </div>
-
                 <div style={{
                     display: 'flex',
+                    gap: '4px',
                     background: 'white',
                     padding: '6px',
                     borderRadius: '12px',
@@ -73,9 +73,9 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            padding: '10px 24px',
+                            padding: '6px 14px',
                             borderRadius: '8px',
-                            fontSize: '0.85rem',
+                            fontSize: '0.8rem',
                             fontWeight: 700,
                             border: 'none',
                             cursor: 'pointer',
@@ -94,16 +94,17 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                             e.currentTarget.style.boxShadow = 'none';
                         }}
                     >
-                        <Plus size={18} /> Create Receipt
+                        <Plus size={16} /> Create Receipt
                     </button>
                 </div>
             </div>
 
+            {/* Tabs */}
             <div style={{
                 display: 'flex',
                 gap: '8px',
                 background: 'white',
-                padding: '6px',
+                padding: '4px',
                 borderRadius: '12px',
                 border: '1px solid #E0E6ED',
                 width: 'fit-content'
@@ -111,38 +112,32 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                 <button
                     onClick={() => setActiveTab('UNRECONCILED')}
                     style={{
-                        padding: '10px 24px',
+                        padding: '6px 16px',
                         borderRadius: '8px',
-                        fontSize: '0.8rem',
+                        fontSize: '0.75rem',
                         fontWeight: 700,
                         border: 'none',
                         cursor: 'pointer',
                         background: activeTab === 'UNRECONCILED' ? '#FF6B00' : 'transparent',
                         color: activeTab === 'UNRECONCILED' ? 'white' : '#718096',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
                     }}
                 >
-                    <Clock size={16} /> For Review
+                    FOR REVIEW
                 </button>
                 <button
                     onClick={() => setActiveTab('RECONCILED')}
                     style={{
-                        padding: '10px 24px',
+                        padding: '6px 16px',
                         borderRadius: '8px',
-                        fontSize: '0.8rem',
+                        fontSize: '0.75rem',
                         fontWeight: 700,
                         border: 'none',
                         cursor: 'pointer',
-                        background: activeTab === 'RECONCILED' ? '#00C853' : 'transparent',
+                        background: activeTab === 'RECONCILED' ? '#FF6B00' : 'transparent',
                         color: activeTab === 'RECONCILED' ? 'white' : '#718096',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
                     }}
                 >
-                    <CheckCircle size={16} /> Reconciled
+                    RECONCILED
                 </button>
             </div>
 

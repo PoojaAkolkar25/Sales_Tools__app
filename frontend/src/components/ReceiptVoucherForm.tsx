@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Receipt as ReceiptIcon, Calendar, DollarSign, Upload } from 'lucide-react';
+import { ArrowLeft, Save, Calendar, DollarSign, Upload } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 
@@ -237,29 +237,32 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
     const totalChargesAdjusted = formData.adjustments.reduce((sum, a) => sum + parseFloat(a.bank_charges || 0), 0);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#718096', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 600 }}>
-                    <ArrowLeft size={18} /> Back to Dashboard
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#718096', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
+                    <ArrowLeft size={16} /> Back to Dashboard
                 </button>
-                <button onClick={handleSubmit} disabled={loading} className="ae-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Save size={18} /> {loading ? 'Saving...' : 'Save Receipt'}
+                <button onClick={handleSubmit} disabled={loading} className="ae-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', fontSize: '0.85rem' }}>
+                    <Save size={16} /> {loading ? 'Saving...' : 'Save Receipt'}
                 </button>
             </div>
 
-            <div className="glass-card" style={{ padding: '32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255, 107, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <ReceiptIcon size={20} color="#FF6B00" />
-                    </div>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Create Receipt Voucher</h2>
+            <div className="glass-card" style={{ padding: '12px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <span style={{
+                        width: '3px',
+                        height: '14px',
+                        background: '#0066CC',
+                        borderRadius: '2px'
+                    }}></span>
+                    <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', margin: 0 }}>Create Receipt Voucher</h2>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '16px' }}>
                     <div className="ae-input-group">
-                        <label className="ae-label">Customer Name</label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>Customer Name</label>
                         <select
-                            className="ae-input"
+                            style={{ width: '100%', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '34px' }}
                             value={formData.customer_name}
                             onChange={e => setFormData({ ...formData, customer_name: e.target.value })}
                         >
@@ -270,31 +273,30 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         </select>
                     </div>
                     <div className="ae-input-group">
-                        <label className="ae-label">Payment Date</label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>Payment Date</label>
                         <div style={{ position: 'relative' }}>
-                            <Calendar size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
+                            <Calendar size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
                             <input
                                 type="date"
-                                className="ae-input"
-                                style={{ paddingLeft: '44px' }}
+                                style={{ width: '100%', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '34px' }}
                                 value={formData.payment_date}
                                 onChange={e => setFormData({ ...formData, payment_date: e.target.value })}
                             />
                         </div>
                     </div>
                     <div className="ae-input-group">
-                        <label className="ae-label">Reference Number</label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>Reference Number</label>
                         <input
-                            className="ae-input"
+                            style={{ width: '100%', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '34px' }}
                             placeholder="Cheque / UTR / Ref No"
                             value={formData.reference_number}
                             onChange={e => setFormData({ ...formData, reference_number: e.target.value })}
                         />
                     </div>
                     <div className="ae-input-group">
-                        <label className="ae-label">Payment Method</label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>Payment Method</label>
                         <select
-                            className="ae-input"
+                            style={{ width: '100%', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '34px' }}
                             value={formData.payment_method}
                             onChange={e => setFormData({ ...formData, payment_method: e.target.value })}
                         >
@@ -305,9 +307,9 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         </select>
                     </div>
                     <div className="ae-input-group">
-                        <label className="ae-label">Deposit To (Bank)</label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>Deposit To (Bank)</label>
                         <select
-                            className="ae-input"
+                            style={{ width: '100%', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '34px' }}
                             value={formData.deposit_to}
                             onChange={e => setFormData({ ...formData, deposit_to: e.target.value })}
                         >
@@ -316,88 +318,85 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         </select>
                     </div>
                     <div className="ae-input-group">
-                        <label className="ae-label">Amount Received</label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>Amount Received</label>
                         <div style={{ position: 'relative' }}>
-                            <DollarSign size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
+                            <DollarSign size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
                             <input
                                 type="number"
-                                className="ae-input"
-                                style={{ paddingLeft: '44px' }}
+                                style={{ width: '100%', padding: '6px 10px 6px 28px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '34px' }}
                                 value={formData.amount_received}
                                 onChange={e => setFormData({ ...formData, amount_received: e.target.value })}
                             />
                         </div>
                     </div>
                     <div className="ae-input-group">
-                        <label className="ae-label">Bank Charges</label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>Bank Charges</label>
                         <div style={{ position: 'relative' }}>
-                            <DollarSign size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
+                            <DollarSign size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
                             <input
                                 type="number"
-                                className="ae-input"
-                                style={{ paddingLeft: '44px' }}
+                                style={{ width: '100%', padding: '6px 10px 6px 28px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '34px' }}
                                 value={formData.bank_charges}
                                 onChange={e => setFormData({ ...formData, bank_charges: e.target.value })}
                             />
                         </div>
                     </div>
                     <div className="ae-input-group">
-                        <label className="ae-label">TDS Receivable</label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>TDS Receivable</label>
                         <div style={{ position: 'relative' }}>
-                            <DollarSign size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
+                            <DollarSign size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
                             <input
                                 type="number"
-                                className="ae-input"
-                                style={{ paddingLeft: '44px', background: '#F7FAFC' }}
+                                style={{ width: '100%', padding: '6px 10px 6px 28px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', outline: 'none', height: '34px' }}
                                 value={formData.tds_receivable}
                                 readOnly
                             />
                         </div>
                     </div>
                     <div className="ae-input-group">
-                        <label className="ae-label">TDS (%)</label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>TDS (%)</label>
                         <input
                             type="number"
-                            className="ae-input"
+                            style={{ width: '100%', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '34px' }}
                             value={formData.tds_percentage}
                             onChange={e => setFormData({ ...formData, tds_percentage: e.target.value })}
                         />
                     </div>
                     <div className="ae-input-group">
-                        <label className="ae-label">Exchange Rate</label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>Exchange Rate</label>
                         <input
                             type="number"
                             step="0.0001"
-                            className="ae-input"
+                            style={{ width: '100%', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '34px' }}
                             value={formData.exchange_rate}
                             onChange={e => setFormData({ ...formData, exchange_rate: e.target.value })}
                         />
                     </div>
                 </div>
 
-                <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '32px' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#2D3748', marginBottom: '20px' }}>Outstanding Transactions</h3>
+                <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px' }}>
+                    <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#2D3748', marginBottom: '12px' }}>Outstanding Transactions</h3>
 
-                    <div className="ae-table-container">
+                    <div className="ae-table-container" style={{ maxHeight: '40vh' }}>
                         <table className="ae-table" style={{ background: 'white' }}>
                             <thead>
                                 <tr>
-                                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                                    <th style={{ width: '32px', textAlign: 'center' }}>#</th>
                                     <th>Inv. No</th>
                                     <th>Project</th>
                                     <th>Date</th>
                                     <th>Due Date</th>
                                     <th style={{ textAlign: 'right' }}>Orig. Amt</th>
                                     <th style={{ textAlign: 'right' }}>Open Bal.</th>
-                                    <th style={{ width: '120px', textAlign: 'right' }}>Payment</th>
-                                    <th style={{ width: '120px', textAlign: 'right' }}>TDS</th>
-                                    <th style={{ width: '120px', textAlign: 'right' }}>Balance</th>
+                                    <th style={{ width: '100px', textAlign: 'right' }}>Payment</th>
+                                    <th style={{ width: '100px', textAlign: 'right' }}>TDS</th>
+                                    <th style={{ width: '100px', textAlign: 'right' }}>Balance</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {invoices.length === 0 ? (
                                     <tr>
-                                        <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>
+                                        <td colSpan={10} style={{ textAlign: 'center', padding: '20px', color: '#718096', fontSize: '0.8rem' }}>
                                             {formData.customer_name ? 'No outstanding invoices for this customer.' : 'Select a customer to see invoices.'}
                                         </td>
                                     </tr>
@@ -427,11 +426,11 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                                 });
                                                             }
                                                         }}
-                                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                                        style={{ width: '14px', height: '14px', cursor: 'pointer' }}
                                                     />
                                                 </td>
                                                 <td style={{ fontWeight: 600 }}>{inv.invoice_no}</td>
-                                                <td style={{ fontSize: '0.85rem' }}>{inv.project_name}</td>
+                                                <td>{inv.project_name}</td>
                                                 <td>{inv.invoice_date}</td>
                                                 <td>{inv.due_date}</td>
                                                 <td style={{ textAlign: 'right' }}>${parseFloat(inv.total_amount).toLocaleString()}</td>
@@ -439,8 +438,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                 <td>
                                                     <input
                                                         type="number"
-                                                        className="ae-input"
-                                                        style={{ height: '32px', fontSize: '12px', textAlign: 'right' }}
+                                                        style={{ width: '100%', height: '24px', fontSize: '11px', textAlign: 'right', padding: '2px 6px', border: '1px solid #E2E8F0', borderRadius: '4px', outline: 'none' }}
                                                         placeholder="0.00"
                                                         value={adjustment?.payment_amount || ''}
                                                         onChange={e => handleAdjustmentChange(inv.id, 'payment_amount', e.target.value)}
@@ -449,8 +447,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                 <td>
                                                     <input
                                                         type="number"
-                                                        className="ae-input"
-                                                        style={{ height: '32px', fontSize: '12px', textAlign: 'right' }}
+                                                        style={{ width: '100%', height: '24px', fontSize: '11px', textAlign: 'right', padding: '2px 6px', border: '1px solid #E2E8F0', borderRadius: '4px', outline: 'none' }}
                                                         placeholder="0.00"
                                                         value={adjustment?.tds_amount || ''}
                                                         onChange={e => handleAdjustmentChange(inv.id, 'tds_amount', e.target.value)}
@@ -467,10 +464,10 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                             {invoices.length > 0 && (
                                 <tfoot>
                                     <tr style={{ background: '#F7FAFC' }}>
-                                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 700 }}>Totals:</td>
-                                        <td style={{ fontWeight: 800, color: '#FF6B00', textAlign: 'right' }}>${totalAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                        <td style={{ fontWeight: 800, color: '#FF6B00', textAlign: 'right' }}>${totalTdsAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                        <td></td>
+                                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 700, padding: '8px', fontSize: '0.8rem' }}>Totals:</td>
+                                        <td style={{ fontWeight: 800, color: '#FF6B00', textAlign: 'right', padding: '8px', fontSize: '0.8rem' }}>${totalAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                        <td style={{ fontWeight: 800, color: '#FF6B00', textAlign: 'right', padding: '8px', fontSize: '0.8rem' }}>${totalTdsAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                        <td style={{ padding: '8px' }}></td>
                                     </tr>
                                 </tfoot>
                             )}
@@ -478,9 +475,9 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                     </div>
                 </div>
 
-                <div className="ae-input-group" style={{ marginBottom: '20px' }}>
-                    <label className="ae-label">Attachments</label>
-                    <div style={{ padding: '20px', border: '2px dashed #E2E8F0', borderRadius: '12px', textAlign: 'center' }}>
+                <div className="ae-input-group" style={{ marginBottom: '12px', marginTop: '16px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Attachments</label>
+                    <div style={{ padding: '12px', border: '2px dashed #E2E8F0', borderRadius: '8px', textAlign: 'center' }}>
                         <input
                             type="file"
                             multiple
@@ -492,10 +489,10 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 }
                             }}
                         />
-                        <label htmlFor="file-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                            <Upload size={24} color="#CBD5E0" />
-                            <span style={{ color: '#718096', fontWeight: 600 }}>Click to upload files</span>
-                            <span style={{ fontSize: '0.8rem', color: '#A0AEC0' }}>
+                        <label htmlFor="file-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <Upload size={20} color="#CBD5E0" />
+                            <span style={{ color: '#718096', fontWeight: 600, fontSize: '0.8rem' }}>Click to upload files</span>
+                            <span style={{ fontSize: '0.7rem', color: '#A0AEC0' }}>
                                 {formData.attachments.length > 0
                                     ? `${formData.attachments.length} file(s) selected`
                                     : 'Supports documents, images and PDFs'}
@@ -505,18 +502,18 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                 </div>
 
                 <div style={{
-                    marginTop: '32px',
-                    padding: '24px',
+                    marginTop: '16px',
+                    padding: '12px 20px',
                     background: '#F8FAFC',
-                    borderRadius: '12px',
+                    borderRadius: '8px',
                     display: 'flex',
                     justifyContent: 'flex-end',
-                    gap: '40px'
+                    gap: '24px'
                 }}>
                     <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.75rem', color: '#718096', marginBottom: '4px' }}>Bank Charges Diff:</div>
+                        <div style={{ fontSize: '0.7rem', color: '#718096', marginBottom: '2px' }}>Bank Charges Diff:</div>
                         <div style={{
-                            fontSize: '1rem',
+                            fontSize: '0.85rem',
                             fontWeight: 700,
                             color: Math.abs(parseFloat(formData.bank_charges) - totalChargesAdjusted) < 0.01 ? '#00C853' : '#E53E3E'
                         }}>
@@ -524,9 +521,9 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.75rem', color: '#718096', marginBottom: '4px' }}>TDS Difference:</div>
+                        <div style={{ fontSize: '0.7rem', color: '#718096', marginBottom: '2px' }}>TDS Difference:</div>
                         <div style={{
-                            fontSize: '1rem',
+                            fontSize: '0.85rem',
                             fontWeight: 700,
                             color: Math.abs(parseFloat(formData.tds_receivable) - totalTdsAdjusted) < 0.01 ? '#00C853' : '#E53E3E'
                         }}>
@@ -534,9 +531,9 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.75rem', color: '#718096', marginBottom: '4px' }}>Amount Difference:</div>
+                        <div style={{ fontSize: '0.7rem', color: '#718096', marginBottom: '2px' }}>Amount Difference:</div>
                         <div style={{
-                            fontSize: '1.25rem',
+                            fontSize: '1rem',
                             fontWeight: 800,
                             color: Math.abs(parseFloat(formData.amount_received) - totalAdjusted) < 0.01 ? '#00C853' : '#E53E3E'
                         }}>

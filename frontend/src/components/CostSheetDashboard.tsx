@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Eye, Search, Calendar, FileSpreadsheet, RefreshCw } from 'lucide-react';
+import { Eye, Search, FileSpreadsheet, RefreshCw } from 'lucide-react';
 
 interface CostSheet {
     id: number;
@@ -9,6 +9,7 @@ interface CostSheet {
     project_name: string;
     status: string;
     total_estimated_price: string;
+    cost_sheet_date?: string;
     created_at: string;
 }
 
@@ -156,122 +157,112 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
         return statusMap[status] || { bg: '#F7FAFC', color: '#718096', label: status };
     };
 
-    if (loading) {
-        return (
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '80px',
-                color: '#718096'
-            }}>
-                <RefreshCw size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: '16px' }} />
-                <span style={{ fontWeight: 500 }}>Loading cost sheets...</span>
-            </div>
-        );
-    }
-
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="ae-table-container" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {/* Header Area */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '18px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                        Cost Sheet Dashboard
+                    </h1>
+                </div>
 
-            {/* Status Flow Navigation & Download */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingRight: '8px'
-            }}>
                 <div style={{
                     display: 'flex',
-                    alignItems: 'center',
                     gap: '4px',
                     background: 'white',
                     padding: '6px',
                     borderRadius: '12px',
                     border: '1px solid #E0E6ED',
-                    width: 'fit-content',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
                 }}>
-                    {statusFlow.map((flow, index) => (
-                        <React.Fragment key={flow.value}>
-                            <button
-                                onClick={() => setFilters({ ...filters, status: flow.value })}
-                                style={{
-                                    padding: '8px 20px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    background: filters.status === flow.value ? '#FF6B00' : 'transparent',
-                                    color: filters.status === flow.value ? 'white' : 'black',
-                                    boxShadow: filters.status === flow.value ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                                }}
-                            >
-                                {flow.label}
-                            </button>
-                            {index < statusFlow.length - 1 && (
-                                <span style={{ color: '#CBD5E0', fontSize: '12px' }}>›</span>
-                            )}
-                        </React.Fragment>
-                    ))}
+                    <button
+                        onClick={handleDownloadReport}
+                        disabled={isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate))}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 14px',
+                            borderRadius: '8px',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: (isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate))) ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s',
+                            background: '#F7FAFC',
+                            color: '#4A5568'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!(isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate)))) {
+                                e.currentTarget.style.background = '#FF6B00';
+                                e.currentTarget.style.color = 'white';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!(isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate)))) {
+                                e.currentTarget.style.background = '#F7FAFC';
+                                e.currentTarget.style.color = '#4A5568';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }
+                        }}
+                    >
+                        {isDownloading ? <RefreshCw size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
+                        {isDownloading ? 'Downloading...' : 'Download Report'}
+                    </button>
                 </div>
-
-                <button
-                    onClick={handleDownloadReport}
-                    disabled={isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate))}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 24px',
-                        background: (isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate))) ? '#A0AEC0' : '#0066CC',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '12px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        cursor: (isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate))) ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 4px 12px rgba(0, 102, 204, 0.2)'
-                    }}
-                    onMouseEnter={(e) => {
-                        if (!(isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate)))) {
-                            e.currentTarget.style.background = '#0052A3';
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        if (!(isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate)))) {
-                            e.currentTarget.style.background = '#0066CC';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                        }
-                    }}
-                >
-                    {isDownloading ? <RefreshCw size={18} className="animate-spin" /> : <FileSpreadsheet size={18} />}
-                    {isDownloading ? 'Downloading...' : 'Download Report'}
-                </button>
             </div>
 
-            {/* Table Container */}
-            <div className="ae-table-container">
+            {/* Status Tabs */}
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                background: 'white',
+                padding: '4px',
+                borderRadius: '12px',
+                border: '1px solid #E0E6ED',
+                width: 'fit-content'
+            }}>
+                {statusFlow.map((flow) => (
+                    <button
+                        key={flow.value}
+                        onClick={() => setFilters({ ...filters, status: flow.value })}
+                        style={{
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: filters.status === flow.value ? '#FF6B00' : 'transparent',
+                            color: filters.status === flow.value ? 'white' : '#718096',
+                        }}
+                    >
+                        {flow.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Table Area */}
+            <div style={{ overflowX: 'auto' }}>
                 <table className="ae-table">
                     <thead>
                         <tr>
-                            <th style={{ width: '14%', top: 0 }}>Lead Number</th>
-                            <th style={{ width: '18%', top: 0 }}>Customer Name</th>
-                            <th style={{ width: '18%', top: 0 }}>Project Name</th>
-                            <th style={{ width: '12%', top: 0 }}>Cost Sheet No.</th>
-                            <th style={{ width: '10%', top: 0 }}>Date</th>
-                            <th style={{ width: '10%', top: 0 }}>Status</th>
-                            <th style={{ width: '12%', top: 0 }}>Total Price</th>
-                            <th style={{ width: '6%', textAlign: 'right', top: 0 }}>Actions</th>
+                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Lead Number</th>
+                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Customer Name</th>
+                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Project Name</th>
+                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Cost Sheet No.</th>
+                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Date</th>
+                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Status</th>
+                            <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, minWidth: '120px', backgroundColor: '#FAFBFC' }}>Total Price</th>
+                            <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, width: '100px', backgroundColor: '#FAFBFC' }}>Actions</th>
                         </tr>
                         {/* Filter Row */}
                         <tr style={{ background: '#F7FAFC' }}>
-                            <th style={{ padding: '8px', top: '51px' }}>
+                            <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -279,11 +270,11 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                         placeholder="Filter..."
                                         value={filters.leadNo}
                                         onChange={e => setFilters({ ...filters, leadNo: e.target.value })}
-                                        style={{ height: '32px', fontSize: '11px' }}
+                                        style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
                                     />
                                 </div>
                             </th>
-                            <th style={{ padding: '8px', top: '51px' }}>
+                            <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -291,11 +282,11 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                         placeholder="Filter..."
                                         value={filters.customerName}
                                         onChange={e => setFilters({ ...filters, customerName: e.target.value })}
-                                        style={{ height: '32px', fontSize: '11px' }}
+                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
                                     />
                                 </div>
                             </th>
-                            <th style={{ padding: '8px', top: '51px' }}>
+                            <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -303,11 +294,11 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                         placeholder="Filter..."
                                         value={filters.projectName}
                                         onChange={e => setFilters({ ...filters, projectName: e.target.value })}
-                                        style={{ height: '32px', fontSize: '11px' }}
+                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
                                     />
                                 </div>
                             </th>
-                            <th style={{ padding: '8px', top: '51px' }}>
+                            <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -315,73 +306,99 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                         placeholder="Filter..."
                                         value={filters.csNumber}
                                         onChange={e => setFilters({ ...filters, csNumber: e.target.value })}
-                                        style={{ height: '32px', fontSize: '11px' }}
+                                        style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
                                     />
                                 </div>
                             </th>
-                            <th style={{ padding: '8px', top: '51px' }}>
-                                <div className="ae-input-group" style={{ flexDirection: 'column', gap: '4px', background: 'transparent', border: 'none', padding: 0 }}>
+                            <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                <div className="ae-input-group">
+                                    <Search className="ae-search-icon" size={12} style={{ left: '10px' }} />
                                     <select
                                         className="ae-input"
                                         value={filters.period}
                                         onChange={e => setFilters({ ...filters, period: e.target.value })}
-                                        style={{ height: '32px', fontSize: '11px', width: '100%', borderRadius: '8px' }}
+                                        style={{
+                                            height: '24px',
+                                            width: '100%',
+                                            borderRadius: '6px',
+                                            paddingLeft: '28px',
+                                            paddingRight: '8px',
+                                            paddingTop: 0,
+                                            paddingBottom: 0,
+                                            fontSize: '11px',
+                                            color: filters.period === '' ? '#A0AEC0' : 'black'
+                                        }}
                                     >
-                                        <option value="">All Periods</option>
-                                        <option value="last_month">Last Month</option>
-                                        <option value="last_3_months">Last 3 Months</option>
-                                        <option value="last_6_months">Last 6 Months</option>
-                                        <option value="last_year">Last Year</option>
-                                        <option value="last_financial_year">Last FY</option>
-                                        <option value="custom">Custom Range</option>
+                                        <option value="" style={{ color: '#A0AEC0' }}>All Period</option>
+                                        <option value="last_month" style={{ color: 'black' }}>Last Month</option>
+                                        <option value="last_3_months" style={{ color: 'black' }}>Last 3 Months</option>
+                                        <option value="last_6_months" style={{ color: 'black' }}>Last 6 Months</option>
+                                        <option value="last_year" style={{ color: 'black' }}>Last Year</option>
+                                        <option value="last_financial_year" style={{ color: 'black' }}>Last FY</option>
+                                        <option value="custom" style={{ color: 'black' }}>Custom Range</option>
                                     </select>
-                                    {filters.period === 'custom' && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
-                                            <input
-                                                type="date"
-                                                className="ae-input"
-                                                value={filters.startDate}
-                                                onChange={e => setFilters({ ...filters, startDate: e.target.value })}
-                                                style={{ height: '28px', fontSize: '10px', borderRadius: '6px' }}
-                                                placeholder="Start"
-                                            />
-                                            <input
-                                                type="date"
-                                                className="ae-input"
-                                                value={filters.endDate}
-                                                onChange={e => setFilters({ ...filters, endDate: e.target.value })}
-                                                style={{ height: '28px', fontSize: '10px', borderRadius: '6px' }}
-                                                placeholder="End"
-                                            />
-                                        </div>
-                                    )}
                                 </div>
+                                {filters.period === 'custom' && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', marginTop: '4px' }}>
+                                        <input
+                                            type="date"
+                                            className="ae-input"
+                                            value={filters.startDate}
+                                            onChange={e => setFilters({ ...filters, startDate: e.target.value })}
+                                            style={{ height: '24px', fontSize: '10px', borderRadius: '4px' }}
+                                            placeholder="Start"
+                                        />
+                                        <input
+                                            type="date"
+                                            className="ae-input"
+                                            value={filters.endDate}
+                                            onChange={e => setFilters({ ...filters, endDate: e.target.value })}
+                                            style={{ height: '24px', fontSize: '10px', borderRadius: '4px' }}
+                                            placeholder="End"
+                                        />
+                                    </div>
+                                )}
                             </th>
-                            <th style={{ padding: '8px', top: '51px' }}></th>
-                            <th style={{ padding: '8px', top: '51px' }}></th>
-                            <th style={{ padding: '8px', textAlign: 'right', top: '51px' }}>
+                            <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>
+                            <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>
+                            <th style={{ textAlign: 'center', top: '40px', position: 'sticky', right: 0, backgroundColor: '#F7FAFC', zIndex: 12 }}>
                                 <button
                                     onClick={() => setFilters({ csNumber: '', leadNo: '', customerName: '', projectName: '', status: '', period: '', startDate: '', endDate: '' })}
                                     style={{
+                                        height: '24px',
+                                        width: '100%',
                                         fontSize: '10px',
                                         color: '#FF6B00',
                                         fontWeight: 700,
                                         textTransform: 'uppercase',
                                         cursor: 'pointer',
-                                        background: 'none',
-                                        border: 'none',
-                                        padding: '4px 8px',
-                                        borderRadius: '4px',
-                                        transition: 'background 0.2s'
+                                        background: 'white',
+                                        border: '1px solid #E0E6ED',
+                                        padding: '0 8px',
+                                        borderRadius: '6px',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                        e.currentTarget.style.borderColor = '#FF6B00';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'white';
+                                        e.currentTarget.style.borderColor = '#E0E6ED';
                                     }}
                                 >
-                                    Reset
+                                    Preview
                                 </button>
                             </th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredCostSheets.length === 0 ? (
+                        {loading ? (
+                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '100px' }}><RefreshCw className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
+                        ) : filteredCostSheets.length === 0 ? (
                             <tr>
                                 <td colSpan={8} style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>
                                     <FileSpreadsheet size={40} style={{ marginBottom: '12px', opacity: 0.3 }} />
@@ -394,25 +411,24 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                             filteredCostSheets.map((cs) => {
                                 const statusInfo = getStatusBadge(cs.status);
                                 return (
-                                    <tr key={cs.id} style={{ cursor: 'pointer' }} onClick={() => onView(cs.id)}>
-                                        <td style={{ fontWeight: 600, color: '#4A5568', fontFamily: 'monospace', fontSize: '12px' }}>
+                                    <tr key={cs.id}>
+                                        <td style={{ fontWeight: 600, color: '#718096', fontSize: '0.8rem' }}>
                                             {cs.lead_no}
                                         </td>
-                                        <td style={{ color: '#2D3748', fontSize: '13px', fontWeight: 500 }}>
+                                        <td style={{ color: '#4A5568', fontWeight: 500 }}>
                                             {cs.customer_name || '—'}
                                         </td>
-                                        <td style={{ color: 'black', fontSize: '12px' }}>
+                                        <td style={{ color: '#2D3748', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={cs.project_name || '—'}>
                                             {cs.project_name || '—'}
                                         </td>
-                                        <td style={{ fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace', fontSize: '12px' }}>
+                                        <td style={{ fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace' }}>
                                             {cs.cost_sheet_no}
                                         </td>
-                                        <td style={{ color: '#4A5568', fontSize: '12px', fontWeight: 500 }}>
+                                        <td style={{ color: '#4A5568', fontWeight: 600 }}>
                                             {cs.cost_sheet_date ? new Date(cs.cost_sheet_date).toLocaleDateString() : new Date(cs.created_at).toLocaleDateString()}
                                         </td>
                                         <td>
                                             <span style={{
-                                                display: 'inline-block',
                                                 padding: '4px 10px',
                                                 borderRadius: '6px',
                                                 fontSize: '10px',
@@ -424,27 +440,30 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                                 {statusInfo.label}
                                             </span>
                                         </td>
-                                        <td style={{ fontWeight: 700, color: '#1a1f36', fontFamily: 'monospace', fontSize: '13px' }}>
+                                        <td style={{ fontWeight: 700, color: '#1a1f36', textAlign: 'right' }}>
                                             ${parseFloat(cs.total_estimated_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
-                                        <td style={{ textAlign: 'right' }}>
+                                        <td style={{ textAlign: 'center' }}>
                                             <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onView(cs.id);
-                                                }}
+                                                onClick={() => onView(cs.id)}
                                                 style={{
-                                                    padding: '8px',
-                                                    color: '#A0AEC0',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    padding: '6px 12px',
+                                                    background: '#0066CC',
+                                                    color: 'white',
                                                     border: 'none',
-                                                    background: 'none',
-                                                    cursor: 'pointer',
                                                     borderRadius: '6px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer',
                                                     transition: 'all 0.2s'
                                                 }}
-                                                title="View Details"
+                                                onMouseOver={(e) => e.currentTarget.style.background = '#0052A3'}
+                                                onMouseOut={(e) => e.currentTarget.style.background = '#0066CC'}
                                             >
-                                                <Eye size={16} />
+                                                <Eye size={14} /> View
                                             </button>
                                         </td>
                                     </tr>

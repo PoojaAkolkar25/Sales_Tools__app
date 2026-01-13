@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, TrendingUp, Percent, Wallet, BarChart4 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, TrendingUp, Percent, Wallet, BarChart4, Sparkles } from 'lucide-react';
 import api from '../api';
 
 interface Lead {
@@ -29,7 +30,7 @@ const TableHeader = ({ columns, isReadOnly }: { columns: string[], isReadOnly: b
         <tr style={{ background: 'transparent' }}>
             {columns.map((col, i) => (
                 <th key={i} style={{
-                    padding: '4px 12px',
+                    padding: '6px 8px',
                     textAlign: 'left',
                     fontSize: '0.7rem',
                     fontWeight: 700,
@@ -40,7 +41,7 @@ const TableHeader = ({ columns, isReadOnly }: { columns: string[], isReadOnly: b
                     whiteSpace: 'nowrap'
                 }}>{col}</th>
             ))}
-            {!isReadOnly && <th style={{ padding: '14px 12px', width: '50px', borderBottom: '2px solid #E0E6ED' }}></th>}
+            {!isReadOnly && <th style={{ padding: '6px 8px', width: '40px', borderBottom: '2px solid #E0E6ED' }}></th>}
         </tr>
     </thead>
 );
@@ -69,15 +70,15 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly 
     const displayValue = (type === 'number' && (value === 0 || value === '0' || value === '')) ? '' : value;
 
     return (
-        <td style={{ padding: '6px 8px' }}>
+        <td style={{ padding: '2px 4px' }}>
             <input
                 style={{
                     width: '100%',
-                    padding: '8px 10px',
+                    padding: '4px 8px',
                     background: 'white',
                     border: '1px solid #E0E6ED',
-                    borderRadius: '6px',
-                    fontSize: '0.85rem',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
                     fontWeight: 500,
                     color: '#2D3748',
                     outline: 'none',
@@ -96,8 +97,8 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly 
 
 const ReadOnlyCell = ({ value, bold = false }: any) => (
     <td style={{
-        padding: '6px 8px',
-        fontSize: bold ? '0.9rem' : '0.8rem',
+        padding: '4px 8px',
+        fontSize: bold ? '0.8rem' : '0.75rem',
         fontWeight: bold ? 700 : 600,
         color: bold ? '#1a1f36' : '#718096',
         fontFamily: 'monospace',
@@ -141,6 +142,15 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
     // Remark States
     const [overallRemarks, setOverallRemarks] = useState('');
+    const [showRemarksModal, setShowRemarksModal] = useState(false);
+
+    // Toast State
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const handleShowToast = (message: string, type: 'success' | 'error' = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
 
 
     const isReadOnly = status !== 'PENDING' && status !== 'REVERTED';
@@ -533,8 +543,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         if (!rejectComment) return setCustomAlert({ message: 'Please provide rejection comments', type: 'error' });
         try {
             await api.post(`/cost-sheets/${localId}/reject/`, { comments: rejectComment });
-            setCustomAlert({ message: 'Cost Sheet Rejected', type: 'success' });
-            if (onBack) onBack();
+            setShowRejectModal(false);
+            handleShowToast('sheet sent for reject', 'success');
+            // Give user time to see toast before redirecting
+            setTimeout(() => {
+                if (onBack) onBack();
+            }, 1500);
         } catch (error: any) {
             setCustomAlert({ message: error.response?.data?.error || 'Failed to reject', type: 'error' });
         }
@@ -544,8 +558,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         if (!revertComment) return setCustomAlert({ message: 'Please provide revert comments', type: 'error' });
         try {
             await api.post(`/cost-sheets/${localId}/revert/`, { comments: revertComment });
-            setCustomAlert({ message: 'Cost Sheet Reverted to User', type: 'success' });
-            if (onBack) onBack();
+            setShowRevertModal(false);
+            handleShowToast('sheet sent for revert', 'success');
+            // Give user time to see toast before redirecting
+            setTimeout(() => {
+                if (onBack) onBack();
+            }, 1500);
         } catch (error: any) {
             setCustomAlert({ message: error.response?.data?.error || 'Failed to revert', type: 'error' });
         }
@@ -635,23 +653,75 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             {activeTab === 'form' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                     {status === 'REJECTED' && approvalComments && (
-                        <div className="bg-[#EF4444]/5 border border-[#EF4444]/20 rounded-xl p-6">
-                            <h4 className="text-[#EF4444] font-bold mb-2 flex items-center gap-2"><XCircle size={16} /> Rejection Comments</h4>
-                            <p className="text-[#2D3748] italic font-medium">"{approvalComments}"</p>
+                        <div className="section-panel remark-panel rejection-pulse" style={{
+                            background: 'rgba(239, 68, 68, 0.04)',
+                            border: '1px solid rgba(239, 68, 68, 0.1)',
+                            borderLeft: '4px solid #EF4444',
+                            borderRadius: '16px',
+                            padding: '12px 20px',
+                            marginBottom: '12px'
+                        }}>
+                            <div className="remark-heading" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#EF4444', marginBottom: '8px' }}>
+                                <XCircle size={16} strokeWidth={2.5} className="icon-breathe" />
+                                <span style={{ fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rejection Comments</span>
+                            </div>
+                            <div style={{
+                                background: 'white',
+                                padding: '10px 16px',
+                                borderRadius: '12px',
+                                border: '1px solid rgba(239, 68, 68, 0.08)',
+                                color: '#1e293b',
+                                fontSize: '0.85rem',
+                                fontWeight: 500,
+                                lineHeight: 1.4,
+                                fontStyle: 'italic',
+                                position: 'relative'
+                            }}>
+                                <span style={{ color: '#EF4444', fontSize: '1.2rem', fontWeight: 900, position: 'absolute', top: '4px', left: '6px', opacity: 0.2 }}>"</span>
+                                {approvalComments}
+                                <span style={{ color: '#EF4444', fontSize: '1.2rem', fontWeight: 900, position: 'absolute', bottom: '-4px', right: '6px', opacity: 0.2 }}>"</span>
+                            </div>
                         </div>
                     )}
 
                     {status === 'REVERTED' && revertComments && (
-                        <div className="bg-[#FFFBEB] border border-[#D69E2E]/20 rounded-xl p-6">
-                            <h4 className="text-[#D69E2E] font-bold mb-2 flex items-center gap-2"><Clock size={16} /> Reversion Remarks</h4>
-                            <p className="text-[#2D3748] italic font-medium">"{revertComments}"</p>
+                        <div className="section-panel remark-panel remark-pulse" style={{
+                            background: 'rgba(255, 107, 0, 0.04)',
+                            border: '1px solid rgba(255, 107, 0, 0.1)',
+                            borderLeft: '4px solid #FF6B00',
+                            borderRadius: '16px',
+                            padding: '12px 20px',
+                            marginBottom: '12px'
+                        }}>
+                            <div className="remark-heading" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#FF6B00', marginBottom: '8px' }}>
+                                <Sparkles size={16} strokeWidth={2.5} className="icon-breathe" />
+                                <span style={{ fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reversion Remarks</span>
+                            </div>
+                            <div style={{
+                                background: 'white',
+                                padding: '10px 16px',
+                                borderRadius: '12px',
+                                border: '1px solid rgba(255, 107, 0, 0.08)',
+                                color: '#1e293b',
+                                fontSize: '0.85rem',
+                                fontWeight: 500,
+                                lineHeight: 1.4,
+                                fontStyle: 'italic',
+                                position: 'relative'
+                            }}>
+                                <span style={{ color: '#FF6B00', fontSize: '1.2rem', fontWeight: 900, position: 'absolute', top: '4px', left: '6px', opacity: 0.2 }}>"</span>
+                                {revertComments}
+                                <span style={{ color: '#FF6B00', fontSize: '1.2rem', fontWeight: 900, position: 'absolute', bottom: '-4px', right: '6px', opacity: 0.2 }}>"</span>
+                            </div>
                         </div>
                     )}
 
                     {status === 'APPROVED' && (
-                        <div className="bg-[#00C853]/5 border border-[#00C853]/20 rounded-xl p-6 flex items-center gap-3">
-                            <CheckCircle size={20} className="text-[#00C853]" />
-                            <p className="text-[#2D3748] font-semibold">This cost sheet has been approved and is locked for editing.</p>
+                        <div className="section-panel approved-banner approved-pulse" style={{ marginBottom: '12px' }}>
+                            <CheckCircle size={20} className="text-green icon-breathe" strokeWidth={2.5} />
+                            <p style={{ margin: 0, color: '#2D3748', fontSize: '0.9rem', fontWeight: 700 }}>
+                                This cost sheet has been approved and is locked for editing.
+                            </p>
                         </div>
                     )}
 
@@ -1138,8 +1208,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 Overall Remarks
                             </h3>
                         </div>
-                        <div style={{ padding: '0 8px' }}>
-                            <textarea
+                        <div style={{ padding: '8px' }}>
+                            <div
+                                onClick={() => !isReadOnly && setShowRemarksModal(true)}
                                 style={{
                                     width: '100%',
                                     padding: '16px',
@@ -1147,17 +1218,31 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     border: '1px solid #E0E6ED',
                                     borderRadius: '12px',
                                     fontSize: '0.9rem',
-                                    fontWeight: 500,
-                                    color: '#2D3748',
-                                    outline: 'none',
+                                    color: overallRemarks ? '#2D3748' : '#718096',
+                                    cursor: isReadOnly ? 'default' : 'pointer',
                                     minHeight: '60px',
-                                    resize: 'vertical'
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '12px'
                                 }}
-                                value={overallRemarks}
-                                onChange={(e) => setOverallRemarks(e.target.value)}
-                                readOnly={isReadOnly}
-                                placeholder="Add overall remarks for this cost sheet..."
-                            />
+                                onMouseEnter={(e) => {
+                                    if (!isReadOnly) {
+                                        e.currentTarget.style.borderColor = '#FF6B00';
+                                        e.currentTarget.style.background = '#FFFAF5';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!isReadOnly) {
+                                        e.currentTarget.style.borderColor = '#E0E6ED';
+                                        e.currentTarget.style.background = 'white';
+                                    }
+                                }}
+                            >
+                                <div style={{ flex: 1, whiteSpace: 'pre-wrap' }}>
+                                    {overallRemarks || "Click to add overall remarks for this cost sheet..."}
+                                </div>
+                            </div>
                         </div>
                     </section>
 
@@ -1443,13 +1528,82 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                             {status === 'SUBMITTED' && (
                                 <>
-                                    <button onClick={handleApprove} style={{ background: '#00C853', color: 'white', border: 'none', padding: '0 20px', height: '40px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                    <button
+                                        onClick={handleApprove}
+                                        style={{
+                                            background: '#E8FBF0',
+                                            color: '#00C853',
+                                            border: '1px solid rgba(0, 200, 83, 0.2)',
+                                            padding: '0 20px',
+                                            height: '40px',
+                                            borderRadius: '8px',
+                                            fontWeight: 700,
+                                            fontSize: '13px',
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = '#00C853';
+                                            e.currentTarget.style.color = 'white';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = '#E8FBF0';
+                                            e.currentTarget.style.color = '#00C853';
+                                        }}
+                                    >
                                         Approve
                                     </button>
-                                    <button onClick={() => setShowRevertModal(true)} style={{ background: '#FFF5F0', color: '#D69E2E', border: '1px solid rgba(214, 158, 46, 0.2)', padding: '0 20px', height: '40px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                    <button
+                                        onClick={() => setShowRevertModal(true)}
+                                        style={{
+                                            background: '#FFFBEB',
+                                            color: '#D69E2E',
+                                            border: '1px solid rgba(214, 158, 46, 0.2)',
+                                            padding: '0 20px',
+                                            height: '40px',
+                                            borderRadius: '8px',
+                                            fontWeight: 700,
+                                            fontSize: '13px',
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = '#D69E2E';
+                                            e.currentTarget.style.color = 'white';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = '#FFFBEB';
+                                            e.currentTarget.style.color = '#D69E2E';
+                                        }}
+                                    >
                                         Revert
                                     </button>
-                                    <button onClick={() => setShowRejectModal(true)} style={{ background: '#FCCCCC', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '0 20px', height: '40px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                    <button
+                                        onClick={() => setShowRejectModal(true)}
+                                        style={{
+                                            background: '#FFF5F5',
+                                            color: '#EF4444',
+                                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                                            padding: '0 20px',
+                                            height: '40px',
+                                            borderRadius: '8px',
+                                            fontWeight: 700,
+                                            fontSize: '13px',
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = '#EF4444';
+                                            e.currentTarget.style.color = 'white';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = '#FFF5F5';
+                                            e.currentTarget.style.color = '#EF4444';
+                                        }}
+                                    >
                                         Reject
                                     </button>
                                 </>
@@ -1461,38 +1615,38 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                 </div>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {/* Consolidated Category Breakdown Table */}
                     <div style={{
                         background: 'white',
                         borderRadius: '20px',
-                        padding: '32px',
+                        padding: '20px',
                         border: '1px solid #E2E8F0',
                         boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
                         transition: 'all 0.3s ease'
                     }}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.08)';
-                            e.currentTarget.style.transform = 'translateY(-4px)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
                         }}
                         onMouseLeave={(e) => {
                             e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.04)';
                             e.currentTarget.style.transform = 'translateY(0)';
                         }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                             <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Category Breakdown Summary</h3>
+                            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Category Breakdown Summary</h3>
                         </div>
 
                         <div style={{ overflow: 'hidden', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
-                                        <th style={{ padding: '16px 20px', fontSize: '0.8rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'left', width: '30%' }}>Category</th>
-                                        <th style={{ padding: '16px 20px', fontSize: '0.8rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'right' }}>Total Est. Cost</th>
-                                        <th style={{ padding: '16px 20px', fontSize: '0.8rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'right' }}>Total Est. Amount</th>
-                                        <th style={{ padding: '16px 20px', fontSize: '0.8rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'right' }}>Total Est. Margin %</th>
-                                        <th style={{ padding: '16px 20px', fontSize: '0.8rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'right' }}>Total Est. Price</th>
+                                        <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '30%' }}>Category</th>
+                                        <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Total Est. Cost</th>
+                                        <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Total Est. Amount</th>
+                                        <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Total Est. Margin %</th>
+                                        <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Total Est. Price</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1513,17 +1667,17 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             onMouseEnter={(e) => { e.currentTarget.style.background = '#FFF5EB'; }}
                                             onMouseLeave={(e) => { e.currentTarget.style.background = idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'; }}
                                         >
-                                            <td style={{ padding: '18px 20px', fontSize: '0.95rem', fontWeight: 700, color: '#1a1f36' }}>{row.label}</td>
-                                            <td style={{ padding: '18px 20px', fontSize: '0.95rem', fontWeight: 600, color: '#4A5568', fontFamily: 'monospace', textAlign: 'right' }}>
+                                            <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 700, color: '#1a1f36' }}>{row.label}</td>
+                                            <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, color: '#4A5568', fontFamily: 'monospace', textAlign: 'right' }}>
                                                 ${row.totals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>
-                                            <td style={{ padding: '18px 20px', fontSize: '0.95rem', fontWeight: 600, color: '#4A5568', fontFamily: 'monospace', textAlign: 'right' }}>
+                                            <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, color: '#4A5568', fontFamily: 'monospace', textAlign: 'right' }}>
                                                 ${row.totals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>
-                                            <td style={{ padding: '18px 20px', fontSize: '0.95rem', fontWeight: 700, color: row.totals.catMarginPercent >= 0 ? '#00C853' : '#EF4444', fontFamily: 'monospace', textAlign: 'right' }}>
+                                            <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 700, color: row.totals.catMarginPercent >= 0 ? '#00C853' : '#EF4444', fontFamily: 'monospace', textAlign: 'right' }}>
                                                 {row.totals.catMarginPercent.toFixed(2)}%
                                             </td>
-                                            <td style={{ padding: '18px 20px', fontSize: '1.05rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>
+                                            <td style={{ padding: '8px 16px', fontSize: '0.9rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>
                                                 ${row.totals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>
                                         </tr>
@@ -1534,38 +1688,38 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     </div>
 
                     {/* Overall Totals Section (Moved Below Table) */}
-                    <div style={{ marginTop: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                            <div style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></div>
-                            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Cost Summary Breakdown</h3>
+                    <div style={{ marginTop: '0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                            <div style={{ width: '4px', height: '20px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Cost Summary Breakdown</h3>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
                             {[
                                 {
                                     label: 'Total Estimated Cost',
                                     value: `$${totals.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-                                    icon: <BarChart4 size={24} style={{ color: '#0066CC' }} />,
+                                    icon: <BarChart4 size={16} style={{ color: '#0066CC' }} />,
                                     bgColor: '#EEF6FF',
                                     accentColor: '#0066CC'
                                 },
                                 {
                                     label: 'Total Estimated Amount',
                                     value: `$${totals.totalMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-                                    icon: <Wallet size={24} style={{ color: '#FF6B00' }} />,
+                                    icon: <Wallet size={16} style={{ color: '#FF6B00' }} />,
                                     bgColor: '#FFF2EB',
                                     accentColor: '#FF6B00'
                                 },
                                 {
                                     label: 'Total Estimated Margin %',
                                     value: `${totals.totalMarginPercent.toFixed(2)}%`,
-                                    icon: <Percent size={24} style={{ color: '#00C853' }} />,
+                                    icon: <Percent size={16} style={{ color: '#00C853' }} />,
                                     bgColor: '#E8FBF0',
                                     accentColor: '#00C853'
                                 },
                                 {
                                     label: 'Total Estimated Price',
                                     value: `$${totals.totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-                                    icon: <TrendingUp size={24} style={{ color: '#6B46C1' }} />,
+                                    icon: <TrendingUp size={16} style={{ color: '#6B46C1' }} />,
                                     bgColor: '#F3E8FF',
                                     accentColor: '#6B46C1'
                                 }
@@ -1574,20 +1728,20 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     key={i}
                                     style={{
                                         background: 'white',
-                                        borderRadius: '16px',
-                                        padding: '24px',
+                                        borderRadius: '12px',
+                                        padding: '12px',
                                         border: '1px solid #E2E8F0',
                                         boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
                                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         justifyContent: 'space-between',
-                                        minHeight: '140px',
+                                        minHeight: '85px',
                                         position: 'relative',
                                         overflow: 'hidden'
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(-6px)';
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
                                         e.currentTarget.style.boxShadow = `0 12px 24px ${stat.accentColor}15`;
                                         e.currentTarget.style.borderColor = stat.accentColor;
                                     }}
@@ -1599,9 +1753,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                         <div style={{
-                                            width: '44px',
-                                            height: '44px',
-                                            borderRadius: '12px',
+                                            width: '28px',
+                                            height: '28px',
+                                            borderRadius: '8px',
                                             background: stat.bgColor,
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1610,10 +1764,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             {stat.icon}
                                         </div>
                                         <div style={{
-                                            padding: '4px 8px',
-                                            borderRadius: '6px',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
                                             background: stat.bgColor,
-                                            fontSize: '0.65rem',
+                                            fontSize: '0.55rem',
                                             fontWeight: 800,
                                             color: stat.accentColor,
                                             textTransform: 'uppercase'
@@ -1621,11 +1775,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             Metrics
                                         </div>
                                     </div>
-                                    <div style={{ marginTop: '16px' }}>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#718096', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    <div style={{ marginTop: '8px' }}>
+                                        <label style={{ fontSize: '0.65rem', fontWeight: 700, color: '#718096', display: 'block', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                             {stat.label}
                                         </label>
-                                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a1f36', letterSpacing: '-0.02em' }}>
+                                        <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36', letterSpacing: '-0.02em' }}>
                                             {stat.value}
                                         </div>
                                     </div>
@@ -1769,47 +1923,481 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 )
             }
 
-            {/* Reject Modal */}
-            {
-                showRejectModal && (
-                    <div className="fixed inset-0 bg-[#1a1f36]/80 backdrop-blur-md flex items-center justify-center z-[100] p-6">
-                        <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 border border-[#EF4444]/20">
-                            <h3 className="text-2xl font-bold mb-4 text-[#1a1f36]">Provide Rejection Reason</h3>
-                            <p className="text-[#718096] text-sm mb-6">Explain why this cost sheet requires modifications before it can be approved.</p>
-                            <textarea
-                                value={rejectComment}
-                                onChange={e => setRejectComment(e.target.value)}
-                                placeholder="Type rejection comments here..."
-                                className="w-full h-40 bg-[#FAFBFC] border border-[#E0E6ED] rounded-xl p-4 text-[#2D3748] focus:border-[#EF4444] focus:ring-4 focus:ring-[#EF4444]/5 outline-none transition-all"
-                            />
-                            <div className="flex justify-end gap-4 mt-8">
-                                <button onClick={() => setShowRejectModal(false)} className="px-6 py-3 text-[#718096] font-bold hover:text-[#1a1f36]">Cancel</button>
-                                <button onClick={handleReject} className="bg-[#EF4444] text-white px-10 py-3 rounded-lg font-bold hover:bg-[#D32F2F] shadow-lg shadow-[#EF4444]/20">Confirm Rejection</button>
+
+            {/* Branded Action Modal (Template Style) */}
+            {/* Branded Action Modal (Template Style) */}
+            {(showRejectModal || showRevertModal) && createPortal(
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 10000,
+                        background: 'rgba(0, 0, 0, 0.45)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        padding: '24px',
+                    }}
+                >
+                    <div
+                        style={{
+                            background: 'white',
+                            width: '100%',
+                            maxWidth: '400px',
+                            borderRadius: '24px',
+                            boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
+                            overflow: 'hidden',
+                            position: 'relative',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Orange Header Section */}
+                        <div style={{
+                            background: '#FF6B00',
+                            padding: '28px 24px 24px',
+                            position: 'relative',
+                        }}>
+                            <button
+                                onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
+                                style={{
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: 'white',
+                                    opacity: 0.7,
+                                    transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'transparent'; }}
+                            >
+                                <X size={16} strokeWidth={3} />
+                            </button>
+
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    background: 'rgba(255,255,255,0.2)',
+                                    borderRadius: '10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <Sparkles size={18} color="white" />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <h3 style={{
+                                        fontSize: '1.25rem',
+                                        fontWeight: 800,
+                                        color: 'white',
+                                        margin: '0 0 4px 0',
+                                        lineHeight: 1.2
+                                    }}>
+                                        {showRevertModal ? 'Revert Cost Sheet' : 'Reject Cost Sheet'}
+                                    </h3>
+                                    <p style={{
+                                        margin: 0,
+                                        color: 'rgba(255,255,255,0.95)',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 500,
+                                        lineHeight: 1.4
+                                    }}>
+                                        {showRevertModal
+                                            ? 'Provide a reason for reverting this cost sheet back to the creator.'
+                                            : 'Provide a reason for rejecting this cost sheet for the records.'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* White Input Section */}
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    color: '#1e293b',
+                                    marginBottom: '8px'
+                                }}>
+                                    {showRevertModal ? 'Reversion Reason' : 'Rejection Reason'}
+                                </label>
+                                <textarea
+                                    value={showRevertModal ? revertComment : rejectComment}
+                                    onChange={e => showRevertModal ? setRevertComment(e.target.value) : setRejectComment(e.target.value)}
+                                    placeholder={showRevertModal ? "Type your reason here..." : "Type your reason here..."}
+                                    autoFocus
+                                    style={{
+                                        width: '100%',
+                                        height: '90px',
+                                        background: '#f8fafc',
+                                        border: '1.5px solid #e2e8f0',
+                                        borderRadius: '12px',
+                                        padding: '12px 16px',
+                                        fontSize: '0.9rem',
+                                        color: '#1e293b',
+                                        outline: 'none',
+                                        resize: 'none',
+                                        transition: 'all 0.2s',
+                                        fontWeight: 500
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.borderColor = '#FF6B00';
+                                        e.currentTarget.style.background = 'white';
+                                        e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 107, 0, 0.08)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.borderColor = '#e2e8f0';
+                                        e.currentTarget.style.background = '#f8fafc';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: '10px'
+                            }}>
+                                <button
+                                    onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
+                                    style={{
+                                        padding: '10px 20px',
+                                        borderRadius: '12px',
+                                        background: '#f1f5f9',
+                                        color: '#475569',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={showRevertModal ? handleRevert : handleReject}
+                                    style={{
+                                        padding: '10px 24px',
+                                        borderRadius: '12px',
+                                        background: '#FF6B00',
+                                        color: 'white',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 107, 0, 0.3)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
+                                    }}
+                                >
+                                    {showRevertModal ? 'Revert' : 'Reject'}
+                                </button>
                             </div>
                         </div>
                     </div>
-                )
-            }
-            {
-                showRevertModal && (
-                    <div className="fixed inset-0 bg-[#1a1f36]/80 backdrop-blur-md flex items-center justify-center z-[100] p-6">
-                        <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 border border-[#D69E2E]/20">
-                            <h3 className="text-2xl font-bold mb-4 text-[#1a1f36]">Revert Cost Sheet</h3>
-                            <p className="text-[#718096] text-sm mb-6">Explain why this cost sheet is being sent back to the user for modifications.</p>
-                            <textarea
-                                value={revertComment}
-                                onChange={e => setRevertComment(e.target.value)}
-                                placeholder="Type reversion reason here..."
-                                className="w-full h-40 bg-[#FAFBFC] border border-[#E0E6ED] rounded-xl p-4 text-[#2D3748] focus:border-[#D69E2E] focus:ring-4 focus:ring-[#D69E2E]/5 outline-none transition-all"
-                            />
-                            <div className="flex justify-end gap-4 mt-8">
-                                <button onClick={() => setShowRevertModal(false)} className="px-6 py-3 text-[#718096] font-bold hover:text-[#1a1f36]">Cancel</button>
-                                <button onClick={handleRevert} className="bg-[#D69E2E] text-white px-10 py-3 rounded-lg font-bold hover:bg-[#B45309] shadow-lg shadow-[#D69E2E]/20">Confirm Revert</button>
+                </div>,
+                document.body
+            )}
+
+            {/* Overall Remarks Modal */}
+            {showRemarksModal && createPortal(
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 10000,
+                        background: 'rgba(0, 0, 0, 0.45)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        padding: '24px',
+                    }}
+                >
+                    <div
+                        style={{
+                            background: 'white',
+                            width: '100%',
+                            maxWidth: '400px',
+                            borderRadius: '24px',
+                            boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
+                            overflow: 'hidden',
+                            position: 'relative',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Orange Header Section */}
+                        <div style={{
+                            background: '#FF6B00',
+                            padding: '28px 24px 24px',
+                            position: 'relative',
+                        }}>
+                            <button
+                                onClick={() => setShowRemarksModal(false)}
+                                style={{
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: 'white',
+                                    opacity: 0.7,
+                                    transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'transparent'; }}
+                            >
+                                <X size={16} strokeWidth={3} />
+                            </button>
+
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    background: 'rgba(255,255,255,0.2)',
+                                    borderRadius: '10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <Sparkles size={18} color="white" />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <h3 style={{
+                                        fontSize: '1.25rem',
+                                        fontWeight: 800,
+                                        color: 'white',
+                                        margin: '0 0 4px 0',
+                                        lineHeight: 1.2
+                                    }}>
+                                        Cost Sheet Remarks
+                                    </h3>
+                                    <p style={{
+                                        margin: 0,
+                                        color: 'rgba(255,255,255,0.95)',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 500,
+                                        lineHeight: 1.4
+                                    }}>
+                                        Add final context or overall observations for this cost sheet submission.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* White Input Section */}
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    color: '#1e293b',
+                                    marginBottom: '8px'
+                                }}>
+                                    Overall Remarks
+                                </label>
+                                <textarea
+                                    value={overallRemarks}
+                                    onChange={(e) => setOverallRemarks(e.target.value)}
+                                    placeholder="Type your overall remarks here..."
+                                    autoFocus
+                                    style={{
+                                        width: '100%',
+                                        height: '110px',
+                                        background: '#f8fafc',
+                                        border: '1.5px solid #e2e8f0',
+                                        borderRadius: '12px',
+                                        padding: '12px 16px',
+                                        fontSize: '0.9rem',
+                                        color: '#1e293b',
+                                        outline: 'none',
+                                        resize: 'none',
+                                        transition: 'all 0.2s',
+                                        fontWeight: 500
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.borderColor = '#FF6B00';
+                                        e.currentTarget.style.background = 'white';
+                                        e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 107, 0, 0.08)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.borderColor = '#e2e8f0';
+                                        e.currentTarget.style.background = '#f8fafc';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: '10px'
+                            }}>
+                                <button
+                                    onClick={() => setShowRemarksModal(false)}
+                                    style={{
+                                        padding: '10px 20px',
+                                        borderRadius: '12px',
+                                        background: '#f1f5f9',
+                                        color: '#475569',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => setShowRemarksModal(false)}
+                                    style={{
+                                        padding: '10px 24px',
+                                        borderRadius: '12px',
+                                        background: '#FF6B00',
+                                        color: 'white',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#e65a00';
+                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = '#FF6B00';
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                    }}
+                                >
+                                    Save Remarks
+                                </button>
                             </div>
                         </div>
                     </div>
-                )
-            }
+                </div>,
+                document.body
+            )}
+
+            {/* Premium Toast Notification */}
+            {toast && createPortal(
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: '24px',
+                        right: '24px',
+                        zIndex: 10001,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        background: 'white',
+                        padding: '16px 20px',
+                        borderRadius: '16px',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
+                        border: '1px solid #E2E8F0',
+                        borderLeft: `4px solid ${toast.type === 'success' ? '#10B981' : '#EF4444'}`,
+                        animation: 'toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                        minWidth: '300px'
+                    }}
+                >
+                    <div style={{
+                        width: '32px',
+                        height: '32px',
+                        background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                    }}>
+                        {toast.type === 'success' ? (
+                            <CheckCircle size={18} color="#10B981" />
+                        ) : (
+                            <XCircle size={18} color="#EF4444" />
+                        )}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <p style={{
+                            margin: 0,
+                            fontSize: '0.9rem',
+                            fontWeight: 700,
+                            color: '#1e293b'
+                        }}>
+                            {toast.type === 'success' ? 'Success' : 'Error'}
+                        </p>
+                        <p style={{
+                            margin: 0,
+                            fontSize: '0.85rem',
+                            fontWeight: 500,
+                            color: '#64748b'
+                        }}>
+                            {toast.message}
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setToast(null)}
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#94a3b8',
+                            padding: '4px'
+                        }}
+                    >
+                        <X size={16} />
+                    </button>
+
+                    <style>{`
+                        @keyframes toastIn {
+                            from { transform: translateX(100%) opacity: 0; }
+                            to { transform: translateX(0) opacity: 1; }
+                        }
+                    `}</style>
+                </div>,
+                document.body
+            )}
         </div >
     );
 };
