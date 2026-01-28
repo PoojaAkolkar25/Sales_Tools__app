@@ -1,0 +1,116 @@
+from django.db import models
+from django.contrib.auth.models import User
+from cost_sheets.models import CostSheet
+from deals.models import Deal
+
+class EstimateStatus(models.TextChoices):
+    DRAFT = 'DRAFT', 'Draft'
+    SUBMITTED = 'SUBMITTED', 'Submitted to Customer'
+    NEGOTIATION = 'NEGOTIATION', 'Negotiation'
+    APPROVED = 'APPROVED', 'Approved'
+    REJECTED = 'REJECTED', 'Rejected'
+
+class Estimate(models.Model):
+    estimate_id = models.CharField(max_length=50, blank=True)
+    cost_sheet = models.ForeignKey(CostSheet, on_delete=models.CASCADE, related_name='estimates')
+    deal = models.ForeignKey(Deal, on_delete=models.CASCADE, related_name='estimates')
+    version = models.IntegerField(default=1)
+    status = models.CharField(max_length=20, choices=EstimateStatus.choices, default=EstimateStatus.DRAFT)
+    
+    estimate_date = models.DateField(null=True, blank=True)
+    description_memo = models.TextField(blank=True, default='')
+    terms_conditions = models.TextField(blank=True, default='')
+    
+    markup_adjustment = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    commercial_terms = models.TextField(blank=True, default='')
+    
+    # Snapshot of Cost Sheet values at the time of creation/rewind
+    total_cost = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    total_margin = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    total_price = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    
+    # Rewind functionality - links to the previous version
+    parent_estimate = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='negotiated_versions')
+    is_latest = models.BooleanField(default=True)
+    
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.estimate_id:
+            import re
+            all_ids = Estimate.objects.values_list('estimate_id', flat=True)
+            max_num = 0
+            for est_id in all_ids:
+                if est_id:
+                    match = re.search(r'EST-(\d+)', est_id)
+                    if match:
+                        try:
+                            num = int(match.group(1))
+                            if num > max_num:
+                                max_num = num
+                        except ValueError:
+                            continue
+            self.estimate_id = f'EST-{max_num + 1:04d}'
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.estimate_id} v{self.version} ({self.status})"
+
+class Proposal(models.Model):
+    estimate = models.ForeignKey(Estimate, on_delete=models.CASCADE, related_name='proposals')
+    file = models.FileField(upload_to='proposals/')
+    filename = models.CharField(max_length=255)
+    version = models.IntegerField(default=1)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.filename} v{self.version}"
+
+class EstimateItem(models.Model):
+    estimate = models.ForeignKey(Estimate, on_delete=models.CASCADE, related_name='items')
+    sr_no = models.IntegerField()
+    particulars = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    qty = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    rate = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    
+    def save(self, *args, **kwargs):
+        self.amount = self.qty * self.rate
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.estimate.estimate_id} - {self.particulars}"
+
+class RenewalFrequency(models.TextChoices):
+    MONTHLY = 'MONTHLY', 'Monthly'
+    QUARTERLY = 'QUARTERLY', 'Quarterly'
+    YEARLY = 'YEARLY', 'Yearly'
+
+class RenewalStatus(models.TextChoices):
+    UPCOMING = 'UPCOMING', 'Upcoming'
+    RENEWED = 'RENEWED', 'Renewed'
+    CLOSED = 'CLOSED', 'Closed'
+    CANCELLED = 'CANCELLED', 'Cancelled'
+
+class Renewal(models.Model):
+    estimate = models.ForeignKey(Estimate, on_delete=models.CASCADE, related_name='renewals')
+    proposal = models.ForeignKey(Proposal, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reminder_date = models.DateField()
+    
+    frequency = models.CharField(max_length=20, choices=RenewalFrequency.choices)
+    status = models.CharField(max_length=20, choices=RenewalStatus.choices, default=RenewalStatus.UPCOMING)
+    
+    notes = models.TextField(blank=True, default='')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Renewal for {self.estimate.estimate_id} ({self.start_date} to {self.end_date})"

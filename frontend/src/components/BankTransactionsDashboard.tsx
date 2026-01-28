@@ -165,12 +165,8 @@ const BankTransactionsDashboard: React.FC = () => {
     const filteredTransactions = transactions.filter(t => t.status === activeTab);
 
     return (
-<<<<<<< HEAD
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: 'calc(100vh - 85px)', overflow: 'hidden' }}>
             {/* Hidden File Input */}
-=======
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
->>>>>>> c0dd97e4bc003a44d22055df10d72b33e1cae328
             <input
                 type="file"
                 ref={fileInputRef}
@@ -179,12 +175,8 @@ const BankTransactionsDashboard: React.FC = () => {
                 onChange={handleFileChange}
             />
 
-<<<<<<< HEAD
             {/* Header & Actions */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
-=======
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
->>>>>>> c0dd97e4bc003a44d22055df10d72b33e1cae328
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '18px', background: '#FF6B00', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
@@ -233,11 +225,7 @@ const BankTransactionsDashboard: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-<<<<<<< HEAD
                             padding: '6px 14px',
-=======
-                            padding: '10px 16px',
->>>>>>> c0dd97e4bc003a44d22055df10d72b33e1cae328
                             borderRadius: '8px',
                             fontSize: '0.8rem',
                             fontWeight: 700,
@@ -270,11 +258,7 @@ const BankTransactionsDashboard: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-<<<<<<< HEAD
                             padding: '6px 14px',
-=======
-                            padding: '10px 16px',
->>>>>>> c0dd97e4bc003a44d22055df10d72b33e1cae328
                             borderRadius: '8px',
                             fontSize: '0.8rem',
                             fontWeight: 700,
@@ -333,14 +317,9 @@ const BankTransactionsDashboard: React.FC = () => {
                 ))}
             </div>
 
-<<<<<<< HEAD
             <div style={{ display: 'grid', gridTemplateColumns: selectedTransaction ? '1fr 400px' : '1fr', gap: '12px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
                 {/* Main Table */}
                 <div className="ae-table-container" style={{ height: '100%', maxHeight: 'none' }}>
-=======
-            <div style={{ display: 'grid', gridTemplateColumns: selectedTransaction ? '1fr 400px' : '1fr', gap: '20px' }}>
-                <div className="ae-table-container">
->>>>>>> c0dd97e4bc003a44d22055df10d72b33e1cae328
                     <table className="ae-table">
                         <thead>
                             <tr>
@@ -485,12 +464,8 @@ const BankTransactionsDashboard: React.FC = () => {
                             </div>
                         </div>
 
-<<<<<<< HEAD
                         <div style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
 
-=======
-                        <div style={{ padding: '20px', flex: 1, maxHeight: '400px', overflowY: 'auto' }}>
->>>>>>> c0dd97e4bc003a44d22055df10d72b33e1cae328
                             <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '12px', color: '#4A5568' }}>
                                 Select Unreconciled Receipt Voucher:
                             </div>

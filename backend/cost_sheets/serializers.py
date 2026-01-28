@@ -129,27 +129,36 @@ class CostSheetSerializer(serializers.ModelSerializer):
     infra_items = InfrastructureItemSerializer(many=True, required=False)
     other_items = OtherItemSerializer(many=True, required=False)
     attachments = CostSheetAttachmentSerializer(many=True, read_only=True)
-    lead_no = serializers.CharField(source='lead.lead_no', read_only=True)
-    customer_name = serializers.CharField(source='lead.customer_name', read_only=True)
-    project_name = serializers.CharField(source='lead.project_name', read_only=True)
-    project_manager = serializers.CharField(required=False, allow_blank=True)
-    sales_person = serializers.CharField(required=False, allow_blank=True)
+    deal_no = serializers.CharField(source='deal.deal_id', read_only=True, allow_null=True)
+    deal_name = serializers.CharField(source='deal.deal_name', read_only=True, allow_null=True)
+    lead_no = serializers.SerializerMethodField()
     lead_details = serializers.SerializerMethodField()
 
     class Meta:
         model = CostSheet
         fields = '__all__'
-        read_only_fields = ('cost_sheet_no', 'total_estimated_cost', 'total_estimated_margin', 'total_estimated_price', 'lead_details')
+        read_only_fields = ('cost_sheet_no', 'total_estimated_cost', 'total_estimated_margin', 'total_estimated_price')
+
+    def get_lead_no(self, obj):
+        try:
+            return obj.lead.lead_no if obj.lead else None
+        except Lead.DoesNotExist:
+            return None
 
     def get_lead_details(self, obj):
-        return {
-            'id': obj.lead.id,
-            'lead_no': obj.lead.lead_no,
-            'customer_name': obj.lead.customer_name,
-            'project_name': obj.lead.project_name,
-            'project_manager': obj.lead.project_manager,
-            'sales_person': obj.lead.sales_person
-        }
+        try:
+            if not obj.lead:
+                return None
+            return {
+                'id': obj.lead.id,
+                'lead_no': obj.lead.lead_no,
+                'customer_name': obj.lead.customer_name,
+                'project_name': obj.lead.project_name,
+                'project_manager': obj.lead.project_manager,
+                'sales_person': obj.lead.sales_person
+            }
+        except Lead.DoesNotExist:
+            return None
 
     def create(self, validated_data):
         license_data = validated_data.pop('license_items', [])
@@ -158,19 +167,35 @@ class CostSheetSerializer(serializers.ModelSerializer):
         infra_data = validated_data.pop('infra_items', [])
         other_data = validated_data.pop('other_items', [])
 
-        pm = validated_data.pop('project_manager', None)
-        sp = validated_data.pop('sales_person', None)
-        pn = validated_data.pop('project_name', None)
+        pm = validated_data.get('project_manager')
+        sp = validated_data.get('sales_person')
+        pn = validated_data.get('project_name')
 
         cost_sheet = CostSheet.objects.create(**validated_data)
         
-        # Update associated lead
-        if pm is not None or sp is not None or pn is not None:
-            lead = cost_sheet.lead
-            if pm is not None: lead.project_manager = pm
-            if sp is not None: lead.sales_person = sp
-            if pn is not None: lead.project_name = pn
-            lead.save()
+        # Sync back to associated lead and deal if they exist
+        if pm or sp or pn:
+            # Sync to Lead
+            try:
+                lead = cost_sheet.lead
+                if lead:
+                    if pm: lead.project_manager = pm
+                    if sp: lead.sales_person = sp
+                    if pn: lead.project_name = pn
+                    lead.save()
+            except Lead.DoesNotExist:
+                pass
+            
+            # Sync to Deal
+            try:
+                deal = cost_sheet.deal
+                if deal:
+                    if pm: deal.project_manager = pm
+                    if sp: deal.salesperson_name = sp
+                    if pn: deal.project_name = pn
+                    deal.save()
+            except Exception:
+                pass
 
         for item in license_data:
             LicenseItem.objects.create(cost_sheet=cost_sheet, **item)
@@ -193,22 +218,38 @@ class CostSheetSerializer(serializers.ModelSerializer):
         infra_data = validated_data.pop('infra_items', None)
         other_data = validated_data.pop('other_items', None)
 
-        pm = validated_data.pop('project_manager', None)
-        sp = validated_data.pop('sales_person', None)
-        pn = validated_data.pop('project_name', None)
+        pm = validated_data.get('project_manager')
+        sp = validated_data.get('sales_person')
+        pn = validated_data.get('project_name')
 
         # Update core fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # Update associated lead
-        if pm is not None or sp is not None or pn is not None:
-            lead = instance.lead
-            if pm is not None: lead.project_manager = pm
-            if sp is not None: lead.sales_person = sp
-            if pn is not None: lead.project_name = pn
-            lead.save()
+        # Sync back to associated lead and deal if they exist
+        if pm or sp or pn:
+            # Sync to Lead
+            try:
+                lead = instance.lead
+                if lead:
+                    if pm: lead.project_manager = pm
+                    if sp: lead.sales_person = sp
+                    if pn: lead.project_name = pn
+                    lead.save()
+            except (Lead.DoesNotExist, AttributeError):
+                pass
+            
+            # Sync to Deal
+            try:
+                deal = instance.deal
+                if deal:
+                    if pm: deal.project_manager = pm
+                    if sp: deal.salesperson_name = sp
+                    if pn: deal.project_name = pn
+                    deal.save()
+            except Exception:
+                pass
 
         # Update nested items
         if license_data is not None:

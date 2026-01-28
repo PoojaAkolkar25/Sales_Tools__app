@@ -26,17 +26,29 @@ import InvoiceDashboard from './components/InvoiceDashboard';
 import api from './api';
 import './index.css';
 import { NotificationProvider } from './context/NotificationContext';
+import DealDashboard from './components/DealDashboard';
+import DealForm from './components/DealForm';
+import EstimateDashboard from './components/EstimateDashboard';
+import EstimateForm from './components/EstimateForm';
+import SalesOrderDashboard from './components/SalesOrderDashboard';
+import SalesOrderForm from './components/SalesOrderForm';
+
 
 
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 
 const AppContent: React.FC = () => {
   const [costSheetView, setCostSheetView] = useState<'form' | 'dashboard'>('dashboard');
+  const [dealView, setDealView] = useState<'form' | 'dashboard'>('dashboard');
+  const [estimateView, setEstimateView] = useState<'form' | 'dashboard'>('dashboard');
+  const [salesOrderView, setSalesOrderView] = useState<'form' | 'dashboard'>('dashboard');
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingDealId, setEditingDealId] = useState<number | null>(null);
+  const [editingEstimateId, setEditingEstimateId] = useState<number | null>(null);
+  const [editingSalesOrderId, setEditingSalesOrderId] = useState<number | null>(null);
+
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [costSheets, setCostSheets] = useState<any[]>([]);
-  const [dashboardLoading, setDashboardLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,22 +56,11 @@ const AppContent: React.FC = () => {
     const token = localStorage.getItem('token');
     if (token) {
       checkAuth();
-      fetchCostSheets();
     } else {
       setAuthLoading(false);
     }
   }, []);
 
-  const fetchCostSheets = async () => {
-    try {
-      const response = await api.get('/cost-sheets/');
-      setCostSheets(response.data);
-    } catch (error) {
-      console.error('Error fetching cost sheets', error);
-    } finally {
-      setDashboardLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (!authLoading) {
@@ -75,7 +76,6 @@ const AppContent: React.FC = () => {
     try {
       const response = await api.get('auth/me/');
       setUser(response.data);
-      fetchCostSheets();
     } catch (err) {
       localStorage.removeItem('token');
       setUser(null);
@@ -121,6 +121,27 @@ const AppContent: React.FC = () => {
     setEditingId(id);
     setCostSheetView('form');
   };
+
+  const handleViewDealDetails = (id: number) => {
+    setEditingDealId(id);
+    setDealView('form');
+  };
+
+  const handleCreateNewDeal = () => {
+    setEditingDealId(null);
+    setDealView('form');
+  };
+
+  const handleViewEstimateDetails = (id: number) => {
+    setEditingEstimateId(id);
+    setEstimateView('form');
+  };
+
+  const handleViewSalesOrderDetails = (id: number) => {
+    setEditingSalesOrderId(id);
+    setSalesOrderView('form');
+  };
+
 
   if (authLoading) {
     return (
@@ -260,14 +281,11 @@ const AppContent: React.FC = () => {
                   id={editingId}
                   onBack={() => {
                     setCostSheetView('dashboard');
-                    fetchCostSheets();
                   }}
-                  onSave={() => fetchCostSheets()}
+                  onSave={() => setCostSheetView('dashboard')}
                 />
               ) : (
                 <CostSheetDashboard
-                  costSheets={costSheets}
-                  loading={dashboardLoading}
                   onView={handleViewDetails}
                 />
               )}
@@ -279,6 +297,57 @@ const AppContent: React.FC = () => {
         user && user.role === 'app_admin' ? (
           <ModuleWrapper>
             <UserManagement />
+          </ModuleWrapper>
+        ) : <Navigate to="/login" />
+      } />
+      <Route path="/deal" element={
+        user ? (
+          <ModuleWrapper>
+            {dealView === 'form' ? (
+              <DealForm
+                id={editingDealId}
+                onBack={() => setDealView('dashboard')}
+                onSave={() => setDealView('dashboard')}
+              />
+            ) : (
+              <DealDashboard
+                onView={handleViewDealDetails}
+                onCreate={handleCreateNewDeal}
+              />
+            )}
+          </ModuleWrapper>
+        ) : <Navigate to="/login" />
+      } />
+      <Route path="/estimates" element={
+        user ? (
+          <ModuleWrapper>
+            {estimateView === 'form' ? (
+              <EstimateForm
+                id={editingEstimateId!}
+                onBack={() => setEstimateView('dashboard')}
+              />
+            ) : (
+              <EstimateDashboard
+                onView={handleViewEstimateDetails}
+              />
+            )}
+          </ModuleWrapper>
+        ) : <Navigate to="/login" />
+      } />
+      <Route path="/sales-order" element={
+        user ? (
+          <ModuleWrapper>
+            {salesOrderView === 'form' ? (
+              <SalesOrderForm
+                id={editingSalesOrderId}
+                onBack={() => setSalesOrderView('dashboard')}
+                onSave={() => setSalesOrderView('dashboard')}
+              />
+            ) : (
+              <SalesOrderDashboard
+                onView={handleViewSalesOrderDetails}
+              />
+            )}
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
@@ -296,7 +365,7 @@ const AppContent: React.FC = () => {
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
-      {baseNavItems.filter(item => !['cost-sheet', 'invoice', 'payment'].includes(item.id)).map(item => (
+      {baseNavItems.filter(item => !['cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order'].includes(item.id)).map(item => (
         <Route key={item.id} path={item.path} element={
           user ? (
             <ModuleWrapper>

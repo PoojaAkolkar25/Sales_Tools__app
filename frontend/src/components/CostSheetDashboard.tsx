@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
-import { Eye, Search, FileSpreadsheet, RefreshCw } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Eye, Search, FileSpreadsheet, RefreshCw, RefreshCcw } from 'lucide-react';
+import api from '../api';
 
 interface CostSheet {
     id: number;
     cost_sheet_no: string;
     lead_no: string;
+    deal_no: string;
     customer_name: string;
     project_name: string;
     status: string;
@@ -14,16 +16,17 @@ interface CostSheet {
 }
 
 interface CostSheetDashboardProps {
-    costSheets: CostSheet[];
-    loading: boolean;
     onView: (id: number) => void;
 }
 
-const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loading, onView }) => {
+const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
+    const [costSheets, setCostSheets] = useState<CostSheet[]>([]);
+    const [loading, setLoading] = useState(true);
     // Filter States
     const [filters, setFilters] = useState({
         csNumber: '',
         leadNo: '',
+        dealNo: '',
         customerName: '',
         projectName: '',
         status: '',
@@ -33,6 +36,22 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
     });
 
     const [isDownloading, setIsDownloading] = useState(false);
+
+    useEffect(() => {
+        fetchCostSheets();
+    }, []);
+
+    const fetchCostSheets = async () => {
+        setLoading(true);
+        try {
+            const response = await api.get('/cost-sheets/');
+            setCostSheets(response.data);
+        } catch (error) {
+            console.error('Error fetching cost sheets', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleDownloadReport = async () => {
         setIsDownloading(true);
@@ -79,6 +98,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
         return costSheets.filter(cs => {
             const matchesCs = (cs.cost_sheet_no || '').toLowerCase().includes(filters.csNumber.toLowerCase());
             const matchesLead = (cs.lead_no || '').toLowerCase().includes(filters.leadNo.toLowerCase());
+            const matchesDeal = (cs.deal_no || '').toLowerCase().includes(filters.dealNo.toLowerCase());
             const matchesCustomer = (cs.customer_name || '').toLowerCase().includes(filters.customerName.toLowerCase());
             const matchesProject = (cs.project_name || '').toLowerCase().includes(filters.projectName.toLowerCase());
             const matchesStatus = filters.status === '' || cs.status === filters.status;
@@ -124,7 +144,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                 }
             }
 
-            return matchesCs && matchesLead && matchesCustomer && matchesProject && matchesStatus && matchesDate;
+            return matchesCs && matchesLead && matchesDeal && matchesCustomer && matchesProject && matchesStatus && matchesDate;
         });
     }, [costSheets, filters]);
 
@@ -212,6 +232,42 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                         {isDownloading ? <RefreshCw size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
                         {isDownloading ? 'Downloading...' : 'Download Report'}
                     </button>
+
+                    <button
+                        onClick={fetchCostSheets}
+                        disabled={loading}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 14px',
+                            borderRadius: '8px',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s',
+                            background: '#F7FAFC',
+                            color: '#4A5568'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!loading) {
+                                e.currentTarget.style.background = '#0066CC';
+                                e.currentTarget.style.color = 'white';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 102, 204, 0.2)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!loading) {
+                                e.currentTarget.style.background = '#F7FAFC';
+                                e.currentTarget.style.color = '#4A5568';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }
+                        }}
+                    >
+                        <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} />
+                        Refresh
+                    </button>
                 </div>
             </div>
 
@@ -252,6 +308,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                     <thead>
                         <tr>
                             <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Lead Number</th>
+                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Deal No.</th>
                             <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Customer Name</th>
                             <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Project Name</th>
                             <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Cost Sheet No.</th>
@@ -270,6 +327,18 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                         placeholder="Filter..."
                                         value={filters.leadNo}
                                         onChange={e => setFilters({ ...filters, leadNo: e.target.value })}
+                                        style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
+                                    />
+                                </div>
+                            </th>
+                            <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                <div className="ae-input-group">
+                                    <Search className="ae-search-icon" size={12} />
+                                    <input
+                                        className="ae-input"
+                                        placeholder="Filter..."
+                                        value={filters.dealNo}
+                                        onChange={e => setFilters({ ...filters, dealNo: e.target.value })}
                                         style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
                                     />
                                 </div>
@@ -363,7 +432,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                             <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>
                             <th style={{ textAlign: 'center', top: '40px', position: 'sticky', right: 0, backgroundColor: '#F7FAFC', zIndex: 12 }}>
                                 <button
-                                    onClick={() => setFilters({ csNumber: '', leadNo: '', customerName: '', projectName: '', status: '', period: '', startDate: '', endDate: '' })}
+                                    onClick={() => setFilters({ csNumber: '', leadNo: '', dealNo: '', customerName: '', projectName: '', status: '', period: '', startDate: '', endDate: '' })}
                                     style={{
                                         height: '24px',
                                         width: '100%',
@@ -397,10 +466,10 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '100px' }}><RefreshCw className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
+                            <tr><td colSpan={9} style={{ textAlign: 'center', padding: '100px' }}><RefreshCw className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
                         ) : filteredCostSheets.length === 0 ? (
                             <tr>
-                                <td colSpan={8} style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>
+                                <td colSpan={9} style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>
                                     <FileSpreadsheet size={40} style={{ marginBottom: '12px', opacity: 0.3 }} />
                                     <div style={{ fontWeight: 600 }}>
                                         {costSheets.length === 0 ? 'No cost sheets found.' : 'No results matching your filters.'}
@@ -413,7 +482,10 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ costSheets, loa
                                 return (
                                     <tr key={cs.id}>
                                         <td style={{ fontWeight: 600, color: '#718096', fontSize: '0.8rem' }}>
-                                            {cs.lead_no}
+                                            {cs.lead_no || '—'}
+                                        </td>
+                                        <td style={{ fontWeight: 600, color: '#0066CC', fontSize: '0.8rem' }}>
+                                            {cs.deal_no || '—'}
                                         </td>
                                         <td style={{ color: '#4A5568', fontWeight: 500 }}>
                                             {cs.customer_name || '—'}

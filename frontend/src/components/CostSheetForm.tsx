@@ -12,6 +12,16 @@ interface Lead {
     sales_person?: string;
 }
 
+interface Deal {
+    id: number;
+    deal_id: string;
+    deal_name: string;
+    customer_name: string;
+    lead?: number;
+    project_manager?: string;
+    salesperson_name?: string;
+}
+
 interface Attachment {
     id: number;
     file: string;
@@ -118,6 +128,8 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const [projectManager, setProjectManager] = useState('');
     const [salesPerson, setSalesPerson] = useState('');
     const [costSheetNo, setCostSheetNo] = useState('');
+    const [dealId, setDealId] = useState<number | null>(null);
+    const [deals, setDeals] = useState<Deal[]>([]);
     const [projectName, setProjectName] = useState('');
     const [costSheetDate, setCostSheetDate] = useState(new Date().toISOString().split('T')[0]);
     const [status, setStatus] = useState('PENDING');
@@ -164,6 +176,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     const response = await api.get(`/cost-sheets/${id}/`);
                     const data = response.data;
                     setCostSheetNo(data.cost_sheet_no);
+                    setDealId(data.deal || null);
                     setCostSheetDate(data.cost_sheet_date);
                     setStatus(data.status);
                     setProjectManager(data.project_manager || '');
@@ -183,9 +196,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     if (data.lead_details) {
                         setLead(data.lead_details);
                         setLeadNo(data.lead_details.lead_no);
-                        setSelectedCustomerName(data.lead_details.customer_name);
-                        setProjectName(data.lead_details.project_name || '');
                     }
+                    setSelectedCustomerName(data.customer_name || '');
+                    setProjectName(data.project_name || '');
                 } catch (error) {
                     console.error('Error fetching cost sheet details', error);
                 }
@@ -194,6 +207,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         } else {
             // Reset form for fresh creation
             setCostSheetNo('');
+            setDealId(null);
             setStatus('PENDING');
             setProjectManager('');
             setSalesPerson('');
@@ -207,10 +221,14 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     useEffect(() => {
         const fetchAllLeads = async () => {
             try {
-                const response = await api.get('/leads/');
-                setLeads(response.data);
+                const [leadsRes, dealsRes] = await Promise.all([
+                    api.get('/leads/'),
+                    api.get('/deals/')
+                ]);
+                setLeads(leadsRes.data);
+                setDeals(dealsRes.data);
             } catch (error) {
-                console.error('Error fetching leads', error);
+                console.error('Error fetching data', error);
             }
         };
         fetchAllLeads();
@@ -221,6 +239,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         if (!customerName) {
             setLead(null);
             setLeadNo('');
+            setDealId(null);
             setProjectManager('');
             setSalesPerson('');
             return;
@@ -238,6 +257,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             // Multiple leads, let user pick Lead No.
             setLead(null);
             setLeadNo('');
+            setDealId(null);
             setProjectName('');
         }
     };
@@ -254,14 +274,36 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         } else {
             setLead(null);
             setLeadNo('');
-            setProjectManager('');
-            setSalesPerson('');
-            setProjectName('');
+            // Do NOT reset PM/SP here if they were manually entered or set by customer
         }
     };
 
-    // Get unique customer names
-    const uniqueCustomers = Array.from(new Set(leads.map(l => l.customer_name))).sort();
+    const handleDealChange = (idStr: string) => {
+        const id = idStr ? parseInt(idStr) : null;
+        setDealId(id);
+
+        // Optional: Auto-select lead if deal has one and it matches
+        if (id) {
+            const selectedDeal = deals.find(d => d.id === id);
+            if (selectedDeal && selectedDeal.lead && !lead) {
+                // Try to find the lead
+                const leadFromDeal = leads.find(l => l.id === selectedDeal.lead);
+                if (leadFromDeal && leadFromDeal.customer_name === selectedCustomerName) {
+                    setLead(leadFromDeal);
+                    setLeadNo(leadFromDeal.lead_no);
+                }
+            }
+
+            // Auto-fill Project Manager and Sales Person from Deal if available
+            if (selectedDeal) {
+                if (selectedDeal.project_manager) setProjectManager(selectedDeal.project_manager);
+                if (selectedDeal.salesperson_name) setSalesPerson(selectedDeal.salesperson_name);
+            }
+        }
+    };
+
+    // Get unique customer names from Deals
+    const uniqueCustomers = Array.from(new Set(deals.map(d => d.customer_name).filter(Boolean))).sort();
 
     // Fixed fetching specific lead by number (if manual search still needed)
 
@@ -366,9 +408,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         setUploadFeedback({ type: '', message: '' });
         let activeId = localId;
 
-        // Validation: If no ID yet, we must have a lead to auto-generate one
-        if (!activeId && !lead) {
-            setUploadFeedback({ type: 'error', message: 'Please select a lead first.' });
+        // Validation: If no ID yet, we must have a lead or a deal to auto-generate one
+        if (!activeId && !lead && !dealId) {
+            setUploadFeedback({ type: 'error', message: 'Please select a Lead or Deal first.' });
             resetInput();
             return;
         }
@@ -445,7 +487,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     };
 
     const handleSave = async (newStatus: string = 'PENDING', isAutoDraft: boolean = false) => {
-        if (!lead) return setCustomAlert({ message: 'Please select a lead first by searching for a Lead No.', type: 'error' });
+        // lead is no longer mandatory for save
         // costSheetNo is now auto-generated, so no check here
 
         const cleanItems = (items: any[], type: 'license' | 'implementation' | 'support' | 'infra' | 'other') =>
@@ -472,11 +514,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
         const payload: any = {
             cost_sheet_date: costSheetDate,
-            lead: lead.id,
+            lead: lead?.id || null,
+            deal: dealId,
             status: newStatus,
             project_manager: projectManager,
             sales_person: salesPerson,
             project_name: projectName,
+            customer_name: selectedCustomerName,
             license_items: cleanItems(licenseItems, 'license'),
             implementation_items: cleanItems(implementationItems, 'implementation'),
             support_items: cleanItems(supportItems, 'support'),
@@ -774,7 +818,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             ))}
                                         </select>
                                     ) : (
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{lead?.customer_name || '—'}</div>
+                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{selectedCustomerName || '—'}</div>
                                     )}
                                 </div>
 
@@ -794,6 +838,41 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         </select>
                                     ) : (
                                         <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{leadNo || '—'}</div>
+                                    )}
+                                </div>
+
+                                {/* Deal No */}
+                                <div style={{ padding: '4px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal No.</label>
+                                    {!isReadOnly ? (
+                                        <select
+                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', cursor: 'pointer', outline: 'none' }}
+                                            value={dealId || ''}
+                                            onChange={e => handleDealChange(e.target.value)}
+                                            disabled={!selectedCustomerName}
+                                        >
+                                            <option value="">Select Deal No.</option>
+                                            {(selectedCustomerName ? deals.filter(d => d.customer_name === selectedCustomerName) : deals).map(d => (
+                                                <option key={d.id} value={d.id}>{d.deal_id} ({d.deal_name})</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <div style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            background: '#F7FAFC',
+                                            border: '1px solid #E0E6ED',
+                                            borderRadius: '8px',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 500,
+                                            color: dealId ? '#1a1f36' : '#718096',
+                                            minHeight: '42px'
+                                        }}>
+                                            {dealId ? (() => {
+                                                const d = deals.find(x => x.id === dealId);
+                                                return d ? `${d.deal_id} (${d.deal_name})` : '—';
+                                            })() : '—'}
+                                        </div>
                                     )}
                                 </div>
 

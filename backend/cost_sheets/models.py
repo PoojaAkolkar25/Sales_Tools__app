@@ -12,12 +12,18 @@ class CostSheetStatus(models.TextChoices):
 class CostSheet(models.Model):
     cost_sheet_no = models.CharField(max_length=100, unique=True, blank=True)
     cost_sheet_date = models.DateField(null=True, blank=True)
-    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='cost_sheets')
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='cost_sheets', null=True, blank=True)
+    deal = models.ForeignKey('deals.Deal', on_delete=models.SET_NULL, null=True, blank=True, related_name='cost_sheets')
     status = models.CharField(
         max_length=20, 
         choices=CostSheetStatus.choices, 
         default=CostSheetStatus.PENDING
     )
+    customer_name = models.CharField(max_length=255, blank=True, default='')
+    project_name = models.CharField(max_length=255, blank=True, default='')
+    project_manager = models.CharField(max_length=255, blank=True, default='')
+    sales_person = models.CharField(max_length=255, blank=True, default='')
+    
     approval_comments = models.TextField(null=True, blank=True)
     revert_comments = models.TextField(null=True, blank=True)
     

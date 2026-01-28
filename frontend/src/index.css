@@ -96,6 +96,20 @@ body {
   animation: modalScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(229, 62, 62, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(229, 62, 62, 0);
+  }
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(113, 128, 150, 0.4) transparent;

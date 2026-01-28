@@ -9,4 +9,7 @@ urlpatterns = [
     path('api/', include('cost_sheets.urls')),
     path('api/finance/', include('finance.urls')),
     path('api/auth/', include('accounts.urls')),
+    path('api/', include('deals.urls')),
+    path('api/', include('estimates.urls')),
+    path('api/', include('sales_orders.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
