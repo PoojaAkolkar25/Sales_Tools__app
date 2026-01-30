@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from .models import SalesOrder, SalesOrderItem, IncomingEmail, PurchaseOrderFile
 from .serializers import SalesOrderSerializer, SalesOrderItemSerializer, IncomingEmailSerializer, PurchaseOrderFileSerializer
 from django.shortcuts import get_object_or_404
+from django.db import models
 
 class SalesOrderViewSet(viewsets.ModelViewSet):
     queryset = SalesOrder.objects.all().order_by('-created_at')
@@ -13,7 +14,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         sales_order = self.get_object()
         
         # Validation Rules from BRD
-        if not sales_order.customer:
+        if not sales_order.customer and not sales_order.customer_name:
             return Response({"error": "Customer is mandatory before submission."}, status=status.HTTP_400_BAD_REQUEST)
         if not sales_order.po_number:
             return Response({"error": "PO Number is mandatory before submission."}, status=status.HTTP_400_BAD_REQUEST)
@@ -22,12 +23,14 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         if not sales_order.items.exists():
             return Response({"error": "At least one line item is required."}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Check for duplicate PO numbers for same customer
-        duplicates = SalesOrder.objects.filter(
-            customer=sales_order.customer, 
-            po_number=sales_order.po_number,
-            status='SUBMITTED'
-        ).exclude(pk=sales_order.pk)
+        # Check for duplicate PO numbers
+        duplicate_query = models.Q(po_number=sales_order.po_number, status='SUBMITTED')
+        if sales_order.customer:
+            duplicate_query &= models.Q(customer=sales_order.customer)
+        else:
+            duplicate_query &= models.Q(customer_name=sales_order.customer_name)
+            
+        duplicates = SalesOrder.objects.filter(duplicate_query).exclude(pk=sales_order.pk)
         
         if duplicates.exists():
             return Response({"error": f"A Sales Order with PO Number {sales_order.po_number} already exists for this customer."}, status=status.HTTP_400_BAD_REQUEST)

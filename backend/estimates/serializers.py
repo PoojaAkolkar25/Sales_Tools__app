@@ -26,6 +26,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     renewals = RenewalSerializer(many=True, read_only=True)
     items = EstimateItemSerializer(many=True)
     created_by_name = serializers.ReadOnlyField(source='created_by.username')
+    approved_by_name = serializers.ReadOnlyField(source='approved_by.username')
     
     # Nested details from related models
     customer_name = serializers.ReadOnlyField(source='deal.customer.name')
@@ -36,9 +37,13 @@ class EstimateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Estimate
         fields = '__all__'
-        read_only_fields = ('estimate_id', 'version', 'is_latest', 'total_cost', 'total_margin', 'total_price')
+        read_only_fields = ('estimate_id', 'version', 'is_latest', 'total_cost', 'total_margin', 'total_price', 'approval_status', 'approved_by', 'approved_at')
 
     def validate(self, data):
+        # Prevent editing if Approved
+        if self.instance and self.instance.approval_status == ApprovalStatus.APPROVED:
+            raise serializers.ValidationError("Approved estimates cannot be edited. Please create a rewind/new version.")
+
         items_data = data.get('items')
         cost_sheet = data.get('cost_sheet') or (self.instance.cost_sheet if self.instance else None)
         
@@ -70,14 +75,23 @@ class EstimateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         items_data = validated_data.pop('items', [])
         cost_sheet = validated_data.get('cost_sheet')
-        # Take snapshot of cost sheet values
+        # Take snapshot of cost sheet values (Initial defaults)
         validated_data['total_cost'] = cost_sheet.total_estimated_cost
         validated_data['total_margin'] = cost_sheet.total_estimated_margin
         validated_data['total_price'] = cost_sheet.total_estimated_price
         
         estimate = Estimate.objects.create(**validated_data)
+        
+        total_items_amount = 0
         for item_data in items_data:
-            EstimateItem.objects.create(estimate=estimate, **item_data)
+            item = EstimateItem.objects.create(estimate=estimate, **item_data)
+            total_items_amount += float(item.amount or 0)
+            
+        # Update total_price to reflect actual items sum if items exist
+        if items_data:
+            estimate.total_price = total_items_amount
+            estimate.save()
+            
         return estimate
 
     def update(self, instance, validated_data):
@@ -87,7 +101,13 @@ class EstimateSerializer(serializers.ModelSerializer):
         if items_data is not None:
             # Simple replacement logic for demo/poc
             instance.items.all().delete()
+            total_items_amount = 0
             for item_data in items_data:
-                EstimateItem.objects.create(estimate=instance, **item_data)
+                item = EstimateItem.objects.create(estimate=instance, **item_data)
+                total_items_amount += float(item.amount or 0)
+            
+            # Recalculate total_price
+            instance.total_price = total_items_amount
+            instance.save()
         
         return instance

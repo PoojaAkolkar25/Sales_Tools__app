@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "deals",
     "estimates",
     "sales_orders",
+    "milestones",
 ]
 
 MIDDLEWARE = [
@@ -100,7 +101,7 @@ WSGI_APPLICATION = "core.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "sales_tools"),
+        "NAME": os.getenv("DB_NAME", "sales_tools_app"),
         "USER": os.getenv("DB_USER", "postgres"),
         "PASSWORD": os.getenv("DB_PASSWORD", "root"),
         "HOST": os.getenv("DB_HOST", "localhost"),

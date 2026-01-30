@@ -8,7 +8,11 @@ import {
     CheckCircle2,
     X,
     History,
-    Upload
+    Upload,
+    Clock,
+    XCircle,
+    ThumbsUp,
+    ThumbsDown
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -31,6 +35,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
             { id: Date.now(), sr_no: 1, particulars: '', description: '', qty: 0, rate: 0, amount: 0 }
         ]
     });
+
+    const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.status === 'SUBMITTED';
 
     useEffect(() => {
         fetchEstimateDetails();
@@ -101,11 +107,15 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
         formDataFile.append('filename', file.name);
 
         try {
-            await api.post('/proposals/', formDataFile, {
+            const response = await api.post('/proposals/', formDataFile, {
                 headers: { 'Content-Type': 'multipart/form-data ' }
             });
             showNotification('Proposal attached successfully', 'success');
-            fetchEstimateDetails();
+            // Update estimate state directly instead of refetching
+            setEstimate((prev: any) => ({
+                ...prev,
+                proposals: [...(prev.proposals || []), response.data]
+            }));
         } catch (error) {
             console.error('Error uploading proposal', error);
             showNotification('Failed to upload proposal', 'error');
@@ -179,11 +189,84 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
         if (!window.confirm('Rewinding will create a new version for negotiation. The current version will be archived. Continue?')) return;
         try {
             await api.post(`/estimates/${id}/rewind/`);
-            showNotification('Estimate rewound. New version created.', 'success');
+            showNotification('Estimate rewound. New version created requiring approval.', 'success');
             onBack(); // Go back to dashboard to see new version
         } catch (error: any) {
             showNotification(error.response?.data?.error || 'Failed to rewind estimate', 'error');
         }
+    };
+
+    const handleRequestApproval = async () => {
+        try {
+            await api.post(`/estimates/${id}/request_approval/`);
+            showNotification('Approval requested successfully', 'success');
+            fetchEstimateDetails();
+        } catch (error: any) {
+            showNotification(error.response?.data?.error || 'Failed to request approval', 'error');
+        }
+    };
+
+    const handleApprove = async () => {
+        const notes = prompt('Approval notes (optional):');
+        try {
+            await api.post(`/estimates/${id}/approve/`, { notes });
+            showNotification('Estimate approved successfully', 'success');
+            fetchEstimateDetails();
+        } catch (error: any) {
+            showNotification(error.response?.data?.error || 'Failed to approve estimate', 'error');
+        }
+    };
+
+    const handleReject = async () => {
+        const notes = prompt('Rejection notes (required):');
+        if (!notes) {
+            showNotification('Rejection notes are required', 'error');
+            return;
+        }
+        try {
+            await api.post(`/estimates/${id}/reject/`, { notes });
+            showNotification('Estimate rejected', 'success');
+            fetchEstimateDetails();
+        } catch (error: any) {
+            showNotification(error.response?.data?.error || 'Failed to reject estimate', 'error');
+        }
+    };
+
+    const getApprovalStatusBadge = () => {
+        if (!estimate) return null;
+
+        const statusConfig: any = {
+            'PENDING': { color: '#FFA500', bg: '#FFF4E5', icon: Clock, label: 'Pending Approval' },
+            'APPROVED': { color: '#38A169', bg: '#E6F7ED', icon: CheckCircle2, label: 'Approved' },
+            'REJECTED': { color: '#E53E3E', bg: '#FFF5F5', icon: XCircle, label: 'Rejected' }
+        };
+
+        const config = statusConfig[estimate.approval_status];
+        if (!config) return null;
+
+        const Icon = config.icon;
+
+        return (
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 12px',
+                background: config.bg,
+                borderRadius: '6px',
+                border: `1px solid ${config.color}`
+            }}>
+                <Icon size={16} color={config.color} />
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: config.color }}>
+                    {config.label}
+                </span>
+                {estimate.approved_by_name && (
+                    <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '4px' }}>
+                        by {estimate.approved_by_name}
+                    </span>
+                )}
+            </div>
+        );
     };
 
     if (loading) {
@@ -196,21 +279,71 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
 
     return (
         <div className="space-y-6" style={{ background: '#fff', color: '#333' }}>
+            {/* Read Only Banner */}
+            {isReadOnly && (
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r shadow-sm flex items-center gap-3">
+                    <div className="bg-blue-100 p-2 rounded-full">
+                        <CheckCircle2 size={20} className="text-blue-600" />
+                    </div>
+                    <div>
+                        <p className="font-bold text-blue-900 text-sm">Read Only Mode</p>
+                        <p className="text-blue-700 text-xs mt-0.5">
+                            This estimate is <strong>{estimate.approval_status === 'APPROVED' ? 'Approved' : 'Submitted'}</strong> and cannot be edited.
+                            {estimate.approval_status === 'APPROVED' && " Use Rewind to create a new version for negotiation."}
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Header Controls */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button onClick={onBack} className="ae-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ChevronLeft size={18} /> Back
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <button onClick={onBack} className="ae-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <ChevronLeft size={18} /> Back
+                    </button>
+                    {getApprovalStatusBadge()}
+                </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
+                    {/* Approval Actions for Sales Head/Finance Manager */}
+                    {estimate.approval_status === 'PENDING' && (
+                        <>
+                            <button onClick={handleApprove} className="ae-btn-secondary" style={{ color: '#38A169', borderColor: '#38A169' }}>
+                                <ThumbsUp size={18} /> Approve
+                            </button>
+                            <button onClick={handleReject} className="ae-btn-secondary" style={{ color: '#E53E3E', borderColor: '#E53E3E' }}>
+                                <ThumbsDown size={18} /> Reject
+                            </button>
+                        </>
+                    )}
+
+                    {/* Request Approval Button */}
+                    {(estimate.status === 'DRAFT' || estimate.status === 'NEGOTIATION') && estimate.approval_status !== 'PENDING' && estimate.approval_status !== 'APPROVED' && (
+                        <button onClick={handleRequestApproval} className="ae-btn-secondary" style={{ color: '#0066CC', borderColor: '#0066CC' }}>
+                            <Clock size={18} /> Request Approval
+                        </button>
+                    )}
+
+                    {/* Rewind Button */}
                     {estimate.is_latest && estimate.version < 2 && (
                         <button onClick={handleRewind} className="ae-btn-secondary" style={{ color: '#FF6B00', borderColor: '#FF6B00' }}>
                             <History size={18} /> Rewind
                         </button>
                     )}
-                    <button onClick={handleSave} disabled={saving} className="ae-btn-secondary">
-                        <Save size={18} /> {saving ? 'Saving...' : 'Save Draft'}
-                    </button>
-                    <button onClick={handleSubmit} className="ae-btn-primary">
+
+                    {/* Save Button - Hidden if Read Only */}
+                    {!isReadOnly && (
+                        <button onClick={handleSave} disabled={saving} className="ae-btn-secondary">
+                            <Save size={18} /> {saving ? 'Saving...' : 'Save Draft'}
+                        </button>
+                    )}
+
+                    {/* Submit button - only enabled if approved */}
+                    <button
+                        onClick={handleSubmit}
+                        className="ae-btn-primary"
+                        disabled={estimate.approval_status !== 'APPROVED'}
+                        style={{ opacity: estimate.approval_status !== 'APPROVED' ? 0.5 : 1 }}
+                    >
                         <Send size={18} /> Submit to Customer
                     </button>
                 </div>
@@ -361,25 +494,27 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                     <div style={{ borderRight: '1px solid #99b6d8', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ background: '#dce6f1', padding: '8px', borderBottom: '1px solid #99b6d8', fontWeight: 700 }}>Description / Memo</div>
                         <textarea
-                            style={{ flex: 1, border: 'none', padding: '12px', minHeight: '100px', outline: 'none' }}
+                            style={{ flex: 1, border: 'none', padding: '12px', minHeight: '100px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'transparent' }}
                             placeholder="Type here..."
                             value={formData.description_memo || ''}
                             onChange={(e) => setFormData({ ...formData, description_memo: e.target.value })}
+                            disabled={isReadOnly}
                         />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <div style={{ background: '#dce6f1', padding: '8px', borderBottom: '1px solid #99b6d8', fontWeight: 700 }}>Terms & Conditions</div>
                         <textarea
-                            style={{ flex: 1, border: 'none', padding: '12px', minHeight: '100px', outline: 'none' }}
+                            style={{ flex: 1, border: 'none', padding: '12px', minHeight: '100px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'transparent' }}
                             placeholder="Type here..."
                             value={formData.terms_conditions || ''}
                             onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}
+                            disabled={isReadOnly}
                         />
                     </div>
                 </div>
             </div>
 
-        </div>
+        </div >
     );
 };
 

@@ -197,3 +197,41 @@ class DealViewSet(viewsets.ModelViewSet):
                 "status": "error",
                 "message": f"PDF export failed: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'])
+    def export_csv(self, request):
+        """Export deal data as CSV."""
+        import csv
+        from io import StringIO
+
+        deals = self.get_queryset()
+        buf = StringIO()
+        writer = csv.writer(buf)
+
+        headers = [
+            'Deal ID', 'Deal Name', 'Customer', 'Customer Email', 'Stage',
+            'Amount', 'Currency', 'Probability (%)', 'Owner', 'Close Date',
+            'HubSpot ID', 'Last Synced'
+        ]
+        writer.writerow(headers)
+
+        for deal in deals:
+            writer.writerow([
+                deal.deal_id,
+                deal.deal_name,
+                deal.customer.name if deal.customer else "N/A",
+                deal.customer_email,
+                deal.stage,
+                float(deal.amount) if deal.amount is not None else "",
+                deal.currency,
+                float(deal.probability) if deal.probability is not None else "",
+                deal.deal_owner.name if deal.deal_owner else "N/A",
+                str(deal.expected_close_date) if deal.expected_close_date else "",
+                deal.hubspot_id or "",
+                str(deal.last_synced_at) if deal.last_synced_at else ""
+            ])
+
+        buf.seek(0)
+        response = HttpResponse(buf.getvalue(), content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="Deals_Report_{timezone.now().strftime("%Y%m%d")}.csv"'
+        return response

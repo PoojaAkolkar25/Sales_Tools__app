@@ -23,6 +23,7 @@ interface Estimate {
     cost_sheet_no: string;
     created_at: string;
     is_latest: boolean;
+    approval_status: string;
 }
 
 interface EstimateDashboardProps {
@@ -70,14 +71,20 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
         });
     }, [estimates, filters]);
 
-    const getStatusStyle = (status: string) => {
+    const getStatusStyle = (status: string, approvalStatus: string) => {
+        if (status === 'PENDING_APPROVAL' || approvalStatus === 'PENDING') return { bg: '#FFFAF0', text: '#DD6B20', label: 'Pending Approval' };
+        if (approvalStatus === 'REJECTED') return { bg: '#FFF5F5', text: '#E53E3E', label: 'Rejected' };
+
         switch (status) {
-            case 'DRAFT': return { bg: '#F7FAFC', text: '#4A5568' };
-            case 'SUBMITTED': return { bg: '#EBF8FF', text: '#3182CE' };
-            case 'NEGOTIATION': return { bg: '#FFF9F5', text: '#FF6B00' };
-            case 'APPROVED': return { bg: '#E6FFFA', text: '#38A169' };
-            case 'REJECTED': return { bg: '#FFF5F5', text: '#E53E3E' };
-            default: return { bg: '#F7FAFC', text: '#4A5568' };
+            case 'DRAFT':
+                return approvalStatus === 'APPROVED'
+                    ? { bg: '#E6FFFA', text: '#38A169', label: 'Approved (Draft)' }
+                    : { bg: '#F7FAFC', text: '#4A5568', label: 'Draft' };
+            case 'SUBMITTED': return { bg: '#EBF8FF', text: '#3182CE', label: 'Submitted to Customer' };
+            case 'NEGOTIATION': return { bg: '#FFF9F5', text: '#FF6B00', label: 'Negotiation' };
+            case 'APPROVED': return { bg: '#E6FFFA', text: '#38A169', label: 'Approved' }; // Fallback
+            case 'REJECTED': return { bg: '#FFF5F5', text: '#E53E3E', label: 'Rejected' };
+            default: return { bg: '#F7FAFC', text: '#4A5568', label: status };
         }
     };
 
@@ -104,14 +111,14 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                         <div className="ae-icon-box bg-green-soft"><CheckCircle2 size={20} /></div>
                     </div>
                     <div className="ae-card-label">Approved</div>
-                    <div className="ae-card-value">{estimates.filter(e => e.status === 'APPROVED' && e.is_latest).length}</div>
+                    <div className="ae-card-value">{estimates.filter(e => e.approval_status === 'APPROVED' && e.is_latest).length}</div>
                 </div>
                 <div className="ae-card">
                     <div className="ae-card-header">
                         <div className="ae-icon-box bg-purple-soft"><Clock size={20} /></div>
                     </div>
                     <div className="ae-card-label">Pending Approval</div>
-                    <div className="ae-card-value">{estimates.filter(e => e.status === 'SUBMITTED' && e.is_latest).length}</div>
+                    <div className="ae-card-value">{estimates.filter(e => (e.status === 'PENDING_APPROVAL' || e.approval_status === 'PENDING') && e.is_latest).length}</div>
                 </div>
             </div>
 
@@ -144,6 +151,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                     >
                         <option value="all">All Statuses</option>
                         <option value="DRAFT">Draft</option>
+                        <option value="PENDING_APPROVAL">Pending Approval</option>
                         <option value="SUBMITTED">Submitted</option>
                         <option value="NEGOTIATION">Negotiation</option>
                         <option value="APPROVED">Approved</option>
@@ -190,7 +198,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                             <tr><td colSpan={9} style={{ textAlign: 'center', padding: '80px', color: '#718096' }}>No estimates found.</td></tr>
                         ) : (
                             filteredEstimates.map(est => {
-                                const style = getStatusStyle(est.status);
+                                const style = getStatusStyle(est.status, est.approval_status);
                                 const hasProposal = (est as any).proposals?.length > 0;
                                 return (
                                     <tr key={est.id}>
@@ -217,8 +225,9 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                 fontSize: '0.7rem',
                                                 fontWeight: 700,
                                                 background: style.bg,
-                                                color: style.text
-                                            }}>{est.status}</span>
+                                                color: style.text,
+                                                whiteSpace: 'nowrap'
+                                            }}>{style.label}</span>
                                         </td>
                                         <td>
                                             {hasProposal ? (

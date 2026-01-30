@@ -32,6 +32,7 @@ import EstimateDashboard from './components/EstimateDashboard';
 import EstimateForm from './components/EstimateForm';
 import SalesOrderDashboard from './components/SalesOrderDashboard';
 import SalesOrderForm from './components/SalesOrderForm';
+import MilestoneDashboard from './components/MilestoneDashboard';
 
 
 
@@ -365,7 +366,14 @@ const AppContent: React.FC = () => {
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
-      {baseNavItems.filter(item => !['cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order'].includes(item.id)).map(item => (
+      <Route path="/milestone" element={
+        user ? (
+          <ModuleWrapper>
+            <MilestoneDashboard />
+          </ModuleWrapper>
+        ) : <Navigate to="/login" />
+      } />
+      {baseNavItems.filter(item => !['cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order', 'milestone'].includes(item.id)).map(item => (
         <Route key={item.id} path={item.path} element={
           user ? (
             <ModuleWrapper>

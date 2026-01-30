@@ -5,8 +5,14 @@ from deals.models import Deal
 
 class EstimateStatus(models.TextChoices):
     DRAFT = 'DRAFT', 'Draft'
+    PENDING_APPROVAL = 'PENDING_APPROVAL', 'Pending Approval'
     SUBMITTED = 'SUBMITTED', 'Submitted to Customer'
     NEGOTIATION = 'NEGOTIATION', 'Negotiation'
+    APPROVED = 'APPROVED', 'Approved'
+    REJECTED = 'REJECTED', 'Rejected'
+
+class ApprovalStatus(models.TextChoices):
+    PENDING = 'PENDING', 'Pending'
     APPROVED = 'APPROVED', 'Approved'
     REJECTED = 'REJECTED', 'Rejected'
 
@@ -32,6 +38,12 @@ class Estimate(models.Model):
     # Rewind functionality - links to the previous version
     parent_estimate = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='negotiated_versions')
     is_latest = models.BooleanField(default=True)
+    
+    # Approval workflow fields
+    approval_status = models.CharField(max_length=20, choices=ApprovalStatus.choices, default=ApprovalStatus.PENDING)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_estimates')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    approval_notes = models.TextField(blank=True, default='')
     
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

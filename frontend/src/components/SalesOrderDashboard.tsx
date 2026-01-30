@@ -3,7 +3,6 @@ import {
     ShoppingBag,
     Clock,
     CheckCircle2,
-    AlertCircle,
     Eye,
     Upload,
     ArrowRight,
@@ -48,17 +47,16 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => 
             const submittedCount = response.data.filter((so: any) => so.status === 'SUBMITTED').length;
 
             const total = response.data.length || 1;
-            const customerMapped = response.data.filter((so: any) => so.customer).length;
             const itemsMapped = response.data.filter((so: any) => so.items && so.items.length > 0 && so.items.every((i: any) => i.product)).length;
             const datesValid = response.data.filter((so: any) => so.po_date).length;
 
-            const accuracy = Math.round(((customerMapped / total) * 0.4 + (itemsMapped / total) * 0.4 + (datesValid / total) * 0.2) * 100);
+            const accuracy = Math.round(((itemsMapped / total) * 0.7 + (datesValid / total) * 0.3) * 100);
 
             setStats({
                 pending: draftCount,
                 submitted: submittedCount,
                 extractionAccuracy: accuracy,
-                mappedCustomers: Math.round((customerMapped / total) * 100),
+                mappedCustomers: 100, // Always 100% since we take from PDF directly
                 mappedItems: Math.round((itemsMapped / total) * 100),
                 validDates: Math.round((datesValid / total) * 100)
             });
@@ -126,7 +124,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => 
                 </div>
                 <div className="flex gap-4">
                     <label className={`ae-btn-primary !py-3 !px-6 cursor-pointer flex items-center gap-2 shadow-lg transition-all ${isExtracting ? 'opacity-70 cursor-not-allowed bg-[#718096]' :
-                            showCompleted ? 'bg-green-500 shadow-green-500/20' : 'shadow-[#FF6B00]/20'
+                        showCompleted ? 'bg-green-500 shadow-green-500/20' : 'shadow-[#FF6B00]/20'
                         }`}>
                         {isExtracting ? (
                             <>
@@ -228,8 +226,8 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => 
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-extrabold text-[#2D3748]">{so.customer_name || 'Unmapped Customer'}</span>
-                                            {so.customer ? <span className="text-[10px] text-green-600 font-bold tracking-widest uppercase">Master Linked</span> : <span className="text-[10px] text-red-500 font-bold tracking-widest uppercase flex items-center gap-1"><AlertCircle size={10} /> Needs Mapping</span>}
+                                            <span className="text-sm font-extrabold text-[#2D3748]">{so.customer_name || 'N/A'}</span>
+                                            <span className="text-[10px] text-blue-600 font-bold tracking-widest uppercase">Extracted from PDF</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">

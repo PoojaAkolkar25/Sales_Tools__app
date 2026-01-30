@@ -127,6 +127,22 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView, onCreate }) => {
         }
     };
 
+    const exportToCSV = async () => {
+        try {
+            const response = await api.get('/deals/export_csv/', { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Deals_Report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            showNotification('CSV report generated successfully', 'success');
+        } catch (error) {
+            showNotification('Error generating CSV report', 'error');
+        }
+    };
+
     const getStageColor = (stage: string) => {
         switch (stage) {
             case 'CLOSED_WON': return { bg: '#E6FFFA', text: '#00A3C4' };
@@ -213,6 +229,13 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView, onCreate }) => {
                                     className="hover:bg-gray-50"
                                 >
                                     <FileSpreadsheet size={16} className="text-green-600" /> Excel (.xlsx)
+                                </button>
+                                <button
+                                    onClick={() => { exportToCSV(); setShowExportMenu(false); }}
+                                    style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                    className="hover:bg-gray-50"
+                                >
+                                    <FileText size={16} className="text-blue-600" /> CSV (.csv)
                                 </button>
                                 <button
                                     onClick={() => { exportToPDF(); setShowExportMenu(false); }}

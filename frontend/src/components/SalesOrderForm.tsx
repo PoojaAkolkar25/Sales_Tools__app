@@ -11,7 +11,8 @@ import {
     X,
     CheckCircle2,
     Briefcase,
-    AlertCircle
+    AlertCircle,
+    Link as LinkIcon
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -26,8 +27,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [salesOrder, setSalesOrder] = useState<any>(null);
-    const [customers, setCustomers] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
+    const [availableEstimates, setAvailableEstimates] = useState<any[]>([]);
     const { showNotification } = useNotification();
 
     useEffect(() => {
@@ -37,13 +38,28 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
         }
     }, [id]);
 
+    useEffect(() => {
+        if (salesOrder?.customer) {
+            fetchCustomerEstimates(salesOrder.customer);
+        } else {
+            setAvailableEstimates([]);
+        }
+    }, [salesOrder?.customer]);
+
+    const fetchCustomerEstimates = async (customerId: number) => {
+        try {
+            const response = await api.get(`/estimates/?customer=${customerId}&approval_status=APPROVED`);
+            setAvailableEstimates(response.data);
+        } catch (error) {
+            console.error('Error fetching estimates', error);
+        }
+    };
+
     const fetchInitialData = async () => {
         try {
-            const [custRes, prodRes] = await Promise.all([
-                api.get('/customers/'),
+            const [prodRes] = await Promise.all([
                 api.get('/products/')
             ]);
-            setCustomers(custRes.data);
             setProducts(prodRes.data);
         } catch (error) {
             console.error('Error fetching initial data', error);
@@ -71,13 +87,32 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
         const newItems = [...salesOrder.items];
         newItems[index] = { ...newItems[index], [field]: value };
 
-        if (field === 'qty' || field === 'rate' || field === 'tax' || field === 'discount') {
-            const qty = parseFloat(newItems[index].qty) || 0;
-            const rate = parseFloat(newItems[index].rate) || 0;
-            newItems[index].amount = qty * rate;
+        const qty = parseFloat(newItems[index].qty) || 0;
+        const rate = parseFloat(newItems[index].rate) || 0;
+        const initial = qty * rate;
+
+        if (field === 'discount_percent' || field === 'qty' || field === 'rate') {
+            const disc_percent = parseFloat(newItems[index].discount_percent) || 0;
+            newItems[index].discount = (initial * (disc_percent / 100)).toFixed(2);
+        } else if (field === 'discount') {
+            const disc_amt = parseFloat(newItems[index].discount) || 0;
+            newItems[index].discount_percent = initial > 0 ? ((disc_amt / initial) * 100).toFixed(2) : 0;
         }
 
-        setSalesOrder((prev: any) => ({ ...prev, items: newItems }));
+        const taxable_amount = initial - (parseFloat(newItems[index].discount) || 0);
+
+        if (field === 'tax_percent' || field === 'discount_percent' || field === 'qty' || field === 'rate') {
+            const tax_percent = parseFloat(newItems[index].tax_percent) || 0;
+            newItems[index].tax = (taxable_amount * (tax_percent / 100)).toFixed(2);
+        } else if (field === 'tax') {
+            const tax_amt = parseFloat(newItems[index].tax) || 0;
+            newItems[index].tax_percent = taxable_amount > 0 ? ((tax_amt / taxable_amount) * 100).toFixed(2) : 0;
+        }
+
+        newItems[index].amount = (taxable_amount + (parseFloat(newItems[index].tax) || 0)).toFixed(2);
+
+        const total = newItems.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0);
+        setSalesOrder((prev: any) => ({ ...prev, items: newItems, total_amount: total }));
     };
 
     const handleAddItem = () => {
@@ -89,7 +124,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
 
     const handleRemoveItem = (index: number) => {
         const newItems = salesOrder.items.filter((_: any, i: number) => i !== index);
-        setSalesOrder((prev: any) => ({ ...prev, items: newItems }));
+        const total = newItems.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0);
+        setSalesOrder((prev: any) => ({ ...prev, items: newItems, total_amount: total }));
     };
 
     const handleSave = async () => {
@@ -117,6 +153,16 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
             showNotification(error.response?.data?.error || 'Failed to submit Sales Order', 'error');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleViewPDF = () => {
+        if (salesOrder.po_file_url) {
+            const baseUrl = api.defaults.baseURL?.replace('/api', '').replace(/\/$/, '') || '';
+            const fullUrl = `${baseUrl}${salesOrder.po_file_url}`;
+            window.open(fullUrl, '_blank');
+        } else {
+            showNotification('PDF file URL not found', 'error');
         }
     };
 
@@ -164,21 +210,38 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                         <div className="p-6 grid grid-cols-2 gap-6">
                             <div className="ae-input-group">
                                 <label className="ae-label uppercase !text-[10px] tracking-widest !font-black !mb-2 opacity-70">Sales Order Number</label>
-                                <input type="text" value={salesOrder.so_number || 'Auto-generated on Submit'} className="ae-input !bg-[#F7FAFC] !cursor-not-allowed font-black" disabled />
+                                <input
+                                    type="text"
+                                    value={salesOrder.so_number || 'Auto-generated on Submit'}
+                                    className="ae-input !bg-[#F7FAFC] !cursor-not-allowed"
+                                    style={{ fontWeight: 700, color: 'rgb(0, 102, 204)' }}
+                                    disabled
+                                />
                             </div>
                             <div className="ae-input-group">
-                                <label className="ae-label uppercase !text-[10px] tracking-widest !font-black !mb-2 opacity-70">Customer *</label>
-                                <select
-                                    name="customer"
-                                    value={salesOrder.customer || ''}
-                                    onChange={handleInputChange}
-                                    className={`ae-input font-bold ${!salesOrder.customer ? 'border-[#FFB7B7] bg-[#FFF5F5] animate-pulse' : ''}`}
-                                    disabled={isSubmitted}
-                                >
-                                    <option value="">-- Match Customer to Master --</option>
-                                    {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                </select>
-                                {!salesOrder.customer && <span className="text-[10px] text-red-500 font-bold tracking-tighter mt-1 italic block">Auto-extraction could not match name automatically.</span>}
+                                <label className="ae-label uppercase !text-[10px] tracking-widest !font-black !mb-2 opacity-70">Customer Name</label>
+                                {salesOrder.customer ? (
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2 bg-green-50 p-2 rounded border border-green-200">
+                                            <CheckCircle2 size={16} className="text-green-600" />
+                                            <span className="text-sm font-bold text-green-900">{salesOrder.customer_detail?.name || 'Mapped Customer'}</span>
+                                        </div>
+                                        <span className="text-[10px] text-green-600 font-bold ml-1">Mapped to Master Data</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-1">
+                                        <input
+                                            type="text"
+                                            value={salesOrder.customer_name || 'N/A'}
+                                            className="ae-input font-black !bg-red-50 !border-red-200 !text-red-900"
+                                            readOnly
+                                        />
+                                        <div className="flex items-center gap-1 text-red-600 mt-1">
+                                            <AlertCircle size={12} />
+                                            <span className="text-[10px] font-bold">Not Matched with Master Data</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <div className="ae-input-group">
                                 <label className="ae-label uppercase !text-[10px] tracking-widest !font-black !mb-2 opacity-70">Customer Code</label>
@@ -195,12 +258,90 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                         </div>
                     </div>
 
+                    {/* Estimate Linking Panel */}
+                    {salesOrder.customer && (
+                        <div className="section-panel !p-0">
+                            <div className="bg-[#F8FAFC] p-4 border-b border-[#E0E6ED] rounded-t-2xl flex items-center gap-2">
+                                <LinkIcon size={18} className="text-[#3182CE]" />
+                                <h3 className="uppercase tracking-tight text-sm" style={{ fontWeight: 700, color: 'rgb(0, 102, 204)' }}>Link Approved Estimates</h3>
+                            </div>
+                            <div className="p-0">
+                                {availableEstimates.length === 0 ? (
+                                    <div className="p-4 text-sm text-[#718096] italic">No approved estimates found for this customer.</div>
+                                ) : (
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-[#F7FAFC] text-xs font-bold text-[#4A5568] uppercase tracking-wider border-b border-[#E2E8F0]">
+                                                <th className="p-3 w-10">
+                                                    {/* Header Checkbox (Optional: Implement Select All if needed, currently skipped for simplicity) */}
+                                                </th>
+                                                <th className="p-3">Est Date</th>
+                                                <th className="p-3">Est Number</th>
+                                                <th className="p-3">Description</th>
+                                                <th className="p-3 text-right">Qty</th>
+                                                <th className="p-3 text-right">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {availableEstimates.map(est => {
+                                                const totalQty = est.items?.reduce((sum: number, item: any) => sum + (parseFloat(item.qty) || 0), 0) || 0;
+                                                const description = est.description_memo || est.project_name || '—';
+                                                const isSelected = salesOrder.estimates?.includes(est.id) || false;
+
+                                                return (
+                                                    <tr
+                                                        key={est.id}
+                                                        className={`border-b border-[#E2E8F0] last:border-0 hover:bg-blue-50 transition-colors cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`}
+                                                        onClick={() => {
+                                                            const current = salesOrder.estimates || [];
+                                                            if (!isSelected) {
+                                                                setSalesOrder({ ...salesOrder, estimates: [...current, est.id] });
+                                                            } else {
+                                                                setSalesOrder({ ...salesOrder, estimates: current.filter((id: number) => id !== est.id) });
+                                                            }
+                                                        }}
+                                                    >
+                                                        <td className="p-3">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="ae-checkbox"
+                                                                checked={isSelected}
+                                                                readOnly // Handled by row click
+                                                                disabled={isSubmitted}
+                                                            />
+                                                        </td>
+                                                        <td className="p-3 text-sm font-medium text-[#2D3748]">
+                                                            {new Date(est.created_at).toLocaleDateString()}
+                                                        </td>
+                                                        <td className="p-3 text-sm font-bold text-[#3182CE]">
+                                                            {est.estimate_id}
+                                                            <span className="ml-2 text-[10px] text-[#718096] bg-[#EDF2F7] px-1.5 py-0.5 rounded">v{est.version}</span>
+                                                        </td>
+                                                        <td className="p-3 text-sm text-[#4A5568] truncate max-w-[200px]" title={description}>
+                                                            {description}
+                                                        </td>
+                                                        <td className="p-3 text-sm font-bold text-[#2D3748] text-right">
+                                                            {totalQty}
+                                                        </td>
+                                                        <td className="p-3 text-sm font-bold text-[#38A169] text-right">
+                                                            ${parseFloat(est.total_price).toLocaleString()}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Line Items Panel */}
                     <div className="section-panel !p-0">
                         <div className="bg-[#F8FAFC] p-4 border-b border-[#E0E6ED] rounded-t-2xl flex justify-between items-center">
                             <div className="flex items-center gap-2">
                                 <ShoppingBag size={18} className="text-[#FF6B00]" />
-                                <h3 className="font-extrabold text-[#2D3748] uppercase tracking-tight text-sm">Product Line Items</h3>
+                                <h3 className="uppercase tracking-tight text-sm" style={{ fontWeight: 700, color: 'rgb(0, 102, 204)' }}>Product Line Items</h3>
                             </div>
                             {!isSubmitted && (
                                 <button onClick={handleAddItem} className="text-xs font-black text-[#3182CE] uppercase hover:underline flex items-center gap-1">
@@ -216,15 +357,16 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                         <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase">Description</th>
                                         <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-20">Qty</th>
                                         <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-32">Rate</th>
-                                        <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-28">Tax</th>
-                                        <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-28">Discount</th>
-                                        <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-32 text-right">Amount</th>
+                                        <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-24">Disc (%)</th>
+                                        <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-32">Taxable Amt</th>
+                                        <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-24">Tax (%)</th>
+                                        <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-32 text-right">Total</th>
                                         {!isSubmitted && <th className="px-4 py-3 w-10"></th>}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#E0E6ED]">
                                     {salesOrder.items.map((item: any, index: number) => (
-                                        <tr key={index} className="group hover:bg-[#FDFDFD]">
+                                        <tr key={index} className="group hover:bg-[#FDFDFD}">
                                             <td className="px-4 py-3 align-top min-w-[200px]">
                                                 <select
                                                     value={item.product || ''}
@@ -266,18 +408,23 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                             <td className="px-4 py-3 align-top">
                                                 <input
                                                     type="number"
-                                                    value={item.tax || 0}
-                                                    onChange={(e) => handleItemChange(index, 'tax', e.target.value)}
-                                                    className="w-full p-2 border border-[#E0E6ED] rounded-lg text-sm font-bold bg-white"
+                                                    value={item.discount_percent || 0}
+                                                    onChange={(e) => handleItemChange(index, 'discount_percent', e.target.value)}
+                                                    className="w-full p-2 border border-[#E0E6ED] rounded-lg text-sm font-bold bg-white text-red-600"
                                                     disabled={isSubmitted}
                                                 />
+                                            </td>
+                                            <td className="px-4 py-3 align-top whitespace-nowrap pt-5 min-w-[100px]">
+                                                <span className="text-sm font-bold text-[#4A5568]">
+                                                    {((parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0) - (parseFloat(item.discount) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                </span>
                                             </td>
                                             <td className="px-4 py-3 align-top">
                                                 <input
                                                     type="number"
-                                                    value={item.discount || 0}
-                                                    onChange={(e) => handleItemChange(index, 'discount', e.target.value)}
-                                                    className="w-full p-2 border border-[#E0E6ED] rounded-lg text-sm font-bold bg-white text-red-600"
+                                                    value={item.tax_percent || 0}
+                                                    onChange={(e) => handleItemChange(index, 'tax_percent', e.target.value)}
+                                                    className="w-full p-2 border border-[#E0E6ED] rounded-lg text-sm font-bold bg-white"
                                                     disabled={isSubmitted}
                                                 />
                                             </td>
@@ -297,9 +444,9 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     ))}
                                 </tbody>
                                 <tfoot>
-                                    <tr className="bg-[#f1f5f9] font-black">
-                                        <td colSpan={4} className="px-4 py-4 text-right text-[#4A5568] uppercase text-xs">Total Order Value</td>
-                                        <td className="px-4 py-4 text-right text-[#2D3748] text-lg">
+                                    <tr className="bg-[#f1f5f9] font-black text-[#2D3748]">
+                                        <td colSpan={5} className="px-4 py-4 text-right text-[#4A5568] uppercase text-xs tracking-widest">Total Order Value</td>
+                                        <td className="px-4 py-4 text-right text-lg border-l border-white">
                                             {salesOrder.currency} {parseFloat(salesOrder.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                         {!isSubmitted && <td></td>}
@@ -367,7 +514,12 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 <p className="text-xs font-black text-[#1a1f36] uppercase">Original PO PDF</p>
                                 <p className="text-[10px] text-[#718096] font-medium truncate mt-1">{salesOrder.po_file_name || 'PurchaseOrder.pdf'}</p>
                             </div>
-                            <button className="ae-btn-secondary !w-auto !px-6 !py-2 text-[10px] font-black uppercase tracking-widest">View PDF Viewer</button>
+                            <button
+                                onClick={handleViewPDF}
+                                className="ae-btn-secondary !w-auto !px-6 !py-2 text-[10px] font-black uppercase tracking-widest"
+                            >
+                                View PDF Viewer
+                            </button>
                         </div>
                     </div>
 
@@ -379,17 +531,13 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 <h4 className="font-black text-xs uppercase tracking-tight">Review Checklist</h4>
                             </div>
                             <ul className="space-y-2">
-                                <li className={`flex items-center gap-2 text-[10px] font-bold ${salesOrder.customer ? 'text-green-600' : 'text-[#718096]'}`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${salesOrder.customer ? 'bg-green-500' : 'bg-[#E0E6ED]'}`}></div>
-                                    Customer Mapped to Master
+                                <li className={`flex items-center gap-2 text-[10px] font-bold text-green-600`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full bg-green-500`}></div>
+                                    Customer Name Extracted
                                 </li>
                                 <li className={`flex items-center gap-2 text-[10px] font-bold ${salesOrder.po_number ? 'text-green-600' : 'text-[#718096]'}`}>
                                     <div className={`w-1.5 h-1.5 rounded-full ${salesOrder.po_number ? 'bg-green-500' : 'bg-[#E0E6ED]'}`}></div>
                                     Valid PO Number Extracted
-                                </li>
-                                <li className={`flex items-center gap-2 text-[10px] font-bold ${salesOrder.items?.every((i: any) => i.product) ? 'text-green-600' : 'text-[#718096]'}`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${salesOrder.items?.every((i: any) => i.product) ? 'bg-green-500' : 'bg-[#E0E6ED]'}`}></div>
-                                    All Items Mapped to Master
                                 </li>
                             </ul>
                         </div>

@@ -31,6 +31,7 @@ class SalesOrder(models.Model):
     status = models.CharField(max_length=20, choices=SalesOrderStatus.choices, default=SalesOrderStatus.DRAFT)
     
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
+    customer_name = models.CharField(max_length=255, blank=True)
     customer_code = models.CharField(max_length=50, blank=True)
     po_number = models.CharField(max_length=100, blank=True)
     po_date = models.DateField(null=True, blank=True)
@@ -46,6 +47,9 @@ class SalesOrder(models.Model):
     po_file = models.ForeignKey(PurchaseOrderFile, on_delete=models.SET_NULL, null=True, blank=True)
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     
+    # Link to Estimates (BRD Requirement: Traceability)
+    estimates = models.ManyToManyField('estimates.Estimate', related_name='sales_orders', blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -68,9 +72,22 @@ class SalesOrderItem(models.Model):
     qty = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     rate = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 
     def save(self, *args, **kwargs):
-        self.amount = self.qty * self.rate
+        initial = self.qty * self.rate
+        # If discount_percent is provided, calculate absolute discount
+        if self.discount_percent > 0:
+            self.discount = initial * (self.discount_percent / 100)
+        
+        taxable_amount = initial - self.discount
+        
+        # If tax_percent is provided, calculate absolute tax
+        if self.tax_percent > 0:
+            self.tax = taxable_amount * (self.tax_percent / 100)
+            
+        self.amount = taxable_amount + self.tax
         super().save(*args, **kwargs)

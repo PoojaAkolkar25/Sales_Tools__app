@@ -68,6 +68,7 @@ class PDFExtractor:
                     "      \"description\": {\"value\": string, \"confidence\": number},\n"
                     "      \"quantity\": {\"value\": number, \"confidence\": number},\n"
                     "      \"unit_price\": {\"value\": number, \"confidence\": number},\n"
+                    "      \"discount\": {\"value\": number, \"confidence\": number, \"note\": \"Return the ABSOLUTE AMOUNT of discount, not the percentage. If 40% of 7500, return 3000.\"},\n"
                     "      \"tax\": {\"value\": number, \"confidence\": number},\n"
                     "      \"line_total\": {\"value\": number, \"confidence\": number}\n"
                     "    }\n"
@@ -119,55 +120,107 @@ class PDFExtractor:
                             if not d_str: return None
                             for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%d %b %Y", "%d %B %Y", "%Y/%m/%d"):
                                 try:
-                                    return datetime.strptime(d_str, fmt).date()
+                                    return datetime.strptime(str(d_str), fmt).date()
                                 except: continue
                             return None
 
+                        def _get_val(obj, key, default_val=0):
+                            if not isinstance(obj, dict): return default_val
+                            val = obj.get(key)
+                            if isinstance(val, dict):
+                                return val.get('value') or val.get('amount') or default_val
+                            return val if val is not None else default_val
+
                         # Map parsed JSON into our internal data dict form if present
-                        header = parsed.get('header', {})
-                        if header:
+                        header = parsed.get('header')
+                        if isinstance(header, dict):
                             if header.get('customer_name'):
-                                data['customer_name'] = header['customer_name'].get('value') or data['customer_name']
+                                data['customer_name'] = _get_val(header, 'customer_name', data['customer_name'])
                             if header.get('customer_code'):
-                                data['customer_code'] = header['customer_code'].get('value') or data['customer_code']
+                                data['customer_code'] = _get_val(header, 'customer_code', data['customer_code'])
                             if header.get('po_number'):
-                                data['po_number'] = header['po_number'].get('value') or data['po_number']
+                                data['po_number'] = _get_val(header, 'po_number', data['po_number'])
                             if header.get('po_date'):
-                                data['po_date'] = _parse_date(header['po_date'].get('value'))
+                                data['po_date'] = _parse_date(_get_val(header, 'po_date', ''))
                             if header.get('delivery_date'):
-                                data['delivery_date'] = _parse_date(header['delivery_date'].get('value'))
+                                data['delivery_date'] = _parse_date(_get_val(header, 'delivery_date', ''))
                             if header.get('billing_address'):
-                                data['billing_address'] = header['billing_address'].get('value')
+                                data['billing_address'] = _get_val(header, 'billing_address', '')
                             if header.get('shipping_address'):
-                                data['shipping_address'] = header['shipping_address'].get('value')
+                                data['shipping_address'] = _get_val(header, 'shipping_address', '')
                             if header.get('currency'):
-                                data['currency'] = header['currency'].get('value') or data['currency']
+                                data['currency'] = _get_val(header, 'currency', data['currency'])
 
                         items = []
-                        for li in parsed.get('line_items', []):
-                            try:
-                                items.append({
-                                    'qty': float(li.get('quantity', {}).get('value') or li.get('qty') or 1),
-                                    'description': li.get('description', {}).get('value') or li.get('description') or '',
-                                    'rate': float(li.get('unit_price', {}).get('value') or li.get('rate') or 0),
-                                    'tax': float(li.get('tax', {}).get('value') or 0),
-                                    'discount': float(li.get('discount', {}).get('value') or 0),
-                                    'amount': float(li.get('line_total', {}).get('value') or li.get('line_total') or 0)
-                                })
-                            except Exception:
-                                continue
+                        line_items = parsed.get('line_items')
+                        if isinstance(line_items, list):
+                            for li in line_items:
+                                try:
+                                    if not isinstance(li, dict): continue
+                                    item_data = {
+                                        'qty': float(_get_val(li, 'quantity', 1)),
+                                        'description': str(_get_val(li, 'description', '')),
+                                        'rate': float(_get_val(li, 'unit_price', 0)),
+                                        'tax': float(_get_val(li, 'tax', 0)),
+                                        'tax_percent': 0.0,
+                                        'discount': float(_get_val(li, 'discount', 0)),
+                                        'discount_percent': 0.0,
+                                        'amount': float(_get_val(li, 'line_total', 0))
+                                    }
+                                    
+                                    # Post-process LLM extraction for discounts
+                                    qty = item_data['qty']
+                                    rate = item_data['rate']
+                                    extracted_amount = item_data['amount']
+                                    extracted_discount = item_data['discount']
+                                    initial_total = qty * rate
+                                    
+                                    if extracted_discount > 0 and extracted_amount > 0:
+                                        # Check if extracted discount IS the percentage
+                                        if extracted_discount <= 100 and abs((initial_total * (1 - extracted_discount/100)) - extracted_amount) < 5.0:
+                                            item_data['discount_percent'] = extracted_discount
+                                            item_data['discount'] = round(initial_total * (extracted_discount / 100.0), 2)
+                                        else:
+                                            # If absolute discount matches the amount gap, calculate percentage
+                                            if abs((initial_total - extracted_discount + item_data['tax']) - extracted_amount) < 1.0:
+                                                item_data['discount'] = extracted_discount
+                                                if initial_total > 0:
+                                                    item_data['discount_percent'] = round((extracted_discount / initial_total) * 100, 2)
+                                            else:
+                                                # Fallback to old percentage check
+                                                percent_calc = round(initial_total * (extracted_discount / 100.0), 2)
+                                                if abs((initial_total - percent_calc + item_data['tax']) - extracted_amount) < 1.0:
+                                                    item_data['discount'] = percent_calc
+                                                    item_data['discount_percent'] = extracted_discount
+                                    elif extracted_amount > 0 and extracted_discount == 0:
+                                        if initial_total > extracted_amount:
+                                            item_data['discount'] = initial_total + item_data['tax'] - extracted_amount
+                                            if initial_total > 0:
+                                                item_data['discount_percent'] = round((item_data['discount'] / initial_total) * 100, 2)
+
+                                    items.append(item_data)
+                                except Exception as e:
+                                    logger.warning(f"Failed to parse line item: {str(e)}")
+                                    continue
 
                         if items:
                             data['items'] = items
                             try:
-                                data['total_amount'] = float(parsed.get('totals', {}).get('grand_total', {}).get('value') or sum(i['amount'] for i in items))
+                                totals = parsed.get('totals', {})
+                                if isinstance(totals, dict):
+                                    gt = totals.get('grand_total')
+                                    gt_val = _get_val(totals, 'grand_total', 0) if gt else 0
+                                    data['total_amount'] = float(gt_val or sum(i['amount'] for i in items))
+                                else:
+                                    data['total_amount'] = sum(i['amount'] for i in items)
                             except Exception:
                                 data['total_amount'] = sum(i['amount'] for i in items)
 
                             # If we got items from LLM, return immediately (high-confidence path)
                             return data
-                    except json.JSONDecodeError:
-                        logger.warning('Vertex LLM returned non-JSON response, falling back to heuristics')
+                    except Exception as e:
+                        logger.exception("Error during LLM JSON processing")
+                        # Fall through to heuristics
             except Exception as e:
                 logger.warning('LLM extraction failed, falling back to heuristic parser: %s', str(e))
         else:
@@ -296,18 +349,55 @@ class PDFExtractor:
                                 rate_match = re.search(r'[\d\.]+', re.sub(r'[, ]', '', str(row[idx_rate]))) if idx_rate != -1 else None
                                 rate = float(rate_match.group(0)) if rate_match else (amount / qty if qty > 0 else 0)
                                 
-                                tax_match = re.search(r'[\d\.]+', re.sub(r'[, ]', '', str(row[idx_tax]))) if idx_tax != -1 else None
-                                tax = float(tax_match.group(0)) if tax_match else 0.0
+                                # Better Tax/Discount heuristics for tables:
+                                # Look for columns that AREN'T percentages if possible
+                                def _get_best_val(row, indices, headers):
+                                    for idx in indices:
+                                        if idx != -1:
+                                            val_str = re.sub(r'[, ]', '', str(row[idx]))
+                                            match = re.search(r'[\d\.]+', val_str)
+                                            if match:
+                                                val = float(match.group(0))
+                                                if '%' in headers[idx]:
+                                                    return val, True
+                                                return val, False
+                                    return 0.0, False
 
-                                disc_match = re.search(r'[\d\.]+', re.sub(r'[, ]', '', str(row[idx_discount]))) if idx_discount != -1 else None
-                                discount = float(disc_match.group(0)) if disc_match else 0.0
+                                # Redefine tax/disc indices for robustness
+                                tax_indices = [i for i, h in enumerate(headers) if any(k in h for k in ['tax', 'gst', 'vat']) and '%' not in h]
+                                if not tax_indices: tax_indices = [i for i, h in enumerate(headers) if any(k in h for k in ['tax', 'gst', 'vat'])]
+                                
+                                disc_indices = [i for i, h in enumerate(headers) if any(k in h for k in ['disc', 'off', 'less']) and '%' not in h]
+                                if not disc_indices: disc_indices = [i for i, h in enumerate(headers) if any(k in h for k in ['disc', 'off', 'less'])]
+
+                                tax_val, is_tax_percent = _get_best_val(row, tax_indices, headers)
+                                disc_val, is_disc_percent = _get_best_val(row, disc_indices, headers)
+
+                                # Calculate absolute values
+                                initial_total = qty * rate
+                                discount = initial_total * (disc_val / 100.0) if is_disc_percent else disc_val
+                                tax = (initial_total - discount) * (tax_val / 100.0) if is_tax_percent else tax_val
+
+                                # Final verification/inference
+                                if amount > 0:
+                                    # If amount is provided, check if it matches our calculation
+                                    calc_total = initial_total - discount + tax
+                                    if abs(calc_total - amount) > 1.0:
+                                        # If it doesn't match, maybe the amount IS the taxable amount?
+                                        # Or maybe discount/tax needs inference
+                                        if initial_total > amount and discount == 0:
+                                            discount = initial_total - amount + tax
+                                            disc_val = (discount / initial_total * 100) if initial_total > 0 else 0
+                                            is_disc_percent = True
 
                                 items_from_table.append({
                                     'qty': qty,
                                     'description': desc.replace('\n', ' '),
                                     'rate': rate,
                                     'tax': tax,
+                                    'tax_percent': tax_val if is_tax_percent else 0,
                                     'discount': discount,
+                                    'discount_percent': disc_val if is_disc_percent else 0,
                                     'amount': amount or (qty * rate + tax - discount)
                                 })
                             except: continue
@@ -356,28 +446,24 @@ class SalesOrderCreator:
         """
         extracted_data = PDFExtractor.extract_from_po(po_file_obj.file.path)
         
-        # Mapping Customer (Try exact match first then partial)
-        cust_name = extracted_data['customer_name']
-        customer = Customer.objects.filter(name=cust_name).first()
-        if not customer:
-            clean_name = re.sub(r'\s+(?:Pvt|Private)\s+(?:Ltd|Limited).*', '', cust_name, flags=re.I).strip()
-            customer = Customer.objects.filter(name__icontains=clean_name).first()
-
-        # SUPER FALLBACK: Search for ANY existing customer name in the document text
-        if not customer and extracted_data.get('full_text'):
-            full_text = extracted_data['full_text'].upper()
-            all_customers = Customer.objects.all()
-            for cand in all_customers:
-                # Clean candidate name for better search (remove Pvt Ltd)
-                short_cand = re.sub(r'\s+(?:Pvt|Private)\s+(?:Ltd|Limited).*', '', cand.name, flags=re.I).strip().upper()
-                if len(short_cand) > 3 and short_cand in full_text:
-                    customer = cand
-                    break
+        # Use extracted customer name directly
+        cust_name = extracted_data.get('customer_name', 'Pending Mapping')
+        
+        # Automated Customer Mapping
+        customer_obj = None
+        if cust_name and cust_name != 'Pending Mapping':
+            # Try exact match (case-insensitive)
+            customer_obj = Customer.objects.filter(name__iexact=cust_name.strip()).first()
+            
+            # If not found, try contains match if the name is long enough to be specific
+            if not customer_obj and len(cust_name) > 4:
+                customer_obj = Customer.objects.filter(name__icontains=cust_name.strip()).first()
         
         # Create SO Draft
         so = SalesOrder.objects.create(
             so_number=None,
-            customer=customer,
+            customer=customer_obj, 
+            customer_name=cust_name,
             po_number=extracted_data['po_number'],
             po_date=extracted_data['po_date'],
             delivery_date=extracted_data['delivery_date'],
@@ -386,7 +472,7 @@ class SalesOrderCreator:
             currency=extracted_data['currency'],
             status=SalesOrderStatus.DRAFT,
             po_file=po_file_obj,
-            billing_address=extracted_data['billing_address'] or extracted_data['customer_name'],
+            billing_address=extracted_data['billing_address'] or cust_name,
             shipping_address=extracted_data['shipping_address']
         )
         
@@ -400,7 +486,9 @@ class SalesOrderCreator:
                 qty=item['qty'],
                 rate=item['rate'],
                 tax=item.get('tax', 0),
+                tax_percent=item.get('tax_percent', 0),
                 discount=item.get('discount', 0),
+                discount_percent=item.get('discount_percent', 0),
                 amount=item['amount']
             )
             total += item['amount']
