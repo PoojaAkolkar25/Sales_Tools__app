@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Estimate, Proposal, Renewal, EstimateItem
+from .models import Estimate, Proposal, Renewal, EstimateItem, ApprovalStatus, EmailLog
 from cost_sheets.serializers import CostSheetSerializer
 from deals.serializers import DealSerializer
 
@@ -21,10 +21,18 @@ class EstimateItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'sr_no', 'particulars', 'description', 'qty', 'rate', 'amount']
         read_only_fields = ['amount']
 
+class EmailLogSerializer(serializers.ModelSerializer):
+    sent_by_name = serializers.ReadOnlyField(source='sent_by.username')
+    
+    class Meta:
+        model = EmailLog
+        fields = '__all__'
+
 class EstimateSerializer(serializers.ModelSerializer):
     proposals = ProposalSerializer(many=True, read_only=True)
     renewals = RenewalSerializer(many=True, read_only=True)
     items = EstimateItemSerializer(many=True)
+    email_logs = EmailLogSerializer(many=True, read_only=True)
     created_by_name = serializers.ReadOnlyField(source='created_by.username')
     approved_by_name = serializers.ReadOnlyField(source='approved_by.username')
     

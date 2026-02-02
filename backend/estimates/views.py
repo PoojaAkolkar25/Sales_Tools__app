@@ -3,8 +3,12 @@ from rest_framework.response import Response
 from .models import Estimate, Proposal, Renewal, EstimateStatus, EstimateItem, ApprovalStatus
 from .serializers import EstimateSerializer, ProposalSerializer, RenewalSerializer
 from .permissions import IsSalesHeadOrFinanceManager
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponse
 from django.utils import timezone
+from django.core.mail import EmailMessage
+import logging
+from .utils import generate_estimate_pdf, merge_pdfs
 
 class EstimateViewSet(viewsets.ModelViewSet):
     queryset = Estimate.objects.all()
@@ -163,6 +167,171 @@ class EstimateViewSet(viewsets.ModelViewSet):
             "estimate": EstimateSerializer(estimate).data
         })
 
+    @decorators.action(detail=True, methods=['post'])
+    def send_email(self, request, pk=None):
+        estimate = self.get_object()
+        email_type = request.data.get('type', 'standard')
+        changes_summary = request.data.get('changes', 'the requested changes')
+        
+        # Determine Recipient Email
+        recipient_email = estimate.deal.customer_email
+        if not recipient_email and estimate.deal.customer:
+            recipient_email = estimate.deal.customer.email
+            
+        if not recipient_email:
+            return Response(
+                {"error": "No customer email found in Deal or Customer record."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get Proposal Attachment
+        # Assuming we want the latest version of the proposal
+        proposal = estimate.proposals.order_by('-version').first()
+        if not proposal:
+            return Response(
+                {"error": "No proposal file attached to this estimate."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @decorators.action(detail=True, methods=['post'])
+    def send_email(self, request, pk=None):
+        estimate = self.get_object()
+        
+        # New customizable fields
+        recipient_email = request.data.get('to') or estimate.deal.customer_email or (estimate.deal.customer.email if estimate.deal.customer else None)
+        cc_emails = request.data.get('cc', '')
+        bcc_emails = request.data.get('bcc', '')
+        subject = request.data.get('subject', f"Proposal / Estimate - {estimate.estimate_id}")
+        body = request.data.get('body', "")
+        
+        if not recipient_email:
+            return Response(
+                {"error": "No recipient email provided or found in records."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get Latest Proposal Attachment
+        proposal = estimate.proposals.order_by('-version').first()
+        if not proposal:
+            return Response(
+                {"error": "No proposal file attached to this estimate."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Send Email
+        status_code = 'SENT'
+        error_msg = ''
+        try:
+            logger = logging.getLogger(__name__)
+            # Process CC and BCC strings into lists
+            cc_list = [e.strip() for e in cc_emails.split(',') if e.strip()]
+            bcc_list = [e.strip() for e in bcc_emails.split(',') if e.strip()]
+            
+            email = EmailMessage(
+                subject=subject,
+                body=body,
+                to=[recipient_email],
+                cc=cc_list,
+                bcc=bcc_list,
+            )
+            
+            # 1. Generate Estimate PDF
+            try:
+                estimate_pdf_bytes = generate_estimate_pdf(estimate)
+            except Exception as e:
+                return Response({'error': f"Failed to generate Estimate PDF: {str(e)}"}, status=500)
+
+            # 2. Merge with Proposal PDF (if valid PDF)
+            try:
+                is_pdf = proposal.filename.lower().endswith('.pdf')
+                merged_pdf_bytes = None
+                
+                if is_pdf:
+                    try:
+                        proposal_path = proposal.file.path
+                        merged_pdf_bytes = merge_pdfs(estimate_pdf_bytes, proposal_path)
+                        filename = f"Estimate_{estimate.estimate_id}_Proposal.pdf"
+                        email.attach(filename, merged_pdf_bytes, 'application/pdf')
+                    except Exception as merge_err:
+                         logger.warning(f"Merge failed for {proposal.filename}: {merge_err}. Attaching separately.")
+                         email.attach(f"Estimate_{estimate.estimate_id}.pdf", estimate_pdf_bytes, 'application/pdf')
+                         with proposal.file.open('rb') as f:
+                             email.attach(proposal.filename, f.read(), 'application/octet-stream')
+                else:
+                    email.attach(f"Estimate_{estimate.estimate_id}.pdf", estimate_pdf_bytes, 'application/pdf')
+                    with proposal.file.open('rb') as f:
+                        email.attach(proposal.filename, f.read(), 'application/octet-stream')
+            except Exception as outer_err:
+                 logger.error(f"Error handling attachments: {outer_err}")
+                 return Response({'error': f"Failed to process attachments: {str(outer_err)}"}, status=500)
+
+            email.send()
+            
+        except Exception as e:
+            logger.error(f"Email sending failed: {e}")
+            status_code = 'FAILED'
+            error_msg = str(e)
+            
+        # 3. Log the communication
+        EmailLog.objects.create(
+            estimate=estimate,
+            subject=subject,
+            recipient=recipient_email,
+            cc=cc_emails,
+            bcc=bcc_emails,
+            status=status_code,
+            error_message=error_msg,
+            sent_by=request.user if request.user.is_authenticated else None
+        )
+        
+        if status_code == 'FAILED':
+             return Response({"error": f"Failed to send email: {error_msg}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+             
+        return Response({"message": "Email sent successfully"})
+
+    @decorators.action(detail=True, methods=['get'])
+    def preview_pdf(self, request, pk=None):
+        estimate = self.get_object()
+        proposal = estimate.proposals.order_by('-version').first()
+        
+        try:
+            est_pdf = generate_estimate_pdf(estimate)
+            if proposal and proposal.filename.lower().endswith('.pdf'):
+                try:
+                    merged = merge_pdfs(est_pdf, proposal.file.path)
+                    response = HttpResponse(merged, content_type='application/pdf')
+                except:
+                     response = HttpResponse(est_pdf, content_type='application/pdf')
+            else:
+                response = HttpResponse(est_pdf, content_type='application/pdf')
+            
+            response['Content-Disposition'] = 'inline; filename="preview.pdf"'
+            return response
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    @decorators.action(detail=True, methods=['get'])
+    def download_pdf(self, request, pk=None):
+        estimate = self.get_object()
+        proposal = estimate.proposals.order_by('-version').first()
+        
+        try:
+            est_pdf = generate_estimate_pdf(estimate)
+            filename = f"Estimate_{estimate.estimate_id}.pdf"
+            
+            if proposal and proposal.filename.lower().endswith('.pdf'):
+                try:
+                    est_pdf = merge_pdfs(est_pdf, proposal.file.path)
+                    filename = f"Estimate_{estimate.estimate_id}_Combined.pdf"
+                except:
+                    pass
+            
+            response = HttpResponse(est_pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
     @decorators.action(detail=True, methods=['post'], permission_classes=[IsSalesHeadOrFinanceManager])
     def reject(self, request, pk=None):
         estimate = self.get_object()
@@ -189,6 +358,23 @@ class EstimateViewSet(viewsets.ModelViewSet):
 class ProposalViewSet(viewsets.ModelViewSet):
     queryset = Proposal.objects.all()
     serializer_class = ProposalSerializer
+
+    def perform_create(self, serializer):
+        estimate_id = self.request.data.get('estimate')
+        if estimate_id:
+            # Find the latest version for this estimate and increment
+            latest_version = Proposal.objects.filter(estimate_id=estimate_id).aggregate(
+                max_version=models.Max('version'))['max_version'] or 0
+            serializer.save(
+                version=latest_version + 1,
+                uploaded_by=self.request.user if self.request.user.is_authenticated else None
+            )
+        else:
+            serializer.save(uploaded_by=self.request.user if self.request.user.is_authenticated else None)
+
+    # Simplified create to use perform_create standard logic
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
 class RenewalViewSet(viewsets.ModelViewSet):
     queryset = Renewal.objects.all()

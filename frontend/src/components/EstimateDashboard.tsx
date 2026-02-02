@@ -6,7 +6,11 @@ import {
     Clock,
     CheckCircle2,
     History,
-    Upload
+    Upload,
+    Mail,
+    X,
+    Eye,
+    Download
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -39,6 +43,92 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
         status: 'all',
         showOnlyLatest: true
     });
+
+    // Email Modal State
+    const [emailModal, setEmailModal] = useState<{
+        open: boolean;
+        estimateId: number | null;
+        to: string;
+        cc: string;
+        bcc: string;
+        subject: string;
+        body: string;
+    }>({
+        open: false,
+        estimateId: null,
+        to: '',
+        cc: '',
+        bcc: '',
+        subject: '',
+        body: ''
+    });
+    const [sending, setSending] = useState(false);
+
+    const openEmailModal = (est: any) => {
+        const clientName = est.customer_name || 'Client';
+        const projectName = est.project_name || 'Project';
+
+        setEmailModal({
+            open: true,
+            estimateId: est.id,
+            to: est.customer_email || '', // Ensure your serializer provides this
+            cc: '',
+            bcc: '',
+            subject: `Proposal / Estimate - ${est.estimate_id}`,
+            body: `Dear ${clientName},\n\nPlease find attached the proposal for ${projectName}.\n\nBest regards,\nSales Team`
+        });
+    };
+
+    const handleSendEmail = async () => {
+        if (!emailModal.estimateId) return;
+        setSending(true);
+        try {
+            await api.post(`/estimates/${emailModal.estimateId}/send_email/`, {
+                to: emailModal.to,
+                cc: emailModal.cc,
+                bcc: emailModal.bcc,
+                subject: emailModal.subject,
+                body: emailModal.body
+            });
+            showNotification('Email sent successfully', 'success');
+            setEmailModal({ ...emailModal, open: false });
+        } catch (error: any) {
+            console.error('Error sending email', error);
+            showNotification(error.response?.data?.error || 'Failed to send email', 'error');
+        } finally {
+            setSending(false);
+        }
+    };
+
+    const handlePreviewPDF = async (id: number) => {
+        try {
+            const response = await api.get(`/estimates/${id}/preview_pdf/`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+            window.open(url, '_blank');
+        } catch (error) {
+            console.error('Error previewing PDF', error);
+            showNotification('Failed to preview PDF', 'error');
+        }
+    };
+
+    const handleDownloadPDF = async (id: number, estId: string) => {
+        try {
+            const response = await api.get(`/estimates/${id}/download_pdf/`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Estimate_${estId}_Combined.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode?.removeChild(link);
+        } catch (error) {
+            showNotification('Failed to download PDF', 'error');
+        }
+    };
 
     useEffect(() => {
         fetchEstimates();
@@ -260,13 +350,49 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                             {new Date(est.created_at).toLocaleDateString()}
                                         </td>
                                         <td style={{ textAlign: 'right' }}>
-                                            <button
-                                                className="ae-btn-secondary"
-                                                onClick={() => onView(est.id)}
-                                                style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                                            >
-                                                View & Manage
-                                            </button>
+                                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    className="ae-btn-secondary"
+                                                    onClick={() => onView(est.id)}
+                                                    style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+                                                    title="View Estimate"
+                                                >
+                                                    <FileText size={16} />
+                                                </button>
+
+                                                <button
+                                                    className="ae-btn-secondary"
+                                                    onClick={() => handlePreviewPDF(est.id)}
+                                                    style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+                                                    title="Preview Combined PDF"
+                                                >
+                                                    <Eye size={16} />
+                                                </button>
+
+                                                <button
+                                                    className="ae-btn-secondary"
+                                                    onClick={() => handleDownloadPDF(est.id, est.estimate_id)}
+                                                    style={{ padding: '6px 10px', fontSize: '0.75rem' }}
+                                                    title="Download Combined PDF"
+                                                >
+                                                    <Download size={16} />
+                                                </button>
+
+                                                <button
+                                                    className="ae-btn-primary"
+                                                    onClick={() => openEmailModal(est)}
+                                                    disabled={!hasProposal}
+                                                    style={{
+                                                        padding: '6px 10px',
+                                                        fontSize: '0.75rem',
+                                                        opacity: !hasProposal ? 0.3 : 1,
+                                                        cursor: !hasProposal ? 'not-allowed' : 'pointer'
+                                                    }}
+                                                    title={!hasProposal ? "Attach a proposal first" : "Send Email"}
+                                                >
+                                                    <Mail size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 );
@@ -275,6 +401,106 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                     </tbody>
                 </table>
             </div>
+            {/* Email Modal */}
+            {emailModal.open && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 2000
+                }}>
+                    <div style={{
+                        background: 'white',
+                        padding: '32px',
+                        borderRadius: '16px',
+                        width: '600px',
+                        maxWidth: '95%',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        maxHeight: '90vh',
+                        overflowY: 'auto'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1A202C' }}>Compose Proposal Email</h3>
+                                <p style={{ color: '#718096', fontSize: '0.85rem', marginTop: '4px' }}>Combined Estimate and Proposal will be attached automatically.</p>
+                            </div>
+                            <button
+                                onClick={() => setEmailModal({ ...emailModal, open: false })}
+                                style={{ padding: '8px', borderRadius: '50%', background: '#F7FAFC', border: 'none', cursor: 'pointer' }}
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
+                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>To:</label>
+                                <input
+                                    className="ae-input"
+                                    value={emailModal.to}
+                                    onChange={(e) => setEmailModal({ ...emailModal, to: e.target.value })}
+                                    placeholder="recipient@example.com"
+                                />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
+                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>CC:</label>
+                                <input
+                                    className="ae-input"
+                                    value={emailModal.cc}
+                                    onChange={(e) => setEmailModal({ ...emailModal, cc: e.target.value })}
+                                    placeholder="cc@example.com (comma separated)"
+                                />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
+                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Subject:</label>
+                                <input
+                                    className="ae-input"
+                                    value={emailModal.subject}
+                                    onChange={(e) => setEmailModal({ ...emailModal, subject: e.target.value })}
+                                    placeholder="Enter subject"
+                                />
+                            </div>
+
+                            <div style={{ marginTop: '16px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Message Body</label>
+                                <textarea
+                                    className="ae-input"
+                                    value={emailModal.body}
+                                    onChange={(e) => setEmailModal({ ...emailModal, body: e.target.value })}
+                                    style={{ width: '100%', minHeight: '180px', padding: '12px', resize: 'vertical' }}
+                                    placeholder="Write your message here..."
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '32px' }}>
+                            <button
+                                className="ae-btn-secondary"
+                                onClick={() => setEmailModal({ ...emailModal, open: false })}
+                                disabled={sending}
+                                style={{ padding: '10px 24px' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="ae-btn-primary"
+                                onClick={handleSendEmail}
+                                disabled={sending}
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 32px' }}
+                            >
+                                {sending ? <RefreshCcw className="animate-spin" size={18} /> : <Mail size={18} />}
+                                {sending ? 'Sending...' : 'Send Now'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

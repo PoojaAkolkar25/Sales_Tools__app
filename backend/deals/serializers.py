@@ -43,6 +43,7 @@ class DealSerializer(serializers.ModelSerializer):
     lead_name = serializers.ReadOnlyField(source='lead.customer_name')
     lead_no = serializers.ReadOnlyField(source='lead.lead_no')
     owner_name = serializers.ReadOnlyField(source='deal_owner.name')
+    country = serializers.PrimaryKeyRelatedField(queryset=CountryMaster.objects.all(), required=False, allow_null=True)
     country_name = serializers.ReadOnlyField(source='country.name')
     partner_name = serializers.ReadOnlyField(source='implementation_partner.name')
     source_name = serializers.ReadOnlyField(source='opportunity_source.name')

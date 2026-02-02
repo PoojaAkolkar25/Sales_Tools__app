@@ -12,7 +12,8 @@ import {
     Clock,
     XCircle,
     ThumbsUp,
-    ThumbsDown
+    ThumbsDown,
+    Mail
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -35,6 +36,58 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
             { id: Date.now(), sr_no: 1, particulars: '', description: '', qty: 0, rate: 0, amount: 0 }
         ]
     });
+
+    // Email Modal State
+    const [emailModal, setEmailModal] = useState<{
+        open: boolean;
+        to: string;
+        cc: string;
+        bcc: string;
+        subject: string;
+        body: string;
+    }>({
+        open: false,
+        to: '',
+        cc: '',
+        bcc: '',
+        subject: '',
+        body: ''
+    });
+    const [sendingEmail, setSendingEmail] = useState(false);
+
+    const openEmailModal = () => {
+        const clientName = estimate.customer_name || 'Client';
+        const projectName = estimate.project_name || 'Project';
+
+        setEmailModal({
+            open: true,
+            to: estimate.customer_email || '',
+            cc: '',
+            bcc: '',
+            subject: `Proposal / Estimate - ${estimate.estimate_id}`,
+            body: `Dear ${clientName},\n\nPlease find attached the proposal for ${projectName}.\n\nBest regards,\nSales Team`
+        });
+    };
+
+    const handleSendEmail = async () => {
+        setSendingEmail(true);
+        try {
+            await api.post(`/estimates/${id}/send_email/`, {
+                to: emailModal.to,
+                cc: emailModal.cc,
+                bcc: emailModal.bcc,
+                subject: emailModal.subject,
+                body: emailModal.body
+            });
+            showNotification('Email sent successfully', 'success');
+            setEmailModal({ ...emailModal, open: false });
+        } catch (error: any) {
+            console.error('Error sending email', error);
+            showNotification(error.response?.data?.error || 'Failed to send email', 'error');
+        } finally {
+            setSendingEmail(false);
+        }
+    };
 
     const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.status === 'SUBMITTED';
 
@@ -346,6 +399,25 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                     >
                         <Send size={18} /> Submit to Customer
                     </button>
+
+                    {/* Send Email Button */}
+                    {(estimate.status === 'SUBMITTED' || estimate.approval_status === 'APPROVED') && (
+                        <button
+                            onClick={openEmailModal}
+                            className="ae-btn-primary"
+                            disabled={!estimate.proposals?.length}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: '#38A169',
+                                opacity: !estimate.proposals?.length ? 0.5 : 1
+                            }}
+                            title={!estimate.proposals?.length ? "Attach a proposal first" : "Send Email"}
+                        >
+                            <Mail size={18} /> Send Email
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -374,29 +446,49 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                             onChange={(e) => setFormData({ ...formData, estimate_date: e.target.value })}
                         />
                     </div>
-                    <div style={{ padding: '8px', borderRight: '1px solid #99b6d8', background: !estimate.proposals?.length ? '#FFF5F5' : 'transparent' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>
-                            Attach Proposal <span style={{ color: '#E53E3E' }}>*</span>
-                        </label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ padding: '8px', gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>
+                                Proposal Attachments (Versioning) <span style={{ color: '#E53E3E' }}>*</span>
+                            </label>
                             <input
                                 type="file"
                                 id="proposal-upload"
                                 style={{ display: 'none' }}
                                 onChange={handleFileChange}
+                                disabled={isReadOnly}
                             />
-                            <label htmlFor="proposal-upload" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <Upload size={16} color={!estimate.proposals?.length ? '#E53E3E' : '#0066CC'} />
-                                <span style={{
-                                    fontSize: '0.85rem',
-                                    color: !estimate.proposals?.length ? '#E53E3E' : '#2D3748',
-                                    fontWeight: !estimate.proposals?.length ? 700 : 500
-                                }}>
-                                    {estimate.proposals?.[0]?.filename || 'Click to attach...'}
-                                </span>
-                            </label>
-                            {estimate.proposals?.length > 0 && (
-                                <CheckCircle2 size={14} color="#38A169" />
+                            {!isReadOnly && (
+                                <label htmlFor="proposal-upload" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#0066CC', fontWeight: 600 }}>
+                                    <Upload size={14} /> Upload New Version
+                                </label>
+                            )}
+                        </div>
+                        <div style={{ maxHeight: '100px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '4px', background: 'white' }}>
+                            {!estimate.proposals?.length ? (
+                                <div style={{ padding: '8px', fontSize: '0.85rem', color: '#E53E3E', fontWeight: 600 }}>No proposal attached. Please upload one.</div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    {[...estimate.proposals].reverse().map((prop: any, idx: number) => (
+                                        <div key={prop.id} style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            padding: '6px 8px',
+                                            borderBottom: idx === estimate.proposals.length - 1 ? 'none' : '1px solid #f1f5f9',
+                                            background: idx === 0 ? '#f0fff4' : 'transparent'
+                                        }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#2d3748' }}>{prop.filename} (v{prop.version})</span>
+                                                <span style={{ fontSize: '0.7rem', color: '#718096' }}>
+                                                    By: {prop.uploaded_by_name || 'System'} | {new Date(prop.uploaded_at).toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <a href={prop.file} target="_blank" rel="noopener noreferrer" style={{ alignSelf: 'center', color: '#0066CC' }}>
+                                                <CheckCircle2 size={16} />
+                                            </a>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     </div>
@@ -514,6 +606,112 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                 </div>
             </div>
 
+            {/* Email Modal */}
+            {emailModal.open && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 2000
+                }}>
+                    <div style={{
+                        background: 'white',
+                        padding: '32px',
+                        borderRadius: '16px',
+                        width: '600px',
+                        maxWidth: '95%',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        maxHeight: '90vh',
+                        overflowY: 'auto'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1A202C' }}>Compose Proposal Email</h3>
+                                <p style={{ color: '#718096', fontSize: '0.85rem', marginTop: '4px' }}>Combined Estimate and Proposal will be attached automatically.</p>
+                            </div>
+                            <button
+                                onClick={() => setEmailModal({ ...emailModal, open: false })}
+                                style={{ padding: '8px', borderRadius: '50%', background: '#F7FAFC', border: 'none', cursor: 'pointer' }}
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
+                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>To:</label>
+                                <input
+                                    className="ae-input"
+                                    value={emailModal.to}
+                                    onChange={(e) => setEmailModal({ ...emailModal, to: e.target.value })}
+                                    placeholder="recipient@example.com"
+                                />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
+                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>CC:</label>
+                                <input
+                                    className="ae-input"
+                                    value={emailModal.cc}
+                                    onChange={(e) => setEmailModal({ ...emailModal, cc: e.target.value })}
+                                    placeholder="cc@example.com (comma separated)"
+                                />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
+                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Subject:</label>
+                                <input
+                                    className="ae-input"
+                                    value={emailModal.subject}
+                                    onChange={(e) => setEmailModal({ ...emailModal, subject: e.target.value })}
+                                    placeholder="Enter subject"
+                                />
+                            </div>
+
+                            <div style={{ marginTop: '16px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Message Body</label>
+                                <textarea
+                                    className="ae-input"
+                                    value={emailModal.body}
+                                    onChange={(e) => setEmailModal({ ...emailModal, body: e.target.value })}
+                                    style={{ width: '100%', minHeight: '180px', padding: '12px', resize: 'vertical' }}
+                                    placeholder="Write your message here..."
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '32px' }}>
+                            <button
+                                className="ae-btn-secondary"
+                                onClick={() => setEmailModal({ ...emailModal, open: false })}
+                                disabled={sendingEmail}
+                                style={{ padding: '10px 24px' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="ae-btn-primary"
+                                onClick={handleSendEmail}
+                                disabled={sendingEmail}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '10px 32px',
+                                    background: '#38A169'
+                                }}
+                            >
+                                {sendingEmail ? <RefreshCw className="animate-spin" size={18} /> : <Mail size={18} />}
+                                {sendingEmail ? 'Sending...' : 'Send Now'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 };

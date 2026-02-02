@@ -126,3 +126,17 @@ class Renewal(models.Model):
 
     def __str__(self):
         return f"Renewal for {self.estimate.estimate_id} ({self.start_date} to {self.end_date})"
+
+class EmailLog(models.Model):
+    estimate = models.ForeignKey(Estimate, on_delete=models.CASCADE, related_name='email_logs')
+    subject = models.CharField(max_length=255)
+    recipient = models.EmailField()
+    cc = models.TextField(blank=True, default='')
+    bcc = models.TextField(blank=True, default='')
+    status = models.CharField(max_length=20, choices=[('SENT', 'Sent'), ('FAILED', 'Failed')])
+    error_message = models.TextField(blank=True, default='')
+    sent_at = models.DateTimeField(auto_now_add=True)
+    sent_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"Email to {self.recipient} for {self.estimate.estimate_id} - {self.status}"
