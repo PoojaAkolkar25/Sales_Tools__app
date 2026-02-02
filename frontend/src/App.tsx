@@ -33,6 +33,8 @@ import EstimateForm from './components/EstimateForm';
 import SalesOrderDashboard from './components/SalesOrderDashboard';
 import SalesOrderForm from './components/SalesOrderForm';
 import MilestoneDashboard from './components/MilestoneDashboard';
+import LeadDashboard from './components/LeadDashboard';
+import LeadForm from './components/LeadForm';
 
 
 
@@ -47,6 +49,8 @@ const AppContent: React.FC = () => {
   const [editingDealId, setEditingDealId] = useState<number | null>(null);
   const [editingEstimateId, setEditingEstimateId] = useState<number | null>(null);
   const [editingSalesOrderId, setEditingSalesOrderId] = useState<number | null>(null);
+  const [editingLeadId, setEditingLeadId] = useState<number | null>(null);
+  const [leadView, setLeadView] = useState<'form' | 'dashboard'>('dashboard');
 
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -143,13 +147,23 @@ const AppContent: React.FC = () => {
     setSalesOrderView('form');
   };
 
+  const handleViewLeadDetails = (id: number) => {
+    setEditingLeadId(id);
+    setLeadView('form');
+  };
+
+  const handleCreateNewLead = () => {
+    setEditingLeadId(null);
+    setLeadView('form');
+  };
+
 
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F7F9FC]">
         <div className="text-center">
           <Loader2 className="animate-spin text-[#0066CC] mx-auto mb-4" size={48} />
-          <p className="text-[#2D3748] font-semibold">Loading Sales Tool...</p>
+          <p className="text-[#2D3748] font-semibold">Loading SalesEdge...</p>
         </div>
       </div>
     );
@@ -158,33 +172,30 @@ const AppContent: React.FC = () => {
   const ModuleWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <div className="app-container">
       {/* Left Sidebar */}
-      <aside className="sidebar flex flex-col">
-        <div className="sidebar-logo">
-          <div className="grid grid-cols-2 gap-0.5 mr-2">
+      <aside className="sidebar flex flex-col !w-20 overflow-hidden">
+        <div className="sidebar-logo !px-0 flex justify-center">
+          <div className="grid grid-cols-2 gap-0.5">
             <div className="w-2.5 h-2.5 bg-[#A0AEC0]"></div>
             <div className="w-2.5 h-2.5 bg-[#3182CE]"></div>
             <div className="w-2.5 h-2.5 bg-[#3182CE]"></div>
             <div className="w-2.5 h-2.5 bg-[#F6AD55]"></div>
           </div>
-          <h1>Sales Tool</h1>
+          <h1 className="sr-only">SalesEdge</h1>
         </div>
 
         <nav className="sidebar-nav flex-1">
-          <div className="sidebar-section-label">Main Modules</div>
           {baseNavItems.map((item) => (
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`sidebar-item ${location.pathname === item.path ? 'active' : ''}`}
+              className={`sidebar-item !px-0 flex justify-center ${location.pathname === item.path ? 'active' : ''}`}
+              title={item.label}
             >
-              <item.icon size={20} />
-              <span>{item.label}</span>
+              <item.icon size={24} />
+              <span className="sr-only">{item.label}</span>
             </button>
           ))}
-
         </nav>
-
-        {/* User context removed from sidebar bottom as it is now in the top navbar */}
       </aside>
 
       {/* Main Content Area */}
@@ -301,21 +312,102 @@ const AppContent: React.FC = () => {
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
+      <Route path="/lead" element={
+        user ? (
+          <ModuleWrapper>
+            {leadView === 'form' ? (
+              <LeadForm
+                id={editingLeadId}
+                onBack={() => setLeadView('dashboard')}
+                onSave={() => setLeadView('dashboard')}
+              />
+            ) : (
+              <LeadDashboard
+                onView={handleViewLeadDetails}
+                onCreate={handleCreateNewLead}
+              />
+            )}
+          </ModuleWrapper>
+        ) : <Navigate to="/login" />
+      } />
       <Route path="/deal" element={
         user ? (
           <ModuleWrapper>
-            {dealView === 'form' ? (
-              <DealForm
-                id={editingDealId}
-                onBack={() => setDealView('dashboard')}
-                onSave={() => setDealView('dashboard')}
-              />
-            ) : (
-              <DealDashboard
-                onView={handleViewDealDetails}
-                onCreate={handleCreateNewDeal}
-              />
-            )}
+            <div className="space-y-6">
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 8px',
+                marginBottom: '16px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  alignItems: 'center',
+                  background: 'white',
+                  padding: '6px',
+                  borderRadius: '12px',
+                  border: '1px solid #E0E6ED',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                }}>
+                  <button
+                    onClick={() => setDealView('dashboard')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 16px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      background: dealView === 'dashboard' ? '#FF6B00' : 'transparent',
+                      color: dealView === 'dashboard' ? 'white' : '#718096',
+                      boxShadow: dealView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                    }}
+                  >
+                    <LayoutDashboard size={18} /> Dashboard
+                  </button>
+                  <button
+                    onClick={handleCreateNewDeal}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 16px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      background: (dealView === 'form' && !editingDealId) ? '#FF6B00' : 'transparent',
+                      color: (dealView === 'form' && !editingDealId) ? 'white' : '#718096',
+                      boxShadow: (dealView === 'form' && !editingDealId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                    }}
+                  >
+                    <PlusCircle size={18} /> Create New
+                  </button>
+                </div>
+              </div>
+
+              {dealView === 'form' ? (
+                <DealForm
+                  id={editingDealId}
+                  onBack={() => setDealView('dashboard')}
+                  onSave={() => setDealView('dashboard')}
+                />
+              ) : (
+                <DealDashboard
+                  onView={handleViewDealDetails}
+                  onCreate={handleCreateNewDeal}
+                />
+              )}
+            </div>
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
@@ -373,7 +465,7 @@ const AppContent: React.FC = () => {
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
-      {baseNavItems.filter(item => !['cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order', 'milestone'].includes(item.id)).map(item => (
+      {baseNavItems.filter(item => !['lead', 'cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order', 'milestone'].includes(item.id)).map(item => (
         <Route key={item.id} path={item.path} element={
           user ? (
             <ModuleWrapper>

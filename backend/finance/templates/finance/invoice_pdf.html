@@ -97,6 +97,8 @@
     </style>
 </head>
 
+{% load date_filters %}
+
 <body>
     <table style="width: 100%; margin-bottom: 20px; border-bottom: 2px solid #FF6B00;">
         <tr>
@@ -112,7 +114,7 @@
                 <h1 style="color: #FF6B00; margin: 0; font-size: 20px;">{% if invoice.invoice_type == 'EXPORT' %}EXPORT
                     INVOICE{% else %}TAX INVOICE{% endif %}</h1>
                 <p style="margin: 2px 0;"><strong>Invoice No:</strong> {{ invoice.invoice_no }}</p>
-                <p style="margin: 2px 0;"><strong>Date:</strong> {{ invoice.invoice_date }}</p>
+                <p style="margin: 2px 0;"><strong>Date:</strong> {{ invoice.invoice_date|date_format }}</p>
                 <p style="margin: 2px 0;"><strong>Place:</strong> {{ invoice.place_of_supply }}</p>
             </td>
         </tr>
@@ -215,15 +217,31 @@
     <div class="footer">
         <div class="signature-box">
             <p>For <strong>{{ company.name }}</strong></p>
-            {% if company.company_seal %}
-            <img src="{{ company.company_seal.path }}" class="signature-img" style="max-height: 50px;">
-            {% endif %}
-            {% if company.signature_image %}
-            <img src="{{ company.signature_image.path }}" class="signature-img">
-            {% else %}
-            <br><br><br>
-            {% endif %}
-            {% if company.authorized_signatory_name %}
+
+            {# Combined Seal and Signature logic #}
+            <div style="position: relative; height: 100px;">
+                {% if invoice.company_seal %}
+                <img src="{{ invoice.company_seal.path }}" class="signature-img"
+                    style="max-height: 60px; position: absolute; left: 0; bottom: 0; opacity: 0.8;">
+                {% elif company.company_seal %}
+                <img src="{{ company.company_seal.path }}" class="signature-img"
+                    style="max-height: 60px; position: absolute; left: 0; bottom: 0; opacity: 0.8;">
+                {% endif %}
+
+                {% if invoice.signature_image %}
+                <img src="{{ invoice.signature_image.path }}" class="signature-img"
+                    style="max-height: 50px; position: absolute; left: 20px; bottom: 10px;">
+                {% elif company.signature_image %}
+                <img src="{{ company.signature_image.path }}" class="signature-img"
+                    style="max-height: 50px; position: absolute; left: 20px; bottom: 10px;">
+                {% else %}
+                <br><br><br>
+                {% endif %}
+            </div>
+
+            {% if invoice.authorized_signatory %}
+            <p><strong>{{ invoice.authorized_signatory }}</strong></p>
+            {% elif company.authorized_signatory_name %}
             <p><strong>{{ company.authorized_signatory_name }}</strong></p>
             {% endif %}
             <p>Authorized Signatory</p>
@@ -232,13 +250,17 @@
 
     <div class="compliance-note">
         {% if invoice.invoice_type == 'DOMESTIC' or invoice.invoice_type == 'INTER_STATE' %}
-        <p><strong>Declaration:</strong> We declare that this invoice shows the actual price of the goods described and
-            that all particulars are true and correct. This invoice is issued under Rule 46 of the CGST Rules, 2017.</p>
+        <p><strong>Declaration:</strong> {{ invoice.gst_declaration|default:"We declare that this invoice shows the
+            actual price of the goods described and that all particulars are true and correct. This invoice is issued
+            under Rule 46 of the CGST Rules, 2017." }}</p>
         {% endif %}
+
         {% if invoice.invoice_type == 'EXPORT' %}
-        <p><strong>LUT Declaration:</strong> Supply meant for export under Letter of Undertaking (LUT) without payment
-            of Integrated Tax as per Section 16(3) of the IGST Act, 2017 and Rule 96A of the CGST Rules, 2017.</p>
+        <p><strong>LUT Declaration:</strong> {{ invoice.lut_declaration|default:"Supply meant for export under Letter of
+            Undertaking (LUT) without payment of Integrated Tax as per Section 16(3) of the IGST Act, 2017 and Rule 96A
+            of the CGST Rules, 2017." }}</p>
         {% endif %}
+
         <p style="margin-top: 10px;">This is a computer-generated invoice and does not require a physical signature.</p>
     </div>
 </body>

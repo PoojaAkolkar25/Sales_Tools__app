@@ -47,7 +47,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'total_discount', 'taxable_amount', 'total_tax', 'round_off', 
             'total_amount', 'open_balance', 'grand_total_words', 'approval_comments', 
             'approved_by', 'approved_at', 'line_items', 'customer_name', 
-            'project_name', 'approved_by_name', 'sales_tax_rate', 'sales_tax_amount'
+            'project_name', 'approved_by_name', 'sales_tax_rate', 'sales_tax_amount',
+            'gst_declaration', 'lut_declaration', 'authorized_signatory', 
+            'signature_image', 'company_seal'
         ]
 
     def to_internal_value(self, data):

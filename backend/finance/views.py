@@ -33,12 +33,25 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['invoice_no', 'lead__customer_name', 'deal__deal_name']
     filterset_class = InvoiceFilter
+    parser_classes = [MultiPartParser, FormParser]
 
     def perform_create(self, serializer):
-        # Calculate taxes and totals first to get all values
-        line_items_data = self.request.data.get('line_items', [])
-        invoice_data = self.request.data
+        import json
         
+        # Get line items data - could be in 'line_items' (JSON) or 'line_items_data' (FormData JSON string)
+        line_items_raw = self.request.data.get('line_items', [])
+        if not line_items_raw:
+            line_items_raw = self.request.data.get('line_items_data', '[]')
+            
+        if isinstance(line_items_raw, str):
+            try:
+                line_items_data = json.loads(line_items_raw)
+            except json.JSONDecodeError:
+                line_items_data = []
+        else:
+            line_items_data = line_items_raw
+            
+        invoice_data = self.request.data
         calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
         
         # Determine invoice number
@@ -95,10 +108,22 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         return invoice
 
     def perform_update(self, serializer):
-        # Calculate taxes and totals first to get all values
-        line_items_data = self.request.data.get('line_items', [])
-        invoice_data = self.request.data
+        import json
         
+        # Get line items data - could be in 'line_items' (JSON) or 'line_items_data' (FormData JSON string)
+        line_items_raw = self.request.data.get('line_items', [])
+        if not line_items_raw:
+            line_items_raw = self.request.data.get('line_items_data', '[]')
+            
+        if isinstance(line_items_raw, str):
+            try:
+                line_items_data = json.loads(line_items_raw)
+            except json.JSONDecodeError:
+                line_items_data = []
+        else:
+            line_items_data = line_items_raw
+            
+        invoice_data = self.request.data
         calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
         
         # Save invoice with all calculated values

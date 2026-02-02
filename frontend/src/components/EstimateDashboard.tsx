@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import { formatToAppDate } from '../utils/dateUtils';
 
 interface Estimate {
     id: number;
@@ -346,8 +347,8 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                 </button>
                                             )}
                                         </td>
-                                        <td style={{ color: '#718096', fontSize: '0.75rem' }}>
-                                            {new Date(est.created_at).toLocaleDateString()}
+                                        <td style={{ color: '#4A5568', fontSize: '0.75rem' }}>
+                                            {formatToAppDate(est.created_at)}
                                         </td>
                                         <td style={{ textAlign: 'right' }}>
                                             <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>

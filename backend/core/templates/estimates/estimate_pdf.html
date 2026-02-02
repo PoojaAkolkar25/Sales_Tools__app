@@ -77,6 +77,8 @@
     </style>
 </head>
 
+{% load date_filters %}
+
 <body>
 
     <div class="header">
@@ -89,7 +91,7 @@
             <td class="label">Estimate No:</td>
             <td>{{ estimate.estimate_id }} (v{{ estimate.version }})</td>
             <td class="label">Date:</td>
-            <td>{{ estimate.estimate_date }}</td>
+            <td>{{ estimate.estimate_date|date_format }}</td>
         </tr>
         <tr>
             <td class="label">Customer:</td>

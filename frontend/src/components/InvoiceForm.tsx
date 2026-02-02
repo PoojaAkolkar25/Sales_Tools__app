@@ -37,8 +37,14 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         invoice_type: 'DOMESTIC',
         sales_tax_rate: 0,
         sales_tax_amount: 0,
-        place_of_supply: ''
+        place_of_supply: '',
+        authorized_signatory: '',
+        gst_declaration: 'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. This invoice is issued under Rule 46 of the CGST Rules, 2017.',
+        lut_declaration: 'Supply meant for export under Letter of Undertaking (LUT) without payment of Integrated Tax as per Section 16(3) of the IGST Act, 2017 and Rule 96A of the CGST Rules, 2017.'
     });
+
+    const [signatureFile, setSignatureFile] = useState<File | null>(null);
+    const [sealFile, setSealFile] = useState<File | null>(null);
 
     const [lineItems, setLineItems] = useState<LineItem[]>([
         { description: '', hsn_sac: '', quantity: 1, rate: 0, discount: 0, gst_rate: 18 }
@@ -103,7 +109,10 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 invoice_type: inv.invoice_type,
                 sales_tax_rate: inv.sales_tax_rate || 0,
                 sales_tax_amount: inv.sales_tax_amount || 0,
-                place_of_supply: inv.place_of_supply || ''
+                place_of_supply: inv.place_of_supply || '',
+                authorized_signatory: inv.authorized_signatory || '',
+                gst_declaration: inv.gst_declaration || '',
+                lut_declaration: inv.lut_declaration || ''
             });
 
             setIsReadOnly(inv.status !== 'DRAFT');
@@ -206,16 +215,29 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         e.preventDefault();
         setLoading(true);
         try {
-            const submissionData = {
-                ...formData,
-                line_items: lineItems
-            };
+            const data = new FormData();
+            Object.keys(formData).forEach(key => {
+                const value = (formData as any)[key];
+                if (value !== null && value !== undefined) {
+                    data.append(key, value);
+                }
+            });
+
+            // Append line items as JSON string (or handle differently if needed)
+            data.append('line_items_data', JSON.stringify(lineItems));
+
+            if (signatureFile) data.append('signature_image', signatureFile);
+            if (sealFile) data.append('company_seal', sealFile);
 
             if (invoiceId) {
-                await api.put(`/finance/invoices/${invoiceId}/`, submissionData);
+                await api.put(`/finance/invoices/${invoiceId}/`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
                 showNotification('Invoice updated successfully', 'success');
             } else {
-                await api.post('/finance/invoices/', submissionData);
+                await api.post('/finance/invoices/', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
                 showNotification('Invoice created successfully', 'success');
             }
             onBack();
@@ -371,11 +393,51 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '40px' }}>
-                    <div className="ae-input-group">
-                        <label className="ae-label">Billing Address</label>
-                        <textarea className="ae-input" rows={4} disabled={isReadOnly} value={formData.billing_address} onChange={e => setFormData({ ...formData, billing_address: e.target.value })} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '40px', marginTop: '32px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        <div className="ae-input-group">
+                            <label className="ae-label">Billing Address</label>
+                            <textarea className="ae-input" rows={3} disabled={isReadOnly} value={formData.billing_address} onChange={e => setFormData({ ...formData, billing_address: e.target.value })} />
+                        </div>
+
+                        <div style={{ background: '#F8FAFC', padding: '24px', borderRadius: '12px', border: '1px solid #E0E6ED' }}>
+                            <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0066CC', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                Compliance & Signatory
+                            </h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Authorized Signatory</label>
+                                    <input className="ae-input" placeholder="Name of signatory" disabled={isReadOnly} value={formData.authorized_signatory} onChange={e => setFormData({ ...formData, authorized_signatory: e.target.value })} />
+                                </div>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Signature & Seal</label>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <label style={{ flex: 1, padding: '8px', border: '1px dashed #E0E6ED', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontSize: '0.7rem' }}>
+                                            {signatureFile ? 'Signature selected' : 'Upload Signature'}
+                                            <input type="file" hidden accept="image/*" onChange={e => setSignatureFile(e.target.files?.[0] || null)} />
+                                        </label>
+                                        <label style={{ flex: 1, padding: '8px', border: '1px dashed #E0E6ED', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontSize: '0.7rem' }}>
+                                            {sealFile ? 'Seal selected' : 'Upload Seal'}
+                                            <input type="file" hidden accept="image/*" onChange={e => setSealFile(e.target.files?.[0] || null)} />
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {formData.invoice_type === 'EXPORT' ? (
+                                <div className="ae-input-group">
+                                    <label className="ae-label">LUT Declaration (Export)</label>
+                                    <textarea className="ae-input" rows={3} disabled={isReadOnly} value={formData.lut_declaration} onChange={e => setFormData({ ...formData, lut_declaration: e.target.value })} />
+                                </div>
+                            ) : (
+                                <div className="ae-input-group">
+                                    <label className="ae-label">GST Declaration (India)</label>
+                                    <textarea className="ae-input" rows={3} disabled={isReadOnly} value={formData.gst_declaration} onChange={e => setFormData({ ...formData, gst_declaration: e.target.value })} />
+                                </div>
+                            )}
+                        </div>
                     </div>
+
                     <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                             <span style={{ color: '#64748b' }}>Subtotal</span>

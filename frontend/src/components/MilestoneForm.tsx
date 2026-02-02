@@ -62,23 +62,43 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
         setMilestones([]);
     };
 
-    const handleSOChange = (soId: string) => {
+    const handleSOChange = async (soId: string) => {
         const so = salesOrders.find(s => s.id.toString() === soId);
         setSelectedSO(so || null);
-        setMilestones([]); // Reset milestones when SO changes? Or maybe auto-create one?
+
         if (so) {
-            // Initialize with one empty milestone
-            setMilestones([{
-                milestone_no: 'M1',
-                period_from: so.order_date,
-                period_to: so.delivery_date,
-                due_date: so.delivery_date,
-                description: 'Initial Milestone',
-                percentage: 100,
-                qty: 1,
-                rate: parseFloat(so.total_amount),
-                amount: parseFloat(so.total_amount)
-            }]);
+            setLoading(true);
+            try {
+                const response = await api.get(`/milestones/?sales_order=${so.id}`);
+                if (response.data && response.data.length > 0) {
+                    // Populate from existing milestones
+                    const loadedMilestones = response.data.map((m: any) => ({
+                        ...m,
+                        percentage: ((parseFloat(m.amount) / parseFloat(so.total_amount)) * 100).toFixed(2)
+                    }));
+                    setMilestones(loadedMilestones);
+                } else {
+                    // Initialize with one empty milestone if none exist
+                    setMilestones([{
+                        milestone_no: 'M1',
+                        period_from: so.order_date,
+                        period_to: so.delivery_date,
+                        due_date: so.delivery_date,
+                        description: 'Initial Milestone',
+                        percentage: '100.00',
+                        qty: 1,
+                        rate: parseFloat(so.total_amount),
+                        amount: parseFloat(so.total_amount)
+                    }]);
+                }
+            } catch (error) {
+                console.error('Error fetching milestones', error);
+                showNotification('Failed to fetch existing milestones', 'error');
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            setMilestones([]);
         }
     };
 
@@ -128,19 +148,34 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
         if (!selectedSO) return;
 
         const total = calculateTotal();
-        if (total > parseFloat(selectedSO.total_amount)) {
-            showNotification(`Total milestone amount (${total}) exceeds Sales Order value (${selectedSO.total_amount})`, 'error');
+        // Use a small epsilon for floating point comparison if needed, but rounding to 2 decimals should be enough
+        if (Math.abs(total - parseFloat(selectedSO.total_amount)) > 0.01) {
+            showNotification(`Total milestone amount (${total}) must equal Sales Order value (${selectedSO.total_amount})`, 'error');
             return;
         }
 
         setSaving(true);
         try {
-            // Save each milestone sequentially
             for (const m of milestones) {
-                await api.post('/milestones/', {
+                // Prepare clean data for the backend (remove UI-only or read-only fields)
+                const data = {
                     sales_order: selectedSO.id,
-                    ...m
-                });
+                    milestone_no: m.milestone_no,
+                    period_from: m.period_from || null,
+                    period_to: m.period_to || null,
+                    due_date: m.due_date || null,
+                    description: m.description,
+                    qty: m.qty || 1,
+                    rate: m.rate || 0,
+                    amount: m.amount || 0,
+                    status: m.status || 'PENDING'
+                };
+
+                if (m.id) {
+                    await api.put(`/milestones/${m.id}/`, data);
+                } else {
+                    await api.post('/milestones/', data);
+                }
             }
             showNotification('Milestones saved successfully', 'success');
             onBack();
@@ -332,55 +367,95 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {milestones.map((milestone, index) => (
-                                                <tr key={index} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                                                    <td style={{ padding: '4px 8px' }}>
-                                                        <input
-                                                            type="text"
-                                                            value={milestone.milestone_no}
-                                                            onChange={(e) => handleMilestoneChange(index, 'milestone_no', e.target.value)}
-                                                            style={{ width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, textAlign: 'center' }}
-                                                        />
-                                                    </td>
-                                                    <td style={{ padding: '4px 8px' }}>
-                                                        <textarea
-                                                            value={milestone.description}
-                                                            onChange={(e) => handleMilestoneChange(index, 'description', e.target.value)}
-                                                            style={{ width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED', borderRadius: '4px', fontSize: '0.75rem', resize: 'none' }}
-                                                            rows={1}
-                                                        />
-                                                    </td>
-                                                    <td style={{ padding: '4px 8px' }}>
-                                                        <input
-                                                            type="date"
-                                                            value={milestone.due_date || ''}
-                                                            onChange={(e) => handleMilestoneChange(index, 'due_date', e.target.value)}
-                                                            style={{ width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED', borderRadius: '4px', fontSize: '0.75rem' }}
-                                                        />
-                                                    </td>
-                                                    <td style={{ padding: '4px 8px' }}>
-                                                        <input
-                                                            type="number"
-                                                            value={milestone.percentage || ''}
-                                                            onChange={(e) => handleMilestoneChange(index, 'percentage', e.target.value)}
-                                                            style={{ width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, textAlign: 'center', color: '#0066CC' }}
-                                                        />
-                                                    </td>
-                                                    <td style={{ padding: '4px 8px' }}>
-                                                        <input
-                                                            type="number"
-                                                            value={milestone.amount || ''}
-                                                            onChange={(e) => handleMilestoneChange(index, 'amount', e.target.value)}
-                                                            style={{ width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800, textAlign: 'right' }}
-                                                        />
-                                                    </td>
-                                                    <td style={{ padding: '4px 8px', textAlign: 'center' }}>
-                                                        <button onClick={() => handleRemoveMilestone(index)} style={{ background: 'none', border: 'none', color: '#FEB2B2', cursor: 'pointer' }}>
-                                                            <X size={16} />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {milestones.map((milestone, index) => {
+                                                const isInvoiced = milestone.status === 'INVOICED';
+                                                return (
+                                                    <tr key={index} style={{
+                                                        borderBottom: '1px solid #F1F5F9',
+                                                        background: isInvoiced ? '#F8FAFC' : 'transparent'
+                                                    }}>
+                                                        <td style={{ padding: '4px 8px' }}>
+                                                            <input
+                                                                type="text"
+                                                                value={milestone.milestone_no}
+                                                                onChange={(e) => handleMilestoneChange(index, 'milestone_no', e.target.value)}
+                                                                disabled={isInvoiced}
+                                                                style={{
+                                                                    width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED',
+                                                                    borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700,
+                                                                    textAlign: 'center', opacity: isInvoiced ? 0.7 : 1
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td style={{ padding: '4px 8px' }}>
+                                                            <textarea
+                                                                value={milestone.description}
+                                                                onChange={(e) => handleMilestoneChange(index, 'description', e.target.value)}
+                                                                disabled={isInvoiced}
+                                                                style={{
+                                                                    width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED',
+                                                                    borderRadius: '4px', fontSize: '0.75rem', resize: 'none',
+                                                                    opacity: isInvoiced ? 0.7 : 1
+                                                                }}
+                                                                rows={1}
+                                                            />
+                                                        </td>
+                                                        <td style={{ padding: '4px 8px' }}>
+                                                            <input
+                                                                type="date"
+                                                                value={milestone.due_date || ''}
+                                                                onChange={(e) => handleMilestoneChange(index, 'due_date', e.target.value)}
+                                                                disabled={isInvoiced}
+                                                                style={{
+                                                                    width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED',
+                                                                    borderRadius: '4px', fontSize: '0.75rem',
+                                                                    opacity: isInvoiced ? 0.7 : 1
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td style={{ padding: '4px 8px' }}>
+                                                            <input
+                                                                type="number"
+                                                                value={milestone.percentage || ''}
+                                                                onChange={(e) => handleMilestoneChange(index, 'percentage', e.target.value)}
+                                                                disabled={isInvoiced}
+                                                                style={{
+                                                                    width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED',
+                                                                    borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700,
+                                                                    textAlign: 'center', color: '#0066CC',
+                                                                    opacity: isInvoiced ? 0.7 : 1
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td style={{ padding: '4px 8px' }}>
+                                                            <input
+                                                                type="number"
+                                                                value={milestone.amount || ''}
+                                                                onChange={(e) => handleMilestoneChange(index, 'amount', e.target.value)}
+                                                                disabled={isInvoiced}
+                                                                style={{
+                                                                    width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED',
+                                                                    borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800,
+                                                                    textAlign: 'right',
+                                                                    opacity: isInvoiced ? 0.7 : 1
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                                                            {!isInvoiced && (
+                                                                <button onClick={() => handleRemoveMilestone(index)} style={{ background: 'none', border: 'none', color: '#FEB2B2', cursor: 'pointer' }}>
+                                                                    <X size={16} />
+                                                                </button>
+                                                            )}
+                                                            {isInvoiced && (
+                                                                <span title="Invoiced milestones cannot be deleted" style={{ color: '#CBD5E0' }}>
+                                                                    <X size={16} />
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                         <tfoot>
                                             <tr style={{ background: '#F8FAFC' }}>

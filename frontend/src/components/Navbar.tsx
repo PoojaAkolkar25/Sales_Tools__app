@@ -38,10 +38,10 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onCreateUser }) => {
             {/* Left Section: Context / Search */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '48px' }}>
                 {/* Breadcrumb */}
-                <div style={{ display: 'flex', gap: '8px', color: 'rgba(255,255,255,0.5)', fontSize: '14px', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                    <span>Sales Tool</span>
-                    <span>/</span>
-                    <span style={{ color: 'white' }}>Dashboard</span>
+                <div style={{ display: 'flex', gap: '8px', color: 'rgba(255,255,255,0.5)', fontSize: '22px', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                    <span>SalesEdge</span>
+                    {/* <span>/</span> */}
+                    {/* <span style={{ color: 'white' }}>Dashboard</span> */}
                 </div>
 
                 <div className="ae-nav-search">

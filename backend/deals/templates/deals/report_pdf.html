@@ -1,22 +1,74 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <style>
-        body { font-family: 'Arial', sans-serif; color: #2D3748; }
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #0066CC; padding-bottom: 10px; }
-        h1 { color: #0066CC; margin: 0; }
-        .date { font-size: 0.8rem; color: #718096; margin-top: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.75rem; }
-        th { background-color: #F7FAFC; color: #4A5568; font-weight: bold; text-align: left; padding: 10px; border: 1px solid #E2E8F0; }
-        td { padding: 10px; border: 1px solid #E2E8F0; vertical-align: top; }
-        .stage-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-        .footer { margin-top: 50px; text-align: center; font-size: 0.7rem; color: #A0AEC0; }
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #2D3748;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #0066CC;
+            padding-bottom: 10px;
+        }
+
+        h1 {
+            color: #0066CC;
+            margin: 0;
+        }
+
+        .date {
+            font-size: 0.8rem;
+            color: #718096;
+            margin-top: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.75rem;
+        }
+
+        th {
+            background-color: #F7FAFC;
+            color: #4A5568;
+            font-weight: bold;
+            text-align: left;
+            padding: 10px;
+            border: 1px solid #E2E8F0;
+        }
+
+        td {
+            padding: 10px;
+            border: 1px solid #E2E8F0;
+            vertical-align: top;
+        }
+
+        .stage-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #A0AEC0;
+        }
     </style>
 </head>
+
+{% load date_filters %}
+
 <body>
     <div class="header">
         <h1>Deals Report</h1>
-        <div class="date">Generated on: {{ now|date:"F j, Y, g:i a" }}</div>
+        <div class="date">Generated on: {{ now|date_format }}</div>
     </div>
 
     <table>
@@ -43,14 +95,14 @@
                 <td>{{ deal.probability|floatformat:0 }}%</td>
                 <td>
                     {% if deal.deal_owner %}
-                        {{ deal.deal_owner.name }}
+                    {{ deal.deal_owner.name }}
                     {% elif deal.deal_owner_user %}
-                        {{ deal.deal_owner_user.username }}
+                    {{ deal.deal_owner_user.username }}
                     {% else %}
-                        N/A
+                    N/A
                     {% endif %}
                 </td>
-                <td>{{ deal.expected_close_date|default:"N/A" }}</td>
+                <td>{{ deal.expected_close_date|date_format|default:"N/A" }}</td>
             </tr>
             {% empty %}
             <tr>
@@ -61,7 +113,8 @@
     </table>
 
     <div class="footer">
-        © {{ now|date:"Y" }} Sales Tool Application. All rights reserved.
+        © {{ now|date:"Y" }} SalesEdge Application. All rights reserved.
     </div>
 </body>
+
 </html>

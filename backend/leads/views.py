@@ -1,13 +1,26 @@
 from rest_framework import viewsets
+from django.db.models import Q
 from .models import Lead
 from .serializers import LeadSerializer
 
 class LeadViewSet(viewsets.ModelViewSet):
-    queryset = Lead.objects.all()
+    queryset = Lead.objects.all().order_by('-created_at')
     serializer_class = LeadSerializer
 
     def get_queryset(self):
-        lead_no = self.request.query_params.get('lead_no', None)
-        if lead_no is not None:
-            return Lead.objects.filter(lead_no=lead_no)
-        return super().get_queryset()
+        queryset = Lead.objects.all().order_by('-created_at')
+        
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(lead_no__icontains=search) |
+                Q(customer_name__icontains=search) |
+                Q(project_name__icontains=search) |
+                Q(sales_person__icontains=search)
+            )
+            
+        company = self.request.query_params.get('company', None)
+        if company:
+            queryset = queryset.filter(company=company)
+            
+        return queryset

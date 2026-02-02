@@ -7,6 +7,7 @@ from .serializers import MilestoneSerializer
 from finance.models import Invoice, InvoiceStatus
 from sales_orders.models import SalesOrder
 import datetime
+from decimal import Decimal, InvalidOperation
 
 class MilestoneViewSet(viewsets.ModelViewSet):
     queryset = Milestone.objects.all()
@@ -19,29 +20,68 @@ class MilestoneViewSet(viewsets.ModelViewSet):
         customer_id = self.request.query_params.get('customer')
         sales_order_id = self.request.query_params.get('sales_order')
         
-        if customer_id:
+        if customer_id and customer_id.isdigit():
             queryset = queryset.filter(sales_order__customer_id=customer_id)
-        if sales_order_id:
+        if sales_order_id and sales_order_id.isdigit():
             queryset = queryset.filter(sales_order_id=sales_order_id)
             
         return queryset
 
-    def create(self, request, *args, **kwargs):
-        # Custom validation for total amount
-        sales_order_id = request.data.get('sales_order')
-        amount = float(request.data.get('amount', 0))
-        
-        if sales_order_id:
+    def _validate_milestone_amount(self, sales_order_id, amount, instance=None):
+        if not sales_order_id:
+            return None
+
+        try:
             so = SalesOrder.objects.get(pk=sales_order_id)
-            existing_total = Milestone.objects.filter(sales_order=so).aggregate(Sum('amount'))['amount__sum'] or 0
+        except SalesOrder.DoesNotExist:
+            return f"Sales Order with ID {sales_order_id} does not exist."
+
+        # Handle empty/falsy amount
+        if amount == "" or amount is None:
+            amount = Decimal('0')
             
-            if float(existing_total) + amount > float(so.total_amount):
-                return Response(
-                    {"error": f"Total milestones amount ({float(existing_total) + amount}) exceeds Sales Order value ({so.total_amount})"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        try:
+            amount_dec = Decimal(str(amount))
+        except (ValueError, TypeError, InvalidOperation):
+            return f"Invalid amount format: {amount}"
+
+        queryset = Milestone.objects.filter(sales_order=so)
+        if instance:
+            queryset = queryset.exclude(pk=instance.pk)
+            
+        existing_total = queryset.aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+        new_total = Decimal(str(existing_total)) + amount_dec
+        
+        if new_total > Decimal(str(so.total_amount)):
+            return f"Total milestones amount ({new_total}) exceeds Sales Order value ({so.total_amount})"
+        return None
+
+    def create(self, request, *args, **kwargs):
+        try:
+            sales_order_id = request.data.get('sales_order')
+            amount = request.data.get('amount', 0)
+            
+            error = self._validate_milestone_amount(sales_order_id, amount)
+            if error:
+                return Response({"error": error}, status=status.HTTP_400_BAD_REQUEST)
+                    
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({"error": f"Internal Server Error during creation: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            sales_order_id = request.data.get('sales_order') or instance.sales_order_id
+            amount = request.data.get('amount', instance.amount)
+            
+            error = self._validate_milestone_amount(sales_order_id, amount, instance=instance)
+            if error:
+                return Response({"error": error}, status=status.HTTP_400_BAD_REQUEST)
                 
-        return super().create(request, *args, **kwargs)
+            return super().update(request, *args, **kwargs)
+        except Exception as e:
+            return Response({"error": f"Internal Server Error during update: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'])
     def create_invoice(self, request, pk=None):
@@ -114,7 +154,7 @@ class MilestoneViewSet(viewsets.ModelViewSet):
                 lead=lead, 
                 total_amount=milestone.amount,
                 open_balance=milestone.amount,
-                status=InvoiceStatus.OPEN
+                status=InvoiceStatus.DRAFT
             )
             
             milestone.invoice = invoice

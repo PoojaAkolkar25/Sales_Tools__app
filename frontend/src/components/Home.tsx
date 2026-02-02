@@ -32,7 +32,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
 
                     <div style={{ textAlign: 'left' }}>
                         <h1 className="ae-hero-title" style={{ fontSize: '1.25rem', marginBottom: '4px' }}>
-                            SALES TOOL
+                            SalesEdge
                         </h1>
                         <p className="ae-hero-text" style={{ fontSize: '0.85rem', margin: '0', maxWidth: '500px' }}>
                             Streamline your workflow, manage leads, and close deals faster.

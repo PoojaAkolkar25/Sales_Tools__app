@@ -1,38 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-    LayoutDashboard,
     PlusCircle,
     Search,
-    Download,
-    TrendingUp,
-    Clock,
-    CheckCircle2,
     Loader2,
-    Mail,
     FileSpreadsheet,
     FileText,
     RefreshCcw,
-    ChevronDown
+    ChevronDown,
+    Download
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import { formatToAppDate } from '../utils/dateUtils';
 
 interface Deal {
     id: number;
+    company: string;
     deal_id: string;
     deal_name: string;
-    project_name: string;
     customer_name: string;
     stage: string;
-    amount: string;
+    deal_amount: string;
     currency: string;
-    deal_owner: number;
-    owner_name: string;
     expected_close_date: string;
+    deal_date: string;
     created_at: string;
     is_read: boolean;
     hubspot_id?: string;
-    last_synced_at?: string;
 }
 
 interface DealDashboardProps {
@@ -44,44 +38,38 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView, onCreate }) => {
     const { showNotification } = useNotification();
     const [deals, setDeals] = useState<Deal[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [reportType, setReportType] = useState<string>('all');
     const [showExportMenu, setShowExportMenu] = useState(false);
-    const [stats, setStats] = useState({
-        total_deals: 0,
-        total_value: 0,
-        win_rate: 0,
-        active_pipeline: 0
+    const [filters, setFilters] = useState({
+        deal_id: '',
+        deal_name: '',
+        company: '',
+        lead_no: '',
+        stage: '',
+        currency: '',
+        deal_amount: '',
+        fx_rate: '',
+        deal_type: '',
+        partner_name: '',
+        client_type: '',
+        salesperson_name: '',
+        sales_head: '',
+        project_manager: '',
+        expected_close_date: '',
+        deal_date: '',
+        period: '',
+        startDate: '',
+        endDate: ''
     });
 
     useEffect(() => {
         fetchDeals();
-    }, [reportType]);
+    }, []);
 
     const fetchDeals = async () => {
         setLoading(true);
         try {
-            let url = '/deals/';
-            const params: any = {};
-            if (reportType !== 'all') {
-                params.report_type = reportType;
-            }
-            if (searchQuery) {
-                params.search = searchQuery;
-            }
-
-            const response = await api.get(url, { params });
+            const response = await api.get('/deals/');
             setDeals(response.data);
-
-            const totalValue = response.data.reduce((sum: number, deal: Deal) => sum + parseFloat(deal.amount || '0'), 0);
-            const wonDeals = response.data.filter((d: Deal) => d.stage === 'CLOSED_WON').length;
-
-            setStats({
-                total_deals: response.data.length,
-                total_value: totalValue,
-                win_rate: response.data.length > 0 ? Math.round((wonDeals / response.data.length) * 100) : 0,
-                active_pipeline: response.data.filter((d: Deal) => !['CLOSED_WON', 'CLOSED_LOST'].includes(d.stage)).length
-            });
         } catch (error) {
             console.error('Error fetching deals', error);
             showNotification('Error fetching deals', 'error');
@@ -90,10 +78,59 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView, onCreate }) => {
         }
     };
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        fetchDeals();
-    };
+    const filteredDeals = useMemo(() => {
+        return deals.filter(deal => {
+            const matchesId = (deal.deal_id || '').toLowerCase().includes(filters.deal_id.toLowerCase());
+            const matchesName = (deal.deal_name || '').toLowerCase().includes(filters.deal_name.toLowerCase());
+            const matchesCompany = filters.company === '' || deal.company === filters.company;
+            const matchesLead = ((deal as any).lead_no || '').toLowerCase().includes(filters.lead_no.toLowerCase());
+            const matchesStage = filters.stage === '' || deal.stage === filters.stage;
+            const matchesCurrency = filters.currency === '' || deal.currency === filters.currency;
+            const matchesAmount = (deal.deal_amount || '').toString().includes(filters.deal_amount);
+            const matchesType = filters.deal_type === '' || (deal as any).deal_type === filters.deal_type;
+            const matchesPartner = ((deal as any).partner_name || '').toLowerCase().includes(filters.partner_name.toLowerCase());
+            const matchesClient = filters.client_type === '' || (deal as any).client_type === filters.client_type;
+            const matchesSales = ((deal as any).salesperson_name || '').toLowerCase().includes(filters.salesperson_name.toLowerCase());
+            const matchesHead = ((deal as any).sales_head || '').toLowerCase().includes(filters.sales_head.toLowerCase());
+            const matchesPM = ((deal as any).project_manager || '').toLowerCase().includes(filters.project_manager.toLowerCase());
+
+            let matchesDate = true;
+            if (filters.period) {
+                const dealDate = new Date(deal.deal_date || deal.created_at);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (filters.period === 'last_month') {
+                    const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                    const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1);
+                    const firstOfLastMonth = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1);
+                    matchesDate = dealDate >= firstOfLastMonth && dealDate <= lastOfLastMonth;
+                } else if (filters.period === 'last_3_months') {
+                    const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                    const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1);
+                    const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+                    matchesDate = dealDate >= threeMonthsAgo && dealDate <= lastOfLastMonth;
+                } else if (filters.period === 'last_6_months') {
+                    const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, 1);
+                    matchesDate = dealDate >= sixMonthsAgo && dealDate < new Date(today.getFullYear(), today.getMonth(), 1);
+                } else if (filters.period === 'last_year') {
+                    const lastYear = today.getFullYear() - 1;
+                    const startOfYear = new Date(lastYear, 0, 1);
+                    const endOfYear = new Date(lastYear, 11, 31, 23, 59, 59);
+                    matchesDate = dealDate >= startOfYear && dealDate <= endOfYear;
+                } else if (filters.period === 'custom' && filters.startDate && filters.endDate) {
+                    const start = new Date(filters.startDate);
+                    const end = new Date(filters.endDate);
+                    end.setHours(23, 59, 59, 999);
+                    matchesDate = dealDate >= start && dealDate <= end;
+                }
+            }
+
+            return matchesId && matchesName && matchesCompany && matchesLead && matchesStage &&
+                matchesCurrency && matchesAmount && matchesType && matchesPartner &&
+                matchesClient && matchesSales && matchesHead && matchesPM && matchesDate;
+        });
+    }, [deals, filters]);
 
     const exportToExcel = async () => {
         try {
@@ -101,7 +138,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView, onCreate }) => {
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `Deals_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+            link.setAttribute('download', `Projects_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -117,228 +154,181 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView, onCreate }) => {
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `Deals_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+            link.setAttribute('download', `Projects_Report_${new Date().toISOString().split('T')[0]}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
             showNotification('PDF report generated successfully', 'success');
         } catch (error) {
-            showNotification('Error generating PDF report. Ensure WeasyPrint is installed on server.', 'error');
-        }
-    };
-
-    const exportToCSV = async () => {
-        try {
-            const response = await api.get('/deals/export_csv/', { responseType: 'blob' });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `Deals_Report_${new Date().toISOString().split('T')[0]}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            showNotification('CSV report generated successfully', 'success');
-        } catch (error) {
-            showNotification('Error generating CSV report', 'error');
+            showNotification('Error generating PDF report', 'error');
         }
     };
 
     const getStageColor = (stage: string) => {
         switch (stage) {
-            case 'CLOSED_WON': return { bg: '#E6FFFA', text: '#00A3C4' };
-            case 'CLOSED_LOST': return { bg: '#FFF5F5', text: '#E53E3E' };
-            case 'NEGOTIATION': return { bg: '#EBF8FF', text: '#3182CE' };
+            case 'PAYMENT': return { bg: '#E6FFFA', text: '#00A3C4' };
+            case 'DEAL_CREATED': return { bg: '#EBF8FF', text: '#3182CE' };
+            case 'COST_SHEET': return { bg: '#FEFCBF', text: '#B7791F' };
+            case 'ESTIMATES': return { bg: '#E9D8FD', text: '#805AD5' };
             default: return { bg: '#F7FAFC', text: '#4A5568' };
         }
     };
 
     return (
-        <div className="space-y-6">
-            {/* KPI Cards */}
-            <div className="ae-grid-4">
-                <div className="ae-card">
-                    <div className="ae-card-header">
-                        <div className="ae-icon-box bg-blue-soft"><TrendingUp size={20} /></div>
-                    </div>
-                    <div className="ae-card-label">Total Value (INR/USD)</div>
-                    <div className="ae-card-value">{stats.total_value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+        <div className="ae-table-container" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '18px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                        Projects Dashboard
+                    </h1>
                 </div>
-                <div className="ae-card">
-                    <div className="ae-card-header">
-                        <div className="ae-icon-box bg-orange-soft"><LayoutDashboard size={20} /></div>
-                    </div>
-                    <div className="ae-card-label">Total Deals</div>
-                    <div className="ae-card-value">{stats.total_deals}</div>
-                </div>
-                <div className="ae-card">
-                    <div className="ae-card-header">
-                        <div className="ae-icon-box bg-green-soft"><CheckCircle2 size={20} /></div>
-                    </div>
-                    <div className="ae-card-label">Win Rate</div>
-                    <div className="ae-card-value">{stats.win_rate}%</div>
-                </div>
-                <div className="ae-card">
-                    <div className="ae-card-header">
-                        <div className="ae-icon-box bg-purple-soft"><Clock size={20} /></div>
-                    </div>
-                    <div className="ae-card-label">Active Pipeline</div>
-                    <div className="ae-card-value">{stats.active_pipeline}</div>
-                </div>
-            </div>
 
-            {/* Actions & Filters */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', padding: '16px', borderRadius: '12px', border: '1px solid #E0E6ED' }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <form onSubmit={handleSearch} className="ae-input-group" style={{ width: '300px' }}>
-                        <span className="ae-search-icon"><Search size={18} /></span>
-                        <input
-                            type="text"
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>Report Period:</span>
+                        <select
                             className="ae-input"
-                            placeholder="Search deals..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </form>
-                    <select
-                        className="ae-input"
-                        style={{ width: '200px', paddingLeft: '12px' }}
-                        value={reportType}
-                        onChange={(e) => setReportType(e.target.value)}
-                    >
-                        <option value="all">All Deals</option>
-                        <option value="my_deals">My Deals</option>
-                        <option value="unread">Unread Deals</option>
-                        <option value="new_this_week">New This Week</option>
-                        <option value="closing_this_month">Closing This Month</option>
-                    </select>
-                </div>
-                <div style={{ display: 'flex', gap: '12px', position: 'relative' }}>
-                    <div className="relative">
+                            value={filters.period}
+                            onChange={e => setFilters({ ...filters, period: e.target.value })}
+                            style={{ height: '32px', fontSize: '0.8rem', width: '150px', padding: '0 12px', lineHeight: '32px' }}
+                        >
+                            <option value="">All Time</option>
+                            <option value="last_month">Last Month</option>
+                            <option value="last_3_months">Last 3 Months</option>
+                            <option value="last_6_months">Last 6 Months</option>
+                            <option value="last_year">Last Year</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+
+                    {filters.period === 'custom' && (
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                            <input type="date" className="ae-input" value={filters.startDate} onChange={e => setFilters({ ...filters, startDate: e.target.value })} style={{ height: '32px', fontSize: '0.75rem', width: '120px', padding: '0 8px' }} />
+                            <input type="date" className="ae-input" value={filters.endDate} onChange={e => setFilters({ ...filters, endDate: e.target.value })} style={{ height: '32px', fontSize: '0.75rem', width: '120px', padding: '0 8px' }} />
+                        </div>
+                    )}
+
+                    <div style={{ position: 'relative' }}>
                         <button
                             className="ae-btn-secondary"
                             onClick={() => setShowExportMenu(!showExportMenu)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}
                         >
-                            <Download size={18} /> Export <ChevronDown size={14} />
+                            <Download size={16} /> Export <ChevronDown size={14} />
                         </button>
                         {showExportMenu && (
-                            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid #E2E8F0', zIndex: 10, minWidth: '180px', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid #E2E8F0', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                 <button
                                     onClick={() => { exportToExcel(); setShowExportMenu(false); }}
                                     style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                     className="hover:bg-gray-50"
                                 >
-                                    <FileSpreadsheet size={16} className="text-green-600" /> Excel (.xlsx)
-                                </button>
-                                <button
-                                    onClick={() => { exportToCSV(); setShowExportMenu(false); }}
-                                    style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                                    className="hover:bg-gray-50"
-                                >
-                                    <FileText size={16} className="text-blue-600" /> CSV (.csv)
+                                    <FileSpreadsheet size={16} className="text-green-600" /> Excel Report
                                 </button>
                                 <button
                                     onClick={() => { exportToPDF(); setShowExportMenu(false); }}
                                     style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                     className="hover:bg-gray-50"
                                 >
-                                    <FileText size={16} className="text-red-600" /> PDF (.pdf)
+                                    <FileText size={16} className="text-red-600" /> PDF Report
                                 </button>
                             </div>
                         )}
                     </div>
-                    <button className="ae-btn-primary" onClick={onCreate} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <PlusCircle size={18} /> New Deal
+
+                    <button onClick={fetchDeals} disabled={loading} className="ae-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}>
+                        <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
                     </button>
                 </div>
             </div>
 
-            {/* Deals Table */}
-            <div className="ae-table-container">
-                <table className="ae-table">
+            <div style={{ overflowX: 'auto', background: 'white', borderRadius: '12px', border: '1px solid #E0E6ED' }}>
+                <table className="ae-table" style={{ minWidth: '2000px' }}>
                     <thead>
                         <tr>
-                            <th>Status/Sync</th>
-                            <th>Deal ID</th>
-                            <th>Deal Name</th>
-                            <th>Project Name</th>
-                            <th>Customer</th>
-                            <th>Stage</th>
-                            <th style={{ textAlign: 'right' }}>Amount</th>
-                            <th>Owner</th>
-                            <th>Close Date</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>ID</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Project Name</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Company</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Lead No.</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Stage</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Currency</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Amount</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>FX Rate</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Type</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Partner</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Client Type</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Salesperson</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Sales Head</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Proj. Manager</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Exp. Close Date</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Date</th>
+                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12, textAlign: 'center' }}>Actions</th>
+                        </tr>
+                        <tr style={{ background: '#F7FAFC' }}>
+                            {['deal_id', 'deal_name', 'company', 'lead_no', 'stage', 'currency', 'deal_amount', 'fx_rate', 'deal_type', 'partner_name', 'client_type', 'salesperson_name', 'sales_head', 'project_manager', 'expected_close_date', 'deal_date'].map((field) => (
+                                <th key={field} style={{ backgroundColor: '#F7FAFC' }}>
+                                    <div className="ae-input-group" style={{ margin: 0 }}>
+                                        <Search className="ae-search-icon" size={12} />
+                                        <input
+                                            className="ae-input"
+                                            placeholder="Filter..."
+                                            value={(filters as any)[field]}
+                                            onChange={e => setFilters({ ...filters, [field]: e.target.value })}
+                                            style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                        />
+                                    </div>
+                                </th>
+                            ))}
+                            <th style={{ textAlign: 'center', backgroundColor: '#F7FAFC' }}>
+                                <button
+                                    onClick={() => setFilters({
+                                        deal_id: '', deal_name: '', company: '', lead_no: '', stage: '',
+                                        currency: '', deal_amount: '', fx_rate: '', deal_type: '',
+                                        partner_name: '', client_type: '', salesperson_name: '',
+                                        sales_head: '', project_manager: '', expected_close_date: '',
+                                        deal_date: '', period: '', startDate: '', endDate: ''
+                                    })}
+                                    style={{ height: '24px', width: '100%', fontSize: '10px', color: '#FF6B00', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
+                                >
+                                    Clear
+                                </button>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr>
-                                <td colSpan={9} style={{ textAlign: 'center', padding: '100px' }}>
-                                    <Loader2 className="animate-spin" style={{ margin: '0 auto' }} />
-                                </td>
-                            </tr>
-                        ) : deals.length === 0 ? (
-                            <tr>
-                                <td colSpan={9} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>
-                                    No deals found.
-                                </td>
-                            </tr>
+                            <tr><td colSpan={17} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
+                        ) : filteredDeals.length === 0 ? (
+                            <tr><td colSpan={17} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No projects found.</td></tr>
                         ) : (
-                            deals.map((deal) => {
+                            filteredDeals.map((deal: Deal) => {
                                 const stageStyle = getStageColor(deal.stage);
                                 return (
-                                    <tr key={deal.id} style={{ background: !deal.is_read ? '#FFF9F5' : 'inherit' }}>
-                                        <td>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                {!deal.is_read && (
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FF6B00', fontSize: '0.65rem', fontWeight: 800 }}>
-                                                        <Mail size={12} /> NEW
-                                                    </div>
-                                                )}
-                                                {deal.hubspot_id ? (
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#3182CE', fontSize: '0.65rem', fontWeight: 700 }}>
-                                                        <RefreshCcw size={12} /> HS: {deal.hubspot_id}
-                                                    </div>
-                                                ) : (
-                                                    <div style={{ fontSize: '0.6rem', color: '#A0AEC0' }}>Not Synced</div>
-                                                )}
-                                            </div>
-                                        </td>
+                                    <tr key={deal.id}>
                                         <td style={{ fontWeight: 600, color: '#0066CC' }}>{deal.deal_id}</td>
                                         <td style={{ fontWeight: 700 }}>{deal.deal_name}</td>
-                                        <td>{deal.project_name || '—'}</td>
-                                        <td>{deal.customer_name || '—'}</td>
+                                        <td>{deal.company}</td>
+                                        <td>{(deal as any).lead_no || '—'}</td>
                                         <td>
-                                            <span style={{
-                                                padding: '4px 10px',
-                                                borderRadius: '99px',
-                                                fontSize: '0.7rem',
-                                                fontWeight: 700,
-                                                background: stageStyle.bg,
-                                                color: stageStyle.text
-                                            }}>
+                                            <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: stageStyle.bg, color: stageStyle.text }}>
                                                 {deal.stage.replace('_', ' ')}
                                             </span>
                                         </td>
-                                        <td style={{ textAlign: 'right', fontWeight: 700 }}>
-                                            {deal.currency} {parseFloat(deal.amount).toLocaleString()}
-                                        </td>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 700 }}>
-                                                    {deal.owner_name?.charAt(0).toUpperCase()}
-                                                </div>
-                                                {deal.owner_name}
-                                            </div>
-                                        </td>
-                                        <td>{deal.expected_close_date || '—'}</td>
-                                        <td style={{ textAlign: 'right' }}>
-                                            <button
-                                                onClick={() => onView(deal.id)}
-                                                className="ae-btn-secondary"
-                                                style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                                            >
-                                                View Details
+                                        <td>{deal.currency}</td>
+                                        <td style={{ fontWeight: 700 }}>{parseFloat(deal.deal_amount).toLocaleString()}</td>
+                                        <td>{(deal as any).fx_rate}</td>
+                                        <td>{(deal as any).deal_type || '—'}</td>
+                                        <td>{(deal as any).partner_name || '—'}</td>
+                                        <td>{(deal as any).client_type || '—'}</td>
+                                        <td>{(deal as any).salesperson_name || '—'}</td>
+                                        <td>{(deal as any).sales_head || '—'}</td>
+                                        <td>{(deal as any).project_manager || '—'}</td>
+                                        <td>{formatToAppDate((deal as any).expected_close_date)}</td>
+                                        <td>{formatToAppDate(deal.deal_date)}</td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <button onClick={() => onView(deal.id)} className="ae-btn-secondary" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>
+                                                View
                                             </button>
                                         </td>
                                     </tr>

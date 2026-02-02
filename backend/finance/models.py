@@ -84,6 +84,19 @@ class Invoice(models.Model):
     approved_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_invoices')
     approved_at = models.DateTimeField(null=True, blank=True)
     
+    # Compliance & Statutory Notes
+    gst_declaration = models.TextField(
+        blank=True, null=True, 
+        default="We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. This invoice is issued under Rule 46 of the CGST Rules, 2017."
+    )
+    lut_declaration = models.TextField(
+        blank=True, null=True,
+        default="Supply meant for export under Letter of Undertaking (LUT) without payment of Integrated Tax as per Section 16(3) of the IGST Act, 2017 and Rule 96A of the CGST Rules, 2017."
+    )
+    authorized_signatory = models.CharField(max_length=255, blank=True, null=True)
+    signature_image = models.ImageField(upload_to='invoices/signatures/', blank=True, null=True)
+    company_seal = models.ImageField(upload_to='invoices/seals/', blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
