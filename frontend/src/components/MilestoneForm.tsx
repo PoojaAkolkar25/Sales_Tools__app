@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { ChevronLeft, Plus, X, Save, AlertCircle, Info, Calendar } from 'lucide-react';
+import { ChevronLeft, Plus, X, Save, AlertCircle, Calendar, Clock } from 'lucide-react';
 
 interface MilestoneFormProps {
     onBack: () => void;
@@ -152,30 +152,91 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-[#E0E6ED] shadow-sm">
-                <button onClick={onBack} className="flex items-center gap-2 text-[#718096] font-bold text-sm hover:text-[#2D3748] transition-colors">
-                    <ChevronLeft size={20} /> Back
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Top Toolbar */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'white',
+                padding: '8px 16px',
+                borderRadius: '12px',
+                border: '1px solid #E0E6ED',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+            }}>
+                <button
+                    onClick={onBack}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: 'none',
+                        border: 'none',
+                        color: '#718096',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <ChevronLeft size={18} /> Back
                 </button>
-                <h2 className="font-extrabold text-[#2D3748] uppercase tracking-tight text-sm">Define Milestones</h2>
-                <button onClick={handleSave} disabled={saving || !selectedSO} className="ae-btn-primary flex items-center gap-2">
-                    {saving ? <div className="animate-spin w-4 h-4 border-2 border-white rounded-full border-t-transparent"></div> : <Save size={16} />}
-                    Save Plan
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '10px',
+                        fontWeight: 900,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        background: 'rgba(255, 107, 0, 0.1)',
+                        color: '#FF6B00',
+                        border: '1px solid rgba(255, 107, 0, 0.2)'
+                    }}>MILESTONE PLAN</span>
+                    <button
+                        onClick={handleSave}
+                        disabled={saving || !selectedSO}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 20px',
+                            borderRadius: '8px',
+                            background: '#FF6B00',
+                            color: 'white',
+                            border: 'none',
+                            fontWeight: 700,
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
+                        }}
+                    >
+                        {saving ? <Clock size={16} className="animate-spin" /> : <Save size={16} />} Save Plan
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left: Context */}
                 <div className="space-y-6">
-                    <div className="section-panel !p-0">
-                        <div className="bg-[#F8FAFC] p-4 border-b border-[#E0E6ED] rounded-t-2xl">
-                            <h3 className="font-extrabold text-[#2D3748] uppercase tracking-tight text-sm">Target Sales Order</h3>
-                        </div>
-                        <div className="p-6 space-y-4">
+                    <section className="section-panel" style={{ padding: '16px 24px' }}>
+                        <h3 style={{
+                            fontSize: '0.9rem',
+                            fontWeight: 800,
+                            margin: '0 0 16px 0',
+                            color: '#0066CC',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            textTransform: 'uppercase'
+                        }}>
+                            <span style={{ width: '3px', height: '14px', background: '#FF6B00', borderRadius: '2px' }}></span>
+                            Selection & Summary
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             <div className="ae-input-group">
-                                <label className="ae-label uppercase !text-[10px] tracking-widest !font-black !mb-2 opacity-70">Customer</label>
+                                <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Select Customer</label>
                                 <select
-                                    className="ae-input font-bold"
+                                    style={{ width: '100%', padding: '6px 12px', border: '1px solid #E0E6ED', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700 }}
                                     onChange={(e) => handleCustomerChange(e.target.value)}
                                     value={selectedCustomer?.id || ''}
                                 >
@@ -185,9 +246,9 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                             </div>
 
                             <div className="ae-input-group">
-                                <label className="ae-label uppercase !text-[10px] tracking-widest !font-black !mb-2 opacity-70">Sales Order</label>
+                                <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Select Sales Order</label>
                                 <select
-                                    className="ae-input font-bold"
+                                    style={{ width: '100%', padding: '6px 12px', border: '1px solid #E0E6ED', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700 }}
                                     onChange={(e) => handleSOChange(e.target.value)}
                                     value={selectedSO?.id || ''}
                                     disabled={!selectedCustomer || loading}
@@ -202,30 +263,56 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                             </div>
 
                             {selectedSO && (
-                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mt-4">
-                                    <h4 className="font-bold text-blue-900 text-xs uppercase mb-2">Order Summary</h4>
-                                    <div className="flex justify-between text-sm mb-1">
-                                        <span className="text-blue-700">Total Value:</span>
-                                        <span className="font-black text-blue-900">{parseFloat(selectedSO.total_amount).toLocaleString()} {selectedSO.currency}</span>
+                                <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E0E6ED', marginTop: '8px' }}>
+                                    <h4 style={{ fontSize: '0.7rem', fontWeight: 800, color: '#0066CC', textTransform: 'uppercase', marginBottom: '12px' }}>Order Details</h4>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#718096' }}>Total Amount:</span>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36' }}>{parseFloat(selectedSO.total_amount).toLocaleString()} {selectedSO.currency}</span>
                                     </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-blue-700">Order Date:</span>
-                                        <span className="font-medium text-blue-900">{selectedSO.order_date}</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#718096' }}>Order Date:</span>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{selectedSO.order_date}</span>
                                     </div>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </section>
                 </div>
 
                 {/* Right: Milestones */}
                 <div className="lg:col-span-2">
-                    <div className="section-panel !p-0">
-                        <div className="bg-[#F8FAFC] p-4 border-b border-[#E0E6ED] rounded-t-2xl flex justify-between items-center">
-                            <h3 className="font-extrabold text-[#2D3748] uppercase tracking-tight text-sm">Milestone Breakdown</h3>
-                            <button onClick={handleAddMilestone} disabled={!selectedSO} className="text-xs font-black text-[#3182CE] uppercase hover:underline flex items-center gap-1">
-                                <Plus size={14} /> Add Milestone
-                            </button>
+                    <section className="section-panel" style={{ padding: '0', overflow: 'hidden' }}>
+                        <div style={{
+                            padding: '12px 24px',
+                            borderBottom: '1px solid #E0E6ED',
+                            background: '#F8FAFC',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Calendar size={16} style={{ color: '#FF6B00' }} />
+                                <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#FF6B00', margin: 0, textTransform: 'uppercase' }}>Milestone Breakdown</h3>
+                            </div>
+                            {selectedSO && (
+                                <button
+                                    onClick={handleAddMilestone}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#0066CC',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        textTransform: 'uppercase',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}
+                                >
+                                    <Plus size={14} /> Add Row
+                                </button>
+                            )}
                         </div>
 
                         {!selectedSO ? (
@@ -233,81 +320,73 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                         ) : (
                             <div className="p-0">
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-[#f8fafc] border-b border-[#E0E6ED]">
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
                                             <tr>
-                                                <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-16">No.</th>
-                                                <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase min-w-[200px]">Description</th>
-                                                <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-32">Due Date</th>
-                                                <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-20 text-center">%</th>
-                                                <th className="px-4 py-3 text-[10px] font-black text-[#718096] uppercase w-32 text-right">Amount</th>
-                                                <th className="px-4 py-3 w-10"></th>
+                                                <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '60px' }}>No.</th>
+                                                <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED' }}>Description</th>
+                                                <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '120px' }}>Due Date</th>
+                                                <th style={{ padding: '8px', textAlign: 'center', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '80px' }}>Amount %</th>
+                                                <th style={{ padding: '8px', textAlign: 'right', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '120px' }}>Amount</th>
+                                                <th style={{ padding: '8px', borderBottom: '2px solid #E0E6ED', width: '40px' }}></th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-[#E0E6ED]">
+                                        <tbody>
                                             {milestones.map((milestone, index) => (
-                                                <tr key={index} className="group hover:bg-[#FDFDFD]">
-                                                    <td className="px-4 py-3 align-top">
+                                                <tr key={index} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                                    <td style={{ padding: '4px 8px' }}>
                                                         <input
                                                             type="text"
                                                             value={milestone.milestone_no}
                                                             onChange={(e) => handleMilestoneChange(index, 'milestone_no', e.target.value)}
-                                                            className="w-full p-2 border border-[#E0E6ED] rounded-lg text-xs font-bold bg-white text-center"
+                                                            style={{ width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, textAlign: 'center' }}
                                                         />
                                                     </td>
-                                                    <td className="px-4 py-3 align-top">
+                                                    <td style={{ padding: '4px 8px' }}>
                                                         <textarea
                                                             value={milestone.description}
                                                             onChange={(e) => handleMilestoneChange(index, 'description', e.target.value)}
-                                                            className="w-full p-2 border border-[#E0E6ED] rounded-lg text-xs bg-white min-h-[38px] resize-none"
+                                                            style={{ width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED', borderRadius: '4px', fontSize: '0.75rem', resize: 'none' }}
                                                             rows={1}
                                                         />
                                                     </td>
-                                                    <td className="px-4 py-3 align-top">
+                                                    <td style={{ padding: '4px 8px' }}>
                                                         <input
                                                             type="date"
                                                             value={milestone.due_date || ''}
                                                             onChange={(e) => handleMilestoneChange(index, 'due_date', e.target.value)}
-                                                            className="w-full p-2 border border-[#E0E6ED] rounded-lg text-xs font-medium bg-white"
+                                                            style={{ width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED', borderRadius: '4px', fontSize: '0.75rem' }}
                                                         />
                                                     </td>
-                                                    <td className="px-4 py-3 align-top">
+                                                    <td style={{ padding: '4px 8px' }}>
                                                         <input
                                                             type="number"
                                                             value={milestone.percentage || ''}
                                                             onChange={(e) => handleMilestoneChange(index, 'percentage', e.target.value)}
-                                                            className="w-full p-2 border border-[#E0E6ED] rounded-lg text-xs font-bold bg-white text-center text-purple-600"
-                                                            placeholder="%"
+                                                            style={{ width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, textAlign: 'center', color: '#0066CC' }}
                                                         />
                                                     </td>
-                                                    <td className="px-4 py-3 align-top">
+                                                    <td style={{ padding: '4px 8px' }}>
                                                         <input
                                                             type="number"
                                                             value={milestone.amount || ''}
                                                             onChange={(e) => handleMilestoneChange(index, 'amount', e.target.value)}
-                                                            className="w-full p-2 border border-[#E0E6ED] rounded-lg text-xs font-black bg-white text-right"
+                                                            style={{ width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800, textAlign: 'right' }}
                                                         />
                                                     </td>
-                                                    <td className="px-4 py-3 align-top text-center pt-4">
-                                                        <button onClick={() => handleRemoveMilestone(index)} className="text-red-300 hover:text-red-500 transition-colors">
+                                                    <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                                                        <button onClick={() => handleRemoveMilestone(index)} style={{ background: 'none', border: 'none', color: '#FEB2B2', cursor: 'pointer' }}>
                                                             <X size={16} />
                                                         </button>
                                                     </td>
                                                 </tr>
                                             ))}
                                         </tbody>
-                                        <tfoot className="bg-[#f8fafc] border-t border-[#E0E6ED]">
-                                            <tr>
-                                                <td colSpan={4} className="px-4 py-3 text-right text-[10px] font-black uppercase text-[#718096] tracking-widest">Total Planned</td>
-                                                <td className={`px-4 py-3 text-right font-black text-sm ${calculateTotal() > parseFloat(selectedSO.total_amount) ? 'text-red-600' : 'text-[#2D3748]'}`}>
-                                                    {parseFloat(selectedSO.total_amount) > 0 && selectedSO.currency} {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                </td>
-                                                <td></td>
-                                            </tr>
-                                            <tr>
-                                                <td colSpan={4} className="px-4 py-3 text-right text-[10px] font-black uppercase text-[#718096] tracking-widest">Balance Remaining</td>
-                                                <td className="px-4 py-3 text-right font-bold text-xs text-[#718096]">
-                                                    {(parseFloat(selectedSO.total_amount) - calculateTotal()).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        <tfoot>
+                                            <tr style={{ background: '#F8FAFC' }}>
+                                                <td colSpan={4} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.65rem', fontWeight: 900, color: '#718096', textTransform: 'uppercase' }}>Total Planned</td>
+                                                <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 900, color: calculateTotal() > parseFloat(selectedSO.total_amount) ? '#C53030' : '#1a1f36' }}>
+                                                    {selectedSO.currency} {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </td>
                                                 <td></td>
                                             </tr>
@@ -316,15 +395,15 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                                 </div>
                             </div>
                         )}
-                    </div>
-
-                    {selectedSO && calculateTotal() !== parseFloat(selectedSO.total_amount) && (
-                        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl mt-4 text-amber-800 text-xs font-bold">
-                            <AlertCircle size={18} />
-                            Total milestone value must equal the Sales Order value ({parseFloat(selectedSO.total_amount).toLocaleString()})
-                        </div>
-                    )}
+                    </section>
                 </div>
+
+                {selectedSO && calculateTotal() !== parseFloat(selectedSO.total_amount) && (
+                    <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl mt-4 text-amber-800 text-xs font-bold">
+                        <AlertCircle size={18} />
+                        Total milestone value must equal the Sales Order value ({parseFloat(selectedSO.total_amount).toLocaleString()})
+                    </div>
+                )}
             </div>
         </div>
     );

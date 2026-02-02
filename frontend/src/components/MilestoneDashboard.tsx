@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { Plus, Search, FileText, CheckCircle2, Clock, Filter, Receipt } from 'lucide-react';
+import {
+    Plus,
+    Search,
+    FileText,
+    CheckCircle2,
+    Clock,
+    Receipt,
+    RefreshCw,
+    BarChart3
+} from 'lucide-react';
 import MilestoneForm from './MilestoneForm';
 
 const MilestoneDashboard: React.FC = () => {
@@ -55,126 +64,217 @@ const MilestoneDashboard: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            {/* Header section with blue sidebar accent */}
+            <div style={{
+                borderLeft: '4px solid #FF6100',
+                paddingLeft: '20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '24px'
+            }}>
                 <div>
-                    <h1 className="text-2xl font-black text-[#1a1f36] tracking-tight">Milestone Management</h1>
-                    <p className="text-sm font-medium text-[#718096] mt-1">Track billing milestones and generate invoices</p>
+                    <h1 style={{
+                        fontSize: '24px',
+                        fontWeight: 900,
+                        color: '#1a1f36',
+                        margin: 0,
+                        letterSpacing: '-0.02em'
+                    }}>Milestone Management</h1>
+                    <p style={{
+                        color: '#718096',
+                        margin: '4px 0 0 0',
+                        fontSize: '14px',
+                        fontWeight: 500
+                    }}>Manage billing milestones and invoicing workflow</p>
                 </div>
-                <button
-                    onClick={() => setShowForm(true)}
-                    className="ae-btn-primary flex items-center gap-2 shadow-lg shadow-[#FF6B00]/20"
-                >
-                    <Plus size={18} /> New Milestone Plan
-                </button>
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white p-4 rounded-xl border border-[#E0E6ED] shadow-sm flex flex-wrap gap-4 items-end">
-                <div className="flex-1 min-w-[200px]">
-                    <label className="text-[10px] font-black uppercase text-[#718096] tracking-widest mb-1 block">Filter by Customer</label>
-                    <div className="relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AEC0]" />
-                        <input
-                            type="text"
-                            placeholder="Customer Name..."
-                            value={filterCustomer}
-                            onChange={(e) => setFilterCustomer(e.target.value)}
-                            className="ae-input pl-9"
-                        />
-                    </div>
-                </div>
-                <div className="flex-1 min-w-[200px]">
-                    <label className="text-[10px] font-black uppercase text-[#718096] tracking-widest mb-1 block">Filter by Sales Order</label>
-                    <div className="relative">
-                        <FileText size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AEC0]" />
-                        <input
-                            type="text"
-                            placeholder="SO Number..."
-                            value={filterSO}
-                            onChange={(e) => setFilterSO(e.target.value)}
-                            className="ae-input pl-9"
-                        />
-                    </div>
-                </div>
-                <div className="flex-none pb-1">
-                    <button className="ae-btn-secondary !p-2">
-                        <Filter size={18} />
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                        onClick={fetchMilestones}
+                        className="ae-btn-secondary"
+                        style={{ width: 'auto', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        <RefreshCw size={18} className={loading ? 'animate-spin' : ''} /> Refresh
+                    </button>
+                    <button
+                        onClick={() => setShowForm(true)}
+                        className="ae-btn-primary"
+                        style={{ width: 'auto', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        <Plus size={18} /> New Milestone Plan
                     </button>
                 </div>
             </div>
 
-            {/* Content */}
-            {loading ? (
-                <div className="text-center py-12 text-[#718096] font-medium animate-pulse">Loading milestone data...</div>
-            ) : filteredMilestones.length === 0 ? (
-                <div className="text-center py-20 bg-[#F8FAFC] rounded-2xl border-2 border-dashed border-[#E2E8F0]">
-                    <div className="w-16 h-16 bg-[#EDF2F7] rounded-full flex items-center justify-center mx-auto mb-4 text-[#A0AEC0]">
-                        <Clock size={32} />
+            {/* KPI Cards section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-4">
+                <div className="ae-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ background: 'rgba(0, 102, 204, 0.1)', padding: '12px', borderRadius: '12px', color: '#0066CC' }}>
+                        <BarChart3 size={24} />
                     </div>
-                    <h3 className="text-lg font-bold text-[#2D3748]">No milestones found</h3>
-                    <p className="text-sm text-[#718096] mt-1">Create a new milestone plan to get started.</p>
+                    <div>
+                        <p style={{ fontSize: '10px', fontWeight: 900, color: '#718096', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>Total Milestones</p>
+                        <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1a1f36', margin: 0 }}>{milestones.length}</h3>
+                    </div>
                 </div>
-            ) : (
-                <div className="bg-white rounded-xl border border-[#E0E6ED] shadow-sm overflow-hidden">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-[#F8FAFC] border-b border-[#E0E6ED]">
-                                <th className="px-6 py-4 text-[10px] font-black uppercase text-[#718096] tracking-widest">Milestone</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase text-[#718096] tracking-widest">Sales Order</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase text-[#718096] tracking-widest">Due Date</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase text-[#718096] tracking-widest text-right">Amount</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase text-[#718096] tracking-widest text-center">Status</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase text-[#718096] tracking-widest text-right">Actions</th>
+                <div className="ae-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ background: 'rgba(255, 107, 0, 0.1)', padding: '12px', borderRadius: '12px', color: '#FF6B00' }}>
+                        <Clock size={24} />
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '10px', fontWeight: 900, color: '#718096', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>Pending Invoicing</p>
+                        <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1a1f36', margin: 0 }}>{milestones.filter(m => m.status !== 'INVOICED').length}</h3>
+                    </div>
+                </div>
+                <div className="ae-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ background: 'rgba(0, 200, 83, 0.1)', padding: '12px', borderRadius: '12px', color: '#00C853' }}>
+                        <CheckCircle2 size={24} />
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '10px', fontWeight: 900, color: '#718096', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>Total Invoiced</p>
+                        <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1a1f36', margin: 0 }}>{milestones.filter(m => m.status === 'INVOICED').length}</h3>
+                    </div>
+                </div>
+            </div>
+
+            {/* Filters section */}
+            <div className="ae-card" style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'flex-end', background: '#FAFBFC' }}>
+                <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '10px', fontWeight: 900, color: '#718096', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Search Customer</label>
+                    <div style={{ position: 'relative' }}>
+                        <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0' }} size={16} />
+                        <input
+                            type="text"
+                            placeholder="Type customer name..."
+                            value={filterCustomer}
+                            onChange={(e) => setFilterCustomer(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '10px 12px 10px 40px',
+                                borderRadius: '10px',
+                                border: '1px solid #E2E8F0',
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                outline: 'none',
+                                transition: 'all 0.2s'
+                            }}
+                        />
+                    </div>
+                </div>
+                <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '10px', fontWeight: 900, color: '#718096', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Sales Order No.</label>
+                    <div style={{ position: 'relative' }}>
+                        <FileText style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0' }} size={16} />
+                        <input
+                            type="text"
+                            placeholder="SO number..."
+                            value={filterSO}
+                            onChange={(e) => setFilterSO(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '10px 12px 10px 40px',
+                                borderRadius: '10px',
+                                border: '1px solid #E2E8F0',
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                outline: 'none',
+                                transition: 'all 0.2s'
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Table section */}
+            <div className="ae-table-container">
+                <table className="ae-table">
+                    <thead>
+                        <tr>
+                            <th style={{ background: '#FAFBFC', fontSize: '11px', fontWeight: 800, color: '#4A5568', textTransform: 'uppercase', padding: '16px 20px', textAlign: 'left', borderBottom: '2px solid #E2E8F0' }}>Milestone / Description</th>
+                            <th style={{ background: '#FAFBFC', fontSize: '11px', fontWeight: 800, color: '#4A5568', textTransform: 'uppercase', padding: '16px 20px', textAlign: 'left', borderBottom: '2px solid #E2E8F0' }}>Sales Order</th>
+                            <th style={{ background: '#FAFBFC', fontSize: '11px', fontWeight: 800, color: '#4A5568', textTransform: 'uppercase', padding: '16px 20px', textAlign: 'left', borderBottom: '2px solid #E2E8F0' }}>Due Date</th>
+                            <th style={{ background: '#FAFBFC', fontSize: '11px', fontWeight: 800, color: '#4A5568', textTransform: 'uppercase', padding: '16px 20px', textAlign: 'right', borderBottom: '2px solid #E2E8F0' }}>Amount</th>
+                            <th style={{ background: '#FAFBFC', fontSize: '11px', fontWeight: 800, color: '#4A5568', textTransform: 'uppercase', padding: '16px 20px', textAlign: 'center', borderBottom: '2px solid #E2E8F0' }}>Status</th>
+                            <th style={{ background: '#FAFBFC', fontSize: '11px', fontWeight: 800, color: '#4A5568', textTransform: 'uppercase', padding: '16px 20px', textAlign: 'right', borderBottom: '2px solid #E2E8F0' }}>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
+                            <tr>
+                                <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#718096', fontWeight: 600 }}>Loading milestone records...</td>
                             </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#E0E6ED]">
-                            {filteredMilestones.map((milestone) => (
-                                <tr key={milestone.id} className="hover:bg-[#FDFDFD] transition-colors group">
-                                    <td className="px-6 py-4">
-                                        <div className="font-bold text-[#2D3748]">{milestone.milestone_no}</div>
-                                        <div className="text-xs text-[#718096] truncate max-w-[200px]" title={milestone.description}>{milestone.description}</div>
+                        ) : filteredMilestones.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>No milestones found matching criteria.</td>
+                            </tr>
+                        ) : (
+                            filteredMilestones.map((milestone) => (
+                                <tr key={milestone.id} style={{ transition: 'all 0.2s' }}>
+                                    <td style={{ padding: '16px 20px' }}>
+                                        <div style={{ fontWeight: 800, color: '#1A1F36', fontSize: '14px' }}>{milestone.milestone_no}</div>
+                                        <div style={{ fontSize: '12px', color: '#718096', marginTop: '2px' }}>{milestone.description}</div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="font-bold text-[#3182CE]">{milestone.sales_order_details?.so_number}</div>
-                                        <div className="text-xs text-[#718096]">{milestone.sales_order_details?.customer_name}</div>
+                                    <td style={{ padding: '16px 20px' }}>
+                                        <div style={{ fontWeight: 700, color: '#0066CC', fontSize: '13px' }}>{milestone.sales_order_details?.so_number}</div>
+                                        <div style={{ fontSize: '11px', color: '#4A5568', textTransform: 'uppercase', fontWeight: 600 }}>{milestone.sales_order_details?.customer_name}</div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-sm font-medium text-[#4A5568]">{new Date(milestone.due_date).toLocaleDateString()}</div>
-                                        <div className="text-[10px] text-[#A0AEC0] uppercase font-bold tracking-wider">Due</div>
+                                    <td style={{ padding: '16px 20px' }}>
+                                        <div style={{ fontWeight: 700, color: '#4A5568', fontSize: '13px' }}>{new Date(milestone.due_date).toLocaleDateString()}</div>
+                                        <div style={{ fontSize: '10px', color: '#A0AEC0', fontWeight: 800, textTransform: 'uppercase' }}>Milestone Due</div>
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="font-black text-[#2D3748]">{parseFloat(milestone.amount).toLocaleString()}</div>
+                                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                                        <div style={{ fontWeight: 900, color: '#1a1f36', fontSize: '15px' }}>${parseFloat(milestone.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                                         {milestone.invoice_details && (
-                                            <div className="text-[10px] text-green-600 font-bold mt-1">INV: {milestone.invoice_details.invoice_no}</div>
+                                            <div style={{ fontSize: '10px', color: '#00C853', fontWeight: 800, marginTop: '4px' }}>INV: {milestone.invoice_details.invoice_no}</div>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 text-center">
+                                    <td style={{ padding: '16px 20px', textAlign: 'center' }}>
                                         {milestone.status === 'INVOICED' ? (
-                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-50 text-green-700 text-[10px] font-black uppercase tracking-wide border border-green-200">
-                                                <CheckCircle2 size={12} /> Invoiced
-                                            </span>
+                                            <span style={{
+                                                padding: '4px 12px',
+                                                borderRadius: '20px',
+                                                fontSize: '10px',
+                                                fontWeight: 900,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em',
+                                                background: 'rgba(0, 200, 83, 0.1)',
+                                                color: '#00C853',
+                                                border: '1px solid rgba(0, 200, 83, 0.2)'
+                                            }}>Invoiced</span>
                                         ) : (
-                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-wide border border-amber-200">
-                                                <Clock size={12} /> Pending
-                                            </span>
+                                            <span style={{
+                                                padding: '4px 12px',
+                                                borderRadius: '20px',
+                                                fontSize: '10px',
+                                                fontWeight: 900,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em',
+                                                background: 'rgba(255, 107, 0, 0.1)',
+                                                color: '#FF6B00',
+                                                border: '1px solid rgba(255, 107, 0, 0.2)'
+                                            }}>Pending</span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 text-right">
+                                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
                                         {milestone.status !== 'INVOICED' && (
                                             <button
                                                 onClick={() => handleCreateInvoice(milestone.id)}
-                                                className="ae-btn-secondary !py-1.5 !px-3 !text-xs flex items-center gap-2 ml-auto hover:border-green-300 hover:text-green-700 hover:bg-green-50"
+                                                className="ae-btn-secondary"
+                                                style={{ width: 'auto', padding: '6px 12px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}
                                             >
                                                 <Receipt size={14} /> Create Invoice
                                             </button>
                                         )}
+                                        {milestone.status === 'INVOICED' && (
+                                            <div style={{ color: '#A0AEC0', fontSize: '11px', fontWeight: 700 }}>Processing Complete</div>
+                                        )}
                                     </td>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

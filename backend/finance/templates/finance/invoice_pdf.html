@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        @page {
+            size: a4;
+            margin: 1cm;
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            color: #333;
+            font-size: 10px;
+        }
+
+        .header {
+            margin-bottom: 20px;
+            border-bottom: 2px solid #FF6B00;
+        }
+
+        .invoice-title h1 {
+            color: #FF6B00;
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .details-grid {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .billing-box,
+        .shipping-box {
+            width: 48%;
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        .section-header {
+            font-weight: bold;
+            background-color: #f4f4f4;
+            padding: 3px;
+            margin-bottom: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th {
+            background-color: #FF6B00;
+            color: white;
+            padding: 5px;
+            text-align: left;
+        }
+
+        td {
+            border: 1px solid #eee;
+            padding: 5px;
+        }
+
+        .totals-table {
+            width: 250px;
+            margin-left: auto;
+        }
+
+        .totals-table td {
+            border: none;
+            padding: 3px;
+        }
+
+        .amount-words {
+            margin-top: 15px;
+            font-style: italic;
+        }
+
+        .footer {
+            margin-top: 30px;
+        }
+
+        .signature-box {
+            text-align: right;
+        }
+
+        .signature-img {
+            max-height: 40px;
+        }
+
+        .compliance-note {
+            font-size: 8px;
+            color: #666;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <table style="width: 100%; margin-bottom: 20px; border-bottom: 2px solid #FF6B00;">
+        <tr>
+            <td style="width: 60%; border: none;">
+                <h2 style="margin: 0; color: #333;">{{ company.name }}</h2>
+                <p style="margin: 2px 0;">{{ company.registered_address|linebreaksbr }}</p>
+                <p style="margin: 2px 0;"><strong>GSTIN:</strong> {{ company.gstin }} | <strong>PAN:</strong> {{
+                    company.pan }}</p>
+                {% if company.website_url %}<p style="margin: 2px 0;"><strong>Website:</strong> {{ company.website_url
+                    }}</p>{% endif %}
+            </td>
+            <td style="width: 40%; text-align: right; border: none; vertical-align: top;">
+                <h1 style="color: #FF6B00; margin: 0; font-size: 20px;">{% if invoice.invoice_type == 'EXPORT' %}EXPORT
+                    INVOICE{% else %}TAX INVOICE{% endif %}</h1>
+                <p style="margin: 2px 0;"><strong>Invoice No:</strong> {{ invoice.invoice_no }}</p>
+                <p style="margin: 2px 0;"><strong>Date:</strong> {{ invoice.invoice_date }}</p>
+                <p style="margin: 2px 0;"><strong>Place:</strong> {{ invoice.place_of_supply }}</p>
+            </td>
+        </tr>
+    </table>
+
+    <table style="width: 100%; margin-bottom: 20px;">
+        <tr>
+            <td style="width: 50%; border: none; vertical-align: top; padding-right: 10px;">
+                <div class="section-header">BILL TO</div>
+                <p style="margin: 5px 0;"><strong>{{ invoice.lead.customer_name }}</strong></p>
+                <p style="margin: 2px 0;">{{ invoice.billing_address|linebreaksbr }}</p>
+                {% if invoice.customer_gstin %}<p style="margin: 2px 0;"><strong>GSTIN:</strong> {{
+                    invoice.customer_gstin }}</p>{% endif %}
+            </td>
+            <td style="width: 50%; border: none; vertical-align: top;">
+                <div class="section-header">SHIP TO</div>
+                <p style="margin: 5px 0;">{{ invoice.shipping_address|linebreaksbr }}</p>
+            </td>
+        </tr>
+    </table>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Sr.</th>
+                <th>Description</th>
+                <th>HSN/SAC</th>
+                <th>Qty</th>
+                <th>Rate</th>
+                <th>Taxable Value</th>
+                {% if invoice.invoice_type == 'DOMESTIC' %}
+                <th>CGST</th>
+                <th>SGST</th>
+                {% elif invoice.invoice_type == 'INTER_STATE' %}
+                <th>IGST</th>
+                {% endif %}
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.sr_no }}</td>
+                <td>{{ item.description }}</td>
+                <td>{{ item.hsn_sac }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.rate }}</td>
+                <td>{{ item.taxable_value }}</td>
+                {% if invoice.invoice_type == 'DOMESTIC' %}
+                <td>{{ item.cgst_amount }} ({{ item.cgst_rate }}%)</td>
+                <td>{{ item.sgst_amount }} ({{ item.sgst_rate }}%)</td>
+                {% elif invoice.invoice_type == 'INTER_STATE' %}
+                <td>{{ item.igst_amount }} ({{ item.igst_rate }}%)</td>
+                {% endif %}
+                <td>{{ item.total_amount }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="totals-table">
+        <tr>
+            <td><strong>Subtotal:</strong></td>
+            <td style="text-align: right;">{{ invoice.subtotal }}</td>
+        </tr>
+        {% if invoice.total_discount > 0 %}
+        <tr>
+            <td><strong>Discount:</strong></td>
+            <td style="text-align: right;">-{{ invoice.total_discount }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td><strong>Taxable Amount:</strong></td>
+            <td style="text-align: right;">{{ invoice.taxable_amount }}</td>
+        </tr>
+        <tr>
+            <td><strong>Total Tax:</strong></td>
+            <td style="text-align: right;">{{ invoice.total_tax }}</td>
+        </tr>
+        {% if invoice.invoice_type == 'USA' and invoice.sales_tax_amount > 0 %}
+        <tr>
+            <td><strong>Sales Tax ({{ invoice.sales_tax_rate }}%):</strong></td>
+            <td style="text-align: right;">{{ invoice.sales_tax_amount }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td><strong>Round Off:</strong></td>
+            <td style="text-align: right;">{{ invoice.round_off }}</td>
+        </tr>
+        <tr style="border-top: 1px solid #333; font-size: 14px;">
+            <td><strong>Grand Total ({{ invoice.currency }}):</strong></td>
+            <td style="text-align: right;"><strong>{{ invoice.total_amount }}</strong></td>
+        </tr>
+    </table>
+
+    <div class="amount-words">
+        <strong>Amount in words:</strong> {{ invoice.grand_total_words }}
+    </div>
+
+    <div class="footer">
+        <div class="signature-box">
+            <p>For <strong>{{ company.name }}</strong></p>
+            {% if company.company_seal %}
+            <img src="{{ company.company_seal.path }}" class="signature-img" style="max-height: 50px;">
+            {% endif %}
+            {% if company.signature_image %}
+            <img src="{{ company.signature_image.path }}" class="signature-img">
+            {% else %}
+            <br><br><br>
+            {% endif %}
+            {% if company.authorized_signatory_name %}
+            <p><strong>{{ company.authorized_signatory_name }}</strong></p>
+            {% endif %}
+            <p>Authorized Signatory</p>
+        </div>
+    </div>
+
+    <div class="compliance-note">
+        {% if invoice.invoice_type == 'DOMESTIC' or invoice.invoice_type == 'INTER_STATE' %}
+        <p><strong>Declaration:</strong> We declare that this invoice shows the actual price of the goods described and
+            that all particulars are true and correct. This invoice is issued under Rule 46 of the CGST Rules, 2017.</p>
+        {% endif %}
+        {% if invoice.invoice_type == 'EXPORT' %}
+        <p><strong>LUT Declaration:</strong> Supply meant for export under Letter of Undertaking (LUT) without payment
+            of Integrated Tax as per Section 16(3) of the IGST Act, 2017 and Rule 96A of the CGST Rules, 2017.</p>
+        {% endif %}
+        <p style="margin-top: 10px;">This is a computer-generated invoice and does not require a physical signature.</p>
+    </div>
+</body>
+
+</html>

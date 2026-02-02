@@ -6,6 +6,7 @@ class Lead(models.Model):
     project_name = models.CharField(max_length=255)
     project_manager = models.CharField(max_length=255, blank=True, default='')
     sales_person = models.CharField(max_length=255, blank=True, default='')
+    email = models.EmailField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

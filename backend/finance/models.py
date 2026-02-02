@@ -1,28 +1,117 @@
 from django.db import models
 from leads.models import Lead
 
+class StateMaster(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    code = models.CharField(max_length=2, unique=True, help_text="GST State Code (e.g., 27 for Maharashtra)")
+    is_union_territory = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name_plural = "States"
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+class CompanyProfile(models.Model):
+    name = models.CharField(max_length=255)
+    registered_address = models.TextField()
+    gstin = models.CharField(max_length=15, blank=True, null=True)
+    pan = models.CharField(max_length=10, blank=True, null=True)
+    website_url = models.URLField(blank=True, null=True)
+    state = models.ForeignKey(StateMaster, on_delete=models.SET_NULL, null=True)
+    authorized_signatory_name = models.CharField(max_length=255, blank=True, null=True, help_text="Name of authorized signatory")
+    signature_image = models.ImageField(upload_to='company/signatures/', blank=True, null=True)
+    company_seal = models.ImageField(upload_to='company/seals/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+class InvoiceType(models.TextChoices):
+    DOMESTIC = 'DOMESTIC', 'Domestic (CGST/SGST)'
+    INTER_STATE = 'INTER_STATE', 'Inter-State (IGST)'
+    EXPORT = 'EXPORT', 'Export (Zero Rated)'
+    USA = 'USA', 'USA Invoice (Non-GST)'
+
 class InvoiceStatus(models.TextChoices):
-    OPEN = 'OPEN', 'Open'
+    DRAFT = 'DRAFT', 'Draft'
+    PENDING_APPROVAL = 'PENDING_APPROVAL', 'Pending Approval'
+    APPROVED = 'APPROVED', 'Approved'
+    SENT = 'SENT', 'Sent to Customer'
     PARTIAL = 'PARTIAL', 'Partially Paid'
     PAID = 'PAID', 'Paid'
+    CANCELLED = 'CANCELLED', 'Cancelled'
 
 class Invoice(models.Model):
     invoice_no = models.CharField(max_length=100, unique=True)
     invoice_date = models.DateField()
     due_date = models.DateField()
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='invoices')
-    total_amount = models.DecimalField(max_digits=15, decimal_places=2)
+    deal = models.ForeignKey('deals.Deal', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
+    cost_sheet = models.ForeignKey('cost_sheets.CostSheet', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
+    proposal = models.ForeignKey('estimates.Proposal', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
+    
+    invoice_type = models.CharField(max_length=20, choices=InvoiceType.choices, default=InvoiceType.DOMESTIC)
+    status = models.CharField(max_length=20, choices=InvoiceStatus.choices, default=InvoiceStatus.DRAFT)
+    
+    is_gst_applicable = models.BooleanField(default=True)
+    currency = models.CharField(max_length=10, default='INR')
+    
+    # USA Sales Tax
+    sales_tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    sales_tax_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    place_of_supply = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Billing & Shipping Address (Snapshots)
+    billing_address = models.TextField(blank=True, null=True)
+    shipping_address = models.TextField(blank=True, null=True)
+    customer_gstin = models.CharField(max_length=15, blank=True, null=True)
+    
+    # Financial Summary
+    subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total_discount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    taxable_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total_tax = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    round_off = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=15, decimal_places=2) # Grand Total
     open_balance = models.DecimalField(max_digits=15, decimal_places=2)
-    status = models.CharField(
-        max_length=20, 
-        choices=InvoiceStatus.choices, 
-        default=InvoiceStatus.OPEN
-    )
+    
+    grand_total_words = models.TextField(blank=True, null=True)
+    
+    # Approval Workflow
+    approval_comments = models.TextField(blank=True, null=True)
+    approved_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_invoices')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.invoice_no
+
+class InvoiceLineItem(models.Model):
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='line_items')
+    sr_no = models.IntegerField()
+    description = models.TextField()
+    hsn_sac = models.CharField(max_length=20, blank=True, null=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    rate = models.DecimalField(max_digits=15, decimal_places=2)
+    taxable_value = models.DecimalField(max_digits=15, decimal_places=2)
+    discount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    
+    # Tax details per line
+    cgst_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    cgst_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    sgst_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    sgst_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    igst_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    igst_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    
+    total_amount = models.DecimalField(max_digits=15, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.invoice.invoice_no} - {self.sr_no}"
 
 class BankConnection(models.Model):
     bank_name = models.CharField(max_length=255)

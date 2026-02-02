@@ -2,30 +2,294 @@ from rest_framework import viewsets, status, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from .filters import InvoiceFilter
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import Invoice, BankConnection, BankTransaction, ReceiptVoucher, ReceiptAdjustment, BankTransactionStatus, ReceiptStatus, BankTransactionSource
+from django.utils import timezone
+from .models import (
+    Invoice, InvoiceLineItem, StateMaster, CompanyProfile,
+    BankConnection, BankTransaction, ReceiptVoucher, ReceiptAdjustment, 
+    BankTransactionStatus, ReceiptStatus, BankTransactionSource
+)
 from .serializers import (
-    InvoiceSerializer, BankConnectionSerializer, BankTransactionSerializer, 
+    InvoiceSerializer, InvoiceLineItemSerializer, StateMasterSerializer, 
+    CompanyProfileSerializer, BankConnectionSerializer, BankTransactionSerializer, 
     ReceiptVoucherSerializer, ReceiptAdjustmentSerializer
 )
+from .services import InvoiceService
 import csv
 import io
 
-class InvoiceViewSet(viewsets.ModelViewSet):
-    queryset = Invoice.objects.all()
-    serializer_class = InvoiceSerializer
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['invoice_no', 'lead__customer_name']
+class StateMasterViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = StateMaster.objects.all().order_by('code')
+    serializer_class = StateMasterSerializer
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        customer_name = self.request.query_params.get('customer_name')
-        status = self.request.query_params.get('status')
-        if customer_name:
-            queryset = queryset.filter(lead__customer_name=customer_name)
-        if status:
-            queryset = queryset.filter(status=status)
-        return queryset
+class CompanyProfileViewSet(viewsets.ModelViewSet):
+    queryset = CompanyProfile.objects.all()
+    serializer_class = CompanyProfileSerializer
+
+class InvoiceViewSet(viewsets.ModelViewSet):
+    queryset = Invoice.objects.all().order_by('-created_at')
+    serializer_class = InvoiceSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['invoice_no', 'lead__customer_name', 'deal__deal_name']
+    filterset_class = InvoiceFilter
+
+    def perform_create(self, serializer):
+        # Calculate taxes and totals first to get all values
+        line_items_data = self.request.data.get('line_items', [])
+        invoice_data = self.request.data
+        
+        calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
+        
+        # Determine invoice number
+        invoice_no = self.request.data.get('invoice_no')
+        if not invoice_no or invoice_no == '':
+            invoice_no = InvoiceService.generate_invoice_number()
+            
+        # Save invoice with all calculated values
+        invoice = serializer.save(
+            invoice_no=invoice_no,
+            invoice_type=calc_results['invoice_type'],
+            subtotal=calc_results['subtotal'],
+            total_discount=calc_results['total_discount'],
+            taxable_amount=calc_results['taxable_amount'],
+            total_tax=calc_results['total_tax'],
+            sales_tax_rate=calc_results['sales_tax_rate'],
+            sales_tax_amount=calc_results['sales_tax_amount'],
+            round_off=calc_results['round_off'],
+            total_amount=calc_results['total_amount'],
+            open_balance=calc_results['total_amount'], # Initial open balance is full amount
+            grand_total_words=calc_results['grand_total_words']
+        )
+        
+        # Create line items
+        for idx, item in enumerate(calc_results['processed_items'], 1):
+            InvoiceLineItem.objects.create(
+                invoice=invoice,
+                sr_no=idx,
+                description=item.get('description'),
+                hsn_sac=item.get('hsn_sac'),
+                quantity=item.get('quantity', 1),
+                rate=item.get('rate', 0),
+                taxable_value=item.get('taxable_value'),
+                discount=item.get('discount', 0),
+                cgst_rate=item.get('cgst_rate', 0),
+                cgst_amount=item.get('cgst_amount', 0),
+                sgst_rate=item.get('sgst_rate', 0),
+                sgst_amount=item.get('sgst_amount', 0),
+                igst_rate=item.get('igst_rate', 0),
+                igst_amount=item.get('igst_amount', 0),
+                total_amount=item.get('total_amount')
+            )
+        
+        # Integration: Auto-update Deal and Cost Sheet with invoice reference
+        if invoice.deal:
+            # Note: Django's related_name 'invoices' handles this automatically via FK
+            # But we could trigger signals or additional logic here if needed
+            pass
+        
+        if invoice.cost_sheet:
+            # Similarly, automatic via FK relationship 'invoices'
+            pass
+        
+        return invoice
+
+    def perform_update(self, serializer):
+        # Calculate taxes and totals first to get all values
+        line_items_data = self.request.data.get('line_items', [])
+        invoice_data = self.request.data
+        
+        calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
+        
+        # Save invoice with all calculated values
+        invoice = serializer.save(
+            invoice_type=calc_results['invoice_type'],
+            subtotal=calc_results['subtotal'],
+            total_discount=calc_results['total_discount'],
+            taxable_amount=calc_results['taxable_amount'],
+            total_tax=calc_results['total_tax'],
+            sales_tax_rate=calc_results['sales_tax_rate'],
+            sales_tax_amount=calc_results['sales_tax_amount'],
+            round_off=calc_results['round_off'],
+            total_amount=calc_results['total_amount'],
+            open_balance=calc_results['total_amount'], # Reset balance on update? Or keep old? Logically if amount changes, balance should adjust.
+            grand_total_words=calc_results['grand_total_words']
+        )
+        
+        # Update line items: Delete old and create new
+        invoice.line_items.all().delete()
+        for idx, item in enumerate(calc_results['processed_items'], 1):
+            InvoiceLineItem.objects.create(
+                invoice=invoice,
+                sr_no=idx,
+                description=item.get('description'),
+                hsn_sac=item.get('hsn_sac'),
+                quantity=item.get('quantity', 1),
+                rate=item.get('rate', 0),
+                taxable_value=item.get('taxable_value'),
+                discount=item.get('discount', 0),
+                cgst_rate=item.get('cgst_rate', 0),
+                cgst_amount=item.get('cgst_amount', 0),
+                sgst_rate=item.get('sgst_rate', 0),
+                sgst_amount=item.get('sgst_amount', 0),
+                igst_rate=item.get('igst_rate', 0),
+                igst_amount=item.get('igst_amount', 0),
+                total_amount=item.get('total_amount')
+            )
+        
+        return invoice
+
+    @action(detail=True, methods=['post'])
+    def submit_for_approval(self, request, pk=None):
+        invoice = self.get_object()
+        if invoice.status != 'DRAFT':
+            return Response({'error': 'Only draft invoices can be submitted for approval'}, status=400)
+        
+        invoice.status = 'PENDING_APPROVAL'
+        invoice.save()
+        return Response({'status': 'Invoice submitted for approval'})
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        invoice = self.get_object()
+        invoice.status = 'APPROVED'
+        invoice.approved_by = request.user
+        invoice.approved_at = timezone.now()
+        invoice.approval_comments = request.data.get('comments', '')
+        invoice.save()
+        return Response({'status': 'Invoice approved'})
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        invoice = self.get_object()
+        comments = request.data.get('approval_comments', '').strip()
+        
+        # Require comments for rejection
+        if not comments:
+            return Response(
+                {'error': 'Approval comments are required when rejecting an invoice'}, 
+                status=400
+            )
+        
+        invoice.status = 'DRAFT' # Or a REJECTED status if we add one
+        invoice.approval_comments = comments
+        invoice.save()
+        return Response({'status': 'Invoice rejected', 'comments': comments})
+
+    @action(detail=True, methods=['get'])
+    def download_pdf(self, request, pk=None):
+        from django.http import HttpResponse
+        invoice = self.get_object()
+        try:
+            pdf_content = InvoiceService.generate_pdf(invoice)
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice.invoice_no}.pdf"'
+            return response
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+
+    @action(detail=True, methods=['post'])
+    def send_email(self, request, pk=None):
+        from django.core.mail import EmailMessage
+        from django.conf import settings
+        
+        invoice = self.get_object()
+        if invoice.status == 'DRAFT':
+            return Response({'error': 'Invoice must be approved before sending'}, status=400)
+            
+        try:
+            pdf_content = InvoiceService.generate_pdf(invoice)
+            
+            subject = f"Invoice {invoice.invoice_no} from {CompanyProfile.objects.first().name}"
+            body = f"Please find attached invoice {invoice.invoice_no} for your reference."
+            
+            # Robust email detection
+            to_email = None
+            if invoice.lead and hasattr(invoice.lead, 'email') and invoice.lead.email:
+                to_email = invoice.lead.email
+            elif invoice.deal and invoice.deal.customer_email:
+                to_email = invoice.deal.customer_email
+            elif invoice.deal and invoice.deal.customer and invoice.deal.customer.email:
+                to_email = invoice.deal.customer.email
+            
+            if not to_email:
+                return Response({'error': 'No email address found for this customer. Please update the Lead or Deal contact info.'}, status=400)
+            
+            email = EmailMessage(
+                subject,
+                body,
+                settings.DEFAULT_FROM_EMAIL,
+                [to_email],
+                cc=[settings.FINANCE_EMAIL] if hasattr(settings, 'FINANCE_EMAIL') else []
+            )
+            email.attach(f"Invoice_{invoice.invoice_no}.pdf", pdf_content, 'application/pdf')
+            email.send()
+            
+            invoice.status = 'SENT'
+            invoice.save()
+            return Response({'status': 'Email sent successfully'})
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+
+    @action(detail=False, methods=['get'])
+    def report_register(self, request):
+        invoices = self.filter_queryset(self.get_queryset())
+        data = []
+        for inv in invoices:
+            data.append({
+                'invoice_no': inv.invoice_no,
+                'date': inv.invoice_date,
+                'customer': inv.lead.customer_name,
+                'type': inv.invoice_type,
+                'status': inv.status,
+                'amount': inv.total_amount
+            })
+        return Response(data)
+
+    @action(detail=False, methods=['get'])
+    def report_tax_summary(self, request):
+        from django.db.models import Sum
+        summary = Invoice.objects.filter(status__in=['APPROVED', 'SENT', 'PAID', 'PARTIAL']).aggregate(
+            total_cgst=Sum('line_items__cgst_amount'),
+            total_sgst=Sum('line_items__sgst_amount'),
+            total_igst=Sum('line_items__igst_amount'),
+            total_sales_tax=Sum('sales_tax_amount')
+        )
+        return Response(summary)
+    
+    @action(detail=False, methods=['get'])
+    def report_customer_billing(self, request):
+        """
+        Customer-wise billing report showing total invoiced amount, paid amount, and outstanding balance per customer.
+        """
+        from django.db.models import Sum, Count, Q
+        
+        # Get customer-grouped data
+        customer_billing = Invoice.objects.values(
+            'lead__id',
+            'lead__customer_name'
+        ).annotate(
+            total_invoices=Count('id'),
+            total_billed=Sum('total_amount'),
+            total_paid=Sum('total_amount', filter=Q(status='PAID')),
+            total_partial=Sum('total_amount', filter=Q(status='PARTIAL')),
+            total_outstanding=Sum('open_balance')
+        ).order_by('-total_billed')
+        
+        # Format the response
+        data = []
+        for customer in customer_billing:
+            data.append({
+                'customer_id': customer['lead__id'],
+                'customer_name': customer['lead__customer_name'],
+                'total_invoices': customer['total_invoices'],
+                'total_billed': float(customer['total_billed'] or 0),
+                'total_paid': float(customer['total_paid'] or 0),
+                'total_partial': float(customer['total_partial'] or 0),
+                'total_outstanding': float(customer['total_outstanding'] or 0)
+            })
+        
+        return Response(data)
 
 class BankConnectionViewSet(viewsets.ModelViewSet):
     queryset = BankConnection.objects.all()
