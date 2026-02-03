@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     # Local apps
+    "core",
     "accounts",
     "leads",
     "cost_sheets",

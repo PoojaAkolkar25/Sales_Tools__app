@@ -22,3 +22,18 @@ def date_format(value):
         return value.strftime("%d/%b/%Y")
     
     return value
+
+@register.filter(name='replace')
+def replace(value, arg):
+    """
+    Replaces characters in a string.
+    Usage: {{ value|replace:"old,new" }}
+    """
+    if not isinstance(value, str):
+        return value
+    
+    if ',' not in arg:
+        return value
+    
+    old, new = arg.split(',', 1)
+    return value.replace(old, new)

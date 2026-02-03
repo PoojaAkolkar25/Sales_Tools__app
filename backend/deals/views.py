@@ -151,24 +151,55 @@ class DealViewSet(viewsets.ModelViewSet):
     def export_pdf(self, request):
         try:
             from django.template.loader import render_to_string
-            import weasyprint
+            from xhtml2pdf import pisa
             
             deals = self.get_queryset()
             html_string = render_to_string('deals/report_pdf.html', {'deals': deals, 'now': timezone.now()})
-            pdf_file = weasyprint.HTML(string=html_string).write_pdf()
             
-            response = HttpResponse(pdf_file, content_type='application/pdf')
+            result = io.BytesIO()
+            pisa_status = pisa.CreatePDF(html_string, dest=result)
+            
+            if pisa_status.err:
+                return Response({
+                    "status": "error",
+                    "message": "PDF generation error occurred."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="Deals_Report_{timezone.now().strftime("%Y%m%d")}.pdf"'
             return response
-        except ImportError:
-             return Response({
-                "status": "error",
-                "message": "PDF export failed: WeasyPrint not installed or properly configured in this environment."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             return Response({
                 "status": "error",
                 "message": f"PDF export failed: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'])
+    def export_single_pdf(self, request, pk=None):
+        try:
+            from django.template.loader import render_to_string
+            from xhtml2pdf import pisa
+            
+            deal = self.get_object()
+            html_string = render_to_string('deals/report_pdf.html', {'deals': [deal], 'now': timezone.now()})
+            
+            result = io.BytesIO()
+            pisa_status = pisa.CreatePISA(html_string, dest=result)
+            
+            if pisa_status.err:
+                return Response({
+                    "status": "error",
+                    "message": "Deal PDF generation error occurred."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            filename = f"Deal_{deal.deal_id}_{timezone.now().strftime('%Y%m%d')}.pdf"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": f"Deal PDF export failed: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['get'])

@@ -79,7 +79,6 @@
                 <th>Customer</th>
                 <th>Stage</th>
                 <th>Amount</th>
-                <th>Prob (%)</th>
                 <th>Owner</th>
                 <th>Close Date</th>
             </tr>
@@ -89,24 +88,15 @@
             <tr>
                 <td style="font-weight: bold; color: #0066CC;">{{ deal.deal_id }}</td>
                 <td>{{ deal.deal_name }}</td>
-                <td>{{ deal.customer_name }}</td>
+                <td>{{ deal.customer.name|default:"N/A" }}</td>
                 <td>{{ deal.stage|replace:"_, " }}</td>
-                <td>{{ deal.currency }} {{ deal.amount|floatformat:2 }}</td>
-                <td>{{ deal.probability|floatformat:0 }}%</td>
-                <td>
-                    {% if deal.deal_owner %}
-                    {{ deal.deal_owner.name }}
-                    {% elif deal.deal_owner_user %}
-                    {{ deal.deal_owner_user.username }}
-                    {% else %}
-                    N/A
-                    {% endif %}
-                </td>
+                <td>{{ deal.currency }} {{ deal.deal_amount|floatformat:2 }}</td>
+                <td>{{ deal.salesperson_name|default:"N/A" }}</td>
                 <td>{{ deal.expected_close_date|date_format|default:"N/A" }}</td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" style="text-align: center; padding: 30px;">No deals found.</td>
+                <td colspan="7" style="text-align: center; padding: 30px;">No deals found.</td>
             </tr>
             {% endfor %}
         </tbody>
