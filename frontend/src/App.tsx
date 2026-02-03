@@ -404,7 +404,6 @@ const AppContent: React.FC = () => {
               ) : (
                 <DealDashboard
                   onView={handleViewDealDetails}
-                  onCreate={handleCreateNewDeal}
                 />
               )}
             </div>

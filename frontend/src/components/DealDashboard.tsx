@@ -1,17 +1,36 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-    PlusCircle,
     Search,
     Loader2,
     FileSpreadsheet,
     FileText,
     RefreshCcw,
     ChevronDown,
-    Download
+    Download,
+    Columns
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
+
+const ALL_COLUMNS = [
+    { key: 'deal_id', label: 'ID' },
+    { key: 'deal_name', label: 'Project Name' },
+    { key: 'company', label: 'Company' },
+    { key: 'lead_no', label: 'Lead No.' },
+    { key: 'stage', label: 'Stage' },
+    { key: 'currency', label: 'Currency' },
+    { key: 'deal_amount', label: 'Amount' },
+    { key: 'fx_rate', label: 'FX Rate' },
+    { key: 'deal_type', label: 'Type' },
+    { key: 'partner_name', label: 'Partner' },
+    { key: 'client_type', label: 'Client Type' },
+    { key: 'salesperson_name', label: 'Salesperson' },
+    { key: 'sales_head', label: 'Sales Head' },
+    { key: 'project_manager', label: 'Proj. Manager' },
+    { key: 'expected_close_date', label: 'Exp. Close Date' },
+    { key: 'deal_date', label: 'Date' }
+];
 
 interface Deal {
     id: number;
@@ -31,38 +50,73 @@ interface Deal {
 
 interface DealDashboardProps {
     onView: (id: number) => void;
-    onCreate: () => void;
 }
 
-const DealDashboard: React.FC<DealDashboardProps> = ({ onView, onCreate }) => {
+const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
     const { showNotification } = useNotification();
     const [deals, setDeals] = useState<Deal[]>([]);
     const [loading, setLoading] = useState(true);
     const [showExportMenu, setShowExportMenu] = useState(false);
-    const [filters, setFilters] = useState({
-        deal_id: '',
-        deal_name: '',
-        company: '',
-        lead_no: '',
-        stage: '',
-        currency: '',
-        deal_amount: '',
-        fx_rate: '',
-        deal_type: '',
-        partner_name: '',
-        client_type: '',
-        salesperson_name: '',
-        sales_head: '',
-        project_manager: '',
-        expected_close_date: '',
-        deal_date: '',
-        period: '',
-        startDate: '',
-        endDate: ''
+    const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+        const saved = localStorage.getItem('dealDashboard_visibleColumns');
+        return saved ? JSON.parse(saved) : ALL_COLUMNS.map(col => col.key);
+    });
+
+    const exportMenuRef = useRef<HTMLDivElement>(null);
+    const columnMenuRef = useRef<HTMLDivElement>(null);
+
+    const [filters, setFilters] = useState(() => {
+        const saved = localStorage.getItem('dealDashboard_filters');
+        return saved ? JSON.parse(saved) : {
+            deal_id: '',
+            deal_name: '',
+            company: '',
+            lead_no: '',
+            stage: '',
+            currency: '',
+            deal_amount: '',
+            fx_rate: '',
+            deal_type: '',
+            partner_name: '',
+            client_type: '',
+            salesperson_name: '',
+            sales_head: '',
+            project_manager: '',
+            expected_close_date: '',
+            deal_date: '',
+            period: '',
+            startDate: '',
+            endDate: ''
+        };
     });
 
     useEffect(() => {
         fetchDeals();
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem('dealDashboard_visibleColumns', JSON.stringify(visibleColumns));
+    }, [visibleColumns]);
+
+    useEffect(() => {
+        localStorage.setItem('dealDashboard_filters', JSON.stringify(filters));
+    }, [filters]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+                setShowExportMenu(false);
+            }
+            if (columnMenuRef.current && !columnMenuRef.current.contains(event.target as Node)) {
+                setShowColumnMenu(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
 
     const fetchDeals = async () => {
@@ -209,7 +263,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView, onCreate }) => {
                         </div>
                     )}
 
-                    <div style={{ position: 'relative' }}>
+                    <div style={{ position: 'relative' }} ref={exportMenuRef}>
                         <button
                             className="ae-btn-secondary"
                             onClick={() => setShowExportMenu(!showExportMenu)}
@@ -237,6 +291,73 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView, onCreate }) => {
                         )}
                     </div>
 
+                    <div style={{ position: 'relative' }} ref={columnMenuRef}>
+                        <button
+                            className="ae-btn-secondary"
+                            onClick={() => setShowColumnMenu(!showColumnMenu)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}
+                        >
+                            <Columns size={16} /> Columns <ChevronDown size={14} />
+                        </button>
+                        {showColumnMenu && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                marginTop: '8px',
+                                background: 'white',
+                                borderRadius: '8px',
+                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                                border: '1px solid #E2E8F0',
+                                zIndex: 100,
+                                minWidth: '200px',
+                                maxHeight: '400px',
+                                overflowY: 'auto'
+                            }}>
+                                <div style={{ padding: '8px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between' }}>
+                                    <button
+                                        onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))}
+                                        style={{ background: 'none', border: 'none', color: '#0066CC', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                        Select All
+                                    </button>
+                                    <button
+                                        onClick={() => setVisibleColumns([])}
+                                        style={{ background: 'none', border: 'none', color: '#718096', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                        Clear All
+                                    </button>
+                                </div>
+                                {ALL_COLUMNS.map(col => (
+                                    <label key={col.key} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        padding: '8px 16px',
+                                        fontSize: '0.8rem',
+                                        color: '#4A5568',
+                                        cursor: 'pointer',
+                                        userSelect: 'none'
+                                    }} className="hover:bg-gray-50">
+                                        <input
+                                            type="checkbox"
+                                            checked={visibleColumns.includes(col.key)}
+                                            onChange={() => {
+                                                if (visibleColumns.includes(col.key)) {
+                                                    setVisibleColumns(visibleColumns.filter(c => c !== col.key));
+                                                } else {
+                                                    setVisibleColumns([...visibleColumns, col.key]);
+                                                }
+                                            }}
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                        {col.label}
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     <button onClick={fetchDeals} disabled={loading} className="ae-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}>
                         <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
                     </button>
@@ -244,37 +365,24 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView, onCreate }) => {
             </div>
 
             <div style={{ overflowX: 'auto', background: 'white', borderRadius: '12px', border: '1px solid #E0E6ED' }}>
-                <table className="ae-table" style={{ minWidth: '2000px' }}>
+                <table className="ae-table" style={{ minWidth: visibleColumns.length > 8 ? '2000px' : '100%' }}>
                     <thead>
                         <tr>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>ID</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Project Name</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Company</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Lead No.</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Stage</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Currency</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Amount</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>FX Rate</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Type</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Partner</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Client Type</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Salesperson</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Sales Head</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Proj. Manager</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Exp. Close Date</th>
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>Date</th>
+                            {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
+                                <th key={col.key} style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>{col.label}</th>
+                            ))}
                             <th style={{ backgroundColor: '#FAFBFC', zIndex: 12, textAlign: 'center' }}>Actions</th>
                         </tr>
                         <tr style={{ background: '#F7FAFC' }}>
-                            {['deal_id', 'deal_name', 'company', 'lead_no', 'stage', 'currency', 'deal_amount', 'fx_rate', 'deal_type', 'partner_name', 'client_type', 'salesperson_name', 'sales_head', 'project_manager', 'expected_close_date', 'deal_date'].map((field) => (
-                                <th key={field} style={{ backgroundColor: '#F7FAFC' }}>
+                            {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
+                                <th key={col.key} style={{ backgroundColor: '#F7FAFC' }}>
                                     <div className="ae-input-group" style={{ margin: 0 }}>
                                         <Search className="ae-search-icon" size={12} />
                                         <input
                                             className="ae-input"
                                             placeholder="Filter..."
-                                            value={(filters as any)[field]}
-                                            onChange={e => setFilters({ ...filters, [field]: e.target.value })}
+                                            value={(filters as any)[col.key]}
+                                            onChange={e => setFilters({ ...filters, [col.key]: e.target.value })}
                                             style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
                                         />
                                     </div>
@@ -298,34 +406,36 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView, onCreate }) => {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={17} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
+                            <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
                         ) : filteredDeals.length === 0 ? (
-                            <tr><td colSpan={17} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No projects found.</td></tr>
+                            <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No projects found.</td></tr>
                         ) : (
                             filteredDeals.map((deal: Deal) => {
                                 const stageStyle = getStageColor(deal.stage);
                                 return (
                                     <tr key={deal.id}>
-                                        <td style={{ fontWeight: 600, color: '#0066CC' }}>{deal.deal_id}</td>
-                                        <td style={{ fontWeight: 700 }}>{deal.deal_name}</td>
-                                        <td>{deal.company}</td>
-                                        <td>{(deal as any).lead_no || '—'}</td>
-                                        <td>
-                                            <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: stageStyle.bg, color: stageStyle.text }}>
-                                                {deal.stage.replace('_', ' ')}
-                                            </span>
-                                        </td>
-                                        <td>{deal.currency}</td>
-                                        <td style={{ fontWeight: 700 }}>{parseFloat(deal.deal_amount).toLocaleString()}</td>
-                                        <td>{(deal as any).fx_rate}</td>
-                                        <td>{(deal as any).deal_type || '—'}</td>
-                                        <td>{(deal as any).partner_name || '—'}</td>
-                                        <td>{(deal as any).client_type || '—'}</td>
-                                        <td>{(deal as any).salesperson_name || '—'}</td>
-                                        <td>{(deal as any).sales_head || '—'}</td>
-                                        <td>{(deal as any).project_manager || '—'}</td>
-                                        <td>{formatToAppDate((deal as any).expected_close_date)}</td>
-                                        <td>{formatToAppDate(deal.deal_date)}</td>
+                                        {visibleColumns.includes('deal_id') && <td style={{ fontWeight: 600, color: '#0066CC' }}>{deal.deal_id}</td>}
+                                        {visibleColumns.includes('deal_name') && <td style={{ fontWeight: 700 }}>{deal.deal_name}</td>}
+                                        {visibleColumns.includes('company') && <td>{deal.company}</td>}
+                                        {visibleColumns.includes('lead_no') && <td>{(deal as any).lead_no || '—'}</td>}
+                                        {visibleColumns.includes('stage') && (
+                                            <td>
+                                                <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: stageStyle.bg, color: stageStyle.text }}>
+                                                    {deal.stage.replace('_', ' ')}
+                                                </span>
+                                            </td>
+                                        )}
+                                        {visibleColumns.includes('currency') && <td>{deal.currency}</td>}
+                                        {visibleColumns.includes('deal_amount') && <td style={{ fontWeight: 700 }}>{parseFloat(deal.deal_amount).toLocaleString()}</td>}
+                                        {visibleColumns.includes('fx_rate') && <td>{(deal as any).fx_rate}</td>}
+                                        {visibleColumns.includes('deal_type') && <td>{(deal as any).deal_type || '—'}</td>}
+                                        {visibleColumns.includes('partner_name') && <td>{(deal as any).partner_name || '—'}</td>}
+                                        {visibleColumns.includes('client_type') && <td>{(deal as any).client_type || '—'}</td>}
+                                        {visibleColumns.includes('salesperson_name') && <td>{(deal as any).salesperson_name || '—'}</td>}
+                                        {visibleColumns.includes('sales_head') && <td>{(deal as any).sales_head || '—'}</td>}
+                                        {visibleColumns.includes('project_manager') && <td>{(deal as any).project_manager || '—'}</td>}
+                                        {visibleColumns.includes('expected_close_date') && <td>{formatToAppDate((deal as any).expected_close_date)}</td>}
+                                        {visibleColumns.includes('deal_date') && <td>{formatToAppDate(deal.deal_date)}</td>}
                                         <td style={{ textAlign: 'center' }}>
                                             <button onClick={() => onView(deal.id)} className="ae-btn-secondary" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>
                                                 View
