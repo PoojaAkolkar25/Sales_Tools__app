@@ -353,6 +353,29 @@ class EstimateViewSet(viewsets.ModelViewSet):
             "estimate": EstimateSerializer(estimate).data
         })
 
+    @decorators.action(detail=True, methods=['post'], permission_classes=[IsSalesHeadOrFinanceManager])
+    def unapprove(self, request, pk=None):
+        """
+        Reverts an approved or rejected estimate back to Pending/Draft state for editing.
+        """
+        estimate = self.get_object()
+        
+        # Security check: Ensure only authorized users can do this (handled by permission_classes)
+        # But we might want to log who did it
+        
+        estimate.approval_status = ApprovalStatus.PENDING
+        estimate.status = EstimateStatus.DRAFT # Or NEGOTIATION, but DRAFT is safest for editing
+        estimate.approved_by = None
+        estimate.approved_at = None
+        # valid_until logic might need reset? preserving for now
+        
+        estimate.save()
+        
+        return Response({
+            "message": "Estimate approval reverted. You can now edit this estimate.",
+            "estimate": EstimateSerializer(estimate).data
+        })
+
     @decorators.action(detail=False, methods=['get'])
     def export_excel(self, request):
         estimates = self.get_queryset()

@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 
+
 # Excel temp files
 .~lock.*
 
@@ -10,3 +11,7 @@ backend/media/
 
 # Node
 node_modules/
+
+# Django Migrations
+**/migrations/*.py
+!**/migrations/__init__.py

@@ -12,7 +12,8 @@ import {
     XCircle,
     ThumbsUp,
     ThumbsDown,
-    Mail
+    Mail,
+    AlertTriangle
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -295,13 +296,30 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
     };
 
     const handleRewind = async () => {
-        if (!window.confirm('Rewinding will create a new version for negotiation. The current version will be archived. Continue?')) return;
+        if (!window.confirm('Rewinding will create a new version (copy) of this estimate starting as a Draft. Continue?')) return;
+        setLoading(true); // User feedback
         try {
             await api.post(`/estimates/${id}/rewind/`);
-            showNotification('Estimate rewound. New version created requiring approval.', 'success');
-            onBack(); // Go back to dashboard to see new version
+            showNotification('Estimate rewarded (new version created)', 'success');
+            onBack();
         } catch (error: any) {
             showNotification(error.response?.data?.error || 'Failed to rewind estimate', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUnapprove = async () => {
+        if (!window.confirm('Unapproving will revert this estimate to Draft status for editing. Continue?')) return;
+        setLoading(true);
+        try {
+            await api.post(`/estimates/${id}/unapprove/`);
+            showNotification('Estimate unapproved and reopened for editing', 'success');
+            fetchEstimateDetails();
+        } catch (error: any) {
+            showNotification(error.response?.data?.error || 'Failed to unapprove estimate', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -432,12 +450,55 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                         </button>
                     )}
 
-                    {/* Rewind Button */}
-                    {estimate.is_latest && estimate.version < 2 && (
-                        <button onClick={handleRewind} className="ae-btn-secondary" style={{ color: '#FF6B00', borderColor: '#FF6B00' }}>
-                            <History size={18} /> Rewind
-                        </button>
-                    )}
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', gap: '8px' }}>
+
+                        {/* Unapprove Logic: Visible if Approved/Rejected */}
+                        {isReadOnly && (
+                            <button
+                                onClick={handleUnapprove}
+                                disabled={saving}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 16px',
+                                    borderRadius: '8px',
+                                    background: '#FFF5F5',
+                                    color: '#C53030',
+                                    border: '1px solid #FEB2B2',
+                                    fontWeight: 700,
+                                    fontSize: '0.8rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <AlertTriangle size={16} /> Unapprove / Re-open
+                            </button>
+                        )}
+
+                        {/* Rewind Logic: Visible if Latest Version (Removed version < 2 restriction) */}
+                        {estimate.is_latest && (
+                            <button
+                                onClick={handleRewind}
+                                disabled={saving}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 16px',
+                                    borderRadius: '8px',
+                                    background: '#EBF8FF',
+                                    color: '#3182CE',
+                                    border: '1px solid #BEE3F8',
+                                    fontWeight: 700,
+                                    fontSize: '0.8rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <History size={16} /> Rewind (New Version)
+                            </button>
+                        )}
+                    </div>
 
                     {/* Save Button - Hidden if Read Only */}
                     {!isReadOnly && (
@@ -451,15 +512,16 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                         <button
                             onClick={() => openEmailModal()}
                             className="ae-btn-primary"
-                            disabled={!estimate.proposals?.length}
+                            disabled={!estimate.proposals?.length || estimate.approval_status !== 'APPROVED'}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
                                 background: '#38A169',
-                                opacity: !estimate.proposals?.length ? 0.5 : 1
+                                opacity: (!estimate.proposals?.length || estimate.approval_status !== 'APPROVED') ? 0.5 : 1,
+                                cursor: (!estimate.proposals?.length || estimate.approval_status !== 'APPROVED') ? 'not-allowed' : 'pointer'
                             }}
-                            title={!estimate.proposals?.length ? "Attach a proposal first" : "Submit to Customer"}
+                            title={estimate.approval_status !== 'APPROVED' ? "Estimate must be approved to send email" : (!estimate.proposals?.length ? "Attach a proposal first" : "Submit to Customer")}
                         >
                             <Mail size={18} /> Submit to Customer
                         </button>

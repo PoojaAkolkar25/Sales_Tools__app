@@ -26,6 +26,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     const [salesOrder, setSalesOrder] = useState<any>(null);
     const [products, setProducts] = useState<any[]>([]);
     const [availableEstimates, setAvailableEstimates] = useState<any[]>([]);
+    const [customers, setCustomers] = useState<any[]>([]);
     const { showNotification } = useNotification();
 
     useEffect(() => {
@@ -54,10 +55,12 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
 
     const fetchInitialData = async () => {
         try {
-            const [prodRes] = await Promise.all([
-                api.get('/products/')
+            const [prodRes, custRes] = await Promise.all([
+                api.get('/products/'),
+                api.get('/customers/')
             ]);
             setProducts(prodRes.data);
+            setCustomers(custRes.data);
         } catch (error) {
             console.error('Error fetching initial data', error);
         }
@@ -72,6 +75,19 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
             showNotification('Error loading Sales Order details', 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleCustomerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const custId = parseInt(e.target.value);
+        if (custId) {
+            const cust = customers.find(c => c.id === custId);
+            setSalesOrder((prev: any) => ({
+                ...prev,
+                customer: custId,
+                customer_name: cust?.name,
+                customer_detail: cust
+            }));
         }
     };
 
@@ -333,24 +349,37 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                         border: '1px solid rgba(0, 200, 83, 0.1)'
                                     }}>
                                         <CheckCircle2 size={16} className="text-green-600" />
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1f36' }}>{salesOrder.customer_detail?.name || 'Mapped Customer'}</span>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1f36' }}>{salesOrder.customer_detail?.name || salesOrder.customer_name}</span>
+                                        {!isSubmitted && (
+                                            <button
+                                                onClick={() => setSalesOrder({ ...salesOrder, customer: null, customer_detail: null })}
+                                                style={{ marginLeft: 'auto', fontSize: '0.65rem', color: '#C53030', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                                            >
+                                                Change
+                                            </button>
+                                        )}
                                     </div>
                                 ) : (
-                                    <input
-                                        type="text"
-                                        value={salesOrder.customer_name || 'N/A'}
+                                    <select
+                                        value={salesOrder.customer || ''}
+                                        onChange={handleCustomerChange}
                                         style={{
                                             width: '100%',
                                             padding: '6px 12px',
-                                            background: '#FFF5F5',
-                                            border: '1px solid #FEB2B2',
+                                            background: '#FFF',
+                                            border: '1px solid #E0E6ED',
                                             borderRadius: '6px',
                                             fontSize: '0.8rem',
                                             fontWeight: 700,
-                                            color: '#C53030'
+                                            color: '#2D3748'
                                         }}
-                                        readOnly
-                                    />
+                                        disabled={isSubmitted}
+                                    >
+                                        <option value="">Select Customer...</option>
+                                        {customers.map(c => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
                                 )}
                             </div>
                             <div className="ae-input-group">
@@ -507,10 +536,11 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ background: 'transparent' }}>
-                                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED' }}>Product</th>
-                                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED' }}>Qty</th>
-                                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED' }}>Rate</th>
-                                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED' }}>Disc%</th>
+                                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '25%' }}>Product</th>
+                                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '30%' }}>Description</th>
+                                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '10%' }}>Qty</th>
+                                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '15%' }}>Rate</th>
+                                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '8%' }}>Disc%</th>
                                         <th style={{ padding: '8px', textAlign: 'right', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED' }}>Total</th>
                                         {!isSubmitted && <th style={{ padding: '8px', borderBottom: '2px solid #E0E6ED', width: '40px' }}></th>}
                                     </tr>
@@ -536,7 +566,24 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                                 </select>
                                             </td>
-                                            <td style={{ padding: '4px 8px', width: '80px' }}>
+                                            <td style={{ padding: '4px 8px' }}>
+                                                <input
+                                                    type="text"
+                                                    value={item.description || ''}
+                                                    onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '4px 8px',
+                                                        border: '1px solid #E0E6ED',
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.75rem',
+                                                        color: '#4A5568'
+                                                    }}
+                                                    placeholder="Item Description"
+                                                    disabled={isSubmitted}
+                                                />
+                                            </td>
+                                            <td style={{ padding: '4px 8px' }}>
                                                 <input
                                                     type="number"
                                                     value={item.qty}
@@ -545,7 +592,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     disabled={isSubmitted}
                                                 />
                                             </td>
-                                            <td style={{ padding: '4px 8px', width: '100px' }}>
+                                            <td style={{ padding: '4px 8px' }}>
                                                 <input
                                                     type="number"
                                                     value={item.rate}
@@ -554,7 +601,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     disabled={isSubmitted}
                                                 />
                                             </td>
-                                            <td style={{ padding: '4px 8px', width: '80px' }}>
+                                            <td style={{ padding: '4px 8px' }}>
                                                 <input
                                                     type="number"
                                                     value={item.discount_percent || 0}
@@ -578,7 +625,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 </tbody>
                                 <tfoot>
                                     <tr style={{ background: '#F8FAFC' }}>
-                                        <td colSpan={4} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.65rem', fontWeight: 900, color: '#718096', textTransform: 'uppercase' }}>Total Order Value</td>
+                                        <td colSpan={5} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.65rem', fontWeight: 900, color: '#718096', textTransform: 'uppercase' }}>Total Order Value</td>
                                         <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 900, color: '#1a1f36' }}>
                                             {salesOrder.currency} {parseFloat(salesOrder.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
@@ -621,6 +668,10 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             <div className="ae-input-group">
                                 <label style={{ fontSize: '0.65rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Billing Address</label>
                                 <textarea name="billing_address" value={salesOrder.billing_address || ''} onChange={handleInputChange} style={{ width: '100%', padding: '6px 12px', border: '1px solid #E0E6ED', borderRadius: '6px', fontSize: '0.75rem' }} rows={3} disabled={isSubmitted} />
+                            </div>
+                            <div className="ae-input-group">
+                                <label style={{ fontSize: '0.65rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Shipping Address</label>
+                                <textarea name="shipping_address" value={salesOrder.shipping_address || ''} onChange={handleInputChange} style={{ width: '100%', padding: '6px 12px', border: '1px solid #E0E6ED', borderRadius: '6px', fontSize: '0.75rem' }} rows={3} disabled={isSubmitted} />
                             </div>
                         </div>
                     </section>

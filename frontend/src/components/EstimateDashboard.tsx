@@ -641,7 +641,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                 <button className="ae-btn-secondary" onClick={() => onView(est.id)} style={{ padding: '6px 10px' }} title="View Estimate"><FileText size={16} /></button>
                                                 <button className="ae-btn-secondary" onClick={() => handlePreviewPDF(est.id)} style={{ padding: '6px 10px' }} title="Preview Combined PDF"><Eye size={16} /></button>
                                                 <button className="ae-btn-secondary" onClick={() => handleDownloadPDF(est.id, est.estimate_id)} style={{ padding: '6px 10px' }} title="Download Combined PDF"><Download size={16} /></button>
-                                                <button className="ae-btn-primary" onClick={() => openEmailModal(est)} disabled={!hasProposal} style={{ padding: '6px 10px', opacity: !hasProposal ? 0.3 : 1, cursor: !hasProposal ? 'not-allowed' : 'pointer' }} title={!hasProposal ? "Attach a proposal first" : "Send Email"}><Mail size={16} /></button>
+                                                <button className="ae-btn-primary" onClick={() => openEmailModal(est)} disabled={!hasProposal || est.approval_status !== 'APPROVED'} style={{ padding: '6px 10px', opacity: (!hasProposal || est.approval_status !== 'APPROVED') ? 0.3 : 1, cursor: (!hasProposal || est.approval_status !== 'APPROVED') ? 'not-allowed' : 'pointer' }} title={est.approval_status !== 'APPROVED' ? "Estimate must be approved to send email" : (!hasProposal ? "Attach a proposal first" : "Send Email")}><Mail size={16} /></button>
                                             </div>
                                         </td>
                                     </tr>

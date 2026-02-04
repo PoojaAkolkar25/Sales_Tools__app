@@ -46,6 +46,7 @@ class SalesOrderSerializer(serializers.ModelSerializer):
 
         total = 0
         for item_data in items_data:
+            item_data.pop('sales_order', None)
             item = SalesOrderItem.objects.create(sales_order=sales_order, **item_data)
             total += item.amount
             
@@ -74,6 +75,7 @@ class SalesOrderSerializer(serializers.ModelSerializer):
             
             total = 0
             for item_data in items_data:
+                item_data.pop('sales_order', None)
                 item = SalesOrderItem.objects.create(sales_order=instance, **item_data)
                 total += item.amount
             instance.total_amount = total

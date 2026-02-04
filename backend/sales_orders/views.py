@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db import models
 
 class SalesOrderViewSet(viewsets.ModelViewSet):
-    queryset = SalesOrder.objects.all().order_by('-created_at')
+    queryset = SalesOrder.objects.all().order_by('-updated_at')
     serializer_class = SalesOrderSerializer
 
     @decorators.action(detail=True, methods=['post'])

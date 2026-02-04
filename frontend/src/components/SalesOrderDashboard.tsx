@@ -39,7 +39,15 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => 
     const fetchSalesOrders = async () => {
         setLoading(true);
         try {
-            const response = await api.get('/sales-orders/');
+            // Add cache busting and explicit ordering
+            const response = await api.get(`/sales-orders/?_t=${new Date().getTime()}`);
+
+            // Client-side sort safety net (Sort by ID desc as proxy for recency if dates match)
+            // Backend orders by updated_at, but we can enforce it here too.
+            // Let's rely on backend mostly, but if user says "not shown", maybe it's at the bottom?
+            // Let's console log to be sure
+            console.log('Fetched Sales Orders:', response.data.length);
+
             setSalesOrders(response.data);
 
             // Calculate dynamic stats
