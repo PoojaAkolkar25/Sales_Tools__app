@@ -394,17 +394,19 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                     </div>
 
                     <div className="ae-grid-4 mt-6">
-                        <div className="ae-input-group">
-                            <label className="ae-label">FX Rate (in case of foreign currency)</label>
-                            <input
-                                type="number"
-                                name="fx_rate"
-                                value={formData.fx_rate}
-                                onChange={handleInputChange}
-                                className="ae-input"
-                                step="0.0001"
-                            />
-                        </div>
+                        {(formData.currency === 'USD' || formData.currency === 'EURO') && (
+                            <div className="ae-input-group">
+                                <label className="ae-label">FX Rate</label>
+                                <input
+                                    type="number"
+                                    name="fx_rate"
+                                    value={formData.fx_rate}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    step="0.0001"
+                                />
+                            </div>
+                        )}
                         <div className="ae-input-group">
                             <label className="ae-label">Deal Amount *</label>
                             <input

@@ -126,13 +126,39 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     };
 
     const handleSave = async () => {
+        // Basic Validation
+        if (!salesOrder.po_number?.trim()) {
+            showNotification('PO Number is required even for draft.', 'error');
+            return;
+        }
+
         setSaving(true);
         try {
-            await api.patch(`/sales-orders/${id}/`, salesOrder);
+            // Prepare payload: Clean up empty strings, remove read-only details
+            const payload = {
+                ...salesOrder,
+                po_date: salesOrder.po_date || null,
+                delivery_date: salesOrder.delivery_date || null,
+                order_date: salesOrder.order_date || new Date().toISOString().split('T')[0],
+                // Remove detail objects that serializer doesn't expect or are read-only
+                customer_detail: undefined,
+                items: salesOrder.items.map((item: any) => ({
+                    ...item,
+                    product: item.product || null,
+                    qty: parseFloat(item.qty) || 0,
+                    rate: parseFloat(item.rate) || 0,
+                    tax: parseFloat(item.tax) || 0,
+                    discount: parseFloat(item.discount) || 0,
+                    amount: parseFloat(item.amount) || 0
+                }))
+            };
+
+            await api.patch(`/sales-orders/${id}/`, payload);
             showNotification('Sales Order updated successfully', 'success');
             onSave();
-        } catch (error) {
-            showNotification('Failed to update Sales Order', 'error');
+        } catch (error: any) {
+            console.error('Save Error:', error);
+            showNotification(error.response?.data?.error || JSON.stringify(error.response?.data) || 'Failed to update Sales Order', 'error');
         } finally {
             setSaving(false);
         }

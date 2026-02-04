@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
     ChevronLeft,
     Save,
-    Send,
     Plus,
     RefreshCw,
     CheckCircle2,
@@ -45,27 +44,101 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
         bcc: string;
         subject: string;
         body: string;
+        templateType: 'standard' | 'followup' | 'revised';
     }>({
         open: false,
         to: '',
         cc: '',
         bcc: '',
         subject: '',
-        body: ''
+        body: '',
+        templateType: 'standard'
     });
     const [sendingEmail, setSendingEmail] = useState(false);
 
-    const openEmailModal = () => {
-        const clientName = estimate.customer_name || 'Client';
-        const projectName = estimate.project_name || 'Project';
+    const EMAIL_TEMPLATES = {
+        standard: {
+            name: 'Standard Proposal',
+            subject: (projectName: string, companyName: string) => `Proposal for ${projectName} - ${companyName}`,
+            body: (clientName: string, projectName: string, companyName: string, expirationDate: string, yourName: string) =>
+                `Dear ${clientName},\n\nGreetings from ${companyName} !!\n\nIt was a pleasure discussing ${projectName} with you. Based on our conversation, I’ve attached a detailed proposal including estimates / quotation for the services and license we discussed.\n\nYou can find the full breakdown of costs and timelines in the attached PDF.\n\nThis proposal is valid until ${expirationDate}. Please let me know if you have any questions or if you’d like to move forward.\n\nBest regards,\n${yourName}`
+        },
+        followup: {
+            name: 'Follow-Up',
+            subject: (projectName: string) => `Quick question about your ${projectName} proposal`,
+            body: (clientName: string, _projectName: string, sentDate: string, yourName: string) =>
+                `Hi ${clientName},\n\nI’m checking in to see if you had a chance to review the proposal I sent on ${sentDate}. I’ve re-attached it here for your convenience.\n\nAre there any specific details or technical aspects I can clarify for you? I’m happy to hop on a 5-minute call to walk you through it.\n\nLooking forward to your thoughts.\n\nBest,\n${yourName}`
+        },
+        revised: {
+            name: 'Revised Quotation',
+            subject: (projectName: string, companyName: string) => `Updated Quote for ${projectName} - ${companyName}`,
+            body: (clientName: string, _projectName: string, _companyName: string, revisionDetails: string, yourName: string) =>
+                `Dear ${clientName},\n\nThank you for your feedback on the initial proposal. As discussed, I have revised the scope to include ${revisionDetails} and adjusted the pricing accordingly.\n\nYou will find the updated proposal attached. Let me know if this aligns better with your current budget and requirements.\n\nKind regards,\n${yourName}`
+        }
+    };
+
+    const openEmailModal = (type: keyof typeof EMAIL_TEMPLATES = 'standard') => {
+        const clientName = estimate.customer_name || '[Client Name]';
+        const projectName = estimate.project_name || '[Project Name]';
+        const companyName = "Your Company Name"; // Should ideally be dynamic
+        const yourName = "Your Name"; // Should ideally be from user profile
+        const expirationDate = "[Expiration Date]";
+        const sentDate = "[Date]";
+        const revisionDetails = "[specific change]";
+
+        let subject = "";
+        let body = "";
+
+        if (type === 'standard') {
+            subject = EMAIL_TEMPLATES.standard.subject(projectName, companyName);
+            body = EMAIL_TEMPLATES.standard.body(clientName, projectName, companyName, expirationDate, yourName);
+        } else if (type === 'followup') {
+            subject = EMAIL_TEMPLATES.followup.subject(projectName);
+            body = EMAIL_TEMPLATES.followup.body(clientName, projectName, sentDate, yourName);
+        } else if (type === 'revised') {
+            subject = EMAIL_TEMPLATES.revised.subject(projectName, companyName);
+            body = EMAIL_TEMPLATES.revised.body(clientName, projectName, companyName, revisionDetails, yourName);
+        }
 
         setEmailModal({
             open: true,
-            to: estimate.customer_email || '',
+            to: estimate.customer_email || (estimate.customer?.email) || '',
             cc: '',
             bcc: '',
-            subject: `Proposal / Estimate - ${estimate.estimate_id}`,
-            body: `Dear ${clientName},\n\nPlease find attached the proposal for ${projectName}.\n\nBest regards,\nSales Team`
+            subject: subject,
+            body: body,
+            templateType: type
+        });
+    };
+
+    const handleTemplateChange = (type: keyof typeof EMAIL_TEMPLATES) => {
+        const clientName = estimate.customer_name || '[Client Name]';
+        const projectName = estimate.project_name || '[Project Name]';
+        const companyName = "Your Company Name";
+        const yourName = "Your Name";
+        const expirationDate = "[Expiration Date]";
+        const sentDate = "[Date]";
+        const revisionDetails = "[specific change]";
+
+        let subject = "";
+        let body = "";
+
+        if (type === 'standard') {
+            subject = EMAIL_TEMPLATES.standard.subject(projectName, companyName);
+            body = EMAIL_TEMPLATES.standard.body(clientName, projectName, companyName, expirationDate, yourName);
+        } else if (type === 'followup') {
+            subject = EMAIL_TEMPLATES.followup.subject(projectName);
+            body = EMAIL_TEMPLATES.followup.body(clientName, projectName, sentDate, yourName);
+        } else if (type === 'revised') {
+            subject = EMAIL_TEMPLATES.revised.subject(projectName, companyName);
+            body = EMAIL_TEMPLATES.revised.body(clientName, projectName, companyName, revisionDetails, yourName);
+        }
+
+        setEmailModal({
+            ...emailModal,
+            subject: subject,
+            body: body,
+            templateType: type
         });
     };
 
@@ -80,7 +153,18 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                 body: emailModal.body
             });
             showNotification('Email sent successfully', 'success');
+
+            // If estimate is not yet submitted, trigger the submit status change
+            if (estimate.status !== 'SUBMITTED') {
+                try {
+                    await api.post(`/estimates/${id}/submit/`);
+                } catch (subErr) {
+                    console.error('Status update failed after email', subErr);
+                }
+            }
+
             setEmailModal({ ...emailModal, open: false });
+            fetchEstimateDetails(); // Refresh to show new status
         } catch (error: any) {
             console.error('Error sending email', error);
             showNotification(error.response?.data?.error || 'Failed to send email', 'error');
@@ -160,9 +244,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
         formDataFile.append('filename', file.name);
 
         try {
-            const response = await api.post('/proposals/', formDataFile, {
-                headers: { 'Content-Type': 'multipart/form-data ' }
-            });
+            const response = await api.post('/proposals/', formDataFile);
             showNotification('Proposal attached successfully', 'success');
             // Update estimate state directly instead of refetching
             setEstimate((prev: any) => ({
@@ -209,32 +291,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
             showNotification(errorMsg, 'error');
         } finally {
             setSaving(false);
-        }
-    };
-
-    const handleSubmit = async () => {
-        const total = calculateTotal();
-        const costSheetPrice = parseFloat(estimate.total_price);
-
-        // Client-side validation for Amount
-        if (total < costSheetPrice) {
-            showNotification(`Total Estimate ($${total.toLocaleString()}) cannot be less than Cost Sheet Price ($${costSheetPrice.toLocaleString()})`, 'error');
-            return;
-        }
-
-        // Client-side validation for Proposal
-        if (!estimate.proposals?.length) {
-            showNotification('Please attach a proposal file before submitting to the customer.', 'error');
-            return;
-        }
-
-        if (!window.confirm('Are you sure you want to submit this estimate to the customer?')) return;
-        try {
-            await api.post(`/estimates/${id}/submit/`);
-            showNotification('Estimate submitted successfully', 'success');
-            fetchEstimateDetails();
-        } catch (error: any) {
-            showNotification(error.response?.data?.error || 'Failed to submit estimate', 'error');
         }
     };
 
@@ -390,20 +446,10 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                         </button>
                     )}
 
-                    {/* Submit button - only enabled if approved */}
-                    <button
-                        onClick={handleSubmit}
-                        className="ae-btn-primary"
-                        disabled={estimate.approval_status !== 'APPROVED'}
-                        style={{ opacity: estimate.approval_status !== 'APPROVED' ? 0.5 : 1 }}
-                    >
-                        <Send size={18} /> Submit to Customer
-                    </button>
-
-                    {/* Send Email Button */}
+                    {/* Submit to Customer button (via Email Modal) */}
                     {(estimate.status === 'SUBMITTED' || estimate.approval_status === 'APPROVED') && (
                         <button
-                            onClick={openEmailModal}
+                            onClick={() => openEmailModal()}
                             className="ae-btn-primary"
                             disabled={!estimate.proposals?.length}
                             style={{
@@ -413,9 +459,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                                 background: '#38A169',
                                 opacity: !estimate.proposals?.length ? 0.5 : 1
                             }}
-                            title={!estimate.proposals?.length ? "Attach a proposal first" : "Send Email"}
+                            title={!estimate.proposals?.length ? "Attach a proposal first" : "Submit to Customer"}
                         >
-                            <Mail size={18} /> Send Email
+                            <Mail size={18} /> Submit to Customer
                         </button>
                     )}
                 </div>
@@ -639,6 +685,32 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                             >
                                 <X size={20} />
                             </button>
+                        </div>
+
+                        <div style={{ marginBottom: '24px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Select Template:</label>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                {(Object.keys(EMAIL_TEMPLATES) as Array<keyof typeof EMAIL_TEMPLATES>).map((type) => (
+                                    <button
+                                        key={type}
+                                        onClick={() => handleTemplateChange(type)}
+                                        style={{
+                                            padding: '8px 16px',
+                                            borderRadius: '8px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            border: '1.5px solid',
+                                            background: emailModal.templateType === type ? '#38A169' : 'white',
+                                            color: emailModal.templateType === type ? 'white' : '#4A5568',
+                                            borderColor: emailModal.templateType === type ? '#38A169' : '#E2E8F0'
+                                        }}
+                                    >
+                                        {EMAIL_TEMPLATES[type].name}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         <div className="space-y-4">

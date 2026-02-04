@@ -183,11 +183,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     setSalesPerson(data.sales_person || '');
                     setApprovalComments(data.approval_comments || '');
                     setRevertComments(data.revert_comments || '');
-                    setLicenseItems(data.license_items);
-                    setImplementationItems(data.implementation_items);
-                    setSupportItems(data.support_items);
-                    setInfraItems(data.infra_items);
-                    setOtherItems(data.other_items || [{ description: '', estimated_cost: 0, margin_percentage: 0 }]);
+                    setLicenseItems(data.license_items.length > 0 ? data.license_items : [{ name: '', type: '', rate: 0, qty: 0, period: '', margin_percentage: 0 }]);
+                    setImplementationItems(data.implementation_items.length > 0 ? data.implementation_items : [{ category: '', num_resources: 0, num_days: 0, rate_per_day: 0, margin_percentage: 0 }]);
+                    setSupportItems(data.support_items.length > 0 ? data.support_items : [{ category: '', num_resources: 0, num_days: 0, rate_per_day: 0, margin_percentage: 0 }]);
+                    setInfraItems(data.infra_items.length > 0 ? data.infra_items : [{ name: '', qty: 0, months: 0, rate_per_month: 0, margin_percentage: 0 }]);
+                    setOtherItems(data.other_items && data.other_items.length > 0 ? data.other_items : [{ description: '', estimated_cost: 0, margin_percentage: 0 }]);
                     setAttachments(data.attachments || []);
 
                     // Set Remark states
@@ -213,6 +213,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             setSalesPerson('');
             setProjectName('');
             setLicenseItems([{ name: '', type: '', rate: 0, qty: 0, period: '', margin_percentage: 0 }]);
+            setImplementationItems([{ category: '', num_resources: 0, num_days: 0, rate_per_day: 0, margin_percentage: 0 }]);
+            setSupportItems([{ category: '', num_resources: 0, num_days: 0, rate_per_day: 0, margin_percentage: 0 }]);
+            setInfraItems([{ name: '', qty: 0, months: 0, rate_per_month: 0, margin_percentage: 0 }]);
+            setOtherItems([{ description: '', estimated_cost: 0, margin_percentage: 0 }]);
             setOverallRemarks('');
             // ... (could reset others too but these are the main ones)
         }

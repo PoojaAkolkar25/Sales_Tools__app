@@ -1,14 +1,20 @@
 from rest_framework import viewsets, status, decorators
 from rest_framework.response import Response
-from .models import Estimate, Proposal, Renewal, EstimateStatus, EstimateItem, ApprovalStatus
+from .models import Estimate, Proposal, Renewal, EstimateStatus, EstimateItem, ApprovalStatus, EmailLog
 from .serializers import EstimateSerializer, ProposalSerializer, RenewalSerializer
 from .permissions import IsSalesHeadOrFinanceManager
+from django.db import models
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
 from django.utils import timezone
 from django.core.mail import EmailMessage
-import logging
 from .utils import generate_estimate_pdf, merge_pdfs
+from django.db.models import Q
+from django.utils import timezone
+from django.http import HttpResponse
+import io
+import xlsxwriter
+import logging
 
 class EstimateViewSet(viewsets.ModelViewSet):
     queryset = Estimate.objects.all()
@@ -16,14 +22,32 @@ class EstimateViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Estimate.objects.all().order_by('-created_at')
+        
+        # Simple filtering
         customer_id = self.request.query_params.get('customer', None)
+        status = self.request.query_params.get('status', None)
         approval_status = self.request.query_params.get('approval_status', None)
+        is_latest = self.request.query_params.get('is_latest', None)
+        search = self.request.query_params.get('search', None)
         
         if customer_id:
             queryset = queryset.filter(deal__customer__id=customer_id)
         
+        if status:
+            queryset = queryset.filter(status=status)
+            
         if approval_status:
             queryset = queryset.filter(approval_status=approval_status)
+            
+        if is_latest is not None:
+             queryset = queryset.filter(is_latest=(is_latest.lower() == 'true'))
+
+        if search:
+            queryset = queryset.filter(
+                Q(estimate_id__icontains=search) |
+                Q(project_name__icontains=search) |
+                Q(customer_name__icontains=search)
+            )
             
         return queryset
 
@@ -166,32 +190,6 @@ class EstimateViewSet(viewsets.ModelViewSet):
             "message": "Estimate approved successfully.",
             "estimate": EstimateSerializer(estimate).data
         })
-
-    @decorators.action(detail=True, methods=['post'])
-    def send_email(self, request, pk=None):
-        estimate = self.get_object()
-        email_type = request.data.get('type', 'standard')
-        changes_summary = request.data.get('changes', 'the requested changes')
-        
-        # Determine Recipient Email
-        recipient_email = estimate.deal.customer_email
-        if not recipient_email and estimate.deal.customer:
-            recipient_email = estimate.deal.customer.email
-            
-        if not recipient_email:
-            return Response(
-                {"error": "No customer email found in Deal or Customer record."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Get Proposal Attachment
-        # Assuming we want the latest version of the proposal
-        proposal = estimate.proposals.order_by('-version').first()
-        if not proposal:
-            return Response(
-                {"error": "No proposal file attached to this estimate."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
     @decorators.action(detail=True, methods=['post'])
     def send_email(self, request, pk=None):
@@ -354,6 +352,75 @@ class EstimateViewSet(viewsets.ModelViewSet):
             "message": "Estimate rejected.",
             "estimate": EstimateSerializer(estimate).data
         })
+
+    @decorators.action(detail=False, methods=['get'])
+    def export_excel(self, request):
+        estimates = self.get_queryset()
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output)
+        worksheet = workbook.add_worksheet("Estimates Report")
+        
+        header_format = workbook.add_format({
+            'bold': True,
+            'bg_color': '#FF6B00',
+            'font_color': 'white',
+            'border': 1
+        })
+        
+        headers = [
+            'Estimate ID', 'Version', 'Customer', 'Project', 'Status',
+            'Total Price', 'Approval Status', 'Created At'
+        ]
+        
+        for col, header in enumerate(headers):
+            worksheet.write(0, col, header, header_format)
+            
+        for row, est in enumerate(estimates, start=1):
+            worksheet.write(row, 0, est.estimate_id)
+            worksheet.write(row, 1, est.version)
+            worksheet.write(row, 2, est.customer_name)
+            worksheet.write(row, 3, est.project_name)
+            worksheet.write(row, 4, est.status)
+            worksheet.write(row, 5, float(est.total_price))
+            worksheet.write(row, 6, est.approval_status)
+            worksheet.write(row, 7, est.created_at.strftime("%Y-%m-%d %H:%M"))
+            
+        workbook.close()
+        output.seek(0)
+        
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="Estimates_Report_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+        return response
+
+    @decorators.action(detail=False, methods=['get'])
+    def export_pdf(self, request):
+        try:
+            from django.template.loader import render_to_string
+            from xhtml2pdf import pisa
+            
+            estimates = self.get_queryset()
+            html_string = render_to_string('estimates/report_pdf.html', {'estimates': estimates, 'now': timezone.now()})
+            
+            result = io.BytesIO()
+            pisa_status = pisa.CreatePDF(html_string, dest=result)
+            
+            if pisa_status.err:
+                return Response({
+                    "status": "error",
+                    "message": "PDF generation error occurred."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="Estimates_Report_{timezone.now().strftime("%Y%m%d")}.pdf"'
+            return response
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": f"PDF export failed: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ProposalViewSet(viewsets.ModelViewSet):
     queryset = Proposal.objects.all()

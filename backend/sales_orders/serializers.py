@@ -8,7 +8,7 @@ class SalesOrderItemSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class SalesOrderSerializer(serializers.ModelSerializer):
-    items = SalesOrderItemSerializer(many=True, read_only=True)
+    items = SalesOrderItemSerializer(many=True, required=False)
     po_file_name = serializers.SerializerMethodField()
     po_file_url = serializers.SerializerMethodField()
 
@@ -31,8 +31,55 @@ class SalesOrderSerializer(serializers.ModelSerializer):
         model = SalesOrder
         fields = ['id', 'so_number', 'order_date', 'status', 'customer', 'customer_detail', 'customer_name', 'customer_code', 'po_number', 'po_date', 'delivery_date', 'billing_address', 'shipping_address', 'currency', 'total_amount', 'po_file', 'po_file_name', 'po_file_url', 'assigned_to', 'items', 'estimates']
         extra_kwargs = {
-            'estimates': {'required': False}
+            'estimates': {'required': False},
+            'so_number': {'read_only': True},
+            'total_amount': {'read_only': True}
         }
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items', [])
+        estimates = validated_data.pop('estimates', [])
+        sales_order = SalesOrder.objects.create(**validated_data)
+        
+        if estimates:
+            sales_order.estimates.set(estimates)
+
+        total = 0
+        for item_data in items_data:
+            item = SalesOrderItem.objects.create(sales_order=sales_order, **item_data)
+            total += item.amount
+            
+        sales_order.total_amount = total
+        sales_order.save()
+        return sales_order
+
+    def update(self, instance, validated_data):
+        items_data = validated_data.pop('items', None)
+        estimates = validated_data.pop('estimates', None)
+        
+        # Update basic fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+            
+        if estimates is not None:
+             instance.estimates.set(estimates)
+
+        # Update Items if provided
+        if items_data is not None:
+            # Delete existing items not in the update payload (optional approach: or delete all and recreate)
+            # For simplicity and correctness with IDs, we'll replace all for now or implement diffing
+            # Given the frontend sends complete list, we can clear and recreate or intelligent update.
+            # Let's go with: delete all existing and recreate (simplest safe approach for drafts)
+            instance.items.all().delete()
+            
+            total = 0
+            for item_data in items_data:
+                item = SalesOrderItem.objects.create(sales_order=instance, **item_data)
+                total += item.amount
+            instance.total_amount = total
+        
+        instance.save()
+        return instance
 
     def validate(self, data):
         # BRD Requirement: Prevent duplicate PO number for same customer
