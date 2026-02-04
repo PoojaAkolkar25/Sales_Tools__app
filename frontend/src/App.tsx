@@ -13,8 +13,13 @@ import {
   Users,
   LayoutDashboard,
   PlusCircle,
-  Loader2
+  Search,
+  Loader2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
+
+
 import CostSheetForm from './components/CostSheetForm';
 import CostSheetDashboard from './components/CostSheetDashboard';
 import Login from './components/Login';
@@ -40,7 +45,101 @@ import LeadForm from './components/LeadForm';
 
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 
+const baseNavItems = [
+  { id: 'home', label: 'Home', icon: LayoutDashboard, path: '/home' },
+  { id: 'lead', label: 'Lead', icon: Users, path: '/lead' },
+  { id: 'deal', label: 'Deal', icon: Handshake, path: '/deal' },
+  { id: 'cost-sheet', label: 'Cost Sheet', icon: FileText, path: '/cost-sheet' },
+  { id: 'estimates', label: 'Estimates', icon: FileSpreadsheet, path: '/estimates' },
+  { id: 'sales-order', label: 'Sales Order', icon: ShoppingBag, path: '/sales-order' },
+  { id: 'milestone', label: 'Milestone', icon: Milestone, path: '/milestone' },
+  { id: 'inventory', label: 'Inventory', icon: Boxes, path: '/inventory' },
+  { id: 'invoice', label: 'Invoice', icon: Receipt, path: '/invoice' },
+  { id: 'payment', label: 'Payment', icon: Wallet, path: '/payment' },
+  { id: 'revenue', label: 'Revenue', icon: TrendingUp, path: '/revenue' },
+  { id: 'contracts', label: 'Contracts', icon: Gavel, path: '/contracts' },
+];
+
+interface ModuleWrapperProps {
+  children: React.ReactNode;
+  isSidebarExpanded: boolean;
+  setIsSidebarExpanded: (expanded: boolean) => void;
+  user: any;
+  onLogout: () => void;
+  navigate: (path: string) => void;
+  location: any;
+  onCreateUser?: () => void;
+}
+
+const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
+  children,
+  isSidebarExpanded,
+  setIsSidebarExpanded,
+  user,
+  onLogout,
+  navigate,
+  location,
+  onCreateUser
+}) => (
+  <div className="app-container">
+    {/* Left Sidebar */}
+    <aside className={`sidebar flex flex-col ${isSidebarExpanded ? 'expanded' : '!w-20'} overflow-hidden`}>
+      <div className={`sidebar-logo !px-0 flex items-center ${isSidebarExpanded ? 'justify-start px-6' : 'justify-center'}`}>
+        <img
+          src="/Salesedge1_logo.png"
+          alt="SalesEdge Logo"
+          className="sidebar-logo-img"
+        />
+        {isSidebarExpanded && <h1 className="ml-3 text-white font-extrabold text-xl tracking-tight">SalesEdge</h1>}
+      </div>
+
+      <nav className="sidebar-nav flex-1">
+        {baseNavItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => navigate(item.path)}
+            className={`sidebar-item !px-0 ${isSidebarExpanded ? 'expanded' : 'flex justify-center'} ${location.pathname === item.path ? 'active' : ''}`}
+            title={!isSidebarExpanded ? item.label : ''}
+          >
+            <item.icon size={24} className="flex-shrink-0" />
+            {isSidebarExpanded && <span className="font-semibold text-sm">{item.label}</span>}
+            {!isSidebarExpanded && <span className="sr-only">{item.label}</span>}
+          </button>
+        ))}
+
+        {/* Toggle Button Relocated Below Items */}
+        <div className="sidebar-toggle-container">
+          <button
+            onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+            className="sidebar-toggle-btn"
+            title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+          >
+            {isSidebarExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+          </button>
+        </div>
+      </nav>
+    </aside>
+
+    {/* Main Content Area */}
+    <main className={`main-content ${isSidebarExpanded ? 'sidebar-expanded' : ''}`}>
+      <Navbar
+        user={user}
+        onLogout={onLogout}
+        onCreateUser={onCreateUser}
+        isSidebarExpanded={isSidebarExpanded}
+      />
+
+      <div className="main-scroll-area">
+        <div className="content-inner animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {children}
+        </div>
+      </div>
+    </main>
+  </div>
+);
+
 const AppContent: React.FC = () => {
+
   const [costSheetView, setCostSheetView] = useState<'form' | 'dashboard'>('dashboard');
   const [dealView, setDealView] = useState<'form' | 'dashboard'>('dashboard');
   const [estimateView, setEstimateView] = useState<'form' | 'dashboard'>('dashboard');
@@ -51,6 +150,9 @@ const AppContent: React.FC = () => {
   const [editingSalesOrderId, setEditingSalesOrderId] = useState<number | null>(null);
   const [editingLeadId, setEditingLeadId] = useState<number | null>(null);
   const [leadView, setLeadView] = useState<'form' | 'dashboard'>('dashboard');
+  const [leadSearchQuery, setLeadSearchQuery] = useState('');
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+
 
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -100,21 +202,6 @@ const AppContent: React.FC = () => {
     setUser(null);
     navigate('/login');
   };
-
-  const baseNavItems = [
-    { id: 'home', label: 'Home', icon: LayoutDashboard, path: '/home' },
-    { id: 'lead', label: 'Lead', icon: Users, path: '/lead' },
-    { id: 'deal', label: 'Deal', icon: Handshake, path: '/deal' },
-    { id: 'cost-sheet', label: 'Cost Sheet', icon: FileText, path: '/cost-sheet' },
-    { id: 'estimates', label: 'Estimates', icon: FileSpreadsheet, path: '/estimates' },
-    { id: 'sales-order', label: 'Sales Order', icon: ShoppingBag, path: '/sales-order' },
-    { id: 'milestone', label: 'Milestone', icon: Milestone, path: '/milestone' },
-    { id: 'inventory', label: 'Inventory', icon: Boxes, path: '/inventory' },
-    { id: 'invoice', label: 'Invoice', icon: Receipt, path: '/invoice' },
-    { id: 'payment', label: 'Payment', icon: Wallet, path: '/payment' },
-    { id: 'revenue', label: 'Revenue', icon: TrendingUp, path: '/revenue' },
-    { id: 'contracts', label: 'Contracts', icon: Gavel, path: '/contracts' },
-  ];
 
 
   const handleCreateNew = () => {
@@ -169,55 +256,22 @@ const AppContent: React.FC = () => {
     );
   }
 
-  const ModuleWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="app-container">
-      {/* Left Sidebar */}
-      <aside className="sidebar flex flex-col !w-20 overflow-hidden">
-        <div className="sidebar-logo !px-0 flex justify-center">
-          <div className="grid grid-cols-2 gap-0.5">
-            <div className="w-2.5 h-2.5 bg-[#A0AEC0]"></div>
-            <div className="w-2.5 h-2.5 bg-[#3182CE]"></div>
-            <div className="w-2.5 h-2.5 bg-[#3182CE]"></div>
-            <div className="w-2.5 h-2.5 bg-[#F6AD55]"></div>
-          </div>
-          <h1 className="sr-only">SalesEdge</h1>
-        </div>
-
-        <nav className="sidebar-nav flex-1">
-          {baseNavItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.path)}
-              className={`sidebar-item !px-0 flex justify-center ${location.pathname === item.path ? 'active' : ''}`}
-              title={item.label}
-            >
-              <item.icon size={24} />
-              <span className="sr-only">{item.label}</span>
-            </button>
-          ))}
-        </nav>
-      </aside>
-
-      {/* Main Content Area */}
-      <main className="main-content">
-        <Navbar
-          user={user}
-          onLogout={handleLogout}
-          onCreateUser={user?.role === 'app_admin' ? () => navigate('/user-management?action=create') : undefined}
-        />
-        <div className="content-inner animate-in fade-in slide-in-from-bottom-4 duration-500">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
+  const commonWrapperProps = {
+    isSidebarExpanded,
+    setIsSidebarExpanded,
+    user,
+    onLogout: handleLogout,
+    navigate,
+    location,
+    onCreateUser: user?.role === 'app_admin' ? () => navigate('/user-management?action=create') : undefined
+  };
 
   return (
     <Routes>
       <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
       <Route path="/home" element={
         user ? (
-          <ModuleWrapper>
+          <ModuleWrapper {...commonWrapperProps}>
             <Home user={user} />
           </ModuleWrapper>
         ) : <Navigate to="/login" />
@@ -225,7 +279,7 @@ const AppContent: React.FC = () => {
       <Route path="/Dashboard" element={<Navigate to="/home" />} />
       <Route path="/cost-sheet" element={
         user ? (
-          <ModuleWrapper>
+          <ModuleWrapper {...commonWrapperProps}>
             <div className="space-y-6">
               <div style={{
                 display: 'flex',
@@ -307,32 +361,140 @@ const AppContent: React.FC = () => {
       } />
       <Route path="/user-management" element={
         user && user.role === 'app_admin' ? (
-          <ModuleWrapper>
+          <ModuleWrapper {...commonWrapperProps}>
             <UserManagement />
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
       <Route path="/lead" element={
         user ? (
-          <ModuleWrapper>
-            {leadView === 'form' ? (
-              <LeadForm
-                id={editingLeadId}
-                onBack={() => setLeadView('dashboard')}
-                onSave={() => setLeadView('dashboard')}
-              />
-            ) : (
-              <LeadDashboard
-                onView={handleViewLeadDetails}
-                onCreate={handleCreateNewLead}
-              />
-            )}
+          <ModuleWrapper {...commonWrapperProps}>
+            <div className="space-y-6">
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 8px',
+                marginBottom: '8px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                  <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Lead Management</h1>
+                </div>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 8px',
+                marginBottom: '16px',
+                gap: '24px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  alignItems: 'center',
+                  background: 'white',
+                  padding: '6px',
+                  borderRadius: '12px',
+                  border: '1px solid #E0E6ED',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                }}>
+                  <button
+                    onClick={() => setLeadView('dashboard')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 16px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      background: leadView === 'dashboard' ? '#FF6B00' : 'transparent',
+                      color: leadView === 'dashboard' ? 'white' : '#718096',
+                      boxShadow: leadView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                    }}
+                  >
+                    <LayoutDashboard size={18} /> Dashboard
+                  </button>
+                  <button
+                    onClick={handleCreateNewLead}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 16px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      background: (leadView === 'form' && !editingLeadId) ? '#FF6B00' : 'transparent',
+                      color: (leadView === 'form' && !editingLeadId) ? 'white' : '#718096',
+                      boxShadow: (leadView === 'form' && !editingLeadId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                    }}
+                  >
+                    <PlusCircle size={18} /> Create New
+                  </button>
+                </div>
+
+                {leadView === 'dashboard' && (
+                  <div className="ae-input-group !bg-white !shadow-sm !border-[#E0E6ED]" style={{
+                    flex: 1,
+                    maxWidth: '500px',
+                    margin: 0,
+                    height: '44px',
+                    borderRadius: '12px',
+                    position: 'relative',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    <span className="ae-search-icon" style={{ left: '16px', zIndex: 2 }}><Search size={20} className="text-[#A0AEC0]" /></span>
+                    <input
+                      type="text"
+                      className="ae-input !border-none !bg-transparent !pl-12 !font-semibold"
+                      placeholder="Search by Lead ID, Customer or Project..."
+                      value={leadSearchQuery}
+                      onChange={(e) => setLeadSearchQuery(e.target.value)}
+                      style={{
+                        fontSize: '0.9rem',
+                        color: '#1a1f36',
+                        width: '100%',
+                        height: '100%',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                )}
+
+              </div>
+
+              {leadView === 'form' ? (
+                <LeadForm
+                  id={editingLeadId}
+                  onBack={() => setLeadView('dashboard')}
+                  onSave={() => setLeadView('dashboard')}
+                />
+              ) : (
+                <LeadDashboard
+                  onView={handleViewLeadDetails}
+                  searchQuery={leadSearchQuery}
+                />
+
+              )}
+            </div>
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
+
       <Route path="/deal" element={
         user ? (
-          <ModuleWrapper>
+          <ModuleWrapper {...commonWrapperProps}>
             <div className="space-y-6">
               <div style={{
                 display: 'flex',
@@ -412,7 +574,7 @@ const AppContent: React.FC = () => {
       } />
       <Route path="/estimates" element={
         user ? (
-          <ModuleWrapper>
+          <ModuleWrapper {...commonWrapperProps}>
             {estimateView === 'form' ? (
               <EstimateForm
                 id={editingEstimateId!}
@@ -428,7 +590,7 @@ const AppContent: React.FC = () => {
       } />
       <Route path="/sales-order" element={
         user ? (
-          <ModuleWrapper>
+          <ModuleWrapper {...commonWrapperProps}>
             {salesOrderView === 'form' ? (
               <SalesOrderForm
                 id={editingSalesOrderId}
@@ -445,21 +607,21 @@ const AppContent: React.FC = () => {
       } />
       <Route path="/invoice" element={
         user ? (
-          <ModuleWrapper>
+          <ModuleWrapper {...commonWrapperProps}>
             <InvoiceDashboard />
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
       <Route path="/payment" element={
         user ? (
-          <ModuleWrapper>
+          <ModuleWrapper {...commonWrapperProps}>
             <Payment />
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
       <Route path="/milestone" element={
         user ? (
-          <ModuleWrapper>
+          <ModuleWrapper {...commonWrapperProps}>
             <MilestoneDashboard />
           </ModuleWrapper>
         ) : <Navigate to="/login" />
@@ -467,7 +629,7 @@ const AppContent: React.FC = () => {
       {baseNavItems.filter(item => !['lead', 'cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order', 'milestone'].includes(item.id)).map(item => (
         <Route key={item.id} path={item.path} element={
           user ? (
-            <ModuleWrapper>
+            <ModuleWrapper {...commonWrapperProps}>
               <div className="glass-card !bg-white">
                 <h2 className="text-3xl font-extrabold text-[#1a1f36] mb-4">{item.label}</h2>
                 <div className="py-20 text-center border-2 border-dashed border-[#E0E6ED] rounded-xl bg-[#FAFBFC]">

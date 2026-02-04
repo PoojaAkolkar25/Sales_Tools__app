@@ -3,12 +3,9 @@ import {
     ArrowLeft,
     Save,
     Loader2,
-    Building2,
-    User,
-    Briefcase,
-    Mail,
-    Globe,
-    Calendar
+    Calendar,
+    Users,
+    Building2
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -95,154 +92,270 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
     }
 
     return (
-        <div className="max-w-4xl mx-auto">
-            <div className="mb-6 flex items-center justify-between">
+        <div style={{ padding: '0 20px' }}>
+            {/* Top Back & Save Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
                 <button
                     onClick={onBack}
-                    className="flex items-center gap-2 text-[#718096] hover:text-[#2D3748] transition-colors font-medium"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: '#718096',
+                        border: 'none',
+                        background: 'none',
+                        cursor: 'pointer',
+                        fontWeight: 700,
+                        fontSize: '0.9rem'
+                    }}
                 >
-                    <ArrowLeft size={20} /> Back to Dashboard
+                    <ArrowLeft size={18} /> Back to Dashboard
                 </button>
-                <div className="flex items-center gap-4">
-                    <button
-                        type="submit"
-                        form="lead-form"
-                        disabled={saving}
-                        className="ae-btn-primary flex items-center gap-2"
-                    >
-                        {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                        {id ? 'Update Lead' : 'Create Lead'}
-                    </button>
-                </div>
+                <button
+                    type="submit"
+                    form="lead-form"
+                    disabled={saving}
+                    className="ae-btn-primary"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 20px', borderRadius: '10px' }}
+                >
+                    {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                    <span style={{ fontWeight: 800 }}>{id ? 'Update Lead' : 'Save Lead'}</span>
+                </button>
             </div>
 
-            <div className="bg-white rounded-xl border border-[#E0E6ED] shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-[#E0E6ED] bg-gray-50/50">
-                    <h2 className="text-lg font-bold text-[#2D3748] flex items-center gap-2">
-                        <Building2 size={20} className="text-[#0066CC]" />
-                        {id ? 'Edit Lead' : 'New Lead Information'}
+            <div className="glass-card" style={{ padding: '40px', maxWidth: '1400px', margin: '0 auto' }}>
+                {/* Visual Header with Orange Icon Box */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '48px' }}>
+                    <div style={{
+                        background: '#FFF5EB',
+                        padding: '12px',
+                        borderRadius: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(255, 107, 0, 0.1)'
+                    }}>
+                        <Users size={28} color="#FF6B00" />
+                    </div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1a1f36', margin: 0, letterSpacing: '-0.02em' }}>
+                        {id ? 'Edit Lead Information' : 'Create New Lead'}
                     </h2>
                 </div>
 
-                <form id="lead-form" onSubmit={handleSubmit} className="p-6 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Company Selection */}
-                        <div className="space-y-1">
-                            <label className="ae-form-label flex items-center gap-2">
-                                <Globe size={14} /> Company Name <span className="text-red-500">*</span>
+                <form id="lead-form" onSubmit={handleSubmit}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px 40px', marginBottom: '40px' }}>
+                        {/* Company Name */}
+                        <div className="ae-input-group">
+                            <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36', display: 'block', marginBottom: '10px' }}>
+                                Company Name <span style={{ color: '#FF6B00' }}>*</span>
                             </label>
                             <select
                                 name="company"
                                 value={formData.company}
                                 onChange={handleInputChange}
-                                className="ae-input"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    background: '#F8FAFC',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '10px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
+                                    color: '#1a1f36',
+                                    outline: 'none',
+                                    height: '48px'
+                                }}
                                 required
                             >
                                 <option value="AE IND">AE IND</option>
                                 <option value="AE USA">AE USA</option>
                             </select>
-                            <p className="text-[0.7rem] text-[#A0AEC0]">Suffix will be INDLD or USALD based on selection</p>
+                            <p style={{ fontSize: '0.7rem', color: '#A0AEC0', marginTop: '8px', fontWeight: 500 }}>INDLD or USALD suffix</p>
                         </div>
 
                         {/* Lead Date */}
-                        <div className="space-y-1">
-                            <label className="ae-form-label flex items-center gap-2">
-                                <Calendar size={14} /> Lead Date <span className="text-red-500">*</span>
+                        <div className="ae-input-group">
+                            <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36', display: 'block', marginBottom: '10px' }}>
+                                Lead Date <span style={{ color: '#FF6B00' }}>*</span>
                             </label>
-                            <input
-                                type="date"
-                                name="lead_date"
-                                value={formData.lead_date}
-                                onChange={handleInputChange}
-                                className="ae-input"
-                                required
-                            />
+                            <div style={{ position: 'relative' }}>
+                                <Calendar size={18} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: '#1a1f36', pointerEvents: 'none' }} />
+                                <input
+                                    type="date"
+                                    name="lead_date"
+                                    value={formData.lead_date}
+                                    onChange={handleInputChange}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px 16px',
+                                        background: '#F8FAFC',
+                                        border: '1px solid #E2E8F0',
+                                        borderRadius: '10px',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 600,
+                                        color: '#1a1f36',
+                                        outline: 'none',
+                                        height: '48px'
+                                    }}
+                                    required
+                                />
+                            </div>
                         </div>
 
                         {/* Customer Name */}
-                        <div className="space-y-1">
-                            <label className="ae-form-label flex items-center gap-2">
-                                <User size={14} /> Customer Name <span className="text-red-500">*</span>
+                        <div className="ae-input-group">
+                            <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36', display: 'block', marginBottom: '10px' }}>
+                                Customer Name <span style={{ color: '#FF6B00' }}>*</span>
                             </label>
                             <input
                                 name="customer_name"
                                 value={formData.customer_name}
                                 onChange={handleInputChange}
-                                className="ae-input"
-                                placeholder="ABC LTD"
+                                placeholder="Enter customer name"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    background: '#F8FAFC',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '10px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
+                                    color: '#1a1f36',
+                                    outline: 'none',
+                                    height: '48px'
+                                }}
                                 required
                             />
                         </div>
 
                         {/* Project Name */}
-                        <div className="space-y-1">
-                            <label className="ae-form-label flex items-center gap-2">
-                                <Briefcase size={14} /> Project Name <span className="text-red-500">*</span>
+                        <div className="ae-input-group">
+                            <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36', display: 'block', marginBottom: '10px' }}>
+                                Project Name <span style={{ color: '#FF6B00' }}>*</span>
                             </label>
                             <input
                                 name="project_name"
                                 value={formData.project_name}
                                 onChange={handleInputChange}
-                                className="ae-input"
-                                placeholder="AutomationEdge Project ABC"
+                                placeholder="Enter project name"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    background: '#F8FAFC',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '10px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
+                                    color: '#1a1f36',
+                                    outline: 'none',
+                                    height: '48px'
+                                }}
                                 required
                             />
                         </div>
 
                         {/* Sales Person */}
-                        <div className="space-y-1">
-                            <label className="ae-form-label flex items-center gap-2">
-                                <User size={14} /> Sales Person
+                        <div className="ae-input-group">
+                            <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36', display: 'block', marginBottom: '10px' }}>
+                                Sales Person
                             </label>
                             <input
                                 name="sales_person"
                                 value={formData.sales_person}
                                 onChange={handleInputChange}
-                                className="ae-input"
                                 placeholder="Name of salesperson"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    background: '#F8FAFC',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '10px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
+                                    color: '#1a1f36',
+                                    outline: 'none',
+                                    height: '48px'
+                                }}
                             />
                         </div>
 
                         {/* Project Manager */}
-                        <div className="space-y-1">
-                            <label className="ae-form-label flex items-center gap-2">
-                                <User size={14} /> Project Manager
+                        <div className="ae-input-group">
+                            <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36', display: 'block', marginBottom: '10px' }}>
+                                Project Manager
                             </label>
                             <input
                                 name="project_manager"
                                 value={formData.project_manager}
                                 onChange={handleInputChange}
-                                className="ae-input"
                                 placeholder="Name of project manager"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    background: '#F8FAFC',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '10px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
+                                    color: '#1a1f36',
+                                    outline: 'none',
+                                    height: '48px'
+                                }}
                             />
                         </div>
 
-                        {/* Email */}
-                        <div className="space-y-1">
-                            <label className="ae-form-label flex items-center gap-2">
-                                <Mail size={14} /> Email Address
+                        {/* Email Address */}
+                        <div className="ae-input-group">
+                            <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36', display: 'block', marginBottom: '10px' }}>
+                                Email Address
                             </label>
                             <input
                                 type="email"
                                 name="email"
                                 value={formData.email}
                                 onChange={handleInputChange}
-                                className="ae-input"
                                 placeholder="customer@example.com"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    background: '#F8FAFC',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '10px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
+                                    color: '#1a1f36',
+                                    outline: 'none',
+                                    height: '48px'
+                                }}
                             />
                         </div>
                     </div>
 
-                    <div className="pt-4 border-t border-[#E0E6ED] mt-6">
-                        <div className="p-4 bg-blue-50/50 rounded-lg flex items-start gap-3">
-                            <div className="mt-1"><Building2 size={16} className="text-[#0066CC]" /></div>
-                            <div>
-                                <h4 className="text-sm font-bold text-[#0066CC]">Lead ID Generation</h4>
-                                <p className="text-xs text-[#4A5568] mt-1">
-                                    The Lead ID will be automatically generated upon saving.
-                                    Format: <strong>{formData.company === 'AE IND' ? 'AEINDLD' : 'AEUSALD'}XXXX</strong>
-                                </p>
-                            </div>
+                    {/* Lead ID Generation Banner */}
+                    <div style={{
+                        background: '#F8FAFC',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '12px',
+                        padding: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '20px'
+                    }}>
+                        <div style={{
+                            background: '#EBF4FF',
+                            padding: '10px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <Building2 size={24} color="#0066CC" />
+                        </div>
+                        <div>
+                            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#2D3748', margin: '0 0 4px 0' }}>Lead ID Generation</h4>
+                            <p style={{ fontSize: '0.85rem', color: '#718096', margin: 0 }}>
+                                Automatic generation: <span style={{ fontWeight: 800, color: '#2D3748' }}>{formData.company === 'AE IND' ? 'AEINDLDXXXX' : 'AEUSALDXXXX'}</span>
+                            </p>
                         </div>
                     </div>
                 </form>
@@ -252,3 +365,4 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
 };
 
 export default LeadForm;
+

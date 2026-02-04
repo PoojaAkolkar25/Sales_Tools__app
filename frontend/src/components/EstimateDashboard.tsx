@@ -385,33 +385,34 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
             <div className="ae-grid-4">
                 <div className="ae-card">
                     <div className="ae-card-header">
-                        <div className="ae-icon-box bg-blue-soft"><FileText size={20} /></div>
+                        <div className="ae-icon-box bg-blue-soft text-blue"><FileText size={18} /></div>
                     </div>
                     <div className="ae-card-label">Total Estimates</div>
                     <div className="ae-card-value">{estimates.filter(e => e.is_latest).length}</div>
                 </div>
                 <div className="ae-card">
                     <div className="ae-card-header">
-                        <div className="ae-icon-box bg-orange-soft"><History size={20} /></div>
+                        <div className="ae-icon-box bg-orange-soft text-orange"><History size={18} /></div>
                     </div>
                     <div className="ae-card-label">Under Negotiation</div>
                     <div className="ae-card-value">{estimates.filter(e => e.status === 'NEGOTIATION' && e.is_latest).length}</div>
                 </div>
                 <div className="ae-card">
                     <div className="ae-card-header">
-                        <div className="ae-icon-box bg-green-soft"><CheckCircle2 size={20} /></div>
+                        <div className="ae-icon-box bg-green-soft text-green"><CheckCircle2 size={18} /></div>
                     </div>
                     <div className="ae-card-label">Approved</div>
                     <div className="ae-card-value">{estimates.filter(e => e.approval_status === 'APPROVED' && e.is_latest).length}</div>
                 </div>
                 <div className="ae-card">
                     <div className="ae-card-header">
-                        <div className="ae-icon-box bg-purple-soft"><Clock size={20} /></div>
+                        <div className="ae-icon-box bg-purple-soft text-purple"><Clock size={18} /></div>
                     </div>
                     <div className="ae-card-label">Pending Approval</div>
                     <div className="ae-card-value">{estimates.filter(e => (e.status === 'PENDING_APPROVAL' || e.approval_status === 'PENDING') && e.is_latest).length}</div>
                 </div>
             </div>
+
 
             {/* Header with Dashboard Title and Controls */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>

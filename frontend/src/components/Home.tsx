@@ -77,27 +77,28 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                 </div>
 
                 {/* KPI Cards Grid */}
-                <div className="ae-grid-4" style={{ marginBottom: '20px', gap: '16px' }}>
+                <div className="ae-grid-4" style={{ marginBottom: '20px' }}>
                     {[
                         { label: 'Total Revenue', value: '$124,500', icon: TrendingUp, color: 'text-green', bg: 'bg-green-soft', trend: '+12.5%' },
                         { label: 'Active Leads', value: '42', icon: Users, color: 'text-blue', bg: 'bg-blue-soft', trend: '+5 new' },
                         { label: 'Open Deals', value: '18', icon: Briefcase, color: 'text-orange', bg: 'bg-orange-soft', trend: '3 closing' },
                         { label: 'Monthly Growth', value: '32%', icon: Target, color: 'text-purple', bg: 'bg-purple-soft', trend: '+2.4%' },
                     ].map((stat, idx) => (
-                        <div key={idx} className="ae-card" style={{ padding: '16px' }}>
-                            <div className="ae-card-header" style={{ marginBottom: '8px' }}>
-                                <div className={`ae-icon-box ${stat.bg} ${stat.color}`} style={{ padding: '8px' }}>
+                        <div key={idx} className="ae-card">
+                            <div className="ae-card-header">
+                                <div className={`ae-icon-box ${stat.bg} ${stat.color}`}>
                                     <stat.icon size={18} />
                                 </div>
                                 <span className="ae-trend-badge" style={{ background: '#F7FAFC', color: '#718096', fontSize: '0.7rem', padding: '2px 6px' }}>
                                     {stat.trend}
                                 </span>
                             </div>
-                            <div className="ae-card-label" style={{ fontSize: '0.7rem' }}>{stat.label}</div>
-                            <div className="ae-card-value" style={{ fontSize: '1.4rem' }}>{stat.value}</div>
+                            <div className="ae-card-label">{stat.label}</div>
+                            <div className="ae-card-value">{stat.value}</div>
                         </div>
                     ))}
                 </div>
+
 
                 {/* Lower Section */}
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', flex: 1, overflow: 'hidden' }}>
