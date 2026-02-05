@@ -236,7 +236,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => 
             </div>
 
             {/* Table Area */}
-            <div className="section-panel bg-white !p-0 overflow-hidden">
+            <div className="section-panel bg-white !p-0 overflow-hidden" style={{ minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
                 <div className="p-4 border-b border-[#E0E6ED] flex justify-between items-center bg-[#F8FAFC]">
                     <div className="flex items-center gap-3">
                         <ShoppingBag className="text-[#3182CE]" size={18} />
@@ -252,6 +252,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => 
                                 <th style={{ backgroundColor: '#FAFBFC' }}>Customer</th>
                                 <th style={{ backgroundColor: '#FAFBFC' }}>Cust Code</th>
                                 <th style={{ backgroundColor: '#FAFBFC' }}>PO Number</th>
+                                <th style={{ backgroundColor: '#FAFBFC' }}>Items (Summary)</th>
                                 <th style={{ backgroundColor: '#FAFBFC' }}>Status</th>
                                 <th style={{ backgroundColor: '#FAFBFC' }}>Amount</th>
                                 <th style={{ backgroundColor: '#FAFBFC' }}>Date</th>
@@ -261,13 +262,13 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => 
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-12 text-center text-[#718096] font-medium italic">
+                                    <td colSpan={9} className="px-6 py-12 text-center text-[#718096] font-medium italic">
                                         Loading Sales Orders...
                                     </td>
                                 </tr>
                             ) : salesOrders.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-12 text-center text-[#718096] font-medium italic">
+                                    <td colSpan={9} className="px-6 py-12 text-center text-[#718096] font-medium italic">
                                         No Sales Orders found. Upload a PO to get started.
                                     </td>
                                 </tr>
@@ -280,7 +281,6 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => 
                                     <td className="whitespace-nowrap">
                                         <div className="flex flex-col">
                                             <span style={{ color: '#2D3748', fontWeight: 600, fontSize: '0.85rem' }}>{so.customer_name || 'N/A'}</span>
-                                            <span style={{ fontSize: '9px', color: '#00C853', fontWeight: 800, textTransform: 'uppercase' }}>Extracted</span>
                                         </div>
                                     </td>
                                     <td className="whitespace-nowrap">
@@ -288,6 +288,24 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => 
                                     </td>
                                     <td className="whitespace-nowrap">
                                         <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>{so.po_number}</span>
+                                    </td>
+                                    <td className="whitespace-nowrap">
+                                        <div className="flex flex-col text-xs">
+                                            {so.items && so.items.length > 0 ? (
+                                                <>
+                                                    <span className="font-bold text-slate-700 truncate max-w-[150px]" title={so.items[0].description || so.items[0].product_name}>
+                                                        {so.items[0].description || (so.items[0].product ? `Product #${so.items[0].product}` : 'Unmapped Item')}
+                                                    </span>
+                                                    {so.items.length > 1 && (
+                                                        <span className="text-orange-600 font-semibold" style={{ fontSize: '0.65rem' }}>
+                                                            + {so.items.length - 1} more items
+                                                        </span>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <span className="text-gray-400 italic">No Items</span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="whitespace-nowrap">
                                         <span style={{
@@ -306,7 +324,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => 
                                         <span style={{ fontWeight: 800, color: '#1a1f36', fontSize: '0.85rem' }}>{so.currency} {parseFloat(so.total_amount).toLocaleString()}</span>
                                     </td>
                                     <td className="whitespace-nowrap">
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#718096' }}>{new Date(so.created_at).toLocaleDateString()}</span>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#718096' }}>{so.created_at ? new Date(so.created_at).toLocaleDateString() : '-'}</span>
                                     </td>
                                     <td style={{ textAlign: 'center' }}>
                                         <button
