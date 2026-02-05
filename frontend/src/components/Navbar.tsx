@@ -1,29 +1,37 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     Plus,
-    Search,
     Bell,
     ChevronDown,
     User,
-    LogOut
+    LogOut,
+    HelpCircle
 } from 'lucide-react';
 
 interface NavbarProps {
     user: any;
     onLogout: () => void;
     onCreateUser?: () => void;
+    onCreateCustomer?: () => void;
+    onCreateEndCustomer?: () => void;
     isSidebarExpanded?: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onCreateUser, isSidebarExpanded }) => {
+const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onCreateUser, onCreateCustomer, onCreateEndCustomer, isSidebarExpanded }) => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [showCreateMenu, setShowCreateMenu] = useState(false);
+    const [showHelpModal, setShowHelpModal] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
+    const createMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
+            }
+            if (createMenuRef.current && !createMenuRef.current.contains(event.target as Node)) {
+                setShowCreateMenu(false);
             }
         };
 
@@ -36,16 +44,8 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onCreateUser, isSidebar
     return (
         <header className={`ae-navbar ${isSidebarExpanded ? 'sidebar-expanded' : ''}`}>
 
-            {/* Left Section: Search only (SalesEdge removed) */}
-            <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                <div className="ae-nav-search">
-                    <Search size={16} color="rgba(255,255,255,0.4)" style={{ marginRight: '10px' }} />
-                    <input
-                        type="text"
-                        placeholder="Search leads, deals, orders..."
-                    />
-                </div>
-            </div>
+            {/* Left Section: Spacer to push actions to the right */}
+            <div style={{ flex: 1 }}></div>
 
             {/* Right Section: Actions & Profile aligned as per image */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
@@ -92,12 +92,145 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onCreateUser, isSidebar
                     )}
                 </div>
 
-                {/* Create User Button */}
-                {onCreateUser && (
-                    <button onClick={onCreateUser} className="ae-create-btn">
-                        <Plus size={14} />
-                        <span>CREATE USER</span>
-                    </button>
+                {/* Onboard Help Button */}
+                <button
+                    onClick={() => setShowHelpModal(true)}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 16px',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '8px',
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    }}
+                    title="View Process Flow"
+                >
+                    <HelpCircle size={18} />
+                    <span>Onboard Help</span>
+                </button>
+
+                {/* Create Dropdown Menu */}
+                {(onCreateUser || onCreateCustomer || onCreateEndCustomer) && (
+                    <div ref={createMenuRef} style={{ position: 'relative' }}>
+                        <button
+                            onClick={() => setShowCreateMenu(!showCreateMenu)}
+                            className="ae-create-btn"
+                        >
+                            <Plus size={14} />
+                            <span>CREATE</span>
+                            <ChevronDown size={12} style={{ marginLeft: '4px', transform: showCreateMenu ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                        </button>
+
+                        {showCreateMenu && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                marginTop: '8px',
+                                background: '#1a1f36',
+                                borderRadius: '12px',
+                                boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+                                padding: '8px',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                zIndex: 100,
+                                minWidth: '200px',
+                                overflow: 'hidden'
+                            }}>
+                                {onCreateUser && (
+                                    <button
+                                        onClick={() => { onCreateUser(); setShowCreateMenu(false); }}
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '12px 16px',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: 'white',
+                                            fontWeight: 600,
+                                            fontSize: '13px',
+                                            cursor: 'pointer',
+                                            borderRadius: '8px',
+                                            transition: 'background 0.2s',
+                                            textAlign: 'left'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                        <User size={16} color="#FF6B00" />
+                                        <span>Create User</span>
+                                    </button>
+                                )}
+                                {onCreateCustomer && (
+                                    <button
+                                        onClick={() => { onCreateCustomer(); setShowCreateMenu(false); }}
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '12px 16px',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: 'white',
+                                            fontWeight: 600,
+                                            fontSize: '13px',
+                                            cursor: 'pointer',
+                                            borderRadius: '8px',
+                                            transition: 'background 0.2s',
+                                            textAlign: 'left'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                        <User size={16} color="#FF6B00" />
+                                        <span>Create Customer</span>
+                                    </button>
+                                )}
+                                {onCreateEndCustomer && (
+                                    <button
+                                        onClick={() => { onCreateEndCustomer(); setShowCreateMenu(false); }}
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '12px 16px',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: 'white',
+                                            fontWeight: 600,
+                                            fontSize: '13px',
+                                            cursor: 'pointer',
+                                            borderRadius: '8px',
+                                            transition: 'background 0.2s',
+                                            textAlign: 'left'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                        <User size={16} color="#FF6B00" />
+                                        <span>Create End Customer</span>
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {/* Profile Section */}
@@ -187,6 +320,136 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onCreateUser, isSidebar
                     )}
                 </div>
             </div>
+
+            {/* Help Modal */}
+            {showHelpModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 2000,
+                    backdropFilter: 'blur(4px)'
+                }} onClick={() => setShowHelpModal(false)}>
+                    <div style={{
+                        background: 'white',
+                        padding: '32px',
+                        borderRadius: '20px',
+                        maxWidth: '600px',
+                        width: '90%',
+                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                        position: 'relative',
+                        animation: 'modalSlideUp 0.3s ease-out'
+                    }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '10px',
+                                    background: 'rgba(255, 107, 0, 0.1)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    <HelpCircle size={24} color="#FF6B00" />
+                                </div>
+                                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36' }}>Deal Process Flow</h2>
+                            </div>
+                            <button
+                                onClick={() => setShowHelpModal(false)}
+                                style={{
+                                    background: '#F1F5F9',
+                                    border: 'none',
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: '#64748B',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#E2E8F0'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#F1F5F9'}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {[
+                                { stage: 'Deal Created', desc: 'Initial deal entry and basic information capture', color: '#3182CE' },
+                                { stage: 'Cost Sheet', desc: 'Detailed cost analysis and resource planning', color: '#B7791F' },
+                                { stage: 'Estimates', desc: 'Formal quotation preparation and approval', color: '#805AD5' },
+                                { stage: 'Sales Order', desc: 'Customer order confirmation and processing', color: '#DD6B20' },
+                                { stage: 'Invoice', desc: 'Billing and invoice generation', color: '#38A169' },
+                                { stage: 'Payment', desc: 'Payment receipt and deal closure', color: '#00A3C4' }
+                            ].map((item, idx) => (
+                                <div key={idx} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '16px',
+                                    padding: '16px',
+                                    background: '#F8FAFC',
+                                    borderRadius: '12px',
+                                    border: '1px solid #F1F5F9',
+                                    transition: 'transform 0.2s, background 0.2s',
+                                    cursor: 'default'
+                                }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateX(4px)';
+                                        e.currentTarget.style.background = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateX(0)';
+                                        e.currentTarget.style.background = '#F8FAFC';
+                                    }}
+                                >
+                                    <div style={{
+                                        width: '28px',
+                                        height: '28px',
+                                        borderRadius: '50%',
+                                        background: item.color,
+                                        color: 'white',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontWeight: 800,
+                                        fontSize: '12px',
+                                        boxShadow: `0 4px 10px ${item.color}40`
+                                    }}>
+                                        {idx + 1}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 700, color: '#1a1f36', fontSize: '14px', marginBottom: '2px' }}>{item.stage}</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#64748B', lineHeight: '1.4' }}>{item.desc}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={{
+                            marginTop: '24px',
+                            padding: '16px',
+                            background: 'linear-gradient(to right, #EBF8FF, #E6FFFA)',
+                            borderRadius: '12px',
+                            border: '1px solid #90CDF4',
+                            display: 'flex',
+                            gap: '12px',
+                            alignItems: 'flex-start'
+                        }}>
+                            <div style={{ fontSize: '18px' }}>💡</div>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#2C5282', lineHeight: '1.5' }}>
+                                <strong>Pro Tip:</strong> Each stage represents a key milestone. Ensure all required information is captured at each stage before proceeding to maintain data integrity.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </header>
 
     );

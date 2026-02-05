@@ -38,10 +38,20 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+class CustomerType(models.TextChoices):
+    PARTNER = 'PARTNER', 'Partner'
+    CUSTOMER = 'CUSTOMER', 'Customer'
+
 class Customer(models.Model):
     name = models.CharField(max_length=255, unique=True)
     email = models.EmailField(blank=True, default='')
+    customer_type = models.CharField(max_length=20, choices=CustomerType.choices, default=CustomerType.CUSTOMER)
+    is_active = models.BooleanField(default=True)
+    contact_person = models.CharField(max_length=255, blank=True, default='')
+    phone = models.CharField(max_length=50, blank=True, default='')
+    address = models.TextField(blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -54,7 +64,7 @@ class Deal(models.Model):
     company = models.CharField(max_length=10, choices=CompanyChoices.choices, default=CompanyChoices.AE_IND)
     deal_id = models.CharField(max_length=50, unique=True, blank=True)
     deal_name = models.CharField(max_length=255) # This is "Project Name" in UI
-    deal_date = models.DateField(default=timezone.now)
+    deal_date = models.DateField(default=timezone.localdate)
     lead = models.ForeignKey(Lead, on_delete=models.SET_NULL, null=True, blank=True, related_name='deals')
     stage = models.CharField(max_length=50, choices=DealStage.choices, default=DealStage.DEAL_CREATED)
     
@@ -64,12 +74,15 @@ class Deal(models.Model):
     
     deal_type = models.CharField(max_length=50, choices=DealType.choices, blank=True, default='')
     priority = models.CharField(max_length=50, blank=True, default='')
-    implementation_partner = models.ForeignKey(ImplementationPartner, on_delete=models.SET_NULL, null=True, blank=True)
     
     description = models.TextField(blank=True, default='')
     
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True, related_name='deals')
     customer_email = models.EmailField(blank=True, default='')
+    end_customer = models.CharField(max_length=255, blank=True, default='')
+    
+    # Attachments stored as JSON array of file paths
+    attachments = models.JSONField(default=list, blank=True)
     
     client_type = models.CharField(max_length=20, choices=ClientType.choices, blank=True, default='')
     
@@ -107,20 +120,50 @@ class Deal(models.Model):
                 self.deal_id = f"{prefix}0001"
         
         super().save(*args, **kwargs)
-        
-        from cost_sheets.models import CostSheet
-        if not CostSheet.objects.filter(deal=self).exists():
-            from django.utils import timezone
-            CostSheet.objects.create(
-                lead=self.lead,
-                deal=self,
-                project_name=self.deal_name,
-                customer_name=self.customer.name if self.customer else '',
-                sales_person=self.salesperson_name,
-                project_manager=self.project_manager,
-                cost_sheet_date=timezone.now().date(),
-                overall_remarks=f"Auto-generated from Project: {self.deal_name} ({self.deal_type})"
-            )
 
     def __str__(self):
         return f"{self.deal_id} - {self.deal_name}"
+
+class DealTypeEntry(models.Model):
+    """Model to support multiple deal type rows (License/Services)"""
+    deal = models.ForeignKey(Deal, on_delete=models.CASCADE, related_name='deal_types')
+    type = models.CharField(max_length=50, choices=DealType.choices)
+    description = models.TextField(blank=True, default='')
+    amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    quantity = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"{self.deal.deal_id} - {self.type} - {self.description[:30]}"
+
+class AuditTrail(models.Model):
+    """Model to track all changes made to deals"""
+    class ActionType(models.TextChoices):
+        CREATE = 'CREATE', 'Created'
+        UPDATE = 'UPDATE', 'Updated'
+        DELETE = 'DELETE', 'Deleted'
+    
+    deal = models.ForeignKey(Deal, on_delete=models.CASCADE, related_name='audit_trail')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    field_name = models.CharField(max_length=100)
+    old_value = models.TextField(blank=True, default='')
+    new_value = models.TextField(blank=True, default='')
+    action_type = models.CharField(max_length=10, choices=ActionType.choices, default=ActionType.UPDATE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+    
+    def __str__(self):
+        return f"{self.deal.deal_id} - {self.field_name} - {self.timestamp}"
+class DealAttachment(models.Model):
+    deal = models.ForeignKey(Deal, on_delete=models.CASCADE, related_name='deal_attachments')
+    file = models.FileField(upload_to='deal_attachments/')
+    filename = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.filename

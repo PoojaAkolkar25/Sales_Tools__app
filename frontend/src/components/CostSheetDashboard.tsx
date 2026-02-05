@@ -1,6 +1,19 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { Eye, Search, FileSpreadsheet, RefreshCw, RefreshCcw } from 'lucide-react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { Eye, Search, FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw } from 'lucide-react';
 import api from '../api';
+
+const ALL_COLUMNS = [
+    { key: 'lead_no', label: 'Lead Number' },
+    { key: 'deal_no', label: 'Deal No.' },
+    { key: 'customer_name', label: 'Customer Name' },
+    { key: 'project_name', label: 'Project Name' },
+    { key: 'cost_sheet_no', label: 'Cost Sheet No.' },
+    { key: 'date', label: 'Date' },
+    { key: 'status', label: 'Status' },
+    { key: 'margin_percentage', label: 'Margin %' },
+    { key: 'est_margin', label: 'Est. Margin' },
+    { key: 'total_price', label: 'Total Price' }
+];
 
 interface CostSheet {
     id: number;
@@ -11,8 +24,11 @@ interface CostSheet {
     project_name: string;
     status: string;
     total_estimated_price: string;
+    total_estimated_margin: string;
+    total_margin_percentage: number;
     cost_sheet_date?: string;
     created_at: string;
+    currency?: string;
 }
 
 interface CostSheetDashboardProps {
@@ -36,6 +52,31 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
     });
 
     const [isDownloading, setIsDownloading] = useState(false);
+    const [showExportMenu, setShowExportMenu] = useState(false);
+    const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+        const saved = localStorage.getItem('costSheetDashboard_visibleColumns');
+        return saved ? JSON.parse(saved) : ALL_COLUMNS.map(col => col.key);
+    });
+    const columnMenuRef = useRef<HTMLDivElement>(null);
+    const exportMenuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        localStorage.setItem('costSheetDashboard_visibleColumns', JSON.stringify(visibleColumns));
+    }, [visibleColumns]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (columnMenuRef.current && !columnMenuRef.current.contains(event.target as Node)) {
+                setShowColumnMenu(false);
+            }
+            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+                setShowExportMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         fetchCostSheets();
@@ -53,44 +94,87 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
         }
     };
 
-    const handleDownloadReport = async () => {
+    const getExportQueryParams = () => {
+        const params = new URLSearchParams();
+        params.append('period', filters.period);
+        if (filters.period === 'custom') {
+            params.append('start_date', filters.startDate);
+            params.append('end_date', filters.endDate);
+        }
+        if (filters.csNumber) params.append('cs_number', filters.csNumber);
+        if (filters.leadNo) params.append('lead_no', filters.leadNo);
+        if (filters.dealNo) params.append('deal_no', filters.dealNo);
+        if (filters.customerName) params.append('customer_name', filters.customerName);
+        if (filters.projectName) params.append('project_name', filters.projectName);
+        if (filters.status) params.append('status', filters.status);
+        return params.toString();
+    };
+
+    const exportToCSV = async () => {
         setIsDownloading(true);
         try {
-            let queryParams = `period=${filters.period}`;
-            if (filters.period === 'custom') {
-                queryParams += `&start_date=${filters.startDate}&end_date=${filters.endDate}`;
-            }
-
-            // Align with src/api.ts configuration
-            const baseUrl = 'http://localhost:8000/api';
-            const fullUrl = `${baseUrl}/cost-sheets/export_report/?${queryParams}`;
-
-            const token = localStorage.getItem('token');
-
-            const response = await fetch(fullUrl, {
-                headers: {
-                    'Authorization': token ? `Token ${token}` : ''
-                }
+            const queryParams = getExportQueryParams();
+            const response = await api.get(`/cost-sheets/export_report/?${queryParams}`, {
+                responseType: 'blob'
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || 'Download failed');
-            }
-
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.setAttribute('download', `cost_sheets_report_${new Date().toISOString().split('T')[0]}.csv`);
+            link.href = url;
+            link.setAttribute('download', `Cost_Sheets_Report_${new Date().toISOString().split('T')[0]}.csv`);
             document.body.appendChild(link);
             link.click();
             link.remove();
+            window.URL.revokeObjectURL(url);
         } catch (error: any) {
-            console.error('Error downloading report:', error);
-            alert(error.message || 'Failed to download report. Please try again.');
+            console.error('Error downloading CSV report:', error);
+            alert('Failed to download CSV report. Please try again.');
         } finally {
             setIsDownloading(false);
+        }
+    };
+
+    const exportToExcel = async () => {
+        setIsDownloading(true);
+        try {
+            const queryParams = getExportQueryParams();
+            const response = await api.get(`/cost-sheets/export_excel/?${queryParams}`, {
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Cost_Sheets_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error: any) {
+            console.error('Error downloading Excel report:', error);
+            alert('Failed to download Excel report. Please try again.');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    const exportSingleExcel = async (id: number, csNo: string) => {
+        try {
+            const response = await api.get(`/cost-sheets/${id}/export_single_excel/`, {
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `CostSheet_${csNo}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error downloading single cost sheet:', error);
+            alert('Failed to download cost sheet.');
         }
     };
 
@@ -145,6 +229,25 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
             }
 
             return matchesCs && matchesLead && matchesDeal && matchesCustomer && matchesProject && matchesStatus && matchesDate;
+        }).sort((a, b) => {
+            // Priority 1: SUBMITTED (Pending Approval) items at the absolute top
+            if (a.status === 'SUBMITTED' && b.status !== 'SUBMITTED') return -1;
+            if (a.status !== 'SUBMITTED' && b.status === 'SUBMITTED') return 1;
+
+            // Priority 2: PENDING (Draft) items at the absolute bottom
+            if (a.status === 'PENDING' && b.status !== 'PENDING') return 1;
+            if (a.status !== 'PENDING' && b.status === 'PENDING') return -1;
+
+            // Priority 3: Newest first for everything
+            const dateA = new Date(a.cost_sheet_date || a.created_at).getTime();
+            const dateB = new Date(b.cost_sheet_date || b.created_at).getTime();
+
+            if (dateB !== dateA) {
+                return dateB - dateA;
+            }
+
+            // Fallback to ID for stable sort
+            return b.id - a.id;
         });
     }, [costSheets, filters]);
 
@@ -158,12 +261,12 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
     }), [costSheets]);
 
     const statusFlow = [
-        { label: `All (${counts.all})`, value: '', color: '#718096' },
         { label: `Draft (${counts.draft})`, value: 'PENDING', color: '#718096' },
         { label: `Pending (${counts.pending})`, value: 'SUBMITTED', color: '#FF6B00' },
         { label: `Reverted (${counts.reverted})`, value: 'REVERTED', color: '#D69E2E' },
         { label: `Approved (${counts.approved})`, value: 'APPROVED', color: '#00C853' },
-        { label: `Rejected (${counts.rejected})`, value: 'REJECTED', color: '#E53E3E' }
+        { label: `Rejected (${counts.rejected})`, value: 'REJECTED', color: '#E53E3E' },
+        { label: `All (${counts.all})`, value: '', color: '#718096' }
     ];
 
     const getStatusBadge = (status: string) => {
@@ -188,86 +291,153 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                     </h1>
                 </div>
 
-                <div style={{
-                    display: 'flex',
-                    gap: '4px',
-                    background: 'white',
-                    padding: '6px',
-                    borderRadius: '12px',
-                    border: '1px solid #E0E6ED',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                }}>
-                    <button
-                        onClick={handleDownloadReport}
-                        disabled={isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate))}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 14px',
-                            borderRadius: '8px',
-                            fontSize: '0.8rem',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: (isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate))) ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.2s',
-                            background: '#F7FAFC',
-                            color: '#4A5568'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (!(isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate)))) {
-                                e.currentTarget.style.background = '#FF6B00';
-                                e.currentTarget.style.color = 'white';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (!(isDownloading || (filters.period === 'custom' && (!filters.startDate || !filters.endDate)))) {
-                                e.currentTarget.style.background = '#F7FAFC';
-                                e.currentTarget.style.color = '#4A5568';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }
-                        }}
-                    >
-                        {isDownloading ? <RefreshCw size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
-                        {isDownloading ? 'Downloading...' : 'Download Report'}
-                    </button>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>Report Period:</span>
+                        <select
+                            className="ae-input"
+                            value={filters.period}
+                            onChange={e => setFilters({ ...filters, period: e.target.value })}
+                            style={{ height: '32px', fontSize: '0.8rem', width: '150px', padding: '0 12px', lineHeight: '32px' }}
+                        >
+                            <option value="">All Time</option>
+                            <option value="last_month">Last Month</option>
+                            <option value="last_3_months">Last 3 Months</option>
+                            <option value="last_6_months">Last 6 Months</option>
+                            <option value="last_year">Last Year</option>
+                            <option value="last_financial_year">Financial Year</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
 
-                    <button
-                        onClick={fetchCostSheets}
-                        disabled={loading}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 14px',
-                            borderRadius: '8px',
-                            fontSize: '0.8rem',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.2s',
-                            background: '#F7FAFC',
-                            color: '#4A5568'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (!loading) {
-                                e.currentTarget.style.background = '#0066CC';
-                                e.currentTarget.style.color = 'white';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 102, 204, 0.2)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (!loading) {
-                                e.currentTarget.style.background = '#F7FAFC';
-                                e.currentTarget.style.color = '#4A5568';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }
-                        }}
-                    >
-                        <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} />
-                        Refresh
-                    </button>
+                    {filters.period === 'custom' && (
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                            <input type="date" className="ae-input" value={filters.startDate} onChange={e => setFilters({ ...filters, startDate: e.target.value })} style={{ height: '32px', fontSize: '0.75rem', width: '120px', padding: '0 8px' }} />
+                            <input type="date" className="ae-input" value={filters.endDate} onChange={e => setFilters({ ...filters, endDate: e.target.value })} style={{ height: '32px', fontSize: '0.75rem', width: '120px', padding: '0 8px' }} />
+                        </div>
+                    )}
+
+                    <div style={{ position: 'relative' }} ref={exportMenuRef}>
+                        <button
+                            className="ae-btn-secondary"
+                            onClick={() => setShowExportMenu(!showExportMenu)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 14px',
+                                fontSize: '0.8rem',
+                                height: '32px',
+                                border: '1px solid #E0E6ED',
+                                borderRadius: '8px',
+                                background: 'white',
+                                color: '#4A5568',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <Download size={16} /> Export <ChevronDown size={14} />
+                        </button>
+                        {showExportMenu && (
+                            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid #E2E8F0', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
+                                <button
+                                    onClick={() => { exportToCSV(); setShowExportMenu(false); }}
+                                    style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                >
+                                    <FileSpreadsheet size={16} style={{ color: '#059669' }} /> CSV Report
+                                </button>
+                                <button
+                                    onClick={() => { exportToExcel(); setShowExportMenu(false); }}
+                                    style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                >
+                                    <FileSpreadsheet size={16} style={{ color: '#2563EB' }} /> Excel Report
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div style={{ position: 'relative' }} ref={columnMenuRef}>
+                        <button
+                            className="ae-btn-secondary"
+                            onClick={() => setShowColumnMenu(!showColumnMenu)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 14px',
+                                fontSize: '0.8rem',
+                                height: '32px',
+                                border: '1px solid #E0E6ED',
+                                borderRadius: '8px',
+                                background: 'white',
+                                color: '#4A5568',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <Columns size={16} /> Columns <ChevronDown size={14} />
+                        </button>
+                        {showColumnMenu && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                marginTop: '8px',
+                                background: 'white',
+                                borderRadius: '8px',
+                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                                border: '1px solid #E2E8F0',
+                                zIndex: 100,
+                                minWidth: '200px',
+                                maxHeight: '400px',
+                                overflowY: 'auto'
+                            }}>
+                                <div style={{ padding: '8px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between' }}>
+                                    <button
+                                        onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))}
+                                        style={{ background: 'none', border: 'none', color: '#0066CC', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                        Select All
+                                    </button>
+                                    <button
+                                        onClick={() => setVisibleColumns([])}
+                                        style={{ background: 'none', border: 'none', color: '#718096', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                        Clear All
+                                    </button>
+                                </div>
+                                {ALL_COLUMNS.map(col => (
+                                    <label key={col.key} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        padding: '8px 16px',
+                                        fontSize: '0.8rem',
+                                        color: '#4A5568',
+                                        cursor: 'pointer',
+                                        userSelect: 'none'
+                                    }} onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>
+                                        <input
+                                            type="checkbox"
+                                            checked={visibleColumns.includes(col.key)}
+                                            onChange={() => {
+                                                if (visibleColumns.includes(col.key)) {
+                                                    setVisibleColumns(visibleColumns.filter(c => c !== col.key));
+                                                } else {
+                                                    setVisibleColumns([...visibleColumns, col.key]);
+                                                }
+                                            }}
+                                        />
+                                        {col.label}
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -307,19 +477,21 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                 <table className="ae-table">
                     <thead>
                         <tr>
-                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Lead Number</th>
-                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Deal No.</th>
-                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Customer Name</th>
-                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Project Name</th>
-                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Cost Sheet No.</th>
-                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Date</th>
-                            <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Status</th>
-                            <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, minWidth: '120px', backgroundColor: '#FAFBFC' }}>Total Price</th>
-                            <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, width: '100px', backgroundColor: '#FAFBFC' }}>Actions</th>
+                            {visibleColumns.includes('lead_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Lead Number</th>}
+                            {visibleColumns.includes('deal_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Deal No.</th>}
+                            {visibleColumns.includes('customer_name') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Customer Name</th>}
+                            {visibleColumns.includes('project_name') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Project Name</th>}
+                            {visibleColumns.includes('cost_sheet_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Cost Sheet No.</th>}
+                            {visibleColumns.includes('date') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Date</th>}
+                            {visibleColumns.includes('status') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Status</th>}
+                            {visibleColumns.includes('margin_percentage') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Margin %</th>}
+                            {visibleColumns.includes('est_margin') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Est. Margin</th>}
+                            {visibleColumns.includes('total_price') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, minWidth: '120px', backgroundColor: '#FAFBFC' }}>Total Price</th>}
+                            <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, width: '130px', backgroundColor: '#FAFBFC' }}>Actions</th>
                         </tr>
                         {/* Filter Row */}
                         <tr style={{ background: '#F7FAFC' }}>
-                            <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                            {visibleColumns.includes('lead_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -330,8 +502,8 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
                                     />
                                 </div>
-                            </th>
-                            <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                            </th>}
+                            {visibleColumns.includes('deal_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -342,8 +514,8 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
                                     />
                                 </div>
-                            </th>
-                            <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                            </th>}
+                            {visibleColumns.includes('customer_name') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -354,8 +526,8 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
                                     />
                                 </div>
-                            </th>
-                            <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                            </th>}
+                            {visibleColumns.includes('project_name') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -366,8 +538,8 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
                                     />
                                 </div>
-                            </th>
-                            <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                            </th>}
+                            {visibleColumns.includes('cost_sheet_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
                                     <input
@@ -378,8 +550,8 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
                                     />
                                 </div>
-                            </th>
-                            <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                            </th>}
+                            {visibleColumns.includes('date') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} style={{ left: '10px' }} />
                                     <select
@@ -427,9 +599,11 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         />
                                     </div>
                                 )}
-                            </th>
-                            <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>
-                            <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>
+                            </th>}
+                            {visibleColumns.includes('status') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
+                            {visibleColumns.includes('margin_percentage') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
+                            {visibleColumns.includes('est_margin') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
+                            {visibleColumns.includes('total_price') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
                             <th style={{ textAlign: 'center', top: '40px', position: 'sticky', right: 0, backgroundColor: '#F7FAFC', zIndex: 12 }}>
                                 <button
                                     onClick={() => setFilters({ csNumber: '', leadNo: '', dealNo: '', customerName: '', projectName: '', status: '', period: '', startDate: '', endDate: '' })}
@@ -459,17 +633,17 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         e.currentTarget.style.borderColor = '#E0E6ED';
                                     }}
                                 >
-                                    Preview
+                                    Clear
                                 </button>
                             </th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={9} style={{ textAlign: 'center', padding: '100px' }}><RefreshCw className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
+                            <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}><RefreshCw className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
                         ) : filteredCostSheets.length === 0 ? (
                             <tr>
-                                <td colSpan={9} style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>
+                                <td colSpan={visibleColumns.length + 1} style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>
                                     <FileSpreadsheet size={40} style={{ marginBottom: '12px', opacity: 0.3 }} />
                                     <div style={{ fontWeight: 600 }}>
                                         {costSheets.length === 0 ? 'No cost sheets found.' : 'No results matching your filters.'}
@@ -481,25 +655,25 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                 const statusInfo = getStatusBadge(cs.status);
                                 return (
                                     <tr key={cs.id}>
-                                        <td style={{ fontWeight: 600, color: '#718096', fontSize: '0.8rem' }}>
+                                        {visibleColumns.includes('lead_no') && <td style={{ fontWeight: 600, color: '#718096', fontSize: '0.8rem' }}>
                                             {cs.lead_no || '—'}
-                                        </td>
-                                        <td style={{ fontWeight: 600, color: '#0066CC', fontSize: '0.8rem' }}>
+                                        </td>}
+                                        {visibleColumns.includes('deal_no') && <td style={{ fontWeight: 600, color: '#0066CC', fontSize: '0.8rem' }}>
                                             {cs.deal_no || '—'}
-                                        </td>
-                                        <td style={{ color: '#4A5568', fontWeight: 500 }}>
+                                        </td>}
+                                        {visibleColumns.includes('customer_name') && <td style={{ color: '#4A5568', fontWeight: 500 }}>
                                             {cs.customer_name || '—'}
-                                        </td>
-                                        <td style={{ color: '#2D3748', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={cs.project_name || '—'}>
+                                        </td>}
+                                        {visibleColumns.includes('project_name') && <td style={{ color: '#2D3748', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={cs.project_name || '—'}>
                                             {cs.project_name || '—'}
-                                        </td>
-                                        <td style={{ fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace' }}>
+                                        </td>}
+                                        {visibleColumns.includes('cost_sheet_no') && <td style={{ fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace' }}>
                                             {cs.cost_sheet_no}
-                                        </td>
-                                        <td style={{ color: '#4A5568', fontWeight: 600 }}>
+                                        </td>}
+                                        {visibleColumns.includes('date') && <td style={{ color: '#4A5568', fontWeight: 600 }}>
                                             {cs.cost_sheet_date ? new Date(cs.cost_sheet_date).toLocaleDateString() : new Date(cs.created_at).toLocaleDateString()}
-                                        </td>
-                                        <td>
+                                        </td>}
+                                        {visibleColumns.includes('status') && <td>
                                             <span style={{
                                                 padding: '4px 10px',
                                                 borderRadius: '6px',
@@ -511,11 +685,19 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                             }}>
                                                 {statusInfo.label}
                                             </span>
-                                        </td>
-                                        <td style={{ fontWeight: 700, color: '#1a1f36', textAlign: 'right' }}>
-                                            ${parseFloat(cs.total_estimated_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                        </td>
-                                        <td style={{ textAlign: 'center' }}>
+                                        </td>}
+                                        {visibleColumns.includes('margin_percentage') && <td style={{ textAlign: 'right', fontWeight: 600, color: '#4A5568', fontSize: '0.8rem' }}>
+                                            {cs.total_margin_percentage || 0}%
+                                        </td>}
+                                        {visibleColumns.includes('est_margin') && <td style={{ textAlign: 'right', fontWeight: 600, color: '#4A5568', fontSize: '0.8rem' }}>
+                                            {cs.currency === 'INR' ? '₹' : cs.currency === 'USD' ? '$' : cs.currency === 'EURO' ? '€' : '$'}
+                                            {parseFloat(cs.total_estimated_margin).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </td>}
+                                        {visibleColumns.includes('total_price') && <td style={{ fontWeight: 700, color: '#1a1f36', textAlign: 'right' }}>
+                                            {cs.currency === 'INR' ? '₹' : cs.currency === 'USD' ? '$' : cs.currency === 'EURO' ? '€' : '$'}
+                                            {parseFloat(cs.total_estimated_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </td>}
+                                        <td style={{ textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
                                             <button
                                                 onClick={() => onView(cs.id)}
                                                 style={{
@@ -534,8 +716,34 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                 }}
                                                 onMouseOver={(e) => e.currentTarget.style.background = '#0052A3'}
                                                 onMouseOut={(e) => e.currentTarget.style.background = '#0066CC'}
+                                                title="View/Edit"
                                             >
-                                                <Eye size={14} /> View
+                                                <Eye size={14} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    exportSingleExcel(cs.id, cs.cost_sheet_no);
+                                                }}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    padding: '6px 12px',
+                                                    background: '#10B981',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseOver={(e) => e.currentTarget.style.background = '#059669'}
+                                                onMouseOut={(e) => e.currentTarget.style.background = '#10B981'}
+                                                title="Download Cost Sheet"
+                                            >
+                                                <Download size={14} />
                                             </button>
                                         </td>
                                     </tr>
@@ -545,7 +753,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                     </tbody>
                 </table>
             </div>
-        </div>
+        </div >
     );
 };
 
