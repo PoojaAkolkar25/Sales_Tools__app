@@ -107,35 +107,30 @@ const MilestoneDashboard: React.FC = () => {
             </div>
 
             {/* KPI Cards section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-4">
-                <div className="ae-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ background: 'rgba(0, 102, 204, 0.1)', padding: '12px', borderRadius: '12px', color: '#0066CC' }}>
-                        <BarChart3 size={24} />
+            <div className="ae-grid-3">
+                <div className="ae-card">
+                    <div className="ae-card-header">
+                        <div className="ae-icon-box bg-blue-soft text-blue"><BarChart3 size={18} /></div>
                     </div>
-                    <div>
-                        <p style={{ fontSize: '10px', fontWeight: 900, color: '#718096', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>Total Milestones</p>
-                        <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1a1f36', margin: 0 }}>{milestones.length}</h3>
-                    </div>
+                    <div className="ae-card-label">Total Milestones</div>
+                    <div className="ae-card-value">{milestones.length}</div>
                 </div>
-                <div className="ae-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ background: 'rgba(255, 107, 0, 0.1)', padding: '12px', borderRadius: '12px', color: '#FF6B00' }}>
-                        <Clock size={24} />
+                <div className="ae-card">
+                    <div className="ae-card-header">
+                        <div className="ae-icon-box bg-orange-soft text-orange"><Clock size={18} /></div>
                     </div>
-                    <div>
-                        <p style={{ fontSize: '10px', fontWeight: 900, color: '#718096', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>Pending Invoicing</p>
-                        <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1a1f36', margin: 0 }}>{milestones.filter(m => m.status !== 'INVOICED').length}</h3>
-                    </div>
+                    <div className="ae-card-label">Pending Invoicing</div>
+                    <div className="ae-card-value">{milestones.filter(m => m.status !== 'INVOICED').length}</div>
                 </div>
-                <div className="ae-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ background: 'rgba(0, 200, 83, 0.1)', padding: '12px', borderRadius: '12px', color: '#00C853' }}>
-                        <CheckCircle2 size={24} />
+                <div className="ae-card">
+                    <div className="ae-card-header">
+                        <div className="ae-icon-box bg-green-soft text-green"><CheckCircle2 size={18} /></div>
                     </div>
-                    <div>
-                        <p style={{ fontSize: '10px', fontWeight: 900, color: '#718096', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>Total Invoiced</p>
-                        <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1a1f36', margin: 0 }}>{milestones.filter(m => m.status === 'INVOICED').length}</h3>
-                    </div>
+                    <div className="ae-card-label">Total Invoiced</div>
+                    <div className="ae-card-value">{milestones.filter(m => m.status === 'INVOICED').length}</div>
                 </div>
             </div>
+
 
             {/* Filters section */}
             <div className="ae-card" style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'flex-end', background: '#FAFBFC' }}>
