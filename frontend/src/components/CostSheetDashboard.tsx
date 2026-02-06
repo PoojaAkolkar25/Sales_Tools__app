@@ -320,6 +320,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                     <div style={{ position: 'relative' }} ref={exportMenuRef}>
                         <button
                             className="ae-btn-secondary"
+                            disabled={isDownloading}
                             onClick={() => setShowExportMenu(!showExportMenu)}
                             style={{
                                 display: 'flex',
@@ -341,6 +342,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                         {showExportMenu && (
                             <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid #E2E8F0', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                 <button
+                                    disabled={isDownloading}
                                     onClick={() => { exportToCSV(); setShowExportMenu(false); }}
                                     style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                     onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
@@ -349,6 +351,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                     <FileSpreadsheet size={16} style={{ color: '#059669' }} /> CSV Report
                                 </button>
                                 <button
+                                    disabled={isDownloading}
                                     onClick={() => { exportToExcel(); setShowExportMenu(false); }}
                                     style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                     onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}

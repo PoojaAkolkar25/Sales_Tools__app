@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const UserManagement: React.FC = () => {
     const { showNotification, showConfirm } = useNotification();
     const [users, setUsers] = useState<any[]>([]);
+    const [customers, setCustomers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'user' | 'customer'>('user');
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({
         username: '',
@@ -18,15 +20,33 @@ const UserManagement: React.FC = () => {
     });
     const [error, setError] = useState('');
 
+    // Feature: Customer Creation
+    const [activeTab, setActiveTab] = useState<'user' | 'customer'>('user');
+    const [customerFormData, setCustomerFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        contact_person: '',
+        address: ''
+    });
+    const [customerError, setCustomerError] = useState('');
+
     const location = useLocation();
+    const navigate = useNavigate();
 
     useEffect(() => {
-        fetchUsers();
+        fetchData();
         const params = new URLSearchParams(location.search);
         if (params.get('action') === 'create') {
             setShowForm(true);
         }
     }, [location.search]);
+
+    const fetchData = async () => {
+        setLoading(true);
+        await Promise.all([fetchUsers(), fetchCustomers()]);
+        setLoading(false);
+    };
 
     const fetchUsers = async () => {
         try {
@@ -34,8 +54,15 @@ const UserManagement: React.FC = () => {
             setUsers(response.data);
         } catch (err) {
             console.error('Error fetching users', err);
-        } finally {
-            setLoading(false);
+        }
+    };
+
+    const fetchCustomers = async () => {
+        try {
+            const response = await api.get('customers/');
+            setCustomers(response.data);
+        } catch (err) {
+            console.error('Error fetching customers', err);
         }
     };
 
@@ -49,6 +76,20 @@ const UserManagement: React.FC = () => {
             fetchUsers();
         } catch (err: any) {
             setError(err.response?.data?.username?.[0] || err.response?.data?.email?.[0] || 'Error creating user');
+        }
+    };
+
+    const handleCreateCustomer = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setCustomerError('');
+        try {
+            await api.post('customers/', customerFormData);
+            showNotification('Customer created successfully', 'success');
+            setCustomerFormData({ name: '', email: '', phone: '', contact_person: '', address: '' });
+            navigate('/customer-dashboard');
+        } catch (err: any) {
+            console.error('Error creating customer', err);
+            setCustomerError(err.response?.data?.name?.[0] || err.response?.data?.message || 'Error creating customer');
         }
     };
 
@@ -67,6 +108,19 @@ const UserManagement: React.FC = () => {
                 }
             }
         });
+    };
+
+    const handleToggleStatus = async (id: number, type: 'user' | 'customer') => {
+        try {
+            const endpoint = type === 'user' ? `auth/users/${id}/toggle_status/` : `customers/${id}/toggle_status/`;
+            await api.post(endpoint);
+            showNotification(`${type === 'user' ? 'User' : 'Customer'} status updated`, 'success');
+            if (type === 'user') fetchUsers();
+            else fetchCustomers();
+        } catch (err) {
+            console.error('Error toggling status', err);
+            showNotification('Error updating status', 'error');
+        }
     };
 
     if (loading) {
@@ -97,46 +151,96 @@ const UserManagement: React.FC = () => {
                         User Management
                     </h1>
                 </div>
-                <button
-                    onClick={() => setShowForm(!showForm)}
-                    style={{
-                        height: '32px',
-                        fontSize: '0.8rem',
-                        background: showForm ? '#FFF5F5' : '#FF6B00',
-                        color: showForm ? '#E53E3E' : 'white',
-                        border: showForm ? '1px solid #FEB2B2' : 'none',
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '0 16px',
-                        borderRadius: '8px',
-                        transition: 'all 0.2s',
-                        cursor: 'pointer',
-                        fontWeight: 600
-                    }}
-                    onMouseEnter={(e) => {
-                        if (showForm) {
-                            e.currentTarget.style.background = '#E53E3E';
-                            e.currentTarget.style.color = 'white';
-                            e.currentTarget.style.borderColor = '#E53E3E';
-                        } else {
-                            e.currentTarget.style.background = '#E65200';
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        if (showForm) {
-                            e.currentTarget.style.background = '#FFF5F5';
-                            e.currentTarget.style.color = '#E53E3E';
-                            e.currentTarget.style.borderColor = '#FEB2B2';
-                        } else {
-                            e.currentTarget.style.background = '#FF6B00';
-                            e.currentTarget.style.color = 'white';
-                        }
-                    }}
-                >
-                    {showForm ? <X size={14} /> : <UserPlus size={14} />}
-                    {showForm ? 'Cancel' : 'Create New User'}
-                </button>
+                        background: '#F1F5F9',
+                        borderRadius: '10px',
+                        padding: '4px',
+                        border: '1px solid #E2E8F0'
+                    }}>
+                        <button
+                            onClick={() => setViewMode('user')}
+                            style={{
+                                padding: '6px 16px',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                borderRadius: '7px',
+                                border: 'none',
+                                background: viewMode === 'user' ? 'white' : 'transparent',
+                                color: viewMode === 'user' ? '#1a1f36' : '#64748B',
+                                boxShadow: viewMode === 'user' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <UserIcon size={14} /> Users
+                        </button>
+                        <button
+                            onClick={() => setViewMode('customer')}
+                            style={{
+                                padding: '6px 16px',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                borderRadius: '7px',
+                                border: 'none',
+                                background: viewMode === 'customer' ? 'white' : 'transparent',
+                                color: viewMode === 'customer' ? '#1a1f36' : '#64748B',
+                                boxShadow: viewMode === 'customer' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <Users size={14} /> Customers
+                        </button>
+                    </div>
+                    <button
+                        onClick={() => setShowForm(!showForm)}
+                        style={{
+                            height: '36px',
+                            fontSize: '0.85rem',
+                            background: showForm ? '#FFF5F5' : '#FF6B00',
+                            color: showForm ? '#E53E3E' : 'white',
+                            border: showForm ? '1px solid #FEB2B2' : 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '0 20px',
+                            borderRadius: '10px',
+                            transition: 'all 0.2s',
+                            cursor: 'pointer',
+                            fontWeight: 700
+                        }}
+                        onMouseEnter={(e) => {
+                            if (showForm) {
+                                e.currentTarget.style.background = '#E53E3E';
+                                e.currentTarget.style.color = 'white';
+                                e.currentTarget.style.borderColor = '#E53E3E';
+                            } else {
+                                e.currentTarget.style.background = '#E65200';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (showForm) {
+                                e.currentTarget.style.background = '#FFF5F5';
+                                e.currentTarget.style.color = '#E53E3E';
+                                e.currentTarget.style.borderColor = '#FEB2B2';
+                            } else {
+                                e.currentTarget.style.background = '#FF6B00';
+                                e.currentTarget.style.color = 'white';
+                            }
+                        }}
+                    >
+                        {showForm ? <X size={14} /> : <UserPlus size={14} />}
+                        {showForm ? 'Cancel' : 'Create New'}
+                    </button>
+                </div>
             </div>
 
             <div style={{ display: 'flex', gap: '24px', flex: 1 }}>
@@ -148,129 +252,165 @@ const UserManagement: React.FC = () => {
                         borderRight: '1px solid #E0E6ED',
                         paddingRight: '24px'
                     }}>
-                        <div style={{ paddingBottom: '20px', marginBottom: '20px', borderBottom: '1px solid #E0E6ED' }}>
-                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#2D3748' }}>
-                                Add New User
-                            </h3>
+                        <div style={{ marginBottom: '20px' }}>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                                <button
+                                    onClick={() => setActiveTab('user')}
+                                    style={{
+                                        flex: 1,
+                                        padding: '8px',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 700,
+                                        borderRadius: '6px',
+                                        border: 'none',
+                                        background: activeTab === 'user' ? '#EBF8FF' : 'transparent',
+                                        color: activeTab === 'user' ? '#3182CE' : '#718096',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Add New User
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('customer')}
+                                    style={{
+                                        flex: 1,
+                                        padding: '8px',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 700,
+                                        borderRadius: '6px',
+                                        border: 'none',
+                                        background: activeTab === 'customer' ? '#EBF8FF' : 'transparent',
+                                        color: activeTab === 'customer' ? '#3182CE' : '#718096',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Create Customer
+                                </button>
+                            </div>
+                            <div style={{ paddingBottom: '10px', borderBottom: '1px solid #E0E6ED' }}>
+                                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#2D3748' }}>
+                                    {activeTab === 'user' ? 'Add New User' : 'Add New Customer'}
+                                </h3>
+                            </div>
                         </div>
-                        <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <div className="space-y-1">
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
-                                    Username
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.username}
-                                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                    className="ae-input"
-                                    placeholder="Enter username"
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    className="ae-input"
-                                    placeholder="Enter email address"
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
-                                    First Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.first_name}
-                                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                    className="ae-input"
-                                    placeholder="Enter first name"
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
-                                    Last Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.last_name}
-                                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                    className="ae-input"
-                                    placeholder="Enter last name"
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
-                                    Password
-                                </label>
-                                <input
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    className="ae-input"
-                                    placeholder="Enter password"
-                                    required
-                                />
-                            </div>
 
-                            <div style={{ marginTop: '16px' }}>
-                                {error && <div className="text-red-500 text-sm font-medium mb-3">{error}</div>}
-
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowForm(false)}
-                                        style={{
-                                            flex: 1,
-                                            padding: '10px',
-                                            borderRadius: '8px',
-                                            fontWeight: 600,
-                                            background: 'white',
-                                            border: '1px solid #E2E8F0',
-                                            color: '#718096',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#FFF5F5';
-                                            e.currentTarget.style.color = '#E53E3E';
-                                            e.currentTarget.style.borderColor = '#FEB2B2';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = 'white';
-                                            e.currentTarget.style.color = '#718096';
-                                            e.currentTarget.style.borderColor = '#E2E8F0';
-                                        }}
-                                    >
-                                        Cancel
-                                    </button>
+                        <form onSubmit={activeTab === 'user' ? handleCreateUser : handleCreateCustomer}>
+                            {activeTab === 'user' ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Username</label>
+                                        <input
+                                            type="text"
+                                            value={formData.username}
+                                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                            style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
+                                            required
+                                        />
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>First Name</label>
+                                            <input
+                                                type="text"
+                                                value={formData.first_name}
+                                                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                                                style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
+                                            />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Last Name</label>
+                                            <input
+                                                type="text"
+                                                value={formData.last_name}
+                                                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                                                style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Email</label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Password</label>
+                                        <input
+                                            type="password"
+                                            value={formData.password}
+                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                            style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
+                                            required
+                                        />
+                                    </div>
+                                    {error && <div style={{ color: '#E53E3E', fontSize: '0.8rem', fontWeight: 600 }}>{error}</div>}
                                     <button
                                         type="submit"
-                                        style={{
-                                            flex: 2,
-                                            padding: '10px',
-                                            borderRadius: '8px',
-                                            fontWeight: 600,
-                                            background: '#FF6B00',
-                                            border: 'none',
-                                            color: 'white',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 4px 6px rgba(255, 107, 0, 0.2)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '8px'
-                                        }}
+                                        style={{ marginTop: '8px', height: '40px', background: '#FF6B00', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                                     >
                                         <UserPlus size={16} /> Create User
                                     </button>
                                 </div>
-                            </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Customer Name</label>
+                                        <input
+                                            type="text"
+                                            value={customerFormData.name}
+                                            onChange={(e) => setCustomerFormData({ ...customerFormData, name: e.target.value })}
+                                            style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Email</label>
+                                        <input
+                                            type="email"
+                                            value={customerFormData.email}
+                                            onChange={(e) => setCustomerFormData({ ...customerFormData, email: e.target.value })}
+                                            style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Phone</label>
+                                        <input
+                                            type="text"
+                                            value={customerFormData.phone}
+                                            onChange={(e) => setCustomerFormData({ ...customerFormData, phone: e.target.value })}
+                                            style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Contact Person</label>
+                                        <input
+                                            type="text"
+                                            value={customerFormData.contact_person}
+                                            onChange={(e) => setCustomerFormData({ ...customerFormData, contact_person: e.target.value })}
+                                            style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Address</label>
+                                        <textarea
+                                            value={customerFormData.address}
+                                            onChange={(e) => setCustomerFormData({ ...customerFormData, address: e.target.value })}
+                                            style={{ width: '100%', height: '80px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem', resize: 'none' }}
+                                        />
+                                    </div>
+                                    {customerError && <div style={{ color: '#E53E3E', fontSize: '0.8rem', fontWeight: 600 }}>{customerError}</div>}
+                                    <button
+                                        type="submit"
+                                        style={{ marginTop: '8px', height: '40px', background: '#FF6B00', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                    >
+                                        <UserPlus size={16} /> Create Customer
+                                    </button>
+                                </div>
+                            )}
                         </form>
                     </div>
                 )}
@@ -280,15 +420,15 @@ const UserManagement: React.FC = () => {
                         <table className="ae-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                             <thead style={{ position: 'sticky', top: 0, zIndex: 20 }}>
                                 <tr>
-                                    <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '30%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>User</th>
+                                    <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '30%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>{viewMode === 'user' ? 'User' : 'Customer'}</th>
                                     <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '25%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>Email</th>
-                                    <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>Role</th>
+                                    <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>{viewMode === 'user' ? 'Role' : 'Contact Person'}</th>
                                     <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>Status</th>
                                     <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {users.map((user) => (
+                                {viewMode === 'user' ? users.map((user) => (
                                     <tr key={user.id} style={{ borderBottom: '1px solid #F0F4F8' }}>
                                         <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                                             <div className="flex items-center">
@@ -303,7 +443,7 @@ const UserManagement: React.FC = () => {
                                         </td>
                                         <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                                             <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
-                                                <Mail size={14} className="text-gray-400" /> {user.email}
+                                                <Mail size={14} className="text-gray-400" /> {user.email || '—'}
                                             </div>
                                         </td>
                                         <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
@@ -325,34 +465,116 @@ const UserManagement: React.FC = () => {
                                         </td>
                                         <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                                             <span style={{
-                                                display: 'inline-block',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
                                                 padding: '4px 10px',
                                                 borderRadius: '6px',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 700,
+                                                fontSize: '0.7rem',
+                                                fontWeight: 800,
                                                 textTransform: 'uppercase',
-                                                background: 'rgba(0, 200, 83, 0.1)',
-                                                color: '#00C853'
+                                                background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                                                color: user.is_active ? '#00C853' : '#F44336'
                                             }}>
-                                                Active
+                                                {user.is_active ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                {user.is_active ? 'Active' : 'Inactive'}
                                             </span>
                                         </td>
                                         <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                            <button
-                                                onClick={() => handleDeleteUser(user.id)}
-                                                style={{
-                                                    padding: '8px',
-                                                    color: '#E53E3E',
-                                                    border: 'none',
-                                                    background: 'rgba(229, 62, 62, 0.1)',
-                                                    cursor: 'pointer',
-                                                    borderRadius: '6px',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                                title="Delete User"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => handleToggleStatus(user.id, 'user')}
+                                                    style={{
+                                                        padding: '8px',
+                                                        color: user.is_active ? '#00C853' : '#F44336',
+                                                        border: 'none',
+                                                        background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                                                        cursor: 'pointer',
+                                                        borderRadius: '6px',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    title={user.is_active ? "Deactivate User" : "Activate User"}
+                                                >
+                                                    <Power size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteUser(user.id)}
+                                                    style={{
+                                                        padding: '8px',
+                                                        color: '#E53E3E',
+                                                        border: 'none',
+                                                        background: 'rgba(229, 62, 62, 0.1)',
+                                                        cursor: 'pointer',
+                                                        borderRadius: '6px',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    title="Delete User"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )) : customers.map((customer) => (
+                                    <tr key={customer.id} style={{ borderBottom: '1px solid #F0F4F8' }}>
+                                        <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                                            <div className="flex items-center">
+                                                <div className="h-10 w-10 flex-shrink-0 bg-[#FF6B00]/10 text-[#FF6B00] rounded-full flex items-center justify-center">
+                                                    <Users size={20} />
+                                                </div>
+                                                <div className="ml-4">
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{customer.name}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{customer.customer_type}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                                            <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
+                                                <Mail size={14} className="text-gray-400" /> {customer.email || '—'}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>
+                                                {customer.contact_person || '—'}
+                                            </div>
+                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{customer.phone}</div>
+                                        </td>
+                                        <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                                            <span style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '4px 10px',
+                                                borderRadius: '6px',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 800,
+                                                textTransform: 'uppercase',
+                                                background: customer.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                                                color: customer.is_active ? '#00C853' : '#F44336',
+                                                transition: 'all 0.2s'
+                                            }}>
+                                                {customer.is_active ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                {customer.is_active ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => handleToggleStatus(customer.id, 'customer')}
+                                                    style={{
+                                                        padding: '8px',
+                                                        color: customer.is_active ? '#00C853' : '#F44336',
+                                                        border: 'none',
+                                                        background: customer.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                                                        cursor: 'pointer',
+                                                        borderRadius: '6px',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    title={customer.is_active ? "Deactivate Customer" : "Activate Customer"}
+                                                >
+                                                    <Power size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -360,8 +582,8 @@ const UserManagement: React.FC = () => {
                         </table>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

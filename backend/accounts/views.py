@@ -1,4 +1,5 @@
 from rest_framework import viewsets, status, permissions
+from rest_framework.decorators import action
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -24,10 +25,21 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'destroy']:
-            # Only admin can create or delete users
+        if self.action in ['create', 'destroy', 'toggle_status']:
+            # Only admin can create, delete, or toggle status
             return [permissions.IsAuthenticated(), IsAppAdmin()]
         return [permissions.IsAuthenticated()]
+
+    @action(detail=True, methods=['post'])
+    def toggle_status(self, request, pk=None):
+        user = self.get_object()
+        user.is_active = not user.is_active
+        user.save()
+        return Response({
+            'status': 'success',
+            'is_active': user.is_active,
+            'message': f'User {user.username} is now {"active" if user.is_active else "inactive"}'
+        })
 
 class IsAppAdmin(permissions.BasePermission):
     def has_permission(self, request, view):

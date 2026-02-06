@@ -123,6 +123,34 @@ class Deal(models.Model):
 
     def __str__(self):
         return f"{self.deal_id} - {self.deal_name}"
+    
+    def get_current_stage(self):
+        """Dynamically determine the current stage based on related records"""
+        # Check in reverse order of workflow: Payment -> Invoice -> Sales Order -> Estimates -> Cost Sheet -> Deal Created
+        
+        # Check if any invoices exist and have payments
+        if hasattr(self, 'invoices') and self.invoices.exists():
+            # Check if any invoice has payments/receipts
+            for invoice in self.invoices.all():
+                if hasattr(invoice, 'receipt_vouchers') and invoice.receipt_vouchers.exists():
+                    return DealStage.PAYMENT
+            # If invoices exist but no payments, stage is INVOICE
+            return DealStage.INVOICE
+        
+        # Check if sales orders exist
+        if hasattr(self, 'sales_orders') and self.sales_orders.exists():
+            return DealStage.SALES_ORDER
+        
+        # Check if estimates exist
+        if hasattr(self, 'estimates') and self.estimates.exists():
+            return DealStage.ESTIMATES
+        
+        # Check if cost sheets exist
+        if hasattr(self, 'cost_sheets') and self.cost_sheets.exists():
+            return DealStage.COST_SHEET
+        
+        # Default to deal created if nothing else exists
+        return DealStage.DEAL_CREATED
 
 class DealTypeEntry(models.Model):
     """Model to support multiple deal type rows (License/Services)"""
@@ -139,14 +167,21 @@ class DealTypeEntry(models.Model):
     def __str__(self):
         return f"{self.deal.deal_id} - {self.type} - {self.description[:30]}"
 
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+
 class AuditTrail(models.Model):
-    """Model to track all changes made to deals"""
+    """Model to track all changes made to any model (Deals, Estimates, etc.)"""
     class ActionType(models.TextChoices):
         CREATE = 'CREATE', 'Created'
         UPDATE = 'UPDATE', 'Updated'
         DELETE = 'DELETE', 'Deleted'
     
-    deal = models.ForeignKey(Deal, on_delete=models.CASCADE, related_name='audit_trail')
+    # Generic Foreign Key
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     field_name = models.CharField(max_length=100)
     old_value = models.TextField(blank=True, default='')
@@ -156,9 +191,12 @@ class AuditTrail(models.Model):
     
     class Meta:
         ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=["content_type", "object_id"]),
+        ]
     
     def __str__(self):
-        return f"{self.deal.deal_id} - {self.field_name} - {self.timestamp}"
+        return f"{self.content_type} {self.object_id} - {self.field_name} - {self.timestamp}"
 class DealAttachment(models.Model):
     deal = models.ForeignKey(Deal, on_delete=models.CASCADE, related_name='deal_attachments')
     file = models.FileField(upload_to='deal_attachments/')

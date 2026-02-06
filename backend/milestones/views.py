@@ -7,6 +7,12 @@ from .serializers import MilestoneSerializer
 from finance.models import Invoice, InvoiceStatus
 from sales_orders.models import SalesOrder
 import datetime
+import io
+import csv
+import xlsxwriter
+from django.http import HttpResponse
+from django.utils import timezone
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 
 class MilestoneViewSet(viewsets.ModelViewSet):
@@ -26,6 +32,137 @@ class MilestoneViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(sales_order_id=sales_order_id)
             
         return queryset
+
+    def _apply_filters(self, request):
+        queryset = Milestone.objects.all().select_related('sales_order', 'sales_order__customer', 'invoice')
+        
+        # Period filtering
+        period = request.query_params.get('period')
+        start_date_str = request.query_params.get('start_date')
+        end_date_str = request.query_params.get('end_date')
+        today = timezone.now().date()
+        
+        start_date = None
+        end_date = None
+
+        if period == 'last_month':
+            first_of_this_month = today.replace(day=1)
+            end_date = first_of_this_month - timedelta(days=1)
+            start_date = end_date.replace(day=1)
+        elif period == 'last_3_months':
+            first_of_this_month = today.replace(day=1)
+            end_date = first_of_this_month - timedelta(days=1)
+            temp_date = end_date - timedelta(days=60)
+            start_date = temp_date.replace(day=1)
+        elif period == 'last_6_months':
+            first_of_this_month = today.replace(day=1)
+            end_date = first_of_this_month - timedelta(days=1)
+            temp_date = end_date - timedelta(days=150)
+            start_date = temp_date.replace(day=1)
+        elif period == 'last_year':
+            last_year = today.year - 1
+            start_date = datetime.date(last_year, 1, 1)
+            end_date = datetime.date(last_year, 12, 31)
+        elif period == 'last_financial_year':
+            if today.month >= 4:
+                start_year = today.year - 1
+            else:
+                start_year = today.year - 2
+            start_date = datetime.date(start_year, 4, 1)
+            end_date = datetime.date(start_year + 1, 3, 31)
+        elif start_date_str and end_date_str:
+            try:
+                start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+
+        if start_date:
+            queryset = queryset.filter(due_date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(due_date__lte=end_date)
+
+        # Field filtering
+        milestone_no = request.query_params.get('milestone_no')
+        so_number = request.query_params.get('so_number')
+        customer_name = request.query_params.get('customer_name')
+        status = request.query_params.get('status')
+
+        if milestone_no:
+            queryset = queryset.filter(milestone_no__icontains=milestone_no)
+        if so_number:
+            queryset = queryset.filter(sales_order__so_number__icontains=so_number)
+        if customer_name:
+            queryset = queryset.filter(sales_order__customer__name__icontains=customer_name)
+        if status:
+            queryset = queryset.filter(status=status)
+
+        return queryset
+
+    @action(detail=False, methods=['get'])
+    def export_report(self, request):
+        queryset = self._apply_filters(request)
+        today = timezone.now().date()
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="milestones_report_{today}.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Milestone No', 'Description', 'Sales Order', 'Customer', 'Due Date', 'Amount', 'Status', 'Invoice No'])
+        
+        for m in queryset:
+            writer.writerow([
+                m.milestone_no,
+                m.description,
+                m.sales_order.so_number if m.sales_order else '—',
+                m.sales_order.customer.name if m.sales_order and m.sales_order.customer else '—',
+                m.due_date.strftime('%Y-%m-%d') if m.due_date else '—',
+                m.amount,
+                m.status,
+                m.invoice.invoice_no if m.invoice else '—'
+            ])
+            
+        return response
+
+    @action(detail=False, methods=['get'])
+    def export_excel(self, request):
+        queryset = self._apply_filters(request)
+        today = timezone.now().date()
+        
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output)
+        worksheet = workbook.add_worksheet("Milestones Report")
+
+        header_format = workbook.add_format({
+            'bold': True,
+            'bg_color': '#FF6B00',
+            'font_color': 'white',
+            'border': 1
+        })
+
+        headers = ['Milestone No', 'Description', 'Sales Order', 'Customer', 'Due Date', 'Amount', 'Status', 'Invoice No']
+        for col, header in enumerate(headers):
+            worksheet.write(0, col, header, header_format)
+
+        for row, m in enumerate(queryset, start=1):
+            worksheet.write(row, 0, m.milestone_no)
+            worksheet.write(row, 1, m.description)
+            worksheet.write(row, 2, m.sales_order.so_number if m.sales_order else '—')
+            worksheet.write(row, 3, m.sales_order.customer.name if m.sales_order and m.sales_order.customer else '—')
+            worksheet.write(row, 4, m.due_date.strftime('%Y-%m-%d') if m.due_date else '—')
+            worksheet.write(row, 5, float(m.amount))
+            worksheet.write(row, 6, m.status)
+            worksheet.write(row, 7, m.invoice.invoice_no if m.invoice else '—')
+
+        workbook.close()
+        output.seek(0)
+
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="milestones_report_{today}.xlsx"'
+        return response
 
     def _validate_milestone_amount(self, sales_order_id, amount, instance=None):
         if not sales_order_id:
@@ -105,10 +242,8 @@ class MilestoneViewSet(viewsets.ModelViewSet):
         
         if not lead and sales_order.customer:
              # 2. Try to find Lead via Deals associated with this Customer
-             # The Customer model has a related_name='deals' from Deal model
              customer_deals = sales_order.customer.deals.all()
              if customer_deals.exists():
-                 # Use the lead from the most recent deal
                  latest_deal = customer_deals.order_by('-created_at').first()
                  if latest_deal and latest_deal.lead:
                      lead = latest_deal.lead
@@ -123,7 +258,6 @@ class MilestoneViewSet(viewsets.ModelViewSet):
              try:
                  from leads.models import Lead
                  import time
-                 # Generate unique lead number
                  timestamp = int(time.time())
                  new_lead_no = f"L-AUTO-{timestamp}"
                  
@@ -141,7 +275,6 @@ class MilestoneViewSet(viewsets.ModelViewSet):
                   return Response({"error": f"Failed to auto-generate Lead for Invoice: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Generate Invoice
-        # Simple Invoice No generation logic (can be improved)
         last_invoice = Invoice.objects.order_by('id').last()
         last_id = last_invoice.id if last_invoice else 0
         new_invoice_no = f"INV-M-{last_id + 1:04d}"

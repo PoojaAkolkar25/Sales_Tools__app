@@ -28,6 +28,17 @@ class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @action(detail=True, methods=['post'])
+    def toggle_status(self, request, pk=None):
+        customer = self.get_object()
+        customer.is_active = not customer.is_active
+        customer.save()
+        return Response({
+            'status': 'success',
+            'is_active': customer.is_active,
+            'message': f'Customer {customer.name} is now {"active" if customer.is_active else "inactive"}'
+        })
+
 class DealTypeEntryViewSet(viewsets.ModelViewSet):
     queryset = DealTypeEntry.objects.all().order_by('-created_at')
     serializer_class = DealTypeEntrySerializer
@@ -47,15 +58,67 @@ class AuditTrailViewSet(viewsets.ReadOnlyModelViewSet):
     
     def get_queryset(self):
         queryset = AuditTrail.objects.all()
-        deal_id = self.request.query_params.get('deal_id', None)
-        if deal_id:
-            queryset = queryset.filter(deal_id=deal_id)
+        model_name = self.request.query_params.get('model_name', None)
+        object_id = self.request.query_params.get('object_id', None)
+        action_type = self.request.query_params.get('action_type', None)
+        user_id = self.request.query_params.get('user_id', None)
+        date_from = self.request.query_params.get('date_from', None)
+        date_to = self.request.query_params.get('date_to', None)
+        
+        # Filter by specific model and object (existing functionality)
+        if model_name and object_id:
+            from django.contrib.contenttypes.models import ContentType
+            try:
+                ct = ContentType.objects.filter(model=model_name.lower()).first()
+                if ct:
+                    queryset = queryset.filter(content_type=ct, object_id=object_id)
+            except Exception:
+                pass
+        
+        # Filter by action type
+        if action_type:
+            queryset = queryset.filter(action_type=action_type.upper())
+        
+        # Filter by user
+        if user_id:
+            queryset = queryset.filter(user_id=user_id)
+        
+        # Filter by date range
+        if date_from:
+            from datetime.datetime import strptime
+            try:
+                queryset = queryset.filter(timestamp__gte=date_from)
+            except Exception:
+                pass
+        
+        if date_to:
+            try:
+                queryset = queryset.filter(timestamp__lte=date_to)
+            except Exception:
+                pass
+                
         return queryset.order_by('-timestamp')
 
 class DealViewSet(viewsets.ModelViewSet):
     queryset = Deal.objects.all().order_by('-created_at')
     serializer_class = DealSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        
+        from django.contrib.contenttypes.models import ContentType
+        ct = ContentType.objects.get_for_model(instance)
+        
+        AuditTrail.objects.create(
+            content_type=ct,
+            object_id=instance.id,
+            user=self.request.user,
+            field_name="Deal Created",
+            old_value="",
+            new_value=f"Deal created with ID {instance.deal_id}",
+            action_type=AuditTrail.ActionType.CREATE
+        )
 
     def get_queryset(self):
         queryset = Deal.objects.all().order_by('-created_at')
@@ -104,8 +167,27 @@ class DealViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         """Override update to create audit trail entries"""
         instance = self.get_object()
-        old_data = {field: getattr(instance, field) for field in ['deal_name', 'deal_amount', 'currency', 'stage', 'customer_id', 'end_customer', 'salesperson_name', 'project_manager']}
         
+        # excluded fields from tracking
+        excluded_fields = ['updated_at', 'last_synced_at', 'created_at', 'id', 'deal_id', 'attachments', 'deal_types']
+        
+        # Get all field names from the model
+        model_fields = [f.name for f in Deal._meta.get_fields() if not f.is_relation and f.name not in excluded_fields]
+        
+        relations_to_track = ['customer', 'lead']
+        all_trackable_fields = model_fields + relations_to_track
+        
+        old_data = {}
+        for field in all_trackable_fields:
+            try:
+                val = getattr(instance, field)
+                if field in relations_to_track:
+                    old_data[field] = str(val) if val else ""
+                else:
+                    old_data[field] = val
+            except AttributeError:
+                continue
+
         # Auto-fetch FX rate if currency is USD or EURO
         if 'currency' in request.data:
             currency = request.data.get('currency')
@@ -120,17 +202,45 @@ class DealViewSet(viewsets.ModelViewSet):
         
         # Create audit trail entries for changed fields
         instance.refresh_from_db()
-        for field, old_value in old_data.items():
-            new_value = getattr(instance, field)
-            if str(old_value) != str(new_value):
-                AuditTrail.objects.create(
-                    deal=instance,
-                    user=request.user,
-                    field_name=field,
-                    old_value=str(old_value) if old_value is not None else '',
-                    new_value=str(new_value) if new_value is not None else '',
-                    action_type=AuditTrail.ActionType.UPDATE
-                )
+        
+        from django.contrib.contenttypes.models import ContentType
+        ct = ContentType.objects.get_for_model(instance)
+        
+        for field in all_trackable_fields:
+             try:
+                new_val = getattr(instance, field)
+                if field in relations_to_track:
+                    new_val_str = str(new_val) if new_val else ""
+                    old_val_str = old_data.get(field, "")
+                    if old_val_str != new_val_str:
+                         AuditTrail.objects.create(
+                            content_type=ct,
+                            object_id=instance.id,
+                            user=request.user,
+                            field_name=field,
+                            old_value=old_val_str,
+                            new_value=new_val_str,
+                            action_type=AuditTrail.ActionType.UPDATE
+                        )
+                else:
+                    old_val = old_data.get(field)
+                    # Convert to string for comparison to match what's stored
+                    if str(old_val) != str(new_val):
+                         # Don't log if both are effectively empty/null
+                         if not old_val and not new_val:
+                             continue
+                             
+                         AuditTrail.objects.create(
+                            content_type=ct,
+                            object_id=instance.id,
+                            user=request.user,
+                            field_name=field,
+                            old_value=str(old_val) if old_val is not None else '',
+                            new_value=str(new_val) if new_val is not None else '',
+                            action_type=AuditTrail.ActionType.UPDATE
+                        )
+             except AttributeError:
+                 continue
         
         return response
 

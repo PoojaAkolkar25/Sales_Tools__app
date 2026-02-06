@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponse
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -9,16 +10,68 @@ import io
 import xlsxwriter
 from .models import CostSheet, CostSheetStatus, CostSheetAttachment
 from .serializers import CostSheetSerializer, CostSheetAttachmentSerializer
+from deals.models import AuditTrail
 
 class CostSheetViewSet(viewsets.ModelViewSet):
     queryset = CostSheet.objects.all()
     serializer_class = CostSheetSerializer
+    
+    def perform_create(self, serializer):
+        """Create cost sheet and log audit trail"""
+        cost_sheet = serializer.save()
+        
+        # Create audit log for creation
+        content_type = ContentType.objects.get_for_model(CostSheet)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=cost_sheet.id,
+            user=self.request.user,
+            action_type='CREATE',
+            field_name='created',
+            old_value='',
+            new_value=f'Cost Sheet {cost_sheet.cost_sheet_no} created'
+        )
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         instance = self.get_object()
         if instance.status != CostSheetStatus.SUBMITTED:
             return Response({'error': 'Only submitted cost sheets can be approved'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if there are any related estimates
+        related_estimates = instance.estimates.all()
+        
+        if related_estimates.exists():
+            # If estimates exist, perform comprehensive validation
+            from estimates.models import ApprovalStatus
+            
+            validation_errors = []
+            
+            for estimate in related_estimates:
+                # Check 1: Estimate must be approved
+                if estimate.approval_status != ApprovalStatus.APPROVED:
+                    validation_errors.append(f"Estimate {estimate.estimate_id} is not approved (Status: {estimate.get_approval_status_display()})")
+                
+                # Check 2: Estimate must have a proposal attachment
+                if not estimate.proposals.exists():
+                    validation_errors.append(f"Estimate {estimate.estimate_id} does not have a proposal attachment")
+                
+                # Check 3: Estimate total amount must be >= Cost Sheet total price
+                estimate_total = sum(float(item.amount) for item in estimate.items.all())
+                cost_sheet_price = float(instance.total_estimated_price)
+                
+                if estimate_total < cost_sheet_price:
+                    validation_errors.append(
+                        f"Estimate {estimate.estimate_id} total amount (${estimate_total:,.2f}) is less than "
+                        f"Cost Sheet total price (${cost_sheet_price:,.2f})"
+                    )
+            
+            # If any validation errors exist, return them
+            if validation_errors:
+                return Response({
+                    'error': 'Cannot approve Cost Sheet. Please resolve the following issues:',
+                    'validation_errors': validation_errors
+                }, status=status.HTTP_400_BAD_REQUEST)
         
         instance.status = CostSheetStatus.APPROVED
         instance.save()
@@ -58,7 +111,38 @@ class CostSheetViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         if instance.status not in [CostSheetStatus.PENDING, CostSheetStatus.REVERTED]:
             return Response({'error': 'Editing is restricted for this cost sheet status'}, status=status.HTTP_403_FORBIDDEN)
-        return super().update(request, *args, **kwargs)
+        
+        # Track original values
+        original_data = {
+            'status': instance.status,
+            'total_estimated_price': str(instance.total_estimated_price) if instance.total_estimated_price else '',
+            'total_estimated_margin': str(instance.total_estimated_margin) if instance.total_estimated_margin else '',
+        }
+        
+        result = super().update(request, *args, **kwargs)
+        
+        # Log changes
+        content_type = ContentType.objects.get_for_model(CostSheet)
+        new_data = {
+            'status': instance.status,
+            'total_estimated_price': str(instance.total_estimated_price) if instance.total_estimated_price else '',
+            'total_estimated_margin': str(instance.total_estimated_margin) if instance.total_estimated_margin else '',
+        }
+        
+        for field, old_value in original_data.items():
+            new_value = new_data[field]
+            if str(old_value) != str(new_value):
+                AuditTrail.objects.create(
+                    content_type=content_type,
+                    object_id=instance.id,
+                    user=request.user,
+                    action_type='UPDATE',
+                    field_name=field,
+                    old_value=str(old_value),
+                    new_value=str(new_value)
+                )
+        
+        return result
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()

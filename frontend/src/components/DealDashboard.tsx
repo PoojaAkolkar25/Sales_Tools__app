@@ -47,6 +47,7 @@ interface Deal {
     customer_email?: string;
     end_customer?: string;
     stage: string;
+    current_stage: string; // Dynamic stage calculated by backend
     deal_amount: string;
     currency: string;
     fx_rate?: number;
@@ -176,7 +177,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
             const matchesName = (deal.deal_name || '').toLowerCase().includes(filters.deal_name.toLowerCase());
             const matchesCompany = filters.company === '' || deal.company === filters.company;
             const matchesLead = ((deal as any).lead_no || '').toLowerCase().includes(filters.lead_no.toLowerCase());
-            const matchesStage = filters.stage === '' || deal.stage === filters.stage;
+            const matchesStage = filters.stage === '' || (deal.current_stage || deal.stage) === filters.stage;
             const matchesCurrency = filters.currency === '' || deal.currency === filters.currency;
             const matchesAmount = (deal.deal_amount || '').toString().includes(filters.deal_amount);
             const matchesType = filters.deal_type === '' || (deal as any).deal_type === filters.deal_type;
@@ -237,12 +238,12 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
 
     const counts = useMemo(() => ({
         all: deals.length,
-        dealCreated: deals.filter(d => d.stage === 'DEAL_CREATED').length,
-        costSheet: deals.filter(d => d.stage === 'COST_SHEET').length,
-        estimates: deals.filter(d => d.stage === 'ESTIMATES').length,
-        salesOrder: deals.filter(d => d.stage === 'SALES_ORDER').length,
-        invoice: deals.filter(d => d.stage === 'INVOICE').length,
-        payment: deals.filter(d => d.stage === 'PAYMENT').length
+        dealCreated: deals.filter(d => (d.current_stage || d.stage) === 'DEAL_CREATED').length,
+        costSheet: deals.filter(d => (d.current_stage || d.stage) === 'COST_SHEET').length,
+        estimates: deals.filter(d => (d.current_stage || d.stage) === 'ESTIMATES').length,
+        salesOrder: deals.filter(d => (d.current_stage || d.stage) === 'SALES_ORDER').length,
+        invoice: deals.filter(d => (d.current_stage || d.stage) === 'INVOICE').length,
+        payment: deals.filter(d => (d.current_stage || d.stage) === 'PAYMENT').length
     }), [deals]);
 
     const statusFlow = [
@@ -565,7 +566,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                             <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No projects found.</td></tr>
                         ) : (
                             filteredDeals.map((deal: Deal) => {
-                                const stageStyle = getStageColor(deal.stage);
+                                const stageStyle = getStageColor(deal.current_stage || deal.stage);
                                 return (
                                     <tr key={deal.id}>
                                         {visibleColumns.includes('deal_id') && <td style={{ fontWeight: 600, color: '#0066CC' }}>{deal.deal_id}</td>}
@@ -576,7 +577,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                         {visibleColumns.includes('stage') && (
                                             <td>
                                                 <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: stageStyle.bg, color: stageStyle.text }}>
-                                                    {deal.stage.replace('_', ' ')}
+                                                    {(deal.current_stage || deal.stage).replace('_', ' ')}
                                                 </span>
                                             </td>
                                         )}

@@ -1,37 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-    Plus,
     Bell,
     ChevronDown,
     User,
     LogOut,
-    HelpCircle
+    HelpCircle,
+    History
 } from 'lucide-react';
+import AllAuditTrail from './AllAuditTrail';
 
 interface NavbarProps {
     user: any;
     onLogout: () => void;
-    onCreateUser?: () => void;
-    onCreateCustomer?: () => void;
-    onCreateEndCustomer?: () => void;
     isSidebarExpanded?: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onCreateUser, onCreateCustomer, onCreateEndCustomer, isSidebarExpanded }) => {
+const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
-    const [showCreateMenu, setShowCreateMenu] = useState(false);
     const [showHelpModal, setShowHelpModal] = useState(false);
+    const [showAuditTrail, setShowAuditTrail] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
-    const createMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
-            }
-            if (createMenuRef.current && !createMenuRef.current.contains(event.target as Node)) {
-                setShowCreateMenu(false);
             }
         };
 
@@ -92,7 +86,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onCreateUser, onCreateC
                     )}
                 </div>
 
-                {/* Onboard Help Button */}
+                {/* Help Button */}
                 <button
                     onClick={() => setShowHelpModal(true)}
                     style={{
@@ -120,118 +114,40 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onCreateUser, onCreateC
                     title="View Process Flow"
                 >
                     <HelpCircle size={18} />
-                    <span>Onboard Help</span>
+                    <span>Help</span>
                 </button>
 
-                {/* Create Dropdown Menu */}
-                {(onCreateUser || onCreateCustomer || onCreateEndCustomer) && (
-                    <div ref={createMenuRef} style={{ position: 'relative' }}>
-                        <button
-                            onClick={() => setShowCreateMenu(!showCreateMenu)}
-                            className="ae-create-btn"
-                        >
-                            <Plus size={14} />
-                            <span>CREATE</span>
-                            <ChevronDown size={12} style={{ marginLeft: '4px', transform: showCreateMenu ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-                        </button>
+                {/* Audit Trail Button */}
+                <button
+                    onClick={() => setShowAuditTrail(true)}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 16px',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '8px',
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    }}
+                    title="View All Audit Logs"
+                >
+                    <History size={18} />
+                    <span>Audit Trail</span>
+                </button>
 
-                        {showCreateMenu && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '100%',
-                                right: 0,
-                                marginTop: '8px',
-                                background: '#1a1f36',
-                                borderRadius: '12px',
-                                boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-                                padding: '8px',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                zIndex: 100,
-                                minWidth: '200px',
-                                overflow: 'hidden'
-                            }}>
-                                {onCreateUser && (
-                                    <button
-                                        onClick={() => { onCreateUser(); setShowCreateMenu(false); }}
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                            padding: '12px 16px',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            color: 'white',
-                                            fontWeight: 600,
-                                            fontSize: '13px',
-                                            cursor: 'pointer',
-                                            borderRadius: '8px',
-                                            transition: 'background 0.2s',
-                                            textAlign: 'left'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                    >
-                                        <User size={16} color="#FF6B00" />
-                                        <span>Create User</span>
-                                    </button>
-                                )}
-                                {onCreateCustomer && (
-                                    <button
-                                        onClick={() => { onCreateCustomer(); setShowCreateMenu(false); }}
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                            padding: '12px 16px',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            color: 'white',
-                                            fontWeight: 600,
-                                            fontSize: '13px',
-                                            cursor: 'pointer',
-                                            borderRadius: '8px',
-                                            transition: 'background 0.2s',
-                                            textAlign: 'left'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                    >
-                                        <User size={16} color="#FF6B00" />
-                                        <span>Create Customer</span>
-                                    </button>
-                                )}
-                                {onCreateEndCustomer && (
-                                    <button
-                                        onClick={() => { onCreateEndCustomer(); setShowCreateMenu(false); }}
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                            padding: '12px 16px',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            color: 'white',
-                                            fontWeight: 600,
-                                            fontSize: '13px',
-                                            cursor: 'pointer',
-                                            borderRadius: '8px',
-                                            transition: 'background 0.2s',
-                                            textAlign: 'left'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                    >
-                                        <User size={16} color="#FF6B00" />
-                                        <span>Create End Customer</span>
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                )}
 
                 {/* Profile Section */}
                 <div
@@ -289,6 +205,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onCreateUser, onCreateC
                                     <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>{user?.role === 'app_admin' ? 'Administrator' : 'User'}</div>
                                 </div>
                             </div>
+
 
                             <button
                                 onClick={(e) => {
@@ -450,6 +367,9 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onCreateUser, onCreateC
                     </div>
                 </div>
             )}
+
+            {/* Audit Trail Sidebar */}
+            <AllAuditTrail show={showAuditTrail} onClose={() => setShowAuditTrail(false)} />
         </header>
 
     );

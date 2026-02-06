@@ -1,8 +1,10 @@
 from rest_framework import viewsets, status, decorators
 from rest_framework.response import Response
+from django.contrib.contenttypes.models import ContentType
 from .models import Estimate, Proposal, Renewal, EstimateStatus, EstimateItem, ApprovalStatus, EmailLog
 from .serializers import EstimateSerializer, ProposalSerializer, RenewalSerializer
 from .permissions import IsSalesHeadOrFinanceManager
+from deals.models import AuditTrail
 from django.db import models
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
@@ -50,6 +52,65 @@ class EstimateViewSet(viewsets.ModelViewSet):
             )
             
         return queryset
+    
+    def perform_create(self, serializer):
+        """Create estimate and log audit trail"""
+        estimate = serializer.save()
+        
+        # Create audit log for creation
+        content_type = ContentType.objects.get_for_model(Estimate)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=estimate.id,
+            user=self.request.user,
+            action_type='CREATE',
+            field_name='created',
+            old_value='',
+            new_value=f'Estimate {estimate.estimate_id} v{estimate.version} created'
+        )
+    
+    def update(self, request, *args, **kwargs):
+        """Update estimate and log field changes"""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        # Track original values for key fields
+        original_data = {
+            'estimate_date': str(instance.estimate_date) if instance.estimate_date else '',
+            'description_memo': instance.description_memo or '',
+            'terms_conditions': instance.terms_conditions or '',
+            'approval_status': instance.approval_status,
+            'status': instance.status,
+        }
+        
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        # Log changes
+        content_type = ContentType.objects.get_for_model(Estimate)
+        new_data = {
+            'estimate_date': str(instance.estimate_date) if instance.estimate_date else '',
+            'description_memo': instance.description_memo or '',
+            'terms_conditions': instance.terms_conditions or '',
+            'approval_status': instance.approval_status,
+            'status': instance.status,
+        }
+        
+        for field, old_value in original_data.items():
+            new_value = new_data[field]
+            if str(old_value) != str(new_value):
+                AuditTrail.objects.create(
+                    content_type=content_type,
+                    object_id=instance.id,
+                    user=request.user,
+                    action_type='UPDATE',
+                    field_name=field,
+                    old_value=str(old_value),
+                    new_value=str(new_value)
+                )
+        
+        return super().update(request, *args, **kwargs)
 
     @decorators.action(detail=True, methods=['post'])
     def submit(self, request, pk=None):

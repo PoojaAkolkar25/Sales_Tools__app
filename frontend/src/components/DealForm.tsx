@@ -11,10 +11,11 @@ import {
     Loader2,
     RefreshCcw,
     File,
-    X
+    History as HistoryIcon,
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import AuditTrail from './AuditTrail';
 
 interface DealFormProps {
     id: number | null;
@@ -39,6 +40,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
     const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploadFeedback, setUploadFeedback] = useState<{ type: 'success' | 'error' | ''; message: string }>({ type: '', message: '' });
+
+    const [showHistory, setShowHistory] = useState(false);
 
     const [formData, setFormData] = useState<any>({
         company: 'AE IND',
@@ -399,15 +402,27 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                 </button>
                 <div style={{ display: 'flex', gap: '12px' }}>
                     {id && (
-                        <button
-                            onClick={handleHubSpotSync}
-                            disabled={syncing}
-                            className="ae-btn-secondary"
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                        >
-                            <RefreshCcw size={18} className={syncing ? 'animate-spin' : ''} />
-                            {syncing ? 'Syncing...' : 'Sync HubSpot'}
-                        </button>
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setShowHistory(true)}
+                                className="ae-btn-secondary"
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            >
+                                <HistoryIcon size={18} />
+                                History
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleHubSpotSync}
+                                disabled={syncing}
+                                className="ae-btn-secondary"
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            >
+                                <RefreshCcw size={18} className={syncing ? 'animate-spin' : ''} />
+                                {syncing ? 'Syncing...' : 'Sync HubSpot'}
+                            </button>
+                        </>
                     )}
                 </div>
             </div>
@@ -836,26 +851,16 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                             </div>
                         )}
                     </div>
+                </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #E0E6ED' }}>
-                        <button
-                            type="button"
-                            onClick={onBack}
-                            className="ae-btn-secondary"
-                            style={{ padding: '12px 32px', fontSize: '1rem' }}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="ae-btn-primary"
-                            style={{ padding: '12px 48px', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}
-                        >
-                            {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                            {id ? 'Update Project' : 'Save Project'}
-                        </button>
-                    </div>
+                {/* Submit Buttons */}
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
+                    <button type="button" onClick={onBack} className="ae-btn-secondary">
+                        Cancel
+                    </button>
+                    <button type="submit" className="ae-btn-primary" disabled={loading}>
+                        {loading ? 'Saving...' : id ? 'Update Project' : 'Save Project'}
+                    </button>
                 </div>
             </form>
 
@@ -885,6 +890,14 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                     </div>
                 </div>
             )}
+
+            {/* Audit Trail Sidebar */}
+            <AuditTrail
+                model="deal"
+                modelId={id}
+                show={showHistory}
+                onClose={() => setShowHistory(false)}
+            />
         </div>
     );
 };
