@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     Search,
-    RefreshCcw,
     FileText,
-    Clock,
     CheckCircle2,
-    History,
     Upload,
     Mail,
     X,
@@ -14,7 +11,8 @@ import {
     ChevronDown,
     Columns,
     FileSpreadsheet,
-    Loader2
+    Loader2,
+    RefreshCcw
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -173,7 +171,11 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
             const matchesId = (est.estimate_id || '').toLowerCase().includes(filters.estimate_id.toLowerCase());
             const matchesCustomer = (est.customer_name || '').toLowerCase().includes(filters.customer_name.toLowerCase());
             const matchesProject = (est.project_name || '').toLowerCase().includes(filters.project_name.toLowerCase());
-            const matchesStatus = filters.status === '' || est.status === filters.status;
+            const matchesStatus = filters.status === '' ? true :
+                filters.status === 'APPROVED' ? est.approval_status === 'APPROVED' :
+                    filters.status === 'REJECTED' ? est.approval_status === 'REJECTED' :
+                        filters.status === 'PENDING_APPROVAL' ? (est.status === 'PENDING_APPROVAL' || est.approval_status === 'PENDING') :
+                            est.status === filters.status;
             const matchesLatest = !filters.showOnlyLatest || est.is_latest;
             const matchesPrice = (est.total_price || '').toString().includes(filters.total_price);
             const matchesVersion = (est.version || '').toString().includes(filters.version);
@@ -379,48 +381,38 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
         }
     };
 
+    // Status Counts & Tabs
+    const counts = useMemo(() => {
+        const latestEstimates = estimates.filter(e => e.is_latest);
+        return {
+            all: latestEstimates.length,
+            // Assuming 'PENDING' or 'DRAFT' as draft status. Adjusting to match common patterns if needed.
+            draft: latestEstimates.filter(e => e.status === 'PENDING' || e.status === 'DRAFT').length,
+            submitted: latestEstimates.filter(e => e.status === 'SUBMITTED').length,
+            pending: latestEstimates.filter(e => e.status === 'PENDING_APPROVAL' || e.approval_status === 'PENDING').length,
+            approved: latestEstimates.filter(e => e.approval_status === 'APPROVED').length,
+            rejected: latestEstimates.filter(e => e.approval_status === 'REJECTED').length
+        };
+    }, [estimates]);
+
+    const statusFlow = [
+        { label: `Draft (${counts.draft})`, value: 'PENDING', color: '#718096' },
+        { label: `Submitted (${counts.submitted})`, value: 'SUBMITTED', color: '#3182CE' },
+        { label: `Pending Approval (${counts.pending})`, value: 'PENDING_APPROVAL', color: '#805AD5' },
+        { label: `Approved (${counts.approved})`, value: 'APPROVED', color: '#38A169' },
+        { label: `Rejected (${counts.rejected})`, value: 'REJECTED', color: '#E53E3E' },
+        { label: `All (${counts.all})`, value: '', color: '#718096' }
+    ];
+
     return (
         <div className="ae-table-container" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* KPI Section */}
-            <div className="ae-grid-4">
-                <div className="ae-card">
-                    <div className="ae-card-header">
-                        <div className="ae-icon-box bg-blue-soft text-blue"><FileText size={18} /></div>
-                    </div>
-                    <div className="ae-card-label">Total Estimates</div>
-                    <div className="ae-card-value">{estimates.filter(e => e.is_latest).length}</div>
-                </div>
-                <div className="ae-card">
-                    <div className="ae-card-header">
-                        <div className="ae-icon-box bg-orange-soft text-orange"><History size={18} /></div>
-                    </div>
-                    <div className="ae-card-label">Under Negotiation</div>
-                    <div className="ae-card-value">{estimates.filter(e => e.status === 'NEGOTIATION' && e.is_latest).length}</div>
-                </div>
-                <div className="ae-card">
-                    <div className="ae-card-header">
-                        <div className="ae-icon-box bg-green-soft text-green"><CheckCircle2 size={18} /></div>
-                    </div>
-                    <div className="ae-card-label">Approved</div>
-                    <div className="ae-card-value">{estimates.filter(e => e.approval_status === 'APPROVED' && e.is_latest).length}</div>
-                </div>
-                <div className="ae-card">
-                    <div className="ae-card-header">
-                        <div className="ae-icon-box bg-purple-soft text-purple"><Clock size={18} /></div>
-                    </div>
-                    <div className="ae-card-label">Pending Approval</div>
-                    <div className="ae-card-value">{estimates.filter(e => (e.status === 'PENDING_APPROVAL' || e.approval_status === 'PENDING') && e.is_latest).length}</div>
-                </div>
-            </div>
-
-
             {/* Header with Dashboard Title and Controls */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '18px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
-                        Estimates Dashboard
-                    </h1>
+                    <div className="flex items-center gap-2">
+                        <div className="h-6 w-1 bg-orange-500 rounded-full"></div>
+                        <h1 className="text-xl font-bold text-gray-800">Estimate Dashboard</h1>
+                    </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -552,11 +544,38 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                             </div>
                         )}
                     </div>
-
-                    <button onClick={fetchEstimates} disabled={loading} className="ae-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}>
-                        <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
-                    </button>
                 </div>
+            </div>
+
+            {/* Status Tabs */}
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                background: 'white',
+                padding: '4px',
+                borderRadius: '12px',
+                border: '1px solid #E0E6ED',
+                width: 'fit-content'
+            }}>
+                {statusFlow.map((flow) => (
+                    <button
+                        key={flow.value}
+                        onClick={() => setFilters({ ...filters, status: flow.value })}
+                        style={{
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: filters.status === flow.value ? '#FF6B00' : 'transparent',
+                            color: filters.status === flow.value ? 'white' : '#718096',
+                        }}
+                    >
+                        {flow.label}
+                    </button>
+                ))}
             </div>
 
             {/* Table Section with Header Filters */}

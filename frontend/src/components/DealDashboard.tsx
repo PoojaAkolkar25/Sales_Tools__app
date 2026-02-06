@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-    Search,
     Loader2,
     FileSpreadsheet,
     FileText,
-    RefreshCcw,
     ChevronDown,
     Download,
     Columns
@@ -15,21 +13,29 @@ import { formatToAppDate } from '../utils/dateUtils';
 
 const ALL_COLUMNS = [
     { key: 'deal_id', label: 'ID' },
+    { key: 'deal_date', label: 'Deal Date *' },
     { key: 'deal_name', label: 'Project Name' },
     { key: 'company', label: 'Company' },
     { key: 'lead_no', label: 'Lead No.' },
     { key: 'stage', label: 'Stage' },
     { key: 'currency', label: 'Currency' },
     { key: 'deal_amount', label: 'Amount' },
-    { key: 'fx_rate', label: 'FX Rate' },
     { key: 'deal_type', label: 'Type' },
-    { key: 'partner_name', label: 'Partner' },
+    { key: 'customer_name', label: 'Customer/Partner Name' },
+    { key: 'customer_email', label: 'Customer Email' },
+    { key: 'end_customer', label: 'End Customer' },
     { key: 'client_type', label: 'Client Type' },
+    { key: 'inside_salesperson', label: 'Inside Salesperson' },
+    { key: 'inside_sales_head', label: 'Inside Sales Head' },
     { key: 'salesperson_name', label: 'Salesperson' },
     { key: 'sales_head', label: 'Sales Head' },
     { key: 'project_manager', label: 'Proj. Manager' },
+    { key: 'project_manager_head', label: 'PM Head' },
     { key: 'expected_close_date', label: 'Exp. Close Date' },
-    { key: 'deal_date', label: 'Date' }
+    { key: 'remark', label: 'Remarks/Description' },
+    { key: 'won_lost_reason', label: 'Won/Lost Reason' },
+    { key: 'hubspot_id', label: 'HubSpot ID' },
+    { key: 'last_synced_at', label: 'Last Synced' }
 ];
 
 interface Deal {
@@ -38,14 +44,30 @@ interface Deal {
     deal_id: string;
     deal_name: string;
     customer_name: string;
+    customer_email?: string;
+    end_customer?: string;
     stage: string;
+    current_stage: string; // Dynamic stage calculated by backend
     deal_amount: string;
     currency: string;
+    fx_rate?: number;
+    deal_type?: string;
+    client_type?: string;
+    inside_salesperson?: string;
+    inside_sales_head?: string;
+    salesperson_name?: string;
+    sales_head?: string;
+    project_manager?: string;
+    project_manager_head?: string;
     expected_close_date: string;
     deal_date: string;
+    remark?: string;
+    won_lost_reason?: string;
+    hubspot_id?: string;
+    last_synced_at?: string;
     created_at: string;
     is_read: boolean;
-    hubspot_id?: string;
+    lead_no?: string;
 }
 
 interface DealDashboardProps {
@@ -67,8 +89,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
     const columnMenuRef = useRef<HTMLDivElement>(null);
 
     const [filters, setFilters] = useState(() => {
-        const saved = localStorage.getItem('dealDashboard_filters');
-        return saved ? JSON.parse(saved) : {
+        const defaults = {
             deal_id: '',
             deal_name: '',
             company: '',
@@ -78,17 +99,35 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
             deal_amount: '',
             fx_rate: '',
             deal_type: '',
-            partner_name: '',
+            customer_name: '',
+            customer_email: '',
+            end_customer: '',
             client_type: '',
+            inside_salesperson: '',
+            inside_sales_head: '',
             salesperson_name: '',
             sales_head: '',
             project_manager: '',
+            project_manager_head: '',
             expected_close_date: '',
             deal_date: '',
+            remark: '',
+            won_lost_reason: '',
+            hubspot_id: '',
+            last_synced_at: '',
             period: '',
             startDate: '',
             endDate: ''
         };
+        const saved = localStorage.getItem('dealDashboard_filters');
+        if (saved) {
+            try {
+                return { ...defaults, ...JSON.parse(saved) };
+            } catch (e) {
+                return defaults;
+            }
+        }
+        return defaults;
     });
 
     useEffect(() => {
@@ -138,15 +177,23 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
             const matchesName = (deal.deal_name || '').toLowerCase().includes(filters.deal_name.toLowerCase());
             const matchesCompany = filters.company === '' || deal.company === filters.company;
             const matchesLead = ((deal as any).lead_no || '').toLowerCase().includes(filters.lead_no.toLowerCase());
-            const matchesStage = filters.stage === '' || deal.stage === filters.stage;
+            const matchesStage = filters.stage === '' || (deal.current_stage || deal.stage) === filters.stage;
             const matchesCurrency = filters.currency === '' || deal.currency === filters.currency;
             const matchesAmount = (deal.deal_amount || '').toString().includes(filters.deal_amount);
             const matchesType = filters.deal_type === '' || (deal as any).deal_type === filters.deal_type;
-            const matchesPartner = ((deal as any).partner_name || '').toLowerCase().includes(filters.partner_name.toLowerCase());
+            const matchesCustomer = ((deal as any).customer_name || '').toLowerCase().includes((filters.customer_name || '').toLowerCase());
+            const matchesEndCustomer = ((deal as any).end_customer || '').toLowerCase().includes((filters.end_customer || '').toLowerCase());
             const matchesClient = filters.client_type === '' || (deal as any).client_type === filters.client_type;
-            const matchesSales = ((deal as any).salesperson_name || '').toLowerCase().includes(filters.salesperson_name.toLowerCase());
-            const matchesHead = ((deal as any).sales_head || '').toLowerCase().includes(filters.sales_head.toLowerCase());
-            const matchesPM = ((deal as any).project_manager || '').toLowerCase().includes(filters.project_manager.toLowerCase());
+            const matchesInsideSales = ((deal as any).inside_salesperson || '').toLowerCase().includes((filters.inside_salesperson || '').toLowerCase());
+            const matchesInsideHead = ((deal as any).inside_sales_head || '').toLowerCase().includes((filters.inside_sales_head || '').toLowerCase());
+            const matchesSales = ((deal as any).salesperson_name || '').toLowerCase().includes((filters.salesperson_name || '').toLowerCase());
+            const matchesHead = ((deal as any).sales_head || '').toLowerCase().includes((filters.sales_head || '').toLowerCase());
+            const matchesPM = ((deal as any).project_manager || '').toLowerCase().includes((filters.project_manager || '').toLowerCase());
+            const matchesPMHead = ((deal as any).project_manager_head || '').toLowerCase().includes((filters.project_manager_head || '').toLowerCase());
+            const matchesRemark = ((deal as any).remark || '').toLowerCase().includes((filters.remark || '').toLowerCase());
+            const matchesWonLost = ((deal as any).won_lost_reason || '').toLowerCase().includes((filters.won_lost_reason || '').toLowerCase());
+            const matchesHubSpot = ((deal as any).hubspot_id || '').toLowerCase().includes((filters.hubspot_id || '').toLowerCase());
+            const matchesSync = ((deal as any).last_synced_at || '').toLowerCase().includes((filters.last_synced_at || '').toLowerCase());
 
             let matchesDate = true;
             if (filters.period) {
@@ -180,15 +227,75 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                 }
             }
 
-            return matchesId && matchesName && matchesCompany && matchesLead && matchesStage &&
-                matchesCurrency && matchesAmount && matchesType && matchesPartner &&
-                matchesClient && matchesSales && matchesHead && matchesPM && matchesDate;
+            return matchesId && matchesName && matchesCompany && matchesLead &&
+                matchesStage && matchesCurrency && matchesAmount && matchesType &&
+                matchesCustomer && matchesEndCustomer && matchesClient &&
+                matchesInsideSales && matchesInsideHead && matchesSales &&
+                matchesHead && matchesPM && matchesPMHead && matchesDate &&
+                matchesRemark && matchesWonLost && matchesHubSpot && matchesSync;
         });
     }, [deals, filters]);
 
+    const counts = useMemo(() => ({
+        all: deals.length,
+        dealCreated: deals.filter(d => (d.current_stage || d.stage) === 'DEAL_CREATED').length,
+        costSheet: deals.filter(d => (d.current_stage || d.stage) === 'COST_SHEET').length,
+        estimates: deals.filter(d => (d.current_stage || d.stage) === 'ESTIMATES').length,
+        salesOrder: deals.filter(d => (d.current_stage || d.stage) === 'SALES_ORDER').length,
+        invoice: deals.filter(d => (d.current_stage || d.stage) === 'INVOICE').length,
+        payment: deals.filter(d => (d.current_stage || d.stage) === 'PAYMENT').length
+    }), [deals]);
+
+    const statusFlow = [
+        { label: `Deal Created (${counts.dealCreated})`, value: 'DEAL_CREATED' },
+        { label: `Cost Sheet (${counts.costSheet})`, value: 'COST_SHEET' },
+        { label: `Estimates (${counts.estimates})`, value: 'ESTIMATES' },
+        { label: `Sales Order (${counts.salesOrder})`, value: 'SALES_ORDER' },
+        { label: `Invoice (${counts.invoice})`, value: 'INVOICE' },
+        { label: `Payment (${counts.payment})`, value: 'PAYMENT' },
+        { label: `All (${counts.all})`, value: '' }
+    ];
+
+    const getExportQueryParams = () => {
+        const params = new URLSearchParams();
+        if (filters.deal_id) params.append('deal_id', filters.deal_id);
+        if (filters.deal_name) params.append('search', filters.deal_name); // Backend uses 'search' for name/customer
+        if (filters.company) params.append('company', filters.company);
+        if (filters.lead_no) params.append('lead_no', filters.lead_no);
+        if (filters.stage) params.append('stage', filters.stage);
+        if (filters.currency) params.append('currency', filters.currency);
+        // Add other filters as backend supports. 
+        // Note: The backend 'search' filter covers deal_name, deal_id, and customer_name.
+        // We will send specific fields if backend supports them, otherwise rely on broad search or add backend support.
+        // For now, let's map what we can to the existing backend or updated backend.
+
+        // Let's pass all filters and update backend to handle them.
+        if (filters.customer_name) params.append('customer_name', filters.customer_name);
+        if (filters.end_customer) params.append('end_customer', filters.end_customer);
+        if (filters.client_type) params.append('client_type', filters.client_type);
+        if (filters.inside_salesperson) params.append('inside_salesperson', filters.inside_salesperson);
+        if (filters.inside_sales_head) params.append('inside_sales_head', filters.inside_sales_head);
+        if (filters.salesperson_name) params.append('salesperson_name', filters.salesperson_name);
+        if (filters.sales_head) params.append('sales_head', filters.sales_head);
+        if (filters.project_manager) params.append('project_manager', filters.project_manager);
+        if (filters.project_manager_head) params.append('project_manager_head', filters.project_manager_head);
+
+        // Date filters
+        if (filters.period) {
+            params.append('period', filters.period);
+            if (filters.period === 'custom' && filters.startDate && filters.endDate) {
+                params.append('start_date', filters.startDate);
+                params.append('end_date', filters.endDate);
+            }
+        }
+
+        return params.toString();
+    };
+
     const exportToExcel = async () => {
         try {
-            const response = await api.get('/deals/export_excel/', { responseType: 'blob' });
+            const queryParams = getExportQueryParams();
+            const response = await api.get(`/deals/export_excel/?${queryParams}`, { responseType: 'blob' });
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
@@ -204,7 +311,8 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
 
     const exportToPDF = async () => {
         try {
-            const response = await api.get('/deals/export_pdf/', { responseType: 'blob' });
+            const queryParams = getExportQueryParams();
+            const response = await api.get(`/deals/export_pdf/?${queryParams}`, { responseType: 'blob' });
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
@@ -215,6 +323,23 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
             showNotification('PDF report generated successfully', 'success');
         } catch (error) {
             showNotification('Error generating PDF report', 'error');
+        }
+    };
+
+    const exportToCSV = async () => {
+        try {
+            const queryParams = getExportQueryParams();
+            const response = await api.get(`/deals/export_csv/?${queryParams}`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Projects_Report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            showNotification('CSV report generated successfully', 'success');
+        } catch (error) {
+            showNotification('Error generating CSV report', 'error');
         }
     };
 
@@ -357,11 +482,38 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                             </div>
                         )}
                     </div>
-
-                    <button onClick={fetchDeals} disabled={loading} className="ae-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}>
-                        <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
-                    </button>
                 </div>
+            </div>
+
+            {/* Status Tabs */}
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                background: 'white',
+                padding: '4px',
+                borderRadius: '12px',
+                border: '1px solid #E0E6ED',
+                width: 'fit-content'
+            }}>
+                {statusFlow.map((flow) => (
+                    <button
+                        key={flow.value}
+                        onClick={() => setFilters({ ...filters, stage: flow.value })}
+                        style={{
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: filters.stage === flow.value ? '#FF6B00' : 'transparent',
+                            color: filters.stage === flow.value ? 'white' : '#718096',
+                        }}
+                    >
+                        {flow.label}
+                    </button>
+                ))}
             </div>
 
             <div style={{ overflowX: 'auto', background: 'white', borderRadius: '12px', border: '1px solid #E0E6ED' }}>
@@ -377,7 +529,6 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                             {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
                                 <th key={col.key} style={{ backgroundColor: '#F7FAFC' }}>
                                     <div className="ae-input-group" style={{ margin: 0 }}>
-                                        <Search className="ae-search-icon" size={12} />
                                         <input
                                             className="ae-input"
                                             placeholder="Filter..."
@@ -392,10 +543,14 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                 <button
                                     onClick={() => setFilters({
                                         deal_id: '', deal_name: '', company: '', lead_no: '', stage: '',
-                                        currency: '', deal_amount: '', fx_rate: '', deal_type: '',
-                                        partner_name: '', client_type: '', salesperson_name: '',
-                                        sales_head: '', project_manager: '', expected_close_date: '',
-                                        deal_date: '', period: '', startDate: '', endDate: ''
+                                        currency: '', deal_amount: '', deal_type: '',
+                                        customer_name: '', customer_email: '', end_customer: '',
+                                        client_type: '', inside_salesperson: '',
+                                        inside_sales_head: '', salesperson_name: '', sales_head: '',
+                                        project_manager: '', project_manager_head: '',
+                                        expected_close_date: '', deal_date: '',
+                                        remark: '', won_lost_reason: '', hubspot_id: '', last_synced_at: '',
+                                        period: '', startDate: '', endDate: ''
                                     })}
                                     style={{ height: '24px', width: '100%', fontSize: '10px', color: '#FF6B00', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
                                 >
@@ -411,31 +566,44 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                             <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No projects found.</td></tr>
                         ) : (
                             filteredDeals.map((deal: Deal) => {
-                                const stageStyle = getStageColor(deal.stage);
+                                const stageStyle = getStageColor(deal.current_stage || deal.stage);
                                 return (
                                     <tr key={deal.id}>
                                         {visibleColumns.includes('deal_id') && <td style={{ fontWeight: 600, color: '#0066CC' }}>{deal.deal_id}</td>}
+                                        {visibleColumns.includes('deal_date') && <td>{formatToAppDate(deal.deal_date)}</td>}
                                         {visibleColumns.includes('deal_name') && <td style={{ fontWeight: 700 }}>{deal.deal_name}</td>}
                                         {visibleColumns.includes('company') && <td>{deal.company}</td>}
                                         {visibleColumns.includes('lead_no') && <td>{(deal as any).lead_no || '—'}</td>}
                                         {visibleColumns.includes('stage') && (
                                             <td>
                                                 <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: stageStyle.bg, color: stageStyle.text }}>
-                                                    {deal.stage.replace('_', ' ')}
+                                                    {(deal.current_stage || deal.stage).replace('_', ' ')}
                                                 </span>
                                             </td>
                                         )}
                                         {visibleColumns.includes('currency') && <td>{deal.currency}</td>}
-                                        {visibleColumns.includes('deal_amount') && <td style={{ fontWeight: 700 }}>{parseFloat(deal.deal_amount).toLocaleString()}</td>}
-                                        {visibleColumns.includes('fx_rate') && <td>{(deal as any).fx_rate}</td>}
+                                        {visibleColumns.includes('deal_amount') && (
+                                            <td style={{ fontWeight: 700 }}>
+                                                {deal.currency === 'INR' ? '₹' : deal.currency === 'USD' ? '$' : deal.currency === 'EURO' ? '€' : ''}
+                                                {parseFloat(deal.deal_amount).toLocaleString()}
+                                            </td>
+                                        )}
                                         {visibleColumns.includes('deal_type') && <td>{(deal as any).deal_type || '—'}</td>}
-                                        {visibleColumns.includes('partner_name') && <td>{(deal as any).partner_name || '—'}</td>}
+                                        {visibleColumns.includes('customer_name') && <td>{(deal as any).customer_name || '—'}</td>}
+                                        {visibleColumns.includes('customer_email') && <td>{(deal as any).customer_email || '—'}</td>}
+                                        {visibleColumns.includes('end_customer') && <td>{(deal as any).end_customer || '—'}</td>}
                                         {visibleColumns.includes('client_type') && <td>{(deal as any).client_type || '—'}</td>}
+                                        {visibleColumns.includes('inside_salesperson') && <td>{(deal as any).inside_salesperson || '—'}</td>}
+                                        {visibleColumns.includes('inside_sales_head') && <td>{(deal as any).inside_sales_head || '—'}</td>}
                                         {visibleColumns.includes('salesperson_name') && <td>{(deal as any).salesperson_name || '—'}</td>}
                                         {visibleColumns.includes('sales_head') && <td>{(deal as any).sales_head || '—'}</td>}
                                         {visibleColumns.includes('project_manager') && <td>{(deal as any).project_manager || '—'}</td>}
+                                        {visibleColumns.includes('project_manager_head') && <td>{(deal as any).project_manager_head || '—'}</td>}
                                         {visibleColumns.includes('expected_close_date') && <td>{formatToAppDate((deal as any).expected_close_date)}</td>}
-                                        {visibleColumns.includes('deal_date') && <td>{formatToAppDate(deal.deal_date)}</td>}
+                                        {visibleColumns.includes('remark') && <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(deal as any).remark || '—'}</td>}
+                                        {visibleColumns.includes('won_lost_reason') && <td>{(deal as any).won_lost_reason || '—'}</td>}
+                                        {visibleColumns.includes('hubspot_id') && <td>{(deal as any).hubspot_id || '—'}</td>}
+                                        {visibleColumns.includes('last_synced_at') && <td>{deal.last_synced_at ? new Date(deal.last_synced_at).toLocaleString() : '—'}</td>}
                                         <td style={{ textAlign: 'center' }}>
                                             <button onClick={() => onView(deal.id)} className="ae-btn-secondary" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>
                                                 View
@@ -448,7 +616,9 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                     </tbody>
                 </table>
             </div>
-        </div>
+
+
+        </div >
     );
 };
 

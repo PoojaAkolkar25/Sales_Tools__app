@@ -12,8 +12,7 @@ import {
     XCircle,
     ThumbsUp,
     ThumbsDown,
-    Mail,
-    AlertTriangle
+    Mail
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -79,8 +78,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
     };
 
     const openEmailModal = (type: keyof typeof EMAIL_TEMPLATES = 'standard') => {
-        const clientName = estimate.customer_name || '[Client Name]';
-        const projectName = estimate.project_name || '[Project Name]';
+        const clientName = estimate?.customer_name || '[Client Name]';
+        const projectName = estimate?.project_name || '[Project Name]';
         const companyName = "Your Company Name"; // Should ideally be dynamic
         const yourName = "Your Name"; // Should ideally be from user profile
         const expirationDate = "[Expiration Date]";
@@ -103,7 +102,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
 
         setEmailModal({
             open: true,
-            to: estimate.customer_email || (estimate.customer?.email) || '',
+            to: estimate?.customer_email || (estimate?.customer?.email) || '',
             cc: '',
             bcc: '',
             subject: subject,
@@ -113,8 +112,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
     };
 
     const handleTemplateChange = (type: keyof typeof EMAIL_TEMPLATES) => {
-        const clientName = estimate.customer_name || '[Client Name]';
-        const projectName = estimate.project_name || '[Project Name]';
+        const clientName = estimate?.customer_name || '[Client Name]';
+        const projectName = estimate?.project_name || '[Project Name]';
         const companyName = "Your Company Name";
         const yourName = "Your Name";
         const expirationDate = "[Expiration Date]";
@@ -156,7 +155,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
             showNotification('Email sent successfully', 'success');
 
             // If estimate is not yet submitted, trigger the submit status change
-            if (estimate.status !== 'SUBMITTED') {
+            if (estimate?.status !== 'SUBMITTED') {
                 try {
                     await api.post(`/estimates/${id}/submit/`);
                 } catch (subErr) {
@@ -177,10 +176,18 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
     const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.status === 'SUBMITTED';
 
     useEffect(() => {
-        fetchEstimateDetails();
+        if (id) {
+            fetchEstimateDetails();
+        } else {
+            // Creating new estimate - set loading to false
+            setLoading(false);
+            setEstimate(null);
+        }
     }, [id]);
 
     const fetchEstimateDetails = async () => {
+        if (!id) return;
+
         setLoading(true);
         try {
             const response = await api.get(`/estimates/${id}/`);
@@ -260,14 +267,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
 
     const handleSave = async () => {
         const total = calculateTotal();
-        const costSheetPrice = parseFloat(estimate.total_price); // Snapshot of CS price in estimate
+        const costSheetPrice = parseFloat(estimate?.total_price || '0'); // Snapshot of CS price in estimate
 
         if (total < costSheetPrice) {
             showNotification(`Total Estimate ($${total.toLocaleString()}) cannot be less than Cost Sheet Price ($${costSheetPrice.toLocaleString()})`, 'error');
             return;
         }
 
-        if (!estimate.proposals?.length) {
+        if (!estimate?.proposals?.length) {
             showNotification('Please attach a proposal file before saving.', 'error');
             return;
         }
@@ -309,19 +316,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
         }
     };
 
-    const handleUnapprove = async () => {
-        if (!window.confirm('Unapproving will revert this estimate to Draft status for editing. Continue?')) return;
-        setLoading(true);
-        try {
-            await api.post(`/estimates/${id}/unapprove/`);
-            showNotification('Estimate unapproved and reopened for editing', 'success');
-            fetchEstimateDetails();
-        } catch (error: any) {
-            showNotification(error.response?.data?.error || 'Failed to unapprove estimate', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
+
 
     const handleRequestApproval = async () => {
         try {
@@ -432,7 +427,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
                     {/* Approval Actions for Sales Head/Finance Manager */}
-                    {estimate.approval_status === 'PENDING' && (
+                    {estimate?.approval_status === 'PENDING' && (
                         <>
                             <button onClick={handleApprove} className="ae-btn-secondary" style={{ color: '#38A169', borderColor: '#38A169' }}>
                                 <ThumbsUp size={18} /> Approve
@@ -444,7 +439,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                     )}
 
                     {/* Request Approval Button */}
-                    {(estimate.status === 'DRAFT' || estimate.status === 'NEGOTIATION') && estimate.approval_status !== 'PENDING' && estimate.approval_status !== 'APPROVED' && (
+                    {(estimate?.status === 'DRAFT' || estimate?.status === 'NEGOTIATION') && estimate?.approval_status !== 'PENDING' && estimate?.approval_status !== 'APPROVED' && (
                         <button onClick={handleRequestApproval} className="ae-btn-secondary" style={{ color: '#0066CC', borderColor: '#0066CC' }}>
                             <Clock size={18} /> Request Approval
                         </button>
@@ -453,31 +448,10 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                     {/* Action Buttons */}
                     <div style={{ display: 'flex', gap: '8px' }}>
 
-                        {/* Unapprove Logic: Visible if Approved/Rejected */}
-                        {isReadOnly && (
-                            <button
-                                onClick={handleUnapprove}
-                                disabled={saving}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '6px 16px',
-                                    borderRadius: '8px',
-                                    background: '#FFF5F5',
-                                    color: '#C53030',
-                                    border: '1px solid #FEB2B2',
-                                    fontWeight: 700,
-                                    fontSize: '0.8rem',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <AlertTriangle size={16} /> Unapprove / Re-open
-                            </button>
-                        )}
+                        {/* Unapprove/Reopen button removed - Approved estimates are now locked */}
 
                         {/* Rewind Logic: Visible if Latest Version (Removed version < 2 restriction) */}
-                        {estimate.is_latest && (
+                        {estimate?.is_latest && (
                             <button
                                 onClick={handleRewind}
                                 disabled={saving}
@@ -508,20 +482,20 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                     )}
 
                     {/* Submit to Customer button (via Email Modal) */}
-                    {(estimate.status === 'SUBMITTED' || estimate.approval_status === 'APPROVED') && (
+                    {(estimate?.status === 'SUBMITTED' || estimate?.approval_status === 'APPROVED') && (
                         <button
                             onClick={() => openEmailModal()}
                             className="ae-btn-primary"
-                            disabled={!estimate.proposals?.length || estimate.approval_status !== 'APPROVED'}
+                            disabled={!estimate?.proposals?.length || estimate?.approval_status !== 'APPROVED'}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
                                 background: '#38A169',
-                                opacity: (!estimate.proposals?.length || estimate.approval_status !== 'APPROVED') ? 0.5 : 1,
-                                cursor: (!estimate.proposals?.length || estimate.approval_status !== 'APPROVED') ? 'not-allowed' : 'pointer'
+                                opacity: (!estimate?.proposals?.length || estimate?.approval_status !== 'APPROVED') ? 0.5 : 1,
+                                cursor: (!estimate?.proposals?.length || estimate?.approval_status !== 'APPROVED') ? 'not-allowed' : 'pointer'
                             }}
-                            title={estimate.approval_status !== 'APPROVED' ? "Estimate must be approved to send email" : (!estimate.proposals?.length ? "Attach a proposal first" : "Submit to Customer")}
+                            title={estimate?.approval_status !== 'APPROVED' ? "Estimate must be approved to send email" : (!estimate?.proposals?.length ? "Attach a proposal first" : "Submit to Customer")}
                         >
                             <Mail size={18} /> Submit to Customer
                         </button>
@@ -535,15 +509,15 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', background: '#dce6f1', borderBottom: '1px solid #99b6d8' }}>
                     <div style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>Deal No.</label>
-                        <div style={{ fontWeight: 600 }}>{estimate.deal_id || 'XXXX'}</div>
+                        <div style={{ fontWeight: 600 }}>{estimate?.deal_id || 'XXXX'}</div>
                     </div>
                     <div style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>Cost Sheet No.</label>
-                        <div style={{ fontWeight: 600 }}>{estimate.cost_sheet_no || 'XXXX'}</div>
+                        <div style={{ fontWeight: 600 }}>{estimate?.cost_sheet_no || 'XXXX'}</div>
                     </div>
                     <div style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>Estimate No.</label>
-                        <div style={{ fontWeight: 600 }}>{estimate.estimate_id || 'XXXX'}</div>
+                        <div style={{ fontWeight: 600 }}>{estimate?.estimate_id || 'XXXX'}</div>
                     </div>
                     <div style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>Estimate Date</label>
@@ -573,16 +547,16 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                             )}
                         </div>
                         <div style={{ maxHeight: '100px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '4px', background: 'white' }}>
-                            {!estimate.proposals?.length ? (
+                            {!estimate?.proposals?.length ? (
                                 <div style={{ padding: '8px', fontSize: '0.85rem', color: '#E53E3E', fontWeight: 600 }}>No proposal attached. Please upload one.</div>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    {[...estimate.proposals].reverse().map((prop: any, idx: number) => (
+                                    {[...(estimate?.proposals || [])].reverse().map((prop: any, idx: number) => (
                                         <div key={prop.id} style={{
                                             display: 'flex',
                                             justifyContent: 'space-between',
                                             padding: '6px 8px',
-                                            borderBottom: idx === estimate.proposals.length - 1 ? 'none' : '1px solid #f1f5f9',
+                                            borderBottom: idx === (estimate?.proposals?.length || 0) - 1 ? 'none' : '1px solid #f1f5f9',
                                             background: idx === 0 ? '#f0fff4' : 'transparent'
                                         }}>
                                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -602,7 +576,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                     </div>
                     <div style={{ padding: '8px' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>Customer Name</label>
-                        <div style={{ fontWeight: 600 }}>{estimate.customer_name || 'XXXX'}</div>
+                        <div style={{ fontWeight: 600 }}>{estimate?.customer_name || 'XXXX'}</div>
                     </div>
                 </div>
 

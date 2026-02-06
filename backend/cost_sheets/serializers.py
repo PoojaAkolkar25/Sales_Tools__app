@@ -131,8 +131,10 @@ class CostSheetSerializer(serializers.ModelSerializer):
     attachments = CostSheetAttachmentSerializer(many=True, read_only=True)
     deal_no = serializers.CharField(source='deal.deal_id', read_only=True, allow_null=True)
     deal_name = serializers.CharField(source='deal.deal_name', read_only=True, allow_null=True)
+    currency = serializers.CharField(source='deal.currency', read_only=True, allow_null=True)
     lead_no = serializers.SerializerMethodField()
     lead_details = serializers.SerializerMethodField()
+    total_margin_percentage = serializers.SerializerMethodField()
 
     class Meta:
         model = CostSheet
@@ -159,6 +161,12 @@ class CostSheetSerializer(serializers.ModelSerializer):
             }
         except Lead.DoesNotExist:
             return None
+
+    def get_total_margin_percentage(self, obj):
+        if obj.total_estimated_price and obj.total_estimated_price > 0:
+            percentage = (obj.total_estimated_margin / obj.total_estimated_price) * 100
+            return round(percentage, 2)
+        return 0.00
 
     def create(self, validated_data):
         license_data = validated_data.pop('license_items', [])

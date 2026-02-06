@@ -16,7 +16,8 @@ import {
   Search,
   Loader2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Shield
 } from 'lucide-react';
 
 
@@ -40,25 +41,36 @@ import SalesOrderForm from './components/SalesOrderForm';
 import MilestoneDashboard from './components/MilestoneDashboard';
 import LeadDashboard from './components/LeadDashboard';
 import LeadForm from './components/LeadForm';
+import CustomerDashboard from './components/CustomerDashboard';
 
 
 
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 
-const baseNavItems = [
-  { id: 'home', label: 'Home', icon: LayoutDashboard, path: '/home' },
-  { id: 'lead', label: 'Lead', icon: Users, path: '/lead' },
-  { id: 'deal', label: 'Deal', icon: Handshake, path: '/deal' },
-  { id: 'cost-sheet', label: 'Cost Sheet', icon: FileText, path: '/cost-sheet' },
-  { id: 'estimates', label: 'Estimates', icon: FileSpreadsheet, path: '/estimates' },
-  { id: 'sales-order', label: 'Sales Order', icon: ShoppingBag, path: '/sales-order' },
-  { id: 'milestone', label: 'Milestone', icon: Milestone, path: '/milestone' },
-  { id: 'inventory', label: 'Inventory', icon: Boxes, path: '/inventory' },
-  { id: 'invoice', label: 'Invoice', icon: Receipt, path: '/invoice' },
-  { id: 'payment', label: 'Payment', icon: Wallet, path: '/payment' },
-  { id: 'revenue', label: 'Revenue', icon: TrendingUp, path: '/revenue' },
-  { id: 'contracts', label: 'Contracts', icon: Gavel, path: '/contracts' },
-];
+const getNavItems = (user: any) => {
+  const items = [
+    { id: 'home', label: 'Home', icon: LayoutDashboard, path: '/home' },
+    { id: 'lead', label: 'Lead', icon: Users, path: '/lead' },
+    { id: 'deal', label: 'Deal', icon: Handshake, path: '/deal' },
+    { id: 'cost-sheet', label: 'Cost Sheet', icon: FileText, path: '/cost-sheet' },
+    { id: 'estimates', label: 'Estimates', icon: FileSpreadsheet, path: '/estimates' },
+    { id: 'sales-order', label: 'Sales Order', icon: ShoppingBag, path: '/sales-order' },
+    { id: 'milestone', label: 'Milestone', icon: Milestone, path: '/milestone' },
+    { id: 'inventory', label: 'Inventory', icon: Boxes, path: '/inventory' },
+    { id: 'invoice', label: 'Invoice', icon: Receipt, path: '/invoice' },
+    { id: 'payment', label: 'Payment', icon: Wallet, path: '/payment' },
+    { id: 'revenue', label: 'Revenue', icon: TrendingUp, path: '/revenue' },
+    { id: 'contracts', label: 'Contracts', icon: Gavel, path: '/contracts' },
+  ];
+
+  if (user?.role === 'app_admin') {
+    items.push(
+      { id: 'user-management', label: 'User Management', path: '/user-management', icon: Shield }
+    );
+  }
+
+  return items;
+};
 
 interface ModuleWrapperProps {
   children: React.ReactNode;
@@ -79,7 +91,6 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
   onLogout,
   navigate,
   location,
-  onCreateUser
 }) => (
   <div className="app-container">
     {/* Left Sidebar */}
@@ -94,7 +105,7 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
       </div>
 
       <nav className="sidebar-nav flex-1">
-        {baseNavItems.map((item) => (
+        {getNavItems(user).map((item) => (
           <button
             key={item.id}
             onClick={() => navigate(item.path)}
@@ -125,7 +136,6 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
       <Navbar
         user={user}
         onLogout={onLogout}
-        onCreateUser={onCreateUser}
         isSidebarExpanded={isSidebarExpanded}
       />
 
@@ -263,7 +273,6 @@ const AppContent: React.FC = () => {
     onLogout: handleLogout,
     navigate,
     location,
-    onCreateUser: user?.role === 'app_admin' ? () => navigate('/user-management?action=create') : undefined
   };
 
   return (
@@ -575,16 +584,82 @@ const AppContent: React.FC = () => {
       <Route path="/estimates" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            {estimateView === 'form' ? (
-              <EstimateForm
-                id={editingEstimateId!}
-                onBack={() => setEstimateView('dashboard')}
-              />
-            ) : (
-              <EstimateDashboard
-                onView={handleViewEstimateDetails}
-              />
-            )}
+            <div className="space-y-6">
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 8px',
+                marginBottom: '16px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  alignItems: 'center',
+                  background: 'white',
+                  padding: '6px',
+                  borderRadius: '12px',
+                  border: '1px solid #E0E6ED',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                }}>
+                  <button
+                    onClick={() => setEstimateView('dashboard')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 16px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      background: estimateView === 'dashboard' ? '#FF6B00' : 'transparent',
+                      color: estimateView === 'dashboard' ? 'white' : '#718096',
+                      boxShadow: estimateView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                    }}
+                  >
+                    <LayoutDashboard size={18} /> Dashboard
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingEstimateId(null);
+                      setEstimateView('form');
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 16px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      background: (estimateView === 'form' && !editingEstimateId) ? '#FF6B00' : 'transparent',
+                      color: (estimateView === 'form' && !editingEstimateId) ? 'white' : '#718096',
+                      boxShadow: (estimateView === 'form' && !editingEstimateId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                    }}
+                  >
+                    <PlusCircle size={18} /> Create New
+                  </button>
+                </div>
+              </div>
+
+              {estimateView === 'form' ? (
+                <EstimateForm
+                  id={editingEstimateId!}
+                  onBack={() => setEstimateView('dashboard')}
+                />
+              ) : (
+                <EstimateDashboard
+                  onView={handleViewEstimateDetails}
+                />
+              )}
+            </div>
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
@@ -626,7 +701,14 @@ const AppContent: React.FC = () => {
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
-      {baseNavItems.filter(item => !['lead', 'cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order', 'milestone'].includes(item.id)).map(item => (
+      <Route path="/customer-dashboard" element={
+        user ? (
+          <ModuleWrapper {...commonWrapperProps}>
+            <CustomerDashboard />
+          </ModuleWrapper>
+        ) : <Navigate to="/login" />
+      } />
+      {getNavItems(user).filter(item => !['lead', 'cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order', 'milestone', 'user-management', 'customer-dashboard'].includes(item.id)).map(item => (
         <Route key={item.id} path={item.path} element={
           user ? (
             <ModuleWrapper {...commonWrapperProps}>
