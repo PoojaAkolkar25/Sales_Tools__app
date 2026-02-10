@@ -35,7 +35,7 @@
 html,
 body,
 * {
-  font-family: Arial, 'Times New Roman', Times, serif !important;
+  font-family: 'Work Sans', sans-serif !important;
 }
 
 body {
@@ -69,7 +69,7 @@ b,
 strong,
 i,
 em {
-  font-family: Arial, 'Times New Roman', Times, serif !important;
+  font-family: 'Work Sans', sans-serif !important;
 }
 
 /* Explicitly target form elements which often have browser-default font overrides */
@@ -79,7 +79,7 @@ select,
 textarea,
 optgroup,
 option {
-  font-family: Arial, 'Times New Roman', Times, serif !important;
+  font-family: 'Work Sans', sans-serif !important;
 }
 
 .sr-only {

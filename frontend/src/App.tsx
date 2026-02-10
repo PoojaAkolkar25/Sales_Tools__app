@@ -161,6 +161,7 @@ const AppContent: React.FC = () => {
   const [editingLeadId, setEditingLeadId] = useState<number | null>(null);
   const [leadView, setLeadView] = useState<'form' | 'dashboard'>('dashboard');
   const [leadSearchQuery, setLeadSearchQuery] = useState('');
+  const [dealSearchQuery, setDealSearchQuery] = useState('');
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
 
@@ -506,79 +507,124 @@ const AppContent: React.FC = () => {
       <Route path="/deal" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="space-y-6">
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 8px',
-                marginBottom: '16px'
-              }}>
+            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+              <div className="space-y-8">
                 <div style={{
                   display: 'flex',
-                  gap: '4px',
                   alignItems: 'center',
-                  background: 'white',
-                  padding: '6px',
-                  borderRadius: '12px',
-                  border: '1px solid #E0E6ED',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '24px'
                 }}>
-                  <button
-                    onClick={() => setDealView('dashboard')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '6px 16px',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      background: dealView === 'dashboard' ? '#FF6B00' : 'transparent',
-                      color: dealView === 'dashboard' ? 'white' : '#718096',
-                      boxShadow: dealView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                    }}
-                  >
-                    <LayoutDashboard size={18} /> Dashboard
-                  </button>
-                  <button
-                    onClick={handleCreateNewDeal}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '6px 16px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: 700,
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      background: (dealView === 'form' && !editingDealId) ? '#FF6B00' : 'transparent',
-                      color: (dealView === 'form' && !editingDealId) ? 'white' : '#718096',
-                      boxShadow: (dealView === 'form' && !editingDealId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                    }}
-                  >
-                    <PlusCircle size={18} /> Create New
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Deal Management</h1>
+                  </div>
                 </div>
-              </div>
 
-              {dealView === 'form' ? (
-                <DealForm
-                  id={editingDealId}
-                  onBack={() => setDealView('dashboard')}
-                  onSave={() => setDealView('dashboard')}
-                />
-              ) : (
-                <DealDashboard
-                  onView={handleViewDealDetails}
-                />
-              )}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '12px',
+                  gap: '24px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    alignItems: 'center',
+                    background: 'white',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                  }}>
+                    <button
+                      onClick={() => setDealView('dashboard')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: dealView === 'dashboard' ? '#FF6B00' : 'transparent',
+                        color: dealView === 'dashboard' ? 'white' : '#718096',
+                        boxShadow: dealView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                      }}
+                    >
+                      <LayoutDashboard size={18} /> Dashboard
+                    </button>
+                    <button
+                      onClick={handleCreateNewDeal}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: (dealView === 'form' && !editingDealId) ? '#FF6B00' : 'transparent',
+                        color: (dealView === 'form' && !editingDealId) ? 'white' : '#718096',
+                        boxShadow: (dealView === 'form' && !editingDealId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                      }}
+                    >
+                      <PlusCircle size={18} /> Create New
+                    </button>
+                  </div>
+
+                  {dealView === 'dashboard' && (
+                    <div className="ae-input-group !bg-white !shadow-sm !border-[#E0E6ED]" style={{
+                      flex: 1,
+                      maxWidth: '500px',
+                      margin: 0,
+                      height: '44px',
+                      borderRadius: '12px',
+                      position: 'relative',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <span className="ae-search-icon" style={{ left: '16px', zIndex: 2 }}><Search size={20} className="text-[#A0AEC0]" /></span>
+                      <input
+                        type="text"
+                        className="ae-input !border-none !bg-transparent !pl-12 !font-semibold"
+                        placeholder="Search by Deal ID, Customer or Project..."
+                        value={dealSearchQuery}
+                        onChange={(e) => setDealSearchQuery(e.target.value)}
+                        style={{
+                          fontSize: '0.9rem',
+                          color: '#1a1f36',
+                          width: '100%',
+                          height: '100%',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {dealView === 'form' ? (
+                  <DealForm
+                    id={editingDealId}
+                    onBack={() => setDealView('dashboard')}
+                    onSave={() => setDealView('dashboard')}
+                  />
+                ) : (
+                  <DealDashboard
+                    onView={handleViewDealDetails}
+                    searchQuery={dealSearchQuery}
+                  />
+                )}
+              </div>
             </div>
           </ModuleWrapper>
         ) : <Navigate to="/login" />

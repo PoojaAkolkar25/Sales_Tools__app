@@ -72,9 +72,10 @@ interface Deal {
 
 interface DealDashboardProps {
     onView: (id: number) => void;
+    searchQuery: string;
 }
 
-const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
+const DealDashboard: React.FC<DealDashboardProps> = ({ onView, searchQuery }) => {
     const { showNotification } = useNotification();
     const [deals, setDeals] = useState<Deal[]>([]);
     const [loading, setLoading] = useState(true);
@@ -195,6 +196,11 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
             const matchesHubSpot = ((deal as any).hubspot_id || '').toLowerCase().includes((filters.hubspot_id || '').toLowerCase());
             const matchesSync = ((deal as any).last_synced_at || '').toLowerCase().includes((filters.last_synced_at || '').toLowerCase());
 
+            const matchesSearchQuery = !searchQuery ||
+                (deal.deal_id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (deal.deal_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                ((deal as any).customer_name || '').toLowerCase().includes(searchQuery.toLowerCase());
+
             let matchesDate = true;
             if (filters.period) {
                 const dealDate = new Date(deal.deal_date || deal.created_at);
@@ -232,9 +238,9 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                 matchesCustomer && matchesEndCustomer && matchesClient &&
                 matchesInsideSales && matchesInsideHead && matchesSales &&
                 matchesHead && matchesPM && matchesPMHead && matchesDate &&
-                matchesRemark && matchesWonLost && matchesHubSpot && matchesSync;
+                matchesRemark && matchesWonLost && matchesHubSpot && matchesSync && matchesSearchQuery;
         });
-    }, [deals, filters]);
+    }, [deals, filters, searchQuery]);
 
     const counts = useMemo(() => ({
         all: deals.length,
