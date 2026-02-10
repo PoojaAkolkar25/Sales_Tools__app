@@ -326,22 +326,6 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
         }
     };
 
-    const exportToCSV = async () => {
-        try {
-            const queryParams = getExportQueryParams();
-            const response = await api.get(`/deals/export_csv/?${queryParams}`, { responseType: 'blob' });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `Projects_Report_${new Date().toISOString().split('T')[0]}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            showNotification('CSV report generated successfully', 'success');
-        } catch (error) {
-            showNotification('Error generating CSV report', 'error');
-        }
-    };
 
     const getStageColor = (stage: string) => {
         switch (stage) {

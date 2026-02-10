@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Save,
     ChevronLeft,
     Users,
     Briefcase,
@@ -38,6 +37,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
 
     // Attachment states
     const [attachments, setAttachments] = useState<any[]>([]);
+    const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploadFeedback, setUploadFeedback] = useState<{ type: 'success' | 'error' | ''; message: string }>({ type: '', message: '' });
 
@@ -256,8 +256,12 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!id && !formData.deal_name) {
-            showNotification('Please enter a Project Name first', 'warning');
+        if (!id) {
+            // For new deals, keep files in pending state
+            setPendingFiles(prev => [...prev, file]);
+            setUploadFeedback({ type: 'success', message: 'File added to list' });
+            setTimeout(() => setUploadFeedback({ type: '', message: '' }), 3000);
+            if (e.target) e.target.value = '';
             return;
         }
 
@@ -265,44 +269,16 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
         setUploadFeedback({ type: '', message: '' });
 
         try {
-            let activeId = id;
-
-            // If no ID, auto-save first
-            if (!activeId) {
-                try {
-                    const dataToSubmit = { ...formData };
-                    dataToSubmit.deal_amount = parseFloat(formData.deal_amount) || 0;
-                    dataToSubmit.fx_rate = parseFloat(formData.fx_rate) || 1.0;
-
-                    const res = await api.post('/deals/', dataToSubmit);
-                    activeId = res.data.id;
-                    // We don't redirect yet, just update the local state if needed
-                    // Actually, for consistency, we might want to refresh deal details or just use the new ID
-                    showNotification('Project saved automatically to allow attachment upload', 'info');
-                } catch (err) {
-                    showNotification('Failed to auto-save project for attachment', 'error');
-                    setUploading(false);
-                    return;
-                }
-            }
-
             const uploadData = new FormData();
             uploadData.append('file', file);
 
-            const response = await api.post(`/deals/${activeId}/upload_attachment/`, uploadData, {
+            const response = await api.post(`/deals/${id}/upload_attachment/`, uploadData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
             setAttachments([...attachments, response.data]);
             setUploadFeedback({ type: 'success', message: 'File uploaded successfully' });
             setTimeout(() => setUploadFeedback({ type: '', message: '' }), 4000);
-
-            // If this was a new deal, we should probably trigger a full save/reload or just inform the user
-            if (!id && activeId) {
-                showNotification('Deal created. You can continue editing.', 'success');
-                // Note: The parent component should ideally be notified or we should reload
-                // For now, let's just make sure the file list is updated
-            }
         } catch (error) {
             console.error('Error uploading file', error);
             setUploadFeedback({ type: 'error', message: 'Failed to upload file' });
@@ -310,6 +286,10 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
             setUploading(false);
             if (e.target) e.target.value = '';
         }
+    };
+
+    const handleRemovePending = (index: number) => {
+        setPendingFiles(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleDownload = (att: any) => {
@@ -363,13 +343,41 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
             delete dataToSubmit.created_at;
             delete dataToSubmit.updated_at;
 
+            let finalId = id;
             if (id) {
                 await api.put(`/deals/${id}/`, dataToSubmit);
                 showNotification('Project updated successfully', 'success');
             } else {
-                await api.post('/deals/', dataToSubmit);
+                const res = await api.post('/deals/', dataToSubmit);
+                finalId = res.data.id;
                 showNotification('Project created successfully', 'success');
             }
+
+            // Upload pending files if any
+            if (finalId && pendingFiles.length > 0) {
+                setUploading(true);
+                showNotification(`Uploading ${pendingFiles.length} attachments...`, 'info');
+
+                const uploadPromises = pendingFiles.map(file => {
+                    const uploadData = new FormData();
+                    uploadData.append('file', file);
+                    return api.post(`/deals/${finalId}/upload_attachment/`, uploadData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                });
+
+                try {
+                    await Promise.all(uploadPromises);
+                    showNotification('All attachments uploaded successfully', 'success');
+                } catch (uploadError) {
+                    console.error('Error uploading some files', uploadError);
+                    showNotification('Deal saved but some attachments failed to upload', 'error');
+                } finally {
+                    setUploading(false);
+                    setPendingFiles([]);
+                }
+            }
+
             onSave();
             onBack();
         } catch (error: any) {
@@ -796,12 +804,12 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                     </div>
                                 )}
                             </div>
-                            {attachments.length === 0 && !uploading && !uploadFeedback.message && (
+                            {attachments.length === 0 && pendingFiles.length === 0 && !uploading && !uploadFeedback.message && (
                                 <span style={{ color: '#718096', fontSize: '0.85rem', fontWeight: 500, fontStyle: 'italic' }}>No attachments yet</span>
                             )}
                         </div>
 
-                        {attachments.length > 0 && (
+                        {(attachments.length > 0 || pendingFiles.length > 0) && (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '8px', marginTop: '4px' }}>
                                 {attachments.map((att) => (
                                     <div key={att.id} style={{
@@ -846,6 +854,45 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                                 <Trash2 size={14} />
                                             </button>
                                         </div>
+                                    </div>
+                                ))}
+
+                                {pendingFiles.map((file, idx) => (
+                                    <div key={`pending-${idx}`} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '8px 12px',
+                                        background: '#F0F9FF',
+                                        border: '1px dashed #0066CC',
+                                        borderRadius: '8px',
+                                        transition: 'all 0.2s'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                            <File size={14} className="text-[#0066CC]" />
+                                            <div style={{ minWidth: 0 }}>
+                                                <p style={{
+                                                    margin: 0,
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 600,
+                                                    color: '#0066CC',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis'
+                                                }} title={file.name}>
+                                                    {file.name}
+                                                </p>
+                                                <span style={{ fontSize: '10px', color: '#718096', fontWeight: 600 }}>Pending Upload</span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemovePending(idx)}
+                                            style={{ padding: '4px', color: '#E53E3E', background: 'none', border: 'none', cursor: 'pointer' }}
+                                            title="Remove"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
                                     </div>
                                 ))}
                             </div>
