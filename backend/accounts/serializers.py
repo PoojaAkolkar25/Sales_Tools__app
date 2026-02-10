@@ -6,7 +6,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'role', 'password')
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'role', 'is_active', 'password')
         extra_kwargs = {'password': {'write_only': True}}
 
     def get_role(self, obj):

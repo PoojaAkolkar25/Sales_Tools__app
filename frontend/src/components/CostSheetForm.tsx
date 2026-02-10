@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, TrendingUp, Percent, Wallet, BarChart4, Sparkles } from 'lucide-react';
+import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, TrendingUp, Percent, Wallet, BarChart4, Sparkles, Plus } from 'lucide-react';
 import api from '../api';
 
 interface Lead {
@@ -20,6 +20,7 @@ interface Deal {
     lead?: number;
     project_manager?: string;
     salesperson_name?: string;
+    currency?: string;
 }
 
 interface Attachment {
@@ -38,6 +39,7 @@ interface CostSheetFormProps {
 const TableHeader = ({ columns, isReadOnly }: { columns: string[], isReadOnly: boolean }) => (
     <thead>
         <tr style={{ background: 'transparent' }}>
+            {!isReadOnly && <th style={{ padding: '6px 8px', width: '40px', borderBottom: '2px solid #E0E6ED' }}></th>}
             {columns.map((col, i) => (
                 <th key={i} style={{
                     padding: '6px 8px',
@@ -56,7 +58,7 @@ const TableHeader = ({ columns, isReadOnly }: { columns: string[], isReadOnly: b
     </thead>
 );
 
-const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly }: any) => {
+const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly, onKeyDown, symbol = "", suffix = "" }: any) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         if (type === 'number') {
@@ -81,31 +83,46 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly 
 
     return (
         <td style={{ padding: '2px 4px' }}>
-            <input
-                style={{
-                    width: '100%',
-                    padding: '4px 8px',
-                    background: 'white',
-                    border: '1px solid #E0E6ED',
-                    borderRadius: '4px',
-                    fontSize: '0.75rem',
-                    fontWeight: 500,
-                    color: '#2D3748',
-                    outline: 'none',
-                    transition: 'border-color 0.2s'
-                }}
-                className={`${className} placeholder-gray-400`}
-                type={type}
-                value={displayValue}
-                placeholder={type === 'number' ? "0" : ""}
-                readOnly={isReadOnly}
-                onChange={handleChange}
-            />
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                background: 'white',
+                border: '1px solid #E0E6ED',
+                borderRadius: '4px',
+                padding: '0 8px',
+                transition: 'border-color 0.2s',
+            }}
+                className={`${className} input-container`}
+            >
+                {symbol && <span style={{ marginRight: '4px', fontSize: '0.75rem', color: '#718096', fontWeight: 600 }}>{symbol}</span>}
+                <input
+                    style={{
+                        flex: 1,
+                        width: '100%',
+                        padding: '4px 0',
+                        border: 'none',
+                        outline: 'none',
+                        fontSize: '0.75rem',
+                        fontWeight: 500,
+                        color: '#2D3748',
+                        background: 'transparent'
+                    }}
+                    className="placeholder-gray-400"
+                    type={type}
+                    value={displayValue}
+                    placeholder={type === 'number' ? "0" : ""}
+                    readOnly={isReadOnly}
+                    onChange={handleChange}
+                    onKeyDown={onKeyDown}
+                />
+                {suffix && <span style={{ marginLeft: '4px', fontSize: '0.75rem', color: '#718096', fontWeight: 600 }}>{suffix}</span>}
+            </div>
         </td>
     );
 };
 
-const ReadOnlyCell = ({ value, bold = false }: any) => (
+const ReadOnlyCell = ({ value, bold = false, symbol = '' }: any) => (
     <td style={{
         padding: '4px 8px',
         fontSize: bold ? '0.8rem' : '0.75rem',
@@ -114,7 +131,8 @@ const ReadOnlyCell = ({ value, bold = false }: any) => (
         background: 'rgba(0,0,0,0.02)',
         textAlign: 'right'
     }}>
-        {typeof value === 'number' ? value.toLocaleString(undefined, { minimumFractionDigits: 2 }) : value}
+        {symbol && <span style={{ marginRight: '2px', opacity: 0.8 }}>{symbol}</span>}
+        {typeof value === 'number' ? value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value}
     </td>
 );
 
@@ -129,6 +147,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const [costSheetNo, setCostSheetNo] = useState('');
     const [dealId, setDealId] = useState<number | null>(null);
     const [deals, setDeals] = useState<Deal[]>([]);
+    const [currency, setCurrency] = useState('INR');
     const [projectName, setProjectName] = useState('');
     const [costSheetDate, setCostSheetDate] = useState(new Date().toISOString().split('T')[0]);
     const [status, setStatus] = useState('PENDING');
@@ -137,6 +156,16 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const [rejectComment, setRejectComment] = useState('');
     const [revertComment, setRevertComment] = useState('');
     const [showRejectModal, setShowRejectModal] = useState(false);
+
+    const getCurrencySymbol = (cur: string) => {
+        switch (cur) {
+            case 'USD': return '$';
+            case 'EURO': return '€';
+            default: return '₹';
+        }
+    };
+
+    const currencySymbol = getCurrencySymbol(currency);
     const [showRevertModal, setShowRevertModal] = useState(false);
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [uploading, setUploading] = useState(false);
@@ -176,6 +205,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     const data = response.data;
                     setCostSheetNo(data.cost_sheet_no);
                     setDealId(data.deal || null);
+                    setCurrency(data.currency || 'INR');
                     setCostSheetDate(data.cost_sheet_date);
                     setStatus(data.status);
                     setProjectManager(data.project_manager || '');
@@ -299,6 +329,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
             // Auto-fill Project Manager and Sales Person from Deal if available
             if (selectedDeal) {
+                setCurrency(selectedDeal.currency || 'INR');
                 if (selectedDeal.project_manager) setProjectManager(selectedDeal.project_manager);
                 if (selectedDeal.salesperson_name) setSalesPerson(selectedDeal.salesperson_name);
             }
@@ -341,7 +372,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 const safeMargin = parseFloat(item.margin_percentage) || 0;
 
                 if (type === 'license') {
-                    cost = (parseFloat(item.rate) || 0) * (parseFloat(item.qty) || 0);
+                    const p = parseFloat(item.period);
+                    const periodMultiplier = isNaN(p) ? 1 : p;
+                    cost = (parseFloat(item.rate) || 0) * (parseFloat(item.qty) || 0) * periodMultiplier;
                 } else if (type === 'implementation' || type === 'support') {
                     cost = (parseFloat(item.num_resources) || 0) * (parseFloat(item.num_days) || 0) * (parseFloat(item.rate_per_day) || 0);
                 } else if (type === 'infra') {
@@ -378,7 +411,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             const safeMargin = parseFloat(item.margin_percentage) || 0;
 
             if (type === 'license') {
-                cost = (parseFloat(item.rate) || 0) * (parseFloat(item.qty) || 0);
+                const p = parseFloat(item.period);
+                const periodMultiplier = isNaN(p) ? 1 : p;
+                cost = (parseFloat(item.rate) || 0) * (parseFloat(item.qty) || 0) * periodMultiplier;
             } else if (type === 'implementation' || type === 'support') {
                 cost = (parseFloat(item.num_resources) || 0) * (parseFloat(item.num_days) || 0) * (parseFloat(item.rate_per_day) || 0);
             } else if (type === 'infra') {
@@ -693,7 +728,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         boxShadow: activeTab === 'summary' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
                     }}
                 >
-                    Cost Summary
+                    Cost Sheet Summary
                 </button>
             </div>
 
@@ -793,7 +828,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 background: '#0066CC',
                                 borderRadius: '2px'
                             }}></span>
-                            Lead & Project Details
+                            Cost Sheet Information
                         </h3>
                         <div style={{
                             display: 'flex',
@@ -920,7 +955,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                 fontSize: '0.95rem',
                                                 fontWeight: 700,
                                                 color: '#FF6B00',
-                                                }}>
+                                            }}>
                                                 {costSheetNo || 'Auto-generated'}
                                             </span>
                                         </div>
@@ -964,57 +999,74 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 {/* Cost Sheet Date */}
                                 <div style={{ padding: '4px' }}>
                                     <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet Date</label>
-                                    {!isReadOnly ? (
-                                        <input
-                                            type="date"
-                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                            value={costSheetDate}
-                                            onChange={e => setCostSheetDate(e.target.value)}
-                                        />
-                                    ) : (
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{formatDateDisplay(costSheetDate)}</div>
-                                    )}
+                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{formatDateDisplay(costSheetDate)}</div>
                                 </div>
                             </div>
                         </div>
                     </section>
 
                     {/* License Section */}
-                    <section className="section-panel" style={{ padding: '12px 24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                    <section style={{ marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
                                 License
                             </h3>
-                            {!isReadOnly && (
-                                <button
-                                    onClick={() => addItem('license')}
-                                    className="ae-btn-add"
-                                >
-                                    + Add Item
-                                </button>
-                            )}
                         </div>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
-                                <TableHeader isReadOnly={isReadOnly} columns={['License Name', 'License Type', 'Rate', 'Qty', 'Period', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price', 'Remark']} />
+                                <TableHeader isReadOnly={isReadOnly} columns={['License Name', 'License Type', 'Rate', 'Qty', 'Period', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {licenseItems.map((item, idx) => {
-                                        const cost = (parseFloat(item.rate) || 0) * (parseFloat(item.qty) || 0);
+                                        const periodMultiplier = isNaN(parseFloat(item.period)) ? 1 : parseFloat(item.period);
+                                        const cost = (parseFloat(item.rate) || 0) * (parseFloat(item.qty) || 0) * periodMultiplier;
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
+                                                {!isReadOnly && (
+                                                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                                                        {idx === licenseItems.length - 1 && (
+                                                            <button
+                                                                onClick={() => addItem('license')}
+                                                                style={{
+                                                                    padding: '4px',
+                                                                    background: '#F0F9FF',
+                                                                    border: '1px solid #BAE6FD',
+                                                                    borderRadius: '6px',
+                                                                    color: '#0284C7',
+                                                                    cursor: 'pointer',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    margin: '0 auto'
+                                                                }}
+                                                                title="Add row"
+                                                            >
+                                                                <Plus size={14} />
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                )}
                                                 <InputCell isReadOnly={isReadOnly} value={item.name} onChange={(v: string) => updateItem(idx, 'name', v, licenseItems, setLicenseItems)} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.type} onChange={(v: string) => updateItem(idx, 'type', v, licenseItems, setLicenseItems)} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.rate} onChange={(v: number) => updateItem(idx, 'rate', v, licenseItems, setLicenseItems)} type="number" className="no-spinner" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.rate} onChange={(v: number) => updateItem(idx, 'rate', v, licenseItems, setLicenseItems)} type="number" className="no-spinner" symbol={currencySymbol} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.qty} onChange={(v: number) => updateItem(idx, 'qty', v, licenseItems, setLicenseItems)} type="number" className="no-spinner" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.period} onChange={(v: string) => updateItem(idx, 'period', v, licenseItems, setLicenseItems)} />
-                                                <ReadOnlyCell value={cost} />
-                                                <ReadOnlyCell value={marginAmount} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, licenseItems, setLicenseItems)} type="number" />
-                                                <ReadOnlyCell value={price} bold />
-                                                <InputCell isReadOnly={isReadOnly} value={item.remark} onChange={(v: string) => updateItem(idx, 'remark', v, licenseItems, setLicenseItems)} />
+                                                <ReadOnlyCell value={cost} symbol={currencySymbol} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, licenseItems, setLicenseItems)} type="number" suffix="%" />
+                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} />
+                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} />
+                                                <InputCell
+                                                    isReadOnly={isReadOnly}
+                                                    value={item.remark}
+                                                    onChange={(v: string) => updateItem(idx, 'remark', v, licenseItems, setLicenseItems)}
+                                                    onKeyDown={(e: any) => {
+                                                        if (e.key === 'Tab' && !e.shiftKey && idx === licenseItems.length - 1) {
+                                                            addItem('license');
+                                                        }
+                                                    }}
+                                                />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1035,30 +1087,33 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             </tr>
                                         );
                                     })}
+                                    {/* Total row for License */}
+                                    <tr style={{ background: 'rgba(255, 107, 0, 0.05)', fontWeight: 700 }}>
+                                        {!isReadOnly && <td></td>}
+                                        <td colSpan={5} style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.8rem', color: '#1a1f36' }}>Total License:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catCost} symbol={currencySymbol} bold />
+                                        <td></td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catMarginAmount} symbol={currencySymbol} bold />
+                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catPrice} symbol={currencySymbol} bold />
+                                        <td></td>
+                                        {!isReadOnly && <td></td>}
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </section>
 
                     {/* Implementation Section */}
-                    <section className="section-panel" style={{ padding: '12px 24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                    <section style={{ marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
                                 Services - Implementation
                             </h3>
-                            {!isReadOnly && (
-                                <button
-                                    onClick={() => addItem('implementation')}
-                                    className="ae-btn-add"
-                                >
-                                    + Add Item
-                                </button>
-                            )}
                         </div>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
-                                <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price', 'Remark']} />
+                                <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {implementationItems.map((item, idx) => {
                                         const totalDays = (parseFloat(item.num_resources) || 0) * (parseFloat(item.num_days) || 0);
@@ -1067,16 +1122,49 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const price = cost + marginAmount;
                                         return (
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
+                                                {!isReadOnly && (
+                                                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                                                        {idx === implementationItems.length - 1 && (
+                                                            <button
+                                                                onClick={() => addItem('implementation')}
+                                                                style={{
+                                                                    padding: '4px',
+                                                                    background: '#F0F9FF',
+                                                                    border: '1px solid #BAE6FD',
+                                                                    borderRadius: '6px',
+                                                                    color: '#0284C7',
+                                                                    cursor: 'pointer',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    margin: '0 auto'
+                                                                }}
+                                                                title="Add row"
+                                                            >
+                                                                <Plus size={14} />
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                )}
                                                 <InputCell isReadOnly={isReadOnly} value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, implementationItems, setImplementationItems)} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.num_resources} onChange={(v: number) => updateItem(idx, 'num_resources', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.num_days} onChange={(v: number) => updateItem(idx, 'num_days', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" />
                                                 <ReadOnlyCell value={totalDays} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.rate_per_day} onChange={(v: number) => updateItem(idx, 'rate_per_day', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" />
-                                                <ReadOnlyCell value={cost} />
-                                                <ReadOnlyCell value={marginAmount} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, implementationItems, setImplementationItems)} type="number" />
-                                                <ReadOnlyCell value={price} bold />
-                                                <InputCell isReadOnly={isReadOnly} value={item.remark} onChange={(v: string) => updateItem(idx, 'remark', v, implementationItems, setImplementationItems)} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.rate_per_day} onChange={(v: number) => updateItem(idx, 'rate_per_day', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" symbol={currencySymbol} />
+                                                <ReadOnlyCell value={cost} symbol={currencySymbol} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, implementationItems, setImplementationItems)} type="number" suffix="%" />
+                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} />
+                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} />
+                                                <InputCell
+                                                    isReadOnly={isReadOnly}
+                                                    value={item.remark}
+                                                    onChange={(v: string) => updateItem(idx, 'remark', v, implementationItems, setImplementationItems)}
+                                                    onKeyDown={(e: any) => {
+                                                        if (e.key === 'Tab' && !e.shiftKey && idx === implementationItems.length - 1) {
+                                                            addItem('implementation');
+                                                        }
+                                                    }}
+                                                />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1097,30 +1185,32 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             </tr>
                                         );
                                     })}
+                                    {/* Total row for Implementation */}
+                                    <tr style={{ background: 'rgba(255, 107, 0, 0.05)', fontWeight: 700 }}>
+                                        {!isReadOnly && <td></td>}
+                                        <td colSpan={5} style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.8rem', color: '#1a1f36' }}>Total Implementation:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catCost} symbol={currencySymbol} bold />
+                                        <td></td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catMarginAmount} symbol={currencySymbol} bold />
+                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catPrice} symbol={currencySymbol} bold />
+                                        <td></td>
+                                        {!isReadOnly && <td></td>}
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </section>
 
-                    {/* Support Section */}
-                    <section className="section-panel" style={{ padding: '12px 24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                    <section className="section-panel" style={{ padding: '12px 24px', marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
                                 Services - Support
                             </h3>
-                            {!isReadOnly && (
-                                <button
-                                    onClick={() => addItem('support')}
-                                    className="ae-btn-add"
-                                >
-                                    + Add Item
-                                </button>
-                            )}
                         </div>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
-                                <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price', 'Remark']} />
+                                <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {supportItems.map((item, idx) => {
                                         const totalDays = (parseFloat(item.num_resources) || 0) * (parseFloat(item.num_days) || 0);
@@ -1129,16 +1219,49 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const price = cost + marginAmount;
                                         return (
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
+                                                {!isReadOnly && (
+                                                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                                                        {idx === supportItems.length - 1 && (
+                                                            <button
+                                                                onClick={() => addItem('support')}
+                                                                style={{
+                                                                    padding: '4px',
+                                                                    background: '#F0F9FF',
+                                                                    border: '1px solid #BAE6FD',
+                                                                    borderRadius: '6px',
+                                                                    color: '#0284C7',
+                                                                    cursor: 'pointer',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    margin: '0 auto'
+                                                                }}
+                                                                title="Add row"
+                                                            >
+                                                                <Plus size={14} />
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                )}
                                                 <InputCell isReadOnly={isReadOnly} value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, supportItems, setSupportItems)} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.num_resources} onChange={(v: number) => updateItem(idx, 'num_resources', v, supportItems, setSupportItems)} type="number" className="no-spinner" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.num_days} onChange={(v: number) => updateItem(idx, 'num_days', v, supportItems, setSupportItems)} type="number" className="no-spinner" />
                                                 <ReadOnlyCell value={totalDays} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.rate_per_day} onChange={(v: number) => updateItem(idx, 'rate_per_day', v, supportItems, setSupportItems)} type="number" className="no-spinner" />
-                                                <ReadOnlyCell value={cost} />
-                                                <ReadOnlyCell value={marginAmount} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, supportItems, setSupportItems)} type="number" />
-                                                <ReadOnlyCell value={price} bold />
-                                                <InputCell isReadOnly={isReadOnly} value={item.remark} onChange={(v: string) => updateItem(idx, 'remark', v, supportItems, setSupportItems)} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.rate_per_day} onChange={(v: number) => updateItem(idx, 'rate_per_day', v, supportItems, setSupportItems)} type="number" className="no-spinner" symbol={currencySymbol} />
+                                                <ReadOnlyCell value={cost} symbol={currencySymbol} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, supportItems, setSupportItems)} type="number" suffix="%" />
+                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} />
+                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} />
+                                                <InputCell
+                                                    isReadOnly={isReadOnly}
+                                                    value={item.remark}
+                                                    onChange={(v: string) => updateItem(idx, 'remark', v, supportItems, setSupportItems)}
+                                                    onKeyDown={(e: any) => {
+                                                        if (e.key === 'Tab' && !e.shiftKey && idx === supportItems.length - 1) {
+                                                            addItem('support');
+                                                        }
+                                                    }}
+                                                />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1159,30 +1282,32 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             </tr>
                                         );
                                     })}
+                                    {/* Total row for Support */}
+                                    <tr style={{ background: 'rgba(255, 107, 0, 0.05)', fontWeight: 700 }}>
+                                        {!isReadOnly && <td></td>}
+                                        <td colSpan={5} style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.8rem', color: '#1a1f36' }}>Total Support:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catCost} symbol={currencySymbol} bold />
+                                        <td></td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catMarginAmount} symbol={currencySymbol} bold />
+                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catPrice} symbol={currencySymbol} bold />
+                                        <td></td>
+                                        {!isReadOnly && <td></td>}
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </section>
 
-                    {/* Infrastructure Section */}
-                    <section className="section-panel" style={{ padding: '12px 24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                    <section className="section-panel" style={{ padding: '12px 24px', marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
                                 Infrastructure Cost
                             </h3>
-                            {!isReadOnly && (
-                                <button
-                                    onClick={() => addItem('infra')}
-                                    className="ae-btn-add"
-                                >
-                                    + Add Item
-                                </button>
-                            )}
                         </div>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1000px' }}>
-                                <TableHeader isReadOnly={isReadOnly} columns={['Infra Name', 'Qty', 'Months', 'Rate/Month', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price', 'Remark']} />
+                                <TableHeader isReadOnly={isReadOnly} columns={['Infra Name', 'Qty', 'Months', 'Rate/Month', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {infraItems.map((item, idx) => {
                                         const cost = (parseFloat(item.qty) || 0) * (parseFloat(item.months) || 0) * (parseFloat(item.rate_per_month) || 0);
@@ -1190,15 +1315,48 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const price = cost + marginAmount;
                                         return (
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
+                                                {!isReadOnly && (
+                                                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                                                        {idx === infraItems.length - 1 && (
+                                                            <button
+                                                                onClick={() => addItem('infra')}
+                                                                style={{
+                                                                    padding: '4px',
+                                                                    background: '#F0F9FF',
+                                                                    border: '1px solid #BAE6FD',
+                                                                    borderRadius: '6px',
+                                                                    color: '#0284C7',
+                                                                    cursor: 'pointer',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    margin: '0 auto'
+                                                                }}
+                                                                title="Add row"
+                                                            >
+                                                                <Plus size={14} />
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                )}
                                                 <InputCell isReadOnly={isReadOnly} value={item.name} onChange={(v: string) => updateItem(idx, 'name', v, infraItems, setInfraItems)} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.qty} onChange={(v: number) => updateItem(idx, 'qty', v, infraItems, setInfraItems)} type="number" className="no-spinner" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.months} onChange={(v: number) => updateItem(idx, 'months', v, infraItems, setInfraItems)} type="number" className="no-spinner" />
-                                                <InputCell isReadOnly={isReadOnly} value={item.rate_per_month} onChange={(v: number) => updateItem(idx, 'rate_per_month', v, infraItems, setInfraItems)} type="number" className="no-spinner" />
-                                                <ReadOnlyCell value={cost} />
-                                                <ReadOnlyCell value={marginAmount} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, infraItems, setInfraItems)} type="number" />
-                                                <ReadOnlyCell value={price} bold />
-                                                <InputCell isReadOnly={isReadOnly} value={item.remark} onChange={(v: string) => updateItem(idx, 'remark', v, infraItems, setInfraItems)} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.rate_per_month} onChange={(v: number) => updateItem(idx, 'rate_per_month', v, infraItems, setInfraItems)} type="number" className="no-spinner" symbol={currencySymbol} />
+                                                <ReadOnlyCell value={cost} symbol={currencySymbol} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, infraItems, setInfraItems)} type="number" suffix="%" />
+                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} />
+                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} />
+                                                <InputCell
+                                                    isReadOnly={isReadOnly}
+                                                    value={item.remark}
+                                                    onChange={(v: string) => updateItem(idx, 'remark', v, infraItems, setInfraItems)}
+                                                    onKeyDown={(e: any) => {
+                                                        if (e.key === 'Tab' && !e.shiftKey && idx === infraItems.length - 1) {
+                                                            addItem('infra');
+                                                        }
+                                                    }}
+                                                />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1219,30 +1377,32 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             </tr>
                                         );
                                     })}
+                                    {/* Total row for Infra */}
+                                    <tr style={{ background: 'rgba(255, 107, 0, 0.05)', fontWeight: 700 }}>
+                                        {!isReadOnly && <td></td>}
+                                        <td colSpan={4} style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.8rem', color: '#1a1f36' }}>Total Infra:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catCost} symbol={currencySymbol} bold />
+                                        <td></td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catMarginAmount} symbol={currencySymbol} bold />
+                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catPrice} symbol={currencySymbol} bold />
+                                        <td></td>
+                                        {!isReadOnly && <td></td>}
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </section>
 
-                    {/* Other Category Section */}
-                    <section className="section-panel" style={{ padding: '12px 24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                    <section className="section-panel" style={{ padding: '12px 24px', marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
                                 Other Category
                             </h3>
-                            {!isReadOnly && (
-                                <button
-                                    onClick={() => addItem('other')}
-                                    className="ae-btn-add"
-                                >
-                                    + Add Item
-                                </button>
-                            )}
                         </div>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '800px' }}>
-                                <TableHeader isReadOnly={isReadOnly} columns={['Description', 'Est. Cost', 'Est. Amount', 'Margin %', 'Est. Price', 'Remark']} />
+                                <TableHeader isReadOnly={isReadOnly} columns={['Description', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {otherItems.map((item, idx) => {
                                         const cost = parseFloat(item.estimated_cost) || 0;
@@ -1250,12 +1410,45 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const price = cost + marginAmount;
                                         return (
                                             <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
+                                                {!isReadOnly && (
+                                                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                                                        {idx === otherItems.length - 1 && (
+                                                            <button
+                                                                onClick={() => addItem('other')}
+                                                                style={{
+                                                                    padding: '4px',
+                                                                    background: '#F0F9FF',
+                                                                    border: '1px solid #BAE6FD',
+                                                                    borderRadius: '6px',
+                                                                    color: '#0284C7',
+                                                                    cursor: 'pointer',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    margin: '0 auto'
+                                                                }}
+                                                                title="Add row"
+                                                            >
+                                                                <Plus size={14} />
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                )}
                                                 <InputCell isReadOnly={isReadOnly} value={item.description} onChange={(v: string) => updateItem(idx, 'description', v, otherItems, setOtherItems)} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.estimated_cost} onChange={(v: number) => updateItem(idx, 'estimated_cost', v, otherItems, setOtherItems)} type="number" className="no-spinner" />
-                                                <ReadOnlyCell value={marginAmount} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, otherItems, setOtherItems)} type="number" />
-                                                <ReadOnlyCell value={price} bold />
-                                                <InputCell isReadOnly={isReadOnly} value={item.remark} onChange={(v: string) => updateItem(idx, 'remark', v, otherItems, setOtherItems)} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.estimated_cost} onChange={(v: number) => updateItem(idx, 'estimated_cost', v, otherItems, setOtherItems)} type="number" className="no-spinner" symbol={currencySymbol} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, otherItems, setOtherItems)} type="number" suffix="%" />
+                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} />
+                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} />
+                                                <InputCell
+                                                    isReadOnly={isReadOnly}
+                                                    value={item.remark}
+                                                    onChange={(v: string) => updateItem(idx, 'remark', v, otherItems, setOtherItems)}
+                                                    onKeyDown={(e: any) => {
+                                                        if (e.key === 'Tab' && !e.shiftKey && idx === otherItems.length - 1) {
+                                                            addItem('other');
+                                                        }
+                                                    }}
+                                                />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         <button
@@ -1276,6 +1469,17 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             </tr>
                                         );
                                     })}
+                                    {/* Total row for Other */}
+                                    <tr style={{ background: 'rgba(255, 107, 0, 0.05)', fontWeight: 700 }}>
+                                        {!isReadOnly && <td></td>}
+                                        <td style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.8rem', color: '#1a1f36' }}>Total Other:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catCost} symbol={currencySymbol} bold />
+                                        <td></td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catMarginAmount} symbol={currencySymbol} bold />
+                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catPrice} symbol={currencySymbol} bold />
+                                        <td></td>
+                                        {!isReadOnly && <td></td>}
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -1286,7 +1490,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', minHeight: '32px' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                                Overall Remarks
+                                Description/Remark
                             </h3>
                         </div>
                         <div style={{ padding: '8px' }}>
@@ -1321,11 +1525,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 }}
                             >
                                 <div style={{ flex: 1, whiteSpace: 'pre-wrap' }}>
-                                    {overallRemarks || "Click to add overall remarks for this cost sheet..."}
+                                    {overallRemarks || "Click to add description/remark for this cost sheet..."}
                                 </div>
                             </div>
                         </div>
-                    </section>
+                    </section >
 
                     {/* Document Attachments & Actions Layout - Standalone Row */}
                     {/* Refined Action bar: [Attachment Panel] --- [Standalone Actions] */}
@@ -1694,7 +1898,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
 
 
-                </div>
+                </div >
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {/* Consolidated Category Breakdown Table */}
@@ -1725,8 +1929,8 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
                                         <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '30%' }}>Category</th>
                                         <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Total Est. Cost</th>
-                                        <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Total Est. Amount</th>
                                         <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Total Est. Margin %</th>
+                                        <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Total Est. Margin</th>
                                         <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Total Est. Price</th>
                                     </tr>
                                 </thead>
@@ -1749,138 +1953,45 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             onMouseLeave={(e) => { e.currentTarget.style.background = idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'; }}
                                         >
                                             <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 700, color: '#1a1f36' }}>{row.label}</td>
-                                            <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, color: '#4A5568', textAlign: 'right' }}>
-                                                ${row.totals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                            </td>
-                                            <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, color: '#4A5568', textAlign: 'right' }}>
-                                                ${row.totals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, color: '#4A5568', fontFamily: 'monospace', textAlign: 'right' }}>
+                                                {currencySymbol}{row.totals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+
                                             </td>
                                             <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 700, color: row.totals.catMarginPercent >= 0 ? '#00C853' : '#EF4444', textAlign: 'right' }}>
                                                 {row.totals.catMarginPercent.toFixed(2)}%
                                             </td>
-                                            <td style={{ padding: '8px 16px', fontSize: '0.9rem', fontWeight: 800, color: '#0066CC', textAlign: 'right' }}>
-                                                ${row.totals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, color: '#4A5568', fontFamily: 'monospace', textAlign: 'right' }}>
+                                                {currencySymbol}{row.totals.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td style={{ padding: '8px 16px', fontSize: '0.9rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>
+                                                {currencySymbol}{row.totals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+
                                             </td>
                                         </tr>
                                     ))}
+                                    {/* Subtotal Row */}
+                                    <tr style={{ background: '#F8FAFC', borderTop: '2px solid #E2E8F0' }}>
+                                        <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: '#1a1f36' }}>Total</td>
+                                        <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: '#1a1f36', fontFamily: 'monospace', textAlign: 'right' }}>
+                                            {currencySymbol}{totals.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </td>
+                                        <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: totals.totalMarginPercent >= 0 ? '#00C853' : '#EF4444', fontFamily: 'monospace', textAlign: 'right' }}>
+                                            {totals.totalMarginPercent.toFixed(2)}%
+                                        </td>
+                                        <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: '#1a1f36', fontFamily: 'monospace', textAlign: 'right' }}>
+                                            {currencySymbol}{totals.totalMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </td>
+                                        <td style={{ padding: '12px 16px', fontSize: '0.95rem', fontWeight: 900, color: '#FF6B00', fontFamily: 'monospace', textAlign: 'right' }}>
+                                            {currencySymbol}{totals.totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    {/* Overall Totals Section (Moved Below Table) */}
-                    <div style={{ marginTop: '0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                            <div style={{ width: '4px', height: '20px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Cost Summary Breakdown</h3>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                            {[
-                                {
-                                    label: 'Total Estimated Cost',
-                                    value: `$${totals.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-                                    icon: <BarChart4 size={16} style={{ color: '#0066CC' }} />,
-                                    bgColor: '#EEF6FF',
-                                    accentColor: '#0066CC'
-                                },
-                                {
-                                    label: 'Total Estimated Amount',
-                                    value: `$${totals.totalMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-                                    icon: <Wallet size={16} style={{ color: '#FF6B00' }} />,
-                                    bgColor: '#FFF2EB',
-                                    accentColor: '#FF6B00'
-                                },
-                                {
-                                    label: 'Total Estimated Margin %',
-                                    value: `${totals.totalMarginPercent.toFixed(2)}%`,
-                                    icon: <Percent size={16} style={{ color: '#00C853' }} />,
-                                    bgColor: '#E8FBF0',
-                                    accentColor: '#00C853'
-                                },
-                                {
-                                    label: 'Total Estimated Price',
-                                    value: `$${totals.totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
-                                    icon: <TrendingUp size={16} style={{ color: '#6B46C1' }} />,
-                                    bgColor: '#F3E8FF',
-                                    accentColor: '#6B46C1'
-                                }
-                            ].map((stat, i) => (
-                                <div
-                                    key={i}
-                                    style={{
-                                        background: 'white',
-                                        borderRadius: '12px',
-                                        padding: '12px',
-                                        border: '1px solid #E2E8F0',
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        justifyContent: 'space-between',
-                                        minHeight: '85px',
-                                        position: 'relative',
-                                        overflow: 'hidden'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                        e.currentTarget.style.boxShadow = `0 12px 24px ${stat.accentColor}15`;
-                                        e.currentTarget.style.borderColor = stat.accentColor;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03)';
-                                        e.currentTarget.style.borderColor = '#E2E8F0';
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <div style={{
-                                            width: '28px',
-                                            height: '28px',
-                                            borderRadius: '8px',
-                                            background: stat.bgColor,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center'
-                                        }}>
-                                            {stat.icon}
-                                        </div>
-                                        <div style={{
-                                            padding: '2px 6px',
-                                            borderRadius: '4px',
-                                            background: stat.bgColor,
-                                            fontSize: '0.55rem',
-                                            fontWeight: 800,
-                                            color: stat.accentColor,
-                                            textTransform: 'uppercase'
-                                        }}>
-                                            Metrics
-                                        </div>
-                                    </div>
-                                    <div style={{ marginTop: '8px' }}>
-                                        <label style={{ fontSize: '0.65rem', fontWeight: 700, color: '#718096', display: 'block', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                            {stat.label}
-                                        </label>
-                                        <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36', letterSpacing: '-0.02em' }}>
-                                            {stat.value}
-                                        </div>
-                                    </div>
-                                    <div style={{
-                                        position: 'absolute',
-                                        right: '-10px',
-                                        bottom: '-10px',
-                                        width: '60px',
-                                        height: '60px',
-                                        borderRadius: '50%',
-                                        background: `${stat.accentColor}05`,
-                                        zIndex: 0
-                                    }} />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
-            )
-            }
+            )}
 
 
 
@@ -2007,478 +2118,484 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
             {/* Branded Action Modal (Template Style) */}
             {/* Branded Action Modal (Template Style) */}
-            {(showRejectModal || showRevertModal) && createPortal(
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 10000,
-                        background: 'rgba(0, 0, 0, 0.45)',
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                        padding: '24px',
-                    }}
-                >
+            {
+                (showRejectModal || showRevertModal) && createPortal(
                     <div
                         style={{
-                            background: 'white',
-                            width: '100%',
-                            maxWidth: '400px',
-                            borderRadius: '24px',
-                            boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
-                            overflow: 'hidden',
-                            position: 'relative',
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10000,
+                            background: 'rgba(0, 0, 0, 0.45)',
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
+                            padding: '24px',
                         }}
-                        onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Orange Header Section */}
-                        <div style={{
-                            background: '#FF6B00',
-                            padding: '28px 24px 24px',
-                            position: 'relative',
-                        }}>
-                            <button
-                                onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
-                                style={{
-                                    position: 'absolute',
-                                    top: '16px',
-                                    right: '16px',
-                                    width: '24px',
-                                    height: '24px',
-                                    borderRadius: '50%',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    color: 'white',
-                                    opacity: 0.7,
-                                    transition: 'all 0.2s',
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'transparent'; }}
-                            >
-                                <X size={16} strokeWidth={3} />
-                            </button>
-
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{
-                                    width: '36px',
-                                    height: '36px',
-                                    background: 'rgba(255,255,255,0.2)',
-                                    borderRadius: '10px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <Sparkles size={18} color="white" />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <h3 style={{
-                                        fontSize: '1.25rem',
-                                        fontWeight: 800,
-                                        color: 'white',
-                                        margin: '0 0 4px 0',
-                                        lineHeight: 1.2
-                                    }}>
-                                        {showRevertModal ? 'Revert Cost Sheet' : 'Reject Cost Sheet'}
-                                    </h3>
-                                    <p style={{
-                                        margin: 0,
-                                        color: 'rgba(255,255,255,0.95)',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 500,
-                                        lineHeight: 1.4
-                                    }}>
-                                        {showRevertModal
-                                            ? 'Provide a reason for reverting this cost sheet back to the creator.'
-                                            : 'Provide a reason for rejecting this cost sheet for the records.'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* White Input Section */}
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ marginBottom: '20px' }}>
-                                <label style={{
-                                    display: 'block',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    color: '#1e293b',
-                                    marginBottom: '8px'
-                                }}>
-                                    {showRevertModal ? 'Reversion Reason' : 'Rejection Reason'}
-                                </label>
-                                <textarea
-                                    value={showRevertModal ? revertComment : rejectComment}
-                                    onChange={e => showRevertModal ? setRevertComment(e.target.value) : setRejectComment(e.target.value)}
-                                    placeholder={showRevertModal ? "Type your reason here..." : "Type your reason here..."}
-                                    autoFocus
-                                    style={{
-                                        width: '100%',
-                                        height: '90px',
-                                        background: '#f8fafc',
-                                        border: '1.5px solid #e2e8f0',
-                                        borderRadius: '12px',
-                                        padding: '12px 16px',
-                                        fontSize: '0.9rem',
-                                        color: '#1e293b',
-                                        outline: 'none',
-                                        resize: 'none',
-                                        transition: 'all 0.2s',
-                                        fontWeight: 500
-                                    }}
-                                    onFocus={(e) => {
-                                        e.currentTarget.style.borderColor = '#FF6B00';
-                                        e.currentTarget.style.background = 'white';
-                                        e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 107, 0, 0.08)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.currentTarget.style.borderColor = '#e2e8f0';
-                                        e.currentTarget.style.background = '#f8fafc';
-                                        e.currentTarget.style.boxShadow = 'none';
-                                    }}
-                                />
-                            </div>
-
+                        <div
+                            style={{
+                                background: 'white',
+                                width: '100%',
+                                maxWidth: '400px',
+                                borderRadius: '24px',
+                                boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
+                                overflow: 'hidden',
+                                position: 'relative',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Orange Header Section */}
                             <div style={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                gap: '10px'
+                                background: '#FF6B00',
+                                padding: '28px 24px 24px',
+                                position: 'relative',
                             }}>
                                 <button
                                     onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
                                     style={{
-                                        padding: '10px 20px',
-                                        borderRadius: '12px',
-                                        background: '#f1f5f9',
-                                        color: '#475569',
-                                        fontWeight: 700,
-                                        fontSize: '0.85rem',
+                                        position: 'absolute',
+                                        top: '16px',
+                                        right: '16px',
+                                        width: '24px',
+                                        height: '24px',
+                                        borderRadius: '50%',
+                                        background: 'transparent',
                                         border: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s'
-                                    }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={showRevertModal ? handleRevert : handleReject}
-                                    style={{
-                                        padding: '10px 24px',
-                                        borderRadius: '12px',
-                                        background: '#FF6B00',
                                         color: 'white',
-                                        fontWeight: 700,
-                                        fontSize: '0.85rem',
-                                        border: 'none',
-                                        cursor: 'pointer',
+                                        opacity: 0.7,
                                         transition: 'all 0.2s',
-                                        boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
                                     }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(-1px)';
-                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 107, 0, 0.3)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
-                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'transparent'; }}
                                 >
-                                    {showRevertModal ? 'Revert' : 'Reject'}
+                                    <X size={16} strokeWidth={3} />
                                 </button>
+
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                    <div style={{
+                                        width: '36px',
+                                        height: '36px',
+                                        background: 'rgba(255,255,255,0.2)',
+                                        borderRadius: '10px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        <Sparkles size={18} color="white" />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <h3 style={{
+                                            fontSize: '1.25rem',
+                                            fontWeight: 800,
+                                            color: 'white',
+                                            margin: '0 0 4px 0',
+                                            lineHeight: 1.2
+                                        }}>
+                                            {showRevertModal ? 'Revert Cost Sheet' : 'Reject Cost Sheet'}
+                                        </h3>
+                                        <p style={{
+                                            margin: 0,
+                                            color: 'rgba(255,255,255,0.95)',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 500,
+                                            lineHeight: 1.4
+                                        }}>
+                                            {showRevertModal
+                                                ? 'Provide a reason for reverting this cost sheet back to the creator.'
+                                                : 'Provide a reason for rejecting this cost sheet for the records.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* White Input Section */}
+                            <div style={{ padding: '24px' }}>
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{
+                                        display: 'block',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 700,
+                                        color: '#1e293b',
+                                        marginBottom: '8px'
+                                    }}>
+                                        {showRevertModal ? 'Reversion Reason' : 'Rejection Reason'}
+                                    </label>
+                                    <textarea
+                                        value={showRevertModal ? revertComment : rejectComment}
+                                        onChange={e => showRevertModal ? setRevertComment(e.target.value) : setRejectComment(e.target.value)}
+                                        placeholder={showRevertModal ? "Type your reason here..." : "Type your reason here..."}
+                                        autoFocus
+                                        style={{
+                                            width: '100%',
+                                            height: '90px',
+                                            background: '#f8fafc',
+                                            border: '1.5px solid #e2e8f0',
+                                            borderRadius: '12px',
+                                            padding: '12px 16px',
+                                            fontSize: '0.9rem',
+                                            color: '#1e293b',
+                                            outline: 'none',
+                                            resize: 'none',
+                                            transition: 'all 0.2s',
+                                            fontWeight: 500
+                                        }}
+                                        onFocus={(e) => {
+                                            e.currentTarget.style.borderColor = '#FF6B00';
+                                            e.currentTarget.style.background = 'white';
+                                            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 107, 0, 0.08)';
+                                        }}
+                                        onBlur={(e) => {
+                                            e.currentTarget.style.borderColor = '#e2e8f0';
+                                            e.currentTarget.style.background = '#f8fafc';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }}
+                                    />
+                                </div>
+
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '10px'
+                                }}>
+                                    <button
+                                        onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
+                                        style={{
+                                            padding: '10px 20px',
+                                            borderRadius: '12px',
+                                            background: '#f1f5f9',
+                                            color: '#475569',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={showRevertModal ? handleRevert : handleReject}
+                                        style={{
+                                            padding: '10px 24px',
+                                            borderRadius: '12px',
+                                            background: '#FF6B00',
+                                            color: 'white',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 107, 0, 0.3)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
+                                        }}
+                                    >
+                                        {showRevertModal ? 'Revert' : 'Reject'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+                    </div>,
+                    document.body
+                )
+            }
 
             {/* Overall Remarks Modal */}
-            {showRemarksModal && createPortal(
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 10000,
-                        background: 'rgba(0, 0, 0, 0.45)',
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                        padding: '24px',
-                    }}
-                >
+            {
+                showRemarksModal && createPortal(
                     <div
                         style={{
-                            background: 'white',
-                            width: '100%',
-                            maxWidth: '400px',
-                            borderRadius: '24px',
-                            boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
-                            overflow: 'hidden',
-                            position: 'relative',
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10000,
+                            background: 'rgba(0, 0, 0, 0.45)',
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
+                            padding: '24px',
                         }}
-                        onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Orange Header Section */}
-                        <div style={{
-                            background: '#FF6B00',
-                            padding: '28px 24px 24px',
-                            position: 'relative',
-                        }}>
-                            <button
-                                onClick={() => setShowRemarksModal(false)}
-                                style={{
-                                    position: 'absolute',
-                                    top: '16px',
-                                    right: '16px',
-                                    width: '24px',
-                                    height: '24px',
-                                    borderRadius: '50%',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    color: 'white',
-                                    opacity: 0.7,
-                                    transition: 'all 0.2s',
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'transparent'; }}
-                            >
-                                <X size={16} strokeWidth={3} />
-                            </button>
-
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{
-                                    width: '36px',
-                                    height: '36px',
-                                    background: 'rgba(255,255,255,0.2)',
-                                    borderRadius: '10px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <Sparkles size={18} color="white" />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <h3 style={{
-                                        fontSize: '1.25rem',
-                                        fontWeight: 800,
-                                        color: 'white',
-                                        margin: '0 0 4px 0',
-                                        lineHeight: 1.2
-                                    }}>
-                                        Cost Sheet Remarks
-                                    </h3>
-                                    <p style={{
-                                        margin: 0,
-                                        color: 'rgba(255,255,255,0.95)',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 500,
-                                        lineHeight: 1.4
-                                    }}>
-                                        Add final context or overall observations for this cost sheet submission.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* White Input Section */}
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ marginBottom: '20px' }}>
-                                <label style={{
-                                    display: 'block',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    color: '#1e293b',
-                                    marginBottom: '8px'
-                                }}>
-                                    Overall Remarks
-                                </label>
-                                <textarea
-                                    value={overallRemarks}
-                                    onChange={(e) => setOverallRemarks(e.target.value)}
-                                    placeholder="Type your overall remarks here..."
-                                    autoFocus
-                                    style={{
-                                        width: '100%',
-                                        height: '110px',
-                                        background: '#f8fafc',
-                                        border: '1.5px solid #e2e8f0',
-                                        borderRadius: '12px',
-                                        padding: '12px 16px',
-                                        fontSize: '0.9rem',
-                                        color: '#1e293b',
-                                        outline: 'none',
-                                        resize: 'none',
-                                        transition: 'all 0.2s',
-                                        fontWeight: 500
-                                    }}
-                                    onFocus={(e) => {
-                                        e.currentTarget.style.borderColor = '#FF6B00';
-                                        e.currentTarget.style.background = 'white';
-                                        e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 107, 0, 0.08)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.currentTarget.style.borderColor = '#e2e8f0';
-                                        e.currentTarget.style.background = '#f8fafc';
-                                        e.currentTarget.style.boxShadow = 'none';
-                                    }}
-                                />
-                            </div>
-
+                        <div
+                            style={{
+                                background: 'white',
+                                width: '100%',
+                                maxWidth: '400px',
+                                borderRadius: '24px',
+                                boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
+                                overflow: 'hidden',
+                                position: 'relative',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Orange Header Section */}
                             <div style={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                gap: '10px'
+                                background: '#FF6B00',
+                                padding: '28px 24px 24px',
+                                position: 'relative',
                             }}>
                                 <button
                                     onClick={() => setShowRemarksModal(false)}
                                     style={{
-                                        padding: '10px 20px',
-                                        borderRadius: '12px',
-                                        background: '#f1f5f9',
-                                        color: '#475569',
-                                        fontWeight: 700,
-                                        fontSize: '0.85rem',
+                                        position: 'absolute',
+                                        top: '16px',
+                                        right: '16px',
+                                        width: '24px',
+                                        height: '24px',
+                                        borderRadius: '50%',
+                                        background: 'transparent',
                                         border: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s'
-                                    }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={() => setShowRemarksModal(false)}
-                                    style={{
-                                        padding: '10px 24px',
-                                        borderRadius: '12px',
-                                        background: '#FF6B00',
                                         color: 'white',
-                                        fontWeight: 700,
-                                        fontSize: '0.85rem',
-                                        border: 'none',
-                                        cursor: 'pointer',
+                                        opacity: 0.7,
                                         transition: 'all 0.2s',
-                                        boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
                                     }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = '#e65a00';
-                                        e.currentTarget.style.transform = 'translateY(-1px)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = '#FF6B00';
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'transparent'; }}
                                 >
-                                    Save Remarks
+                                    <X size={16} strokeWidth={3} />
                                 </button>
+
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                    <div style={{
+                                        width: '36px',
+                                        height: '36px',
+                                        background: 'rgba(255,255,255,0.2)',
+                                        borderRadius: '10px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        <Sparkles size={18} color="white" />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <h3 style={{
+                                            fontSize: '1.25rem',
+                                            fontWeight: 800,
+                                            color: 'white',
+                                            margin: '0 0 4px 0',
+                                            lineHeight: 1.2
+                                        }}>
+                                            Cost Sheet Remarks
+                                        </h3>
+                                        <p style={{
+                                            margin: 0,
+                                            color: 'rgba(255,255,255,0.95)',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 500,
+                                            lineHeight: 1.4
+                                        }}>
+                                            Add final context or overall observations for this cost sheet submission.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* White Input Section */}
+                            <div style={{ padding: '24px' }}>
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{
+                                        display: 'block',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 700,
+                                        color: '#1e293b',
+                                        marginBottom: '8px'
+                                    }}>
+                                        Overall Remarks
+                                    </label>
+                                    <textarea
+                                        value={overallRemarks}
+                                        onChange={(e) => setOverallRemarks(e.target.value)}
+                                        placeholder="Type your overall remarks here..."
+                                        autoFocus
+                                        style={{
+                                            width: '100%',
+                                            height: '110px',
+                                            background: '#f8fafc',
+                                            border: '1.5px solid #e2e8f0',
+                                            borderRadius: '12px',
+                                            padding: '12px 16px',
+                                            fontSize: '0.9rem',
+                                            color: '#1e293b',
+                                            outline: 'none',
+                                            resize: 'none',
+                                            transition: 'all 0.2s',
+                                            fontWeight: 500
+                                        }}
+                                        onFocus={(e) => {
+                                            e.currentTarget.style.borderColor = '#FF6B00';
+                                            e.currentTarget.style.background = 'white';
+                                            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 107, 0, 0.08)';
+                                        }}
+                                        onBlur={(e) => {
+                                            e.currentTarget.style.borderColor = '#e2e8f0';
+                                            e.currentTarget.style.background = '#f8fafc';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }}
+                                    />
+                                </div>
+
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '10px'
+                                }}>
+                                    <button
+                                        onClick={() => setShowRemarksModal(false)}
+                                        style={{
+                                            padding: '10px 20px',
+                                            borderRadius: '12px',
+                                            background: '#f1f5f9',
+                                            color: '#475569',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => setShowRemarksModal(false)}
+                                        style={{
+                                            padding: '10px 24px',
+                                            borderRadius: '12px',
+                                            background: '#FF6B00',
+                                            color: 'white',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = '#e65a00';
+                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = '#FF6B00';
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                        }}
+                                    >
+                                        Save Remarks
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+                    </div>,
+                    document.body
+                )
+            }
 
             {/* Premium Toast Notification */}
-            {toast && createPortal(
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: '24px',
-                        right: '24px',
-                        zIndex: 10001,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        background: 'white',
-                        padding: '16px 20px',
-                        borderRadius: '16px',
-                        boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
-                        border: '1px solid #E2E8F0',
-                        borderLeft: `4px solid ${toast.type === 'success' ? '#10B981' : '#EF4444'}`,
-                        animation: 'toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                        minWidth: '300px'
-                    }}
-                >
-                    <div style={{
-                        width: '32px',
-                        height: '32px',
-                        background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                    }}>
-                        {toast.type === 'success' ? (
-                            <CheckCircle size={18} color="#10B981" />
-                        ) : (
-                            <XCircle size={18} color="#EF4444" />
-                        )}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <p style={{
-                            margin: 0,
-                            fontSize: '0.9rem',
-                            fontWeight: 700,
-                            color: '#1e293b'
-                        }}>
-                            {toast.type === 'success' ? 'Success' : 'Error'}
-                        </p>
-                        <p style={{
-                            margin: 0,
-                            fontSize: '0.85rem',
-                            fontWeight: 500,
-                            color: '#64748b'
-                        }}>
-                            {toast.message}
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => setToast(null)}
+            {
+                toast && createPortal(
+                    <div
                         style={{
-                            background: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#94a3b8',
-                            padding: '4px'
+                            position: 'fixed',
+                            top: '24px',
+                            right: '24px',
+                            zIndex: 10001,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            background: 'white',
+                            padding: '16px 20px',
+                            borderRadius: '16px',
+                            boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
+                            border: '1px solid #E2E8F0',
+                            borderLeft: `4px solid ${toast.type === 'success' ? '#10B981' : '#EF4444'}`,
+                            animation: 'toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                            minWidth: '300px'
                         }}
                     >
-                        <X size={16} />
-                    </button>
+                        <div style={{
+                            width: '32px',
+                            height: '32px',
+                            background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                        }}>
+                            {toast.type === 'success' ? (
+                                <CheckCircle size={18} color="#10B981" />
+                            ) : (
+                                <XCircle size={18} color="#EF4444" />
+                            )}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <p style={{
+                                margin: 0,
+                                fontSize: '0.9rem',
+                                fontWeight: 700,
+                                color: '#1e293b'
+                            }}>
+                                {toast.type === 'success' ? 'Success' : 'Error'}
+                            </p>
+                            <p style={{
+                                margin: 0,
+                                fontSize: '0.85rem',
+                                fontWeight: 500,
+                                color: '#64748b'
+                            }}>
+                                {toast.message}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setToast(null)}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: '#94a3b8',
+                                padding: '4px'
+                            }}
+                        >
+                            <X size={16} />
+                        </button>
 
-                    <style>{`
+                        <style>{`
                         @keyframes toastIn {
                             from { transform: translateX(100%) opacity: 0; }
                             to { transform: translateX(0) opacity: 1; }
                         }
                     `}</style>
-                </div>,
-                document.body
-            )}
+                    </div>,
+                    document.body
+                )
+            }
         </div >
     );
 };

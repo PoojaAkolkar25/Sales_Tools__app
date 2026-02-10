@@ -955,6 +955,28 @@ option {
   transform: translateY(0);
 }
 
+.ae-add-row-btn {
+  background: white;
+  border: 1px solid #D1D5DB;
+  color: #6B7280;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  width: fit-content;
+}
+
+.ae-add-row-btn:hover {
+  border-color: #9CA3AF;
+  background-color: #F9FAFB;
+  color: #4B5563;
+}
+
 /* --- Section Panel Cards (Cost Sheet Form) --- */
 .section-panel {
   background: white;

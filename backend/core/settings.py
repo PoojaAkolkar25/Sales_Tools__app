@@ -49,10 +49,10 @@ INSTALLED_APPS = [
     "core",
     "accounts",
     "leads",
-    "cost_sheets",
+    "cost_sheets.apps.CostSheetsConfig",
     "finance",
-    "deals",
-    "estimates",
+    "deals.apps.DealsConfig",
+    "estimates.apps.EstimatesConfig",
     "sales_orders",
     "milestones",
 ]

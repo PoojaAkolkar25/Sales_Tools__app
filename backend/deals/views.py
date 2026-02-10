@@ -3,12 +3,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
 from django.utils import timezone
+from datetime import timedelta
 from django.http import HttpResponse
 import io
 import xlsxwriter
-from .models import Deal, ImplementationPartner, Product, Customer
+from .models import Deal, ImplementationPartner, Product, Customer, DealTypeEntry, AuditTrail, DealAttachment
 from .serializers import (
-    DealSerializer, ImplementationPartnerSerializer, ProductSerializer, CustomerSerializer
+    DealSerializer, ImplementationPartnerSerializer, ProductSerializer, CustomerSerializer,
+    DealTypeEntrySerializer, AuditTrailSerializer, DealAttachmentSerializer
 )
 
 class ImplementationPartnerViewSet(viewsets.ModelViewSet):
@@ -26,10 +28,97 @@ class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @action(detail=True, methods=['post'])
+    def toggle_status(self, request, pk=None):
+        customer = self.get_object()
+        customer.is_active = not customer.is_active
+        customer.save()
+        return Response({
+            'status': 'success',
+            'is_active': customer.is_active,
+            'message': f'Customer {customer.name} is now {"active" if customer.is_active else "inactive"}'
+        })
+
+class DealTypeEntryViewSet(viewsets.ModelViewSet):
+    queryset = DealTypeEntry.objects.all().order_by('-created_at')
+    serializer_class = DealTypeEntrySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = DealTypeEntry.objects.all()
+        deal_id = self.request.query_params.get('deal_id', None)
+        if deal_id:
+            queryset = queryset.filter(deal_id=deal_id)
+        return queryset.order_by('-created_at')
+
+class AuditTrailViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = AuditTrail.objects.all().order_by('-timestamp')
+    serializer_class = AuditTrailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = AuditTrail.objects.all()
+        model_name = self.request.query_params.get('model_name', None)
+        object_id = self.request.query_params.get('object_id', None)
+        action_type = self.request.query_params.get('action_type', None)
+        user_id = self.request.query_params.get('user_id', None)
+        date_from = self.request.query_params.get('date_from', None)
+        date_to = self.request.query_params.get('date_to', None)
+        
+        # Filter by specific model and object (existing functionality)
+        if model_name and object_id:
+            from django.contrib.contenttypes.models import ContentType
+            try:
+                ct = ContentType.objects.filter(model=model_name.lower()).first()
+                if ct:
+                    queryset = queryset.filter(content_type=ct, object_id=object_id)
+            except Exception:
+                pass
+        
+        # Filter by action type
+        if action_type:
+            queryset = queryset.filter(action_type=action_type.upper())
+        
+        # Filter by user
+        if user_id:
+            queryset = queryset.filter(user_id=user_id)
+        
+        # Filter by date range
+        if date_from:
+            from datetime.datetime import strptime
+            try:
+                queryset = queryset.filter(timestamp__gte=date_from)
+            except Exception:
+                pass
+        
+        if date_to:
+            try:
+                queryset = queryset.filter(timestamp__lte=date_to)
+            except Exception:
+                pass
+                
+        return queryset.order_by('-timestamp')
+
 class DealViewSet(viewsets.ModelViewSet):
     queryset = Deal.objects.all().order_by('-created_at')
     serializer_class = DealSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        
+        from django.contrib.contenttypes.models import ContentType
+        ct = ContentType.objects.get_for_model(instance)
+        
+        AuditTrail.objects.create(
+            content_type=ct,
+            object_id=instance.id,
+            user=self.request.user,
+            field_name="Deal Created",
+            old_value="",
+            new_value=f"Deal created with ID {instance.deal_id}",
+            action_type=AuditTrail.ActionType.CREATE
+        )
 
     def get_queryset(self):
         queryset = Deal.objects.all().order_by('-created_at')
@@ -74,6 +163,86 @@ class DealViewSet(viewsets.ModelViewSet):
             instance.save(update_fields=['is_read'])
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+    
+    def update(self, request, *args, **kwargs):
+        """Override update to create audit trail entries"""
+        instance = self.get_object()
+        
+        # excluded fields from tracking
+        excluded_fields = ['updated_at', 'last_synced_at', 'created_at', 'id', 'deal_id', 'attachments', 'deal_types']
+        
+        # Get all field names from the model
+        model_fields = [f.name for f in Deal._meta.get_fields() if not f.is_relation and f.name not in excluded_fields]
+        
+        relations_to_track = ['customer', 'lead']
+        all_trackable_fields = model_fields + relations_to_track
+        
+        old_data = {}
+        for field in all_trackable_fields:
+            try:
+                val = getattr(instance, field)
+                if field in relations_to_track:
+                    old_data[field] = str(val) if val else ""
+                else:
+                    old_data[field] = val
+            except AttributeError:
+                continue
+
+        # Auto-fetch FX rate if currency is USD or EURO
+        if 'currency' in request.data:
+            currency = request.data.get('currency')
+            if currency == 'USD':
+                request.data['fx_rate'] = 83.50  # Mock rate, replace with actual API call
+            elif currency == 'EURO':
+                request.data['fx_rate'] = 90.25  # Mock rate, replace with actual API call
+            else:
+                request.data['fx_rate'] = 1.0
+        
+        response = super().update(request, *args, **kwargs)
+        
+        # Create audit trail entries for changed fields
+        instance.refresh_from_db()
+        
+        from django.contrib.contenttypes.models import ContentType
+        ct = ContentType.objects.get_for_model(instance)
+        
+        for field in all_trackable_fields:
+             try:
+                new_val = getattr(instance, field)
+                if field in relations_to_track:
+                    new_val_str = str(new_val) if new_val else ""
+                    old_val_str = old_data.get(field, "")
+                    if old_val_str != new_val_str:
+                         AuditTrail.objects.create(
+                            content_type=ct,
+                            object_id=instance.id,
+                            user=request.user,
+                            field_name=field,
+                            old_value=old_val_str,
+                            new_value=new_val_str,
+                            action_type=AuditTrail.ActionType.UPDATE
+                        )
+                else:
+                    old_val = old_data.get(field)
+                    # Convert to string for comparison to match what's stored
+                    if str(old_val) != str(new_val):
+                         # Don't log if both are effectively empty/null
+                         if not old_val and not new_val:
+                             continue
+                             
+                         AuditTrail.objects.create(
+                            content_type=ct,
+                            object_id=instance.id,
+                            user=request.user,
+                            field_name=field,
+                            old_value=str(old_val) if old_val is not None else '',
+                            new_value=str(new_val) if new_val is not None else '',
+                            action_type=AuditTrail.ActionType.UPDATE
+                        )
+             except AttributeError:
+                 continue
+        
+        return response
 
     @action(detail=True, methods=['post'])
     def sync_hubspot(self, request, pk=None):
@@ -102,6 +271,70 @@ class DealViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def export_excel(self, request):
         deals = self.get_queryset()
+        
+        # Apply Filters
+        search_query = request.query_params.get('search', '')
+        if search_query:
+            deals = deals.filter(
+                Q(deal_name__icontains=search_query) |
+                Q(customer_name__icontains=search_query) |
+                Q(deal_id__icontains=search_query)
+            )
+
+        deal_id = request.query_params.get('deal_id')
+        if deal_id:
+            deals = deals.filter(deal_id__icontains=deal_id)
+            
+        company = request.query_params.get('company')
+        if company:
+            deals = deals.filter(company=company)
+
+        lead_no = request.query_params.get('lead_no')
+        if lead_no:
+            deals = deals.filter(lead__lead_no__icontains=lead_no)
+
+        stage = request.query_params.get('stage')
+        if stage:
+            deals = deals.filter(stage=stage)
+
+        currency = request.query_params.get('currency')
+        if currency:
+            deals = deals.filter(currency=currency)
+
+        # Date Filtering
+        period = request.query_params.get('period')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        
+        if period:
+            today = timezone.localdate()
+            if period == 'last_month':
+                first = today.replace(day=1)
+                last_month = first - timedelta(days=1)
+                start = last_month.replace(day=1)
+                deals = deals.filter(deal_date__range=[start, last_month])
+            elif period == 'last_3_months':
+                start = today - timedelta(days=90)
+                deals = deals.filter(deal_date__gte=start)
+            elif period == 'last_6_months':
+                start = today - timedelta(days=180)
+                deals = deals.filter(deal_date__gte=start)
+            elif period == 'last_year':
+                last_year = today.year - 1
+                deals = deals.filter(deal_date__year=last_year)
+            elif period == 'custom' and start_date and end_date:
+                deals = deals.filter(deal_date__range=[start_date, end_date])
+                
+        # Other string filters
+        for field in ['customer_name', 'end_customer', 'client_type', 
+                      'inside_salesperson', 'inside_sales_head', 
+                      'salesperson_name', 'sales_head', 
+                      'project_manager', 'project_manager_head']:
+            val = request.query_params.get(field)
+            if val:
+                kwargs = {f'{field}__icontains': val}
+                deals = deals.filter(**kwargs)
+
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output)
         worksheet = workbook.add_worksheet("Deals Report")
@@ -109,14 +342,17 @@ class DealViewSet(viewsets.ModelViewSet):
         # Header formatting
         header_format = workbook.add_format({
             'bold': True,
-            'bg_color': '#0066CC',
+            'bg_color': '#FF6B00',
             'font_color': 'white',
             'border': 1
         })
         
         headers = [
-            'Deal ID', 'Deal Name', 'Customer', 'Customer Email', 'Stage',
-            'Amount', 'Currency', 'Deal Type', 'Salesperson', 'Close Date',
+            'Deal ID', 'Deal Date', 'Project Name', 'Company', 'Lead No.', 'Stage',
+            'Currency', 'Amount', 'Type', 'Customer/Partner Name', 'Customer Email',
+            'End Customer', 'Client Type', 'Inside Salesperson', 'Inside Sales Head',
+            'Salesperson', 'Sales Head', 'Proj. Manager', 'PM Head',
+            'Exp. Close Date', 'Remarks/Description', 'Won/Lost Reason',
             'HubSpot ID', 'Last Synced'
         ]
         
@@ -125,17 +361,29 @@ class DealViewSet(viewsets.ModelViewSet):
             
         for row, deal in enumerate(deals, start=1):
             worksheet.write(row, 0, deal.deal_id)
-            worksheet.write(row, 1, deal.deal_name)
-            worksheet.write(row, 2, deal.customer.name if deal.customer else "N/A")
-            worksheet.write(row, 3, deal.customer_email)
-            worksheet.write(row, 4, deal.stage)
-            worksheet.write(row, 5, float(deal.deal_amount))
+            worksheet.write(row, 1, deal.deal_date.strftime('%Y-%m-%d') if deal.deal_date else "N/A")
+            worksheet.write(row, 2, deal.deal_name)
+            worksheet.write(row, 3, deal.company)
+            worksheet.write(row, 4, deal.lead.lead_no if deal.lead else "—")
+            worksheet.write(row, 5, deal.stage)
             worksheet.write(row, 6, deal.currency)
-            worksheet.write(row, 7, deal.deal_type)
-            worksheet.write(row, 8, deal.salesperson_name or "N/A")
-            worksheet.write(row, 9, str(deal.expected_close_date) if deal.expected_close_date else "N/A")
-            worksheet.write(row, 10, deal.hubspot_id or "N/A")
-            worksheet.write(row, 11, str(deal.last_synced_at) if deal.last_synced_at else "Not Synced")
+            worksheet.write(row, 7, float(deal.deal_amount))
+            worksheet.write(row, 8, deal.deal_type if deal.deal_type else "—")
+            worksheet.write(row, 9, deal.customer.name if deal.customer else "—")
+            worksheet.write(row, 10, deal.customer_email if deal.customer_email else "—")
+            worksheet.write(row, 11, deal.end_customer if deal.end_customer else "—")
+            worksheet.write(row, 12, deal.client_type if deal.client_type else "—")
+            worksheet.write(row, 13, deal.inside_salesperson if deal.inside_salesperson else "—")
+            worksheet.write(row, 14, deal.inside_sales_head if deal.inside_sales_head else "—")
+            worksheet.write(row, 15, deal.salesperson_name if deal.salesperson_name else "—")
+            worksheet.write(row, 16, deal.sales_head if deal.sales_head else "—")
+            worksheet.write(row, 17, deal.project_manager if deal.project_manager else "—")
+            worksheet.write(row, 18, deal.project_manager_head if deal.project_manager_head else "—")
+            worksheet.write(row, 19, str(deal.expected_close_date) if deal.expected_close_date else "N/A")
+            worksheet.write(row, 20, deal.remark if deal.remark else "—")
+            worksheet.write(row, 21, deal.won_lost_reason if deal.won_lost_reason else "—")
+            worksheet.write(row, 22, deal.hubspot_id if deal.hubspot_id else "—")
+            worksheet.write(row, 23, str(deal.last_synced_at) if deal.last_synced_at else "Not Synced")
             
         workbook.close()
         output.seek(0)
@@ -180,19 +428,6 @@ class DealViewSet(viewsets.ModelViewSet):
             from django.template.loader import render_to_string
             from xhtml2pdf import pisa
             
-            deal = self.get_object()
-            html_string = render_to_string('deals/report_pdf.html', {'deals': [deal], 'now': timezone.now()})
-            
-            result = io.BytesIO()
-            pisa_status = pisa.CreatePISA(html_string, dest=result)
-            
-            if pisa_status.err:
-                return Response({
-                    "status": "error",
-                    "message": "Deal PDF generation error occurred."
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-            response = HttpResponse(result.getvalue(), content_type='application/pdf')
             filename = f"Deal_{deal.deal_id}_{timezone.now().strftime('%Y%m%d')}.pdf"
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             return response
@@ -202,6 +437,34 @@ class DealViewSet(viewsets.ModelViewSet):
                 "message": f"Deal PDF export failed: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=True, methods=['post'])
+    def upload_attachment(self, request, pk=None):
+        instance = self.get_object()
+        file = request.FILES.get('file')
+        if not file:
+            return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        attachment = DealAttachment.objects.create(
+            deal=instance,
+            file=file,
+            filename=file.name
+        )
+        serializer = DealAttachmentSerializer(attachment)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['delete'])
+    def delete_attachment(self, request, pk=None):
+        attachment_id = request.query_params.get('attachment_id')
+        if not attachment_id:
+            return Response({'error': 'attachment_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            attachment = DealAttachment.objects.get(id=attachment_id, deal_id=pk)
+            attachment.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except DealAttachment.DoesNotExist:
+            return Response({'error': 'Attachment not found'}, status=status.HTTP_404_NOT_FOUND)
+
     @action(detail=False, methods=['get'])
     def export_csv(self, request):
         """Export deal data as CSV."""
@@ -209,12 +472,79 @@ class DealViewSet(viewsets.ModelViewSet):
         from io import StringIO
 
         deals = self.get_queryset()
+
+        # Apply Filters
+        search_query = request.query_params.get('search', '')
+        if search_query:
+            deals = deals.filter(
+                Q(deal_name__icontains=search_query) |
+                Q(customer_name__icontains=search_query) |
+                Q(deal_id__icontains=search_query)
+            )
+
+        deal_id = request.query_params.get('deal_id')
+        if deal_id:
+            deals = deals.filter(deal_id__icontains=deal_id)
+            
+        company = request.query_params.get('company')
+        if company:
+            deals = deals.filter(company=company)
+
+        lead_no = request.query_params.get('lead_no')
+        if lead_no:
+            deals = deals.filter(lead__lead_no__icontains=lead_no)
+
+        stage = request.query_params.get('stage')
+        if stage:
+            deals = deals.filter(stage=stage)
+
+        currency = request.query_params.get('currency')
+        if currency:
+            deals = deals.filter(currency=currency)
+
+        # Date Filtering
+        period = request.query_params.get('period')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        
+        if period:
+            today = timezone.localdate()
+            if period == 'last_month':
+                first = today.replace(day=1)
+                last_month = first - timedelta(days=1)
+                start = last_month.replace(day=1)
+                deals = deals.filter(deal_date__range=[start, last_month])
+            elif period == 'last_3_months':
+                start = today - timedelta(days=90)
+                deals = deals.filter(deal_date__gte=start)
+            elif period == 'last_6_months':
+                start = today - timedelta(days=180)
+                deals = deals.filter(deal_date__gte=start)
+            elif period == 'last_year':
+                last_year = today.year - 1
+                deals = deals.filter(deal_date__year=last_year)
+            elif period == 'custom' and start_date and end_date:
+                deals = deals.filter(deal_date__range=[start_date, end_date])
+
+        # Other string filters
+        for field in ['customer_name', 'end_customer', 'client_type', 
+                      'inside_salesperson', 'inside_sales_head', 
+                      'salesperson_name', 'sales_head', 
+                      'project_manager', 'project_manager_head']:
+            val = request.query_params.get(field)
+            if val:
+                kwargs = {f'{field}__icontains': val}
+                deals = deals.filter(**kwargs)
+
         buf = StringIO()
         writer = csv.writer(buf)
 
         headers = [
-            'Deal ID', 'Deal Name', 'Customer', 'Customer Email', 'Stage',
-            'Amount', 'Currency', 'Deal Type', 'Salesperson', 'Close Date',
+            'Deal ID', 'Deal Date', 'Project Name', 'Company', 'Lead No.', 'Stage',
+            'Currency', 'Amount', 'Type', 'Customer/Partner Name', 'Customer Email',
+            'End Customer', 'Client Type', 'Inside Salesperson', 'Inside Sales Head',
+            'Salesperson', 'Sales Head', 'Proj. Manager', 'PM Head',
+            'Exp. Close Date', 'Remarks/Description', 'Won/Lost Reason',
             'HubSpot ID', 'Last Synced'
         ]
         writer.writerow(headers)
@@ -222,17 +552,29 @@ class DealViewSet(viewsets.ModelViewSet):
         for deal in deals:
             writer.writerow([
                 deal.deal_id,
+                deal.deal_date.strftime('%Y-%m-%d') if deal.deal_date else "N/A",
                 deal.deal_name,
-                deal.customer.name if deal.customer else "N/A",
-                deal.customer_email,
+                deal.company,
+                deal.lead.lead_no if deal.lead else "—",
                 deal.stage,
-                float(deal.deal_amount) if deal.deal_amount is not None else "",
                 deal.currency,
-                deal.deal_type,
-                deal.salesperson_name or "N/A",
-                str(deal.expected_close_date) if deal.expected_close_date else "",
-                deal.hubspot_id or "",
-                str(deal.last_synced_at) if deal.last_synced_at else ""
+                float(deal.deal_amount) if deal.deal_amount is not None else "",
+                deal.deal_type if deal.deal_type else "—",
+                deal.customer.name if deal.customer else "—",
+                deal.customer_email if deal.customer_email else "—",
+                deal.end_customer if deal.end_customer else "—",
+                deal.client_type if deal.client_type else "—",
+                deal.inside_salesperson if deal.inside_salesperson else "—",
+                deal.inside_sales_head if deal.inside_sales_head else "—",
+                deal.salesperson_name if deal.salesperson_name else "—",
+                deal.sales_head if deal.sales_head else "—",
+                deal.project_manager if deal.project_manager else "—",
+                deal.project_manager_head if deal.project_manager_head else "—",
+                str(deal.expected_close_date) if deal.expected_close_date else "N/A",
+                deal.remark if deal.remark else "—",
+                deal.won_lost_reason if deal.won_lost_reason else "—",
+                deal.hubspot_id if deal.hubspot_id else "—",
+                str(deal.last_synced_at) if deal.last_synced_at else "Not Synced"
             ])
 
         buf.seek(0)
