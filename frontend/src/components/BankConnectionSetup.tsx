@@ -210,7 +210,7 @@ const BankConnectionSetup: React.FC = () => {
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#1a1f36' }}>{conn.bank_name}</h3>
-                                    <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#718096', fontFamily: 'monospace' }}>
+                                    <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#718096', }}>
                                         Acc: ****{conn.account_number.slice(-4)}
                                     </p>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
@@ -252,3 +252,4 @@ const BankConnectionSetup: React.FC = () => {
 };
 
 export default BankConnectionSetup;
+

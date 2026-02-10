@@ -112,7 +112,11 @@ const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView, searchQuery }) =>
             </div>
 
 
-            <div className="ae-table-container" style={{ marginTop: '32px' }}>
+            <div className="ae-table-container" style={{
+                marginTop: '32px',
+                margin: '32px auto 60px auto',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)'
+            }}>
 
                 <table className="ae-table">
                     <thead>
@@ -143,7 +147,7 @@ const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView, searchQuery }) =>
                             filteredLeads.map((lead: Lead) => (
                                 <tr key={lead.id}>
 
-                                    <td style={{ fontWeight: 600, color: '#0066CC' }}>{lead.lead_no}</td>
+                                    <td style={{ fontWeight: 700, color: '#FF6B00' }}>{lead.lead_no}</td>
                                     <td>
                                         <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#4A5568', background: '#EDF2F7', padding: '2px 6px', borderRadius: '4px' }}>
                                             {lead.company}
@@ -156,8 +160,22 @@ const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView, searchQuery }) =>
                                     <td style={{ textAlign: 'right' }}>
                                         <button
                                             onClick={() => onView(lead.id)}
-                                            className="ae-btn-secondary"
-                                            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '6px 12px',
+                                                background: '#0066CC',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseOver={(e) => e.currentTarget.style.background = '#0052A3'}
+                                            onMouseOut={(e) => e.currentTarget.style.background = '#0066CC'}
                                         >
                                             View
                                         </button>

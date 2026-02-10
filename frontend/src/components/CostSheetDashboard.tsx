@@ -493,7 +493,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         <td style={{ color: '#2D3748', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={cs.project_name || '—'}>
                                             {cs.project_name || '—'}
                                         </td>
-                                        <td style={{ fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace' }}>
+                                        <td style={{ fontWeight: 700, color: '#FF6B00', }}>
                                             {cs.cost_sheet_no}
                                         </td>
                                         <td style={{ color: '#4A5568', fontWeight: 600 }}>
@@ -550,3 +550,4 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
 };
 
 export default CostSheetDashboard;
+
