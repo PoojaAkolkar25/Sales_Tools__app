@@ -230,7 +230,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)'}
                                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
-                                <span>Log Out</span>
+                                <span>Logout</span>
                                 <LogOut size={16} />
                             </button>
                         </div>

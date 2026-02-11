@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap');
+/* Global Font Standardization - Enforcing strict system fonts (Arial/Times New Roman) */
 
 :root {
   /* Brand Colors */
@@ -31,10 +31,16 @@
   box-sizing: border-box;
 }
 
+/* Global Font Enforcement - Ultra Strict */
+html,
+body,
+* {
+  font-family: 'Work Sans', sans-serif !important;
+}
+
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Inter', sans-serif;
   background-color: var(--ae-gray-50);
   color: var(--ae-gray-900);
   line-height: 1.5;
@@ -44,7 +50,37 @@ body {
   width: 100vw;
 }
 
+/* Explicitly target common text elements to ensure dominance over library styles */
+div,
+span,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+a,
+li,
+td,
+th,
+label,
+b,
+strong,
+i,
+em {
+  font-family: 'Work Sans', sans-serif !important;
+}
 
+/* Explicitly target form elements which often have browser-default font overrides */
+input,
+button,
+select,
+textarea,
+optgroup,
+option {
+  font-family: 'Work Sans', sans-serif !important;
+}
 
 .sr-only {
   position: absolute;
@@ -1383,7 +1419,7 @@ body {
 }
 
 .font-semibold {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .shadow-lg {
@@ -1579,7 +1615,7 @@ body {
 }
 
 .font-semibold {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .shadow-lg {
@@ -1668,4 +1704,74 @@ body {
   background: rgba(255, 107, 0, 0.1);
   color: var(--ae-orange);
   border-color: rgba(255, 107, 0, 0.2);
+}
+
+/* --- Fixed Form Footer --- */
+.form-footer {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  left: var(--sidebar-width);
+  height: 80px;
+  background: white;
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  padding: 0 40px;
+  gap: 16px;
+  z-index: 800;
+  transition: left var(--sidebar-transition);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.main-content.sidebar-expanded .form-footer {
+  left: var(--sidebar-width-expanded);
+}
+
+.ae-btn-footer-save {
+  background-color: var(--ae-orange);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.2);
+}
+
+.ae-btn-footer-save:hover {
+  background-color: var(--ae-orange-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 107, 0, 0.3);
+}
+
+.ae-btn-footer-save:disabled {
+  background-color: #CBD5E0;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.ae-btn-footer-cancel {
+  background-color: #F1F5F9;
+  color: #475569;
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ae-btn-footer-cancel:hover {
+  background-color: #E2E8F0;
+  color: #1E293B;
 }

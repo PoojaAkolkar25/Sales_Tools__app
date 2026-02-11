@@ -1,10 +1,13 @@
-# Python
+# Python virtual environment
+venv/
+backend/venv/
+
+# Python cache
 __pycache__/
 *.pyc
-
-
-# Excel temp files
-.~lock.*
+*.pyo
+*.pyd
+    
 
 # Django media (optional)
 backend/media/

@@ -128,7 +128,6 @@ const ReadOnlyCell = ({ value, bold = false, symbol = '' }: any) => (
         fontSize: bold ? '0.8rem' : '0.75rem',
         fontWeight: bold ? 700 : 600,
         color: bold ? '#1a1f36' : '#718096',
-        fontFamily: 'monospace',
         background: 'rgba(0,0,0,0.02)',
         textAlign: 'right'
     }}>
@@ -956,13 +955,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                 fontSize: '0.95rem',
                                                 fontWeight: 700,
                                                 color: '#FF6B00',
-                                                fontFamily: 'monospace'
                                             }}>
                                                 {costSheetNo || 'Auto-generated'}
                                             </span>
                                         </div>
                                     ) : (
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace', padding: '10px 0' }}>
+                                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', padding: '10px 0' }}>
                                             {costSheetNo || 'Auto-generated'}
                                         </div>
                                     )}
@@ -1957,8 +1955,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 700, color: '#1a1f36' }}>{row.label}</td>
                                             <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, color: '#4A5568', fontFamily: 'monospace', textAlign: 'right' }}>
                                                 {currencySymbol}{row.totals.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+
                                             </td>
-                                            <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 700, color: row.totals.catMarginPercent >= 0 ? '#00C853' : '#EF4444', fontFamily: 'monospace', textAlign: 'right' }}>
+                                            <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 700, color: row.totals.catMarginPercent >= 0 ? '#00C853' : '#EF4444', textAlign: 'right' }}>
                                                 {row.totals.catMarginPercent.toFixed(2)}%
                                             </td>
                                             <td style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, color: '#4A5568', fontFamily: 'monospace', textAlign: 'right' }}>
@@ -1966,6 +1965,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             </td>
                                             <td style={{ padding: '8px 16px', fontSize: '0.9rem', fontWeight: 800, color: '#0066CC', fontFamily: 'monospace', textAlign: 'right' }}>
                                                 {currencySymbol}{row.totals.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+
                                             </td>
                                         </tr>
                                     ))}

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
     ChevronLeft,
-    Users,
-    Briefcase,
     Plus,
     Trash2,
     Paperclip,
@@ -389,11 +387,11 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
         }
     };
 
-    const SectionHeader = ({ icon: Icon, title, extra }: { icon: any, title: string, extra?: React.ReactNode }) => (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '8px', borderBottom: '1px solid #E0E6ED' }}>
+    const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Icon size={18} className="text-[#FF6B00]" />
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#2D3748' }}>{title}</h3>
+                <span style={{ width: '4px', height: '18px', background: '#0066CC', borderRadius: '2px' }}></span>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#FF6B00' }}>{title}</h3>
             </div>
             {extra}
         </div>
@@ -402,12 +400,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
     return (
         <div className="space-y-6" style={{ padding: '4px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <button
-                    onClick={onBack}
-                    style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', color: '#718096', cursor: 'pointer', fontWeight: 600 }}
-                >
-                    <ChevronLeft size={20} /> Back to Dashboard
-                </button>
+
                 <div style={{ display: 'flex', gap: '12px' }}>
                     {id && (
                         <>
@@ -436,380 +429,382 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* 1. Deal Information */}
-                <div className="section-panel" style={{ padding: '24px' }}>
-                    <SectionHeader icon={Briefcase} title="Deal Information" />
-                    <div className="ae-grid-4">
-                        <div className="ae-input-group">
-                            <label className="ae-label">Company Name *</label>
-                            <select name="company" value={formData.company} onChange={handleInputChange} className="ae-input" required>
-                                <option value="AE IND">AE IND</option>
-                                <option value="AE USA">AE USA</option>
-                            </select>
+                <div style={{
+                    background: 'white',
+                    border: '1px solid #E0E6ED',
+                    borderRadius: '12px',
+                    width: '100%',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                    padding: '24px',
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
+                    {/* 1. Deal Information */}
+                    <div>
+                        <SectionHeader title="Deal Information" />
+                        <div className="ae-grid-4">
+                            <div className="ae-input-group">
+                                <label className="ae-label">Company Name *</label>
+                                <select name="company" value={formData.company} onChange={handleInputChange} className="ae-input" required>
+                                    <option value="AE IND">AE IND</option>
+                                    <option value="AE USA">AE USA</option>
+                                </select>
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Lead Date</label>
+                                <input
+                                    type="date"
+                                    value={formData.lead ? leads.find(l => l.id === parseInt(formData.lead))?.lead_date || '' : ''}
+                                    className="ae-input"
+                                    disabled
+                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
+                                />
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Lead Number</label>
+                                <input
+                                    type="text"
+                                    value={formData.lead ? leads.find(l => l.id === parseInt(formData.lead))?.lead_no || 'No Lead Linked' : 'No Lead Linked'}
+                                    className="ae-input"
+                                    disabled
+                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
+                                />
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Deal Date *</label>
+                                <input
+                                    type="date"
+                                    name="deal_date"
+                                    value={formData.deal_date}
+                                    className="ae-input"
+                                    disabled
+                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
+                                    required
+                                />
+                            </div>
                         </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Lead Date</label>
-                            <input
-                                type="date"
-                                value={formData.lead ? leads.find(l => l.id === parseInt(formData.lead))?.lead_date || '' : ''}
-                                className="ae-input"
-                                disabled
-                                style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
-                            />
-                        </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Lead Number</label>
-                            <input
-                                type="text"
-                                value={formData.lead ? leads.find(l => l.id === parseInt(formData.lead))?.lead_no || 'No Lead Linked' : 'No Lead Linked'}
-                                className="ae-input"
-                                disabled
-                                style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
-                            />
-                        </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Deal Date *</label>
-                            <input
-                                type="date"
-                                name="deal_date"
-                                value={formData.deal_date}
-                                className="ae-input"
-                                disabled
-                                style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
-                                required
-                            />
+
+                        <div className="ae-grid-4 mt-6">
+                            <div className="ae-input-group">
+                                <label className="ae-label">Deal Number</label>
+                                <input
+                                    type="text"
+                                    value={id ? formData.deal_id : 'System Generated'}
+                                    className="ae-input"
+                                    disabled
+                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
+                                />
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Customer/Partner Name</label>
+                                <select name="customer" value={formData.customer} onChange={handleInputChange} className="ae-input">
+                                    <option value="">Select Customer</option>
+                                    {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    <option value="ADD_NEW" style={{ fontWeight: 700, color: '#FF6B00' }}>+ Add New Customer</option>
+                                </select>
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">End Customer</label>
+                                <input
+                                    type="text"
+                                    name="end_customer"
+                                    value={formData.end_customer}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    placeholder="Enter end customer name"
+                                />
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Project Name *</label>
+                                <input
+                                    type="text"
+                                    name="deal_name"
+                                    value={formData.deal_name}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    placeholder="AutomationEdge Project ABC"
+                                    required
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="ae-grid-4 mt-6">
-                        <div className="ae-input-group">
-                            <label className="ae-label">Deal Number</label>
-                            <input
-                                type="text"
-                                value={id ? formData.deal_id : 'System Generated'}
-                                className="ae-input"
-                                disabled
-                                style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
-                            />
-                        </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Customer/Partner Name</label>
-                            <select name="customer" value={formData.customer} onChange={handleInputChange} className="ae-input">
-                                <option value="">Select Customer</option>
-                                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                <option value="ADD_NEW" style={{ fontWeight: 700, color: '#FF6B00' }}>+ Add New Customer</option>
-                            </select>
-                        </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label">End Customer</label>
-                            <input
-                                type="text"
-                                name="end_customer"
-                                value={formData.end_customer}
-                                onChange={handleInputChange}
-                                className="ae-input"
-                                placeholder="Enter end customer name"
-                            />
-                        </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Project Name *</label>
-                            <input
-                                type="text"
-                                name="deal_name"
-                                value={formData.deal_name}
-                                onChange={handleInputChange}
-                                className="ae-input"
-                                placeholder="AutomationEdge Project ABC"
-                                required
-                            />
-                        </div>
-                    </div>
-                </div>
+                    {/* 2 & 3 Combined. Deal Value */}
+                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                        <SectionHeader title="Deal Value" />
 
-                {/* 2 & 3 Combined. Deal Value */}
-                <div className="section-panel" style={{ padding: '12px 24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                            Deal Value
-                        </h3>
-                    </div>
-
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
-                            <thead>
-                                <tr style={{ background: '#F8FAFC' }}>
-                                    <th style={{ padding: '12px 8px', width: '40px' }}></th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '50px' }}>Sr.No.</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '200px' }}>Type *</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>Description</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '100px' }}>Currency</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '80px' }}>Qty</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '130px' }}>Rate</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '140px' }}>Amount</th>
-                                    <th style={{ padding: '12px 8px', textAlign: 'center', width: '40px' }}></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {(formData.deal_types || []).map((item: any, index: number) => {
-                                    const amount = (parseFloat(item.amount) || 0) * (parseInt(item.quantity) || 0);
-                                    return (
-                                        <tr key={index} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
-                                            <td style={{ padding: '8px', textAlign: 'center' }}>
-                                                {index === (formData.deal_types || []).length - 1 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={addDealTypeRow}
-                                                        style={{
-                                                            padding: '4px',
-                                                            background: '#F0F9FF',
-                                                            border: '1px solid #BAE6FD',
-                                                            borderRadius: '6px',
-                                                            color: '#0284C7',
-                                                            cursor: 'pointer',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            margin: '0 auto'
-                                                        }}
-                                                        title="Add row"
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
+                                <thead>
+                                    <tr style={{ background: '#F8FAFC' }}>
+                                        <th style={{ padding: '12px 8px', width: '40px' }}></th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '50px' }}>Sr.No.</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '200px' }}>Type *</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>Description</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '100px' }}>Currency</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '80px' }}>Qty</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '130px' }}>Rate</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '140px' }}>Amount</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', width: '40px' }}></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(formData.deal_types || []).map((item: any, index: number) => {
+                                        const amount = (parseFloat(item.amount) || 0) * (parseInt(item.quantity) || 0);
+                                        return (
+                                            <tr key={index} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
+                                                <td style={{ padding: '8px', textAlign: 'center' }}>
+                                                    {index === (formData.deal_types || []).length - 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={addDealTypeRow}
+                                                            style={{
+                                                                padding: '4px',
+                                                                background: '#F0F9FF',
+                                                                border: '1px solid #BAE6FD',
+                                                                borderRadius: '6px',
+                                                                color: '#0284C7',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                margin: '0 auto'
+                                                            }}
+                                                            title="Add row"
+                                                        >
+                                                            <Plus size={16} />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                                <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{index + 1}</td>
+                                                <td style={{ padding: '8px' }}>
+                                                    <select
+                                                        value={item.type}
+                                                        onChange={(e) => handleDealTypeChange(index, 'type', e.target.value)}
+                                                        className="ae-input"
+                                                        required
+                                                        style={{ height: '36px', padding: '4px 8px', width: '100%' }}
                                                     >
-                                                        <Plus size={16} />
-                                                    </button>
-                                                )}
-                                            </td>
-                                            <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{index + 1}</td>
-                                            <td style={{ padding: '8px' }}>
-                                                <select
-                                                    value={item.type}
-                                                    onChange={(e) => handleDealTypeChange(index, 'type', e.target.value)}
-                                                    className="ae-input"
-                                                    required
-                                                    style={{ height: '36px', padding: '4px 8px', width: '100%' }}
-                                                >
-                                                    <option value="">Select Type</option>
-                                                    <option value="LICENSE">License</option>
-                                                    <option value="SERVICES">Services</option>
-                                                </select>
-                                            </td>
-                                            <td style={{ padding: '8px' }}>
-                                                <input
-                                                    type="text"
-                                                    value={item.description}
-                                                    onChange={(e) => handleDealTypeChange(index, 'description', e.target.value)}
-                                                    className="ae-input"
-                                                    placeholder="Enter description"
-                                                    style={{ height: '36px', padding: '4px 8px' }}
-                                                />
-                                            </td>
-                                            <td style={{ padding: '8px' }}>
-                                                <select
-                                                    name="currency"
-                                                    value={formData.currency}
-                                                    onChange={handleInputChange}
-                                                    className="ae-input"
-                                                    required
-                                                    style={{ height: '36px', padding: '4px 8px', textAlign: 'center' }}
-                                                >
-                                                    <option value="USD">USD</option>
-                                                    <option value="INR">INR</option>
-                                                    <option value="EURO">EURO</option>
-                                                </select>
-                                            </td>
-                                            <td style={{ padding: '8px' }}>
-                                                <input
-                                                    type="number"
-                                                    value={item.quantity}
-                                                    onChange={(e) => handleDealTypeChange(index, 'quantity', e.target.value)}
-                                                    className="ae-input"
-                                                    min="1"
-                                                    style={{ height: '36px', padding: '4px 8px', textAlign: 'center' }}
-                                                />
-                                            </td>
-                                            <td style={{ padding: '8px' }}>
-                                                <div style={{ position: 'relative' }}>
-                                                    <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: '#718096' }}>
-                                                        {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
-                                                    </span>
+                                                        <option value="">Select Type</option>
+                                                        <option value="LICENSE">License</option>
+                                                        <option value="SERVICES">Services</option>
+                                                    </select>
+                                                </td>
+                                                <td style={{ padding: '8px' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={item.description}
+                                                        onChange={(e) => handleDealTypeChange(index, 'description', e.target.value)}
+                                                        className="ae-input"
+                                                        placeholder="Enter description"
+                                                        style={{ height: '36px', padding: '4px 8px' }}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: '8px' }}>
+                                                    <select
+                                                        name="currency"
+                                                        value={formData.currency}
+                                                        onChange={handleInputChange}
+                                                        className="ae-input"
+                                                        required
+                                                        style={{ height: '36px', padding: '4px 8px', textAlign: 'center' }}
+                                                    >
+                                                        <option value="USD">USD</option>
+                                                        <option value="INR">INR</option>
+                                                        <option value="EURO">EURO</option>
+                                                    </select>
+                                                </td>
+                                                <td style={{ padding: '8px' }}>
                                                     <input
                                                         type="number"
-                                                        value={item.amount}
-                                                        onChange={(e) => handleDealTypeChange(index, 'amount', e.target.value)}
+                                                        value={item.quantity}
+                                                        onChange={(e) => handleDealTypeChange(index, 'quantity', e.target.value)}
                                                         className="ae-input"
-                                                        style={{ height: '36px', padding: '4px 8px 4px 24px', textAlign: 'right' }}
-                                                        required
+                                                        min="1"
+                                                        style={{ height: '36px', padding: '4px 8px', textAlign: 'center' }}
                                                     />
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '8px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>
-                                                {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
-                                                {amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                            </td>
-                                            <td style={{ padding: '8px', textAlign: 'center' }}>
-                                                {(formData.deal_types || []).length > 1 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeDealTypeRow(index)}
-                                                        style={{ color: '#E53E3E', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
-                                                        title="Remove Row"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                            <tfoot>
-                                <tr style={{ background: '#F8FAFC' }}>
-                                    <td colSpan={7} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#4A5568' }}>Total Deal Value:</td>
-                                    <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '1.1rem', fontWeight: 800, color: '#FF6B00' }}>
-                                        {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
-                                        {parseFloat(formData.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                    </td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                                                </td>
+                                                <td style={{ padding: '8px' }}>
+                                                    <div style={{ position: 'relative' }}>
+                                                        <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: '#718096' }}>
+                                                            {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
+                                                        </span>
+                                                        <input
+                                                            type="number"
+                                                            value={item.amount}
+                                                            onChange={(e) => handleDealTypeChange(index, 'amount', e.target.value)}
+                                                            className="ae-input"
+                                                            style={{ height: '36px', padding: '4px 8px 4px 24px', textAlign: 'right' }}
+                                                            required
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '8px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>
+                                                    {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
+                                                    {amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td style={{ padding: '8px', textAlign: 'center' }}>
+                                                    {(formData.deal_types || []).length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeDealTypeRow(index)}
+                                                            style={{ color: '#E53E3E', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+                                                            title="Remove Row"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                                <tfoot>
+                                    <tr style={{ background: '#F8FAFC' }}>
+                                        <td colSpan={7} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#4A5568' }}>Total Deal Value:</td>
+                                        <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '1.1rem', fontWeight: 800, color: '#FF6B00' }}>
+                                            {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
+                                            {parseFloat(formData.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
 
-                    <div className="ae-grid-4 mt-6" style={{ borderTop: '1px solid #E2E8F0', paddingTop: '20px' }}>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Deal Stage *</label>
-                            <select name="stage" value={formData.stage} onChange={handleInputChange} className="ae-input" required>
-                                <option value="DEAL_CREATED">Deal created</option>
-                                <option value="COST_SHEET">Cost Sheet</option>
-                                <option value="ESTIMATES">Estimates</option>
-                                <option value="SALES_ORDER">Sales Order</option>
-                                <option value="INVOICE">Invoice</option>
-                                <option value="PAYMENT">Payment</option>
-                            </select>
-                        </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Client Type</label>
-                            <select name="client_type" value={formData.client_type} onChange={handleInputChange} className="ae-input">
-                                <option value="">Select Type</option>
-                                <option value="NEW">New</option>
-                                <option value="EXISTING">Existing</option>
-                            </select>
-                        </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Expected Close Date</label>
-                            <input type="date" name="expected_close_date" value={formData.expected_close_date} onChange={handleInputChange} className="ae-input" />
-                        </div>
-                    </div>
-                </div>
-
-                {/* 4. Deal Team */}
-                <div className="section-panel" style={{ padding: '24px' }}>
-                    <SectionHeader icon={Users} title="Deal Team" />
-                    <div className="ae-grid-4">
-                        <div className="ae-input-group">
-                            <label className="ae-label">Inside Salesperson Name</label>
-                            <input type="text" name="inside_salesperson" value={formData.inside_salesperson} onChange={handleInputChange} className="ae-input" />
-                        </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Inside Sales Head</label>
-                            <input type="text" name="inside_sales_head" value={formData.inside_sales_head} onChange={handleInputChange} className="ae-input" />
-                        </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Salesperson Name</label>
-                            <input type="text" name="salesperson_name" value={formData.salesperson_name} onChange={handleInputChange} className="ae-input" />
-                        </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Sales Head</label>
-                            <input type="text" name="sales_head" value={formData.sales_head} onChange={handleInputChange} className="ae-input" />
+                        <div className="ae-grid-4 mt-6" style={{ borderTop: '1px solid #E2E8F0', paddingTop: '20px' }}>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Deal Stage *</label>
+                                <select name="stage" value={formData.stage} onChange={handleInputChange} className="ae-input" required>
+                                    <option value="DEAL_CREATED">Deal created</option>
+                                    <option value="COST_SHEET">Cost Sheet</option>
+                                    <option value="ESTIMATES">Estimates</option>
+                                    <option value="SALES_ORDER">Sales Order</option>
+                                    <option value="INVOICE">Invoice</option>
+                                    <option value="PAYMENT">Payment</option>
+                                </select>
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Client Type</label>
+                                <select name="client_type" value={formData.client_type} onChange={handleInputChange} className="ae-input">
+                                    <option value="">Select Type</option>
+                                    <option value="NEW">New</option>
+                                    <option value="EXISTING">Existing</option>
+                                </select>
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Expected Close Date</label>
+                                <input type="date" name="expected_close_date" value={formData.expected_close_date} onChange={handleInputChange} className="ae-input" />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="ae-grid-4 mt-6">
-                        <div className="ae-input-group">
-                            <label className="ae-label">Project Manager</label>
-                            <input type="text" name="project_manager" value={formData.project_manager} onChange={handleInputChange} className="ae-input" />
+                    {/* 4. Deal Team */}
+                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                        <SectionHeader title="Deal Team" />
+                        <div className="ae-grid-4">
+                            <div className="ae-input-group">
+                                <label className="ae-label">Inside Salesperson Name</label>
+                                <input type="text" name="inside_salesperson" value={formData.inside_salesperson} onChange={handleInputChange} className="ae-input" />
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Inside Sales Head</label>
+                                <input type="text" name="inside_sales_head" value={formData.inside_sales_head} onChange={handleInputChange} className="ae-input" />
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Salesperson Name</label>
+                                <input type="text" name="salesperson_name" value={formData.salesperson_name} onChange={handleInputChange} className="ae-input" />
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Sales Head</label>
+                                <input type="text" name="sales_head" value={formData.sales_head} onChange={handleInputChange} className="ae-input" />
+                            </div>
                         </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Project Manager Head</label>
-                            <input type="text" name="project_manager_head" value={formData.project_manager_head} onChange={handleInputChange} className="ae-input" />
+
+                        <div className="ae-grid-4 mt-6">
+                            <div className="ae-input-group">
+                                <label className="ae-label">Project Manager</label>
+                                <input type="text" name="project_manager" value={formData.project_manager} onChange={handleInputChange} className="ae-input" />
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Project Manager Head</label>
+                                <input type="text" name="project_manager_head" value={formData.project_manager_head} onChange={handleInputChange} className="ae-input" />
+                            </div>
                         </div>
                     </div>
-                </div>
 
 
-                {/* 5. Description/Remark & Attachments */}
-                <div className="section-panel" style={{ padding: '24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-                        <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#2D3748' }}>Description/Remark</h3>
-                    </div>
+                    {/* 5. Description/Remark & Attachments */}
+                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                        <SectionHeader title="Description/Remark" />
 
-                    <div className="ae-input-group">
-                        <textarea
-                            name="remark"
-                            value={formData.remark}
-                            onChange={handleInputChange}
-                            className="ae-input"
-                            style={{ minHeight: '120px', padding: '16px', borderRadius: '12px' }}
-                            placeholder="Click to add description/remark for this project..."
-                        ></textarea>
-                    </div>
+                        <div className="ae-input-group">
+                            <textarea
+                                name="remark"
+                                value={formData.remark}
+                                onChange={handleInputChange}
+                                className="ae-input"
+                                style={{ minHeight: '120px', padding: '16px', borderRadius: '12px' }}
+                                placeholder="Click to add description/remark for this project..."
+                            ></textarea>
+                        </div>
 
-                    {/* Document Attachments Row */}
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '16px',
-                        marginTop: '24px',
-                        padding: '16px 20px',
-                        background: '#FAFBFC',
-                        borderRadius: '16px',
-                        border: '1px solid #E0E6ED'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <label style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    padding: '8px 20px',
-                                    background: 'white',
-                                    color: '#2D3748',
-                                    borderRadius: '10px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    border: '1px solid #E0E6ED',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                                }}>
-                                    <Paperclip size={16} className="text-[#0066CC]" />
-                                    Attachments
-                                    <input type="file" onChange={handleFileUpload} style={{ display: 'none' }} id="file-upload-input" />
-                                </label>
-                                {uploading && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0066CC', fontSize: '0.8rem', fontWeight: 600 }}>
-                                        <Loader2 size={14} className="animate-spin" /> Uploading...
-                                    </div>
-                                )}
-                                {uploadFeedback.message && (
-                                    <div style={{
-                                        fontSize: '0.8rem',
-                                        fontWeight: 600,
-                                        color: uploadFeedback.type === 'success' ? '#059669' : '#DC2626',
-                                        padding: '4px 12px',
-                                        borderRadius: '20px',
-                                        background: uploadFeedback.type === 'success' ? '#ECFDF5' : '#FEF2F2'
+                        {/* Document Attachments Row */}
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '16px',
+                            marginTop: '24px',
+                            padding: '16px 20px',
+                            background: '#FAFBFC',
+                            borderRadius: '16px',
+                            border: '1px solid #E0E6ED'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    <label style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        padding: '8px 20px',
+                                        background: 'white',
+                                        color: '#2D3748',
+                                        borderRadius: '10px',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        border: '1px solid #E0E6ED',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
                                     }}>
-                                        {uploadFeedback.message}
-                                    </div>
+                                        <Paperclip size={16} className="text-[#0066CC]" />
+                                        Attachments
+                                        <input type="file" onChange={handleFileUpload} style={{ display: 'none' }} id="file-upload-input" />
+                                    </label>
+                                    {uploading && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0066CC', fontSize: '0.8rem', fontWeight: 600 }}>
+                                            <Loader2 size={14} className="animate-spin" /> Uploading...
+                                        </div>
+                                    )}
+                                    {uploadFeedback.message && (
+                                        <div style={{
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                            color: uploadFeedback.type === 'success' ? '#059669' : '#DC2626',
+                                            padding: '4px 12px',
+                                            borderRadius: '20px',
+                                            background: uploadFeedback.type === 'success' ? '#ECFDF5' : '#FEF2F2'
+                                        }}>
+                                            {uploadFeedback.message}
+                                        </div>
+                                    )}
+                                </div>
+                                {attachments.length === 0 && !uploading && !uploadFeedback.message && (
+                                    <span style={{ color: '#718096', fontSize: '0.85rem', fontWeight: 500, fontStyle: 'italic' }}>No attachments yet</span>
                                 )}
                             </div>
-                            {attachments.length === 0 && pendingFiles.length === 0 && !uploading && !uploadFeedback.message && (
-                                <span style={{ color: '#718096', fontSize: '0.85rem', fontWeight: 500, fontStyle: 'italic' }}>No attachments yet</span>
-                            )}
-                        </div>
 
-                        {(attachments.length > 0 || pendingFiles.length > 0) && (
+                        {attachments.length > 0 && (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '8px', marginTop: '4px' }}>
                                 {attachments.map((att) => (
                                     <div key={att.id} style={{
@@ -856,58 +851,66 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                         </div>
                                     </div>
                                 ))}
-
-                                {pendingFiles.map((file, idx) => (
-                                    <div key={`pending-${idx}`} style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '8px 12px',
-                                        background: '#F0F9FF',
-                                        border: '1px dashed #0066CC',
-                                        borderRadius: '8px',
-                                        transition: 'all 0.2s'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                            <File size={14} className="text-[#0066CC]" />
-                                            <div style={{ minWidth: 0 }}>
-                                                <p style={{
-                                                    margin: 0,
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 600,
-                                                    color: '#0066CC',
-                                                    whiteSpace: 'nowrap',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis'
-                                                }} title={file.name}>
-                                                    {file.name}
-                                                </p>
-                                                <span style={{ fontSize: '10px', color: '#718096', fontWeight: 600 }}>Pending Upload</span>
-                                            </div>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemovePending(idx)}
-                                            style={{ padding: '4px', color: '#E53E3E', background: 'none', border: 'none', cursor: 'pointer' }}
-                                            title="Remove"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-                                ))}
                             </div>
                         )}
                     </div>
                 </div>
 
                 {/* Submit Buttons */}
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-                    <button type="button" onClick={onBack} className="ae-btn-secondary">
-                        Cancel
-                    </button>
-                    <button type="submit" className="ae-btn-primary" disabled={loading}>
-                        {loading ? 'Saving...' : id ? 'Update Project' : 'Save Project'}
-                    </button>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+                    <div style={{
+                        display: 'flex',
+                        gap: '4px',
+                        alignItems: 'center',
+                        background: 'white',
+                        padding: '6px',
+                        borderRadius: '12px',
+                        border: '1px solid #E0E6ED',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                        <button
+                            type="button"
+                            onClick={onBack}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: 'transparent',
+                                color: '#718096'
+                            }}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: '#FF6B00',
+                                color: 'white',
+                                boxShadow: '0 2px 8px rgba(255, 107, 0, 0.3)'
+                            }}
+                        >
+                            {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                            {loading ? 'Saving...' : id ? 'Update Project' : 'Save Project'}
+                        </button>
+                    </div>
                 </div>
             </form>
 
