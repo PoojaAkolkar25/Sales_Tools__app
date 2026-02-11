@@ -50,6 +50,10 @@ class Customer(models.Model):
     contact_person = models.CharField(max_length=255, blank=True, default='')
     phone = models.CharField(max_length=50, blank=True, default='')
     address = models.TextField(blank=True, default='')
+    gstin = models.CharField(max_length=15, blank=True, default='', verbose_name="GSTIN")
+    pan = models.CharField(max_length=10, blank=True, default='', verbose_name="PAN")
+    state = models.CharField(max_length=100, blank=True, default='')
+    state_code = models.CharField(max_length=10, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

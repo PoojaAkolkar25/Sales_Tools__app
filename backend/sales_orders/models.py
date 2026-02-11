@@ -35,6 +35,8 @@ class SalesOrder(models.Model):
     customer_code = models.CharField(max_length=50, blank=True)
     po_number = models.CharField(max_length=100, blank=True)
     po_date = models.DateField(null=True, blank=True)
+    po_from_date = models.DateField(null=True, blank=True)
+    po_to_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     
     billing_address = models.TextField(blank=True)

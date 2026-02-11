@@ -215,6 +215,54 @@ class EstimateViewSet(viewsets.ModelViewSet):
         return Response(EstimateSerializer(new_estimate).data, status=status.HTTP_201_CREATED)
 
     @decorators.action(detail=True, methods=['post'])
+    def auto_renewal(self, request, pk=None):
+        original_estimate = self.get_object()
+
+        # BRD: Auto-renewal shall only happen for Approved estimates.
+        if original_estimate.approval_status != ApprovalStatus.APPROVED:
+             return Response(
+                {"error": "Only approved estimates can be auto-renewed."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Create new estimate (reset version, new estimate_id will be generated in save())
+        new_estimate = Estimate.objects.create(
+            cost_sheet=original_estimate.cost_sheet,
+            deal=original_estimate.deal,
+            version=1,
+            status=EstimateStatus.DRAFT,
+            estimate_date=timezone.now().date(),
+            subscription_from=original_estimate.subscription_to + timezone.timedelta(days=1) if original_estimate.subscription_to else None,
+            subscription_to=None,
+            description_memo=original_estimate.description_memo,
+            terms_conditions=original_estimate.terms_conditions,
+            markup_adjustment=original_estimate.markup_adjustment,
+            commercial_terms=original_estimate.commercial_terms,
+            total_cost=original_estimate.total_cost,
+            total_margin=original_estimate.total_margin,
+            total_price=original_estimate.total_price,
+            parent_estimate=None,
+            is_latest=True,
+            approval_status=ApprovalStatus.PENDING,
+            created_by=request.user
+        )
+
+        # Copy line items
+        for item in original_estimate.items.all():
+            EstimateItem.objects.create(
+                estimate=new_estimate,
+                sr_no=item.sr_no,
+                particulars=item.particulars,
+                description=item.description,
+                hsn_sac=item.hsn_sac,
+                qty=item.qty,
+                rate=item.rate,
+                amount=item.amount
+            )
+
+        return Response(EstimateSerializer(new_estimate).data, status=status.HTTP_201_CREATED)
+
+    @decorators.action(detail=True, methods=['post'])
     def request_approval(self, request, pk=None):
         estimate = self.get_object()
         

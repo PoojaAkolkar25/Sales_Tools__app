@@ -17,6 +17,8 @@ class CompanyProfile(models.Model):
     registered_address = models.TextField()
     gstin = models.CharField(max_length=15, blank=True, null=True)
     pan = models.CharField(max_length=10, blank=True, null=True)
+    cin = models.CharField(max_length=21, blank=True, null=True, verbose_name="CIN")
+    msme_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="MSME Number")
     website_url = models.URLField(blank=True, null=True)
     state = models.ForeignKey(StateMaster, on_delete=models.SET_NULL, null=True)
     authorized_signatory_name = models.CharField(max_length=255, blank=True, null=True, help_text="Name of authorized signatory")

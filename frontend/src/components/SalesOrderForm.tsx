@@ -439,6 +439,42 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     disabled={isSubmitted}
                                 />
                             </div>
+                            <div className="ae-input-group">
+                                <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>PO Valid From</label>
+                                <input
+                                    name="po_from_date"
+                                    type="date"
+                                    value={salesOrder.po_from_date || ''}
+                                    onChange={handleInputChange}
+                                    style={{
+                                        width: '100%',
+                                        padding: '6px 12px',
+                                        border: '1px solid #E0E6ED',
+                                        borderRadius: '6px',
+                                        fontSize: '0.8rem',
+                                        color: '#4A5568'
+                                    }}
+                                    disabled={isSubmitted}
+                                />
+                            </div>
+                            <div className="ae-input-group">
+                                <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>PO Valid To</label>
+                                <input
+                                    name="po_to_date"
+                                    type="date"
+                                    value={salesOrder.po_to_date || ''}
+                                    onChange={handleInputChange}
+                                    style={{
+                                        width: '100%',
+                                        padding: '6px 12px',
+                                        border: '1px solid #E0E6ED',
+                                        borderRadius: '6px',
+                                        fontSize: '0.8rem',
+                                        color: '#4A5568'
+                                    }}
+                                    disabled={isSubmitted}
+                                />
+                            </div>
                         </div>
                     </section>
 

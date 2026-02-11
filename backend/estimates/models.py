@@ -24,6 +24,8 @@ class Estimate(models.Model):
     status = models.CharField(max_length=20, choices=EstimateStatus.choices, default=EstimateStatus.DRAFT)
     
     estimate_date = models.DateField(null=True, blank=True)
+    subscription_from = models.DateField(null=True, blank=True)
+    subscription_to = models.DateField(null=True, blank=True)
     description_memo = models.TextField(blank=True, default='')
     terms_conditions = models.TextField(blank=True, default='')
     
@@ -38,6 +40,9 @@ class Estimate(models.Model):
     # Rewind functionality - links to the previous version
     parent_estimate = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='negotiated_versions')
     is_latest = models.BooleanField(default=True)
+    
+    # Custom column labels for the items table
+    column_labels = models.JSONField(default=dict, blank=True, help_text="Custom labels for items table headers")
     
     # Approval workflow fields
     approval_status = models.CharField(max_length=20, choices=ApprovalStatus.choices, default=ApprovalStatus.PENDING)
@@ -86,6 +91,7 @@ class EstimateItem(models.Model):
     sr_no = models.IntegerField()
     particulars = models.CharField(max_length=255)
     description = models.TextField(blank=True, default='')
+    hsn_sac = models.CharField(max_length=20, blank=True, default='', verbose_name="HSN/SAC")
     qty = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     rate = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)

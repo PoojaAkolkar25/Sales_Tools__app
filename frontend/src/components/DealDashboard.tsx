@@ -553,7 +553,14 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                 const stageStyle = getStageColor(deal.current_stage || deal.stage);
                                 return (
                                     <tr key={deal.id}>
-                                        {visibleColumns.includes('deal_id') && <td style={{ fontWeight: 600, color: '#0066CC' }}>{deal.deal_id}</td>}
+                                        {visibleColumns.includes('deal_id') && (
+                                            <td
+                                                style={{ fontWeight: 600, color: '#0066CC', cursor: 'pointer', textDecoration: 'underline' }}
+                                                onClick={() => onView(deal.id)}
+                                            >
+                                                {deal.deal_id}
+                                            </td>
+                                        )}
                                         {visibleColumns.includes('deal_date') && <td>{formatToAppDate(deal.deal_date)}</td>}
                                         {visibleColumns.includes('deal_name') && <td style={{ fontWeight: 700 }}>{deal.deal_name}</td>}
                                         {visibleColumns.includes('company') && <td>{deal.company}</td>}

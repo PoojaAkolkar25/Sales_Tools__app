@@ -189,6 +189,24 @@ const AppContent: React.FC = () => {
     }
   }, [user, authLoading, location.pathname, navigate]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+    if (id) {
+      const numId = parseInt(id);
+      if (location.pathname === '/deal') {
+        setEditingDealId(numId);
+        setDealView('form');
+      } else if (location.pathname === '/estimates') {
+        setEditingEstimateId(numId);
+        setEstimateView('form');
+      } else if (location.pathname === '/sales-order') {
+        setEditingSalesOrderId(numId);
+        setSalesOrderView('form');
+      }
+    }
+  }, [location.pathname, location.search]);
+
   const checkAuth = async () => {
     try {
       const response = await api.get('auth/me/');

@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, Search, FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw } from 'lucide-react';
 import api from '../api';
 
@@ -29,6 +30,7 @@ interface CostSheet {
     cost_sheet_date?: string;
     created_at: string;
     currency?: string;
+    deal?: number | null;
 }
 
 interface CostSheetDashboardProps {
@@ -36,6 +38,7 @@ interface CostSheetDashboardProps {
 }
 
 const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
+    const navigate = useNavigate();
     const [costSheets, setCostSheets] = useState<CostSheet[]>([]);
     const [loading, setLoading] = useState(true);
     // Filter States
@@ -661,7 +664,10 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         {visibleColumns.includes('lead_no') && <td style={{ fontWeight: 600, color: '#718096', fontSize: '0.8rem' }}>
                                             {cs.lead_no || '—'}
                                         </td>}
-                                        {visibleColumns.includes('deal_no') && <td style={{ fontWeight: 600, color: '#0066CC', fontSize: '0.8rem' }}>
+                                        {visibleColumns.includes('deal_no') && <td
+                                            style={{ fontWeight: 600, color: '#0066CC', fontSize: '0.8rem', cursor: cs.deal ? 'pointer' : 'default', textDecoration: cs.deal ? 'underline' : 'none' }}
+                                            onClick={() => cs.deal && navigate(`/deal?id=${cs.deal}`)}
+                                        >
                                             {cs.deal_no || '—'}
                                         </td>}
                                         {visibleColumns.includes('customer_name') && <td style={{ color: '#4A5568', fontWeight: 500 }}>

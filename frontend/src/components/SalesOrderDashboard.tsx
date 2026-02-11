@@ -10,6 +10,7 @@ import {
     BarChart3,
     RefreshCw
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 
@@ -18,6 +19,7 @@ interface SalesOrderDashboardProps {
 }
 
 const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => {
+    const navigate = useNavigate();
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isExtracting, setIsExtracting] = useState(false);
@@ -249,6 +251,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => 
                         <thead>
                             <tr>
                                 <th style={{ backgroundColor: '#FAFBFC' }}>SO Number</th>
+                                <th style={{ backgroundColor: '#FAFBFC' }}>Deal ID</th>
                                 <th style={{ backgroundColor: '#FAFBFC' }}>Customer</th>
                                 <th style={{ backgroundColor: '#FAFBFC' }}>Cust Code</th>
                                 <th style={{ backgroundColor: '#FAFBFC' }}>PO Number</th>
@@ -277,6 +280,14 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView }) => 
                                     <td className="whitespace-nowrap">
                                         <span style={{ fontWeight: 700, color: '#0066CC', fontSize: '0.8rem' }}>{so.so_number || '---'}</span>
                                         {so.status === 'DRAFT' && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800 uppercase tracking-tighter">Draft</span>}
+                                    </td>
+                                    <td className="whitespace-nowrap">
+                                        <span
+                                            style={{ fontWeight: 700, color: '#0066CC', fontSize: '0.8rem', cursor: 'pointer' }}
+                                            onClick={() => navigate(`/deal?id=${so.deal}`)}
+                                        >
+                                            {so.deal_id || '---'}
+                                        </span>
                                     </td>
                                     <td className="whitespace-nowrap">
                                         <div className="flex flex-col">

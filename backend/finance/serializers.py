@@ -24,6 +24,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     line_items = InvoiceLineItemSerializer(many=True, read_only=True)
     customer_name = serializers.CharField(source='lead.customer_name', read_only=True)
     project_name = serializers.CharField(source='lead.project_name', read_only=True)
+    deal_no = serializers.CharField(source='deal.deal_id', read_only=True)
     approved_by_name = serializers.CharField(source='approved_by.username', read_only=True)
     
     # Optional/Calculated fields made non-required for validation
@@ -41,13 +42,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invoice
         fields = [
-            'id', 'invoice_no', 'invoice_date', 'due_date', 'lead', 'deal', 'cost_sheet', 'proposal',
+            'id', 'invoice_no', 'invoice_date', 'due_date', 'lead', 'deal', 'deal_no', 'cost_sheet', 'proposal',
             'invoice_type', 'status', 'is_gst_applicable', 'currency', 'place_of_supply', 
             'billing_address', 'shipping_address', 'customer_gstin', 'subtotal', 
             'total_discount', 'taxable_amount', 'total_tax', 'round_off', 
             'total_amount', 'open_balance', 'grand_total_words', 'approval_comments', 
             'approved_by', 'approved_at', 'line_items', 'customer_name', 
-            'project_name', 'approved_by_name', 'sales_tax_rate', 'sales_tax_amount',
+            'project_name', 'deal_no', 'approved_by_name', 'sales_tax_rate', 'sales_tax_amount',
             'gst_declaration', 'lut_declaration', 'authorized_signatory', 
             'signature_image', 'company_seal'
         ]

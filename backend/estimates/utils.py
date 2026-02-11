@@ -4,6 +4,7 @@ from django.conf import settings
 from xhtml2pdf import pisa
 from pypdf import PdfWriter, PdfReader
 import logging
+from finance.models import CompanyProfile
 
 logger = logging.getLogger(__name__)
 
@@ -14,10 +15,11 @@ def generate_estimate_pdf(estimate):
     """
     try:
         # Prepare context for the template
+        company = CompanyProfile.objects.first()
         context = {
             'estimate': estimate,
             'items': estimate.items.all().order_by('sr_no'),
-            'company_name': "Sales Tools App",
+            'company': company,
         }
         
         # Render HTML

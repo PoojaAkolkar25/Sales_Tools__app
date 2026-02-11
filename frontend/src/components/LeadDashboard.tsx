@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
     TrendingUp,
@@ -21,6 +22,8 @@ interface Lead {
     email: string;
     lead_date: string;
     created_at: string;
+    deal_id: number | null;
+    deal_no: string | null;
 }
 
 interface LeadDashboardProps {
@@ -29,6 +32,7 @@ interface LeadDashboardProps {
 }
 
 const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView, searchQuery }) => {
+    const navigate = useNavigate();
 
 
     const { showNotification } = useNotification();
@@ -118,6 +122,7 @@ const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView, searchQuery }) =>
                     <thead>
                         <tr>
                             <th>Lead ID</th>
+                            <th>Deal Link</th>
                             <th>Company</th>
                             <th>Customer Name</th>
                             <th>Project Name</th>
@@ -144,6 +149,18 @@ const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView, searchQuery }) =>
                                 <tr key={lead.id}>
 
                                     <td style={{ fontWeight: 600, color: '#0066CC' }}>{lead.lead_no}</td>
+                                    <td>
+                                        {lead.deal_id ? (
+                                            <span
+                                                onClick={() => navigate(`/deal?id=${lead.deal_id}`)}
+                                                style={{ fontWeight: 700, color: '#FF6B00', cursor: 'pointer', textDecoration: 'underline' }}
+                                            >
+                                                {lead.deal_no}
+                                            </span>
+                                        ) : (
+                                            <span style={{ color: '#A0AEC0', fontStyle: 'italic', fontSize: '0.75rem' }}>No Deal</span>
+                                        )}
+                                    </td>
                                     <td>
                                         <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#4A5568', background: '#EDF2F7', padding: '2px 6px', borderRadius: '4px' }}>
                                             {lead.company}

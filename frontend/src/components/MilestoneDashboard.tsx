@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Plus,
     Search,
@@ -14,6 +15,7 @@ import MilestoneForm from './MilestoneForm';
 
 const ALL_COLUMNS = [
     { key: 'milestone_no', label: 'Milestone No' },
+    { key: 'deal', label: 'Deal' },
     { key: 'sales_order', label: 'Sales Order' },
     { key: 'customer', label: 'Customer' },
     { key: 'description', label: 'Description' },
@@ -24,6 +26,7 @@ const ALL_COLUMNS = [
 ];
 
 const MilestoneDashboard: React.FC = () => {
+    const navigate = useNavigate();
     const [milestones, setMilestones] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
@@ -358,6 +361,7 @@ const MilestoneDashboard: React.FC = () => {
                     <thead>
                         <tr>
                             {visibleColumns.includes('milestone_no') && <th>Milestone No</th>}
+                            {visibleColumns.includes('deal') && <th>Deal</th>}
                             {visibleColumns.includes('sales_order') && <th>Sales Order</th>}
                             {visibleColumns.includes('customer') && <th>Customer</th>}
                             {visibleColumns.includes('description') && <th>Description</th>}
@@ -381,6 +385,7 @@ const MilestoneDashboard: React.FC = () => {
                                     <input className="ae-input" placeholder="Filter..." value={filters.soNumber} onChange={e => setFilters({ ...filters, soNumber: e.target.value })} style={{ height: '24px', fontSize: '11px' }} />
                                 </div>
                             </th>}
+                            {visibleColumns.includes('deal') && <th></th>}
                             {visibleColumns.includes('customer') && <th>
                                 <div className="ae-input-group">
                                     <Search className="ae-search-icon" size={12} />
@@ -411,6 +416,18 @@ const MilestoneDashboard: React.FC = () => {
                             filteredMilestones.map((m) => (
                                 <tr key={m.id}>
                                     {visibleColumns.includes('milestone_no') && <td style={{ fontWeight: 800, color: '#1A1F36' }}>{m.milestone_no}</td>}
+                                    {visibleColumns.includes('deal') && (
+                                        <td>
+                                            {m.sales_order_details?.deal ? (
+                                                <span
+                                                    onClick={() => navigate(`/deal?id=${m.sales_order_details.deal}`)}
+                                                    style={{ fontWeight: 700, color: '#FF6B00', cursor: 'pointer', textDecoration: 'underline' }}
+                                                >
+                                                    {m.sales_order_details.deal_id}
+                                                </span>
+                                            ) : '—'}
+                                        </td>
+                                    )}
                                     {visibleColumns.includes('sales_order') && <td style={{ fontWeight: 700, color: '#0066CC' }}>{m.sales_order_details?.so_number}</td>}
                                     {visibleColumns.includes('customer') && <td style={{ fontWeight: 600, color: '#4A5568' }}>{m.sales_order_details?.customer_name}</td>}
                                     {visibleColumns.includes('description') && <td style={{ fontSize: '12px', color: '#718096' }}>{m.description}</td>}

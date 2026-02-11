@@ -146,7 +146,6 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
             }));
 
             // Map items from cost sheet if available
-            // This is a simplification, in real world we'd fetch specific items
             if (cs.total_estimated_price) {
                 setLineItems([{
                     description: `Project: ${cs.project_name}`,
@@ -157,6 +156,42 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     gst_rate: 18
                 }]);
             }
+        }
+    };
+
+    const handleProposalChange = async (proposalId: string) => {
+        const p = proposals.find(prop => prop.id === parseInt(proposalId));
+        if (p && p.estimate) {
+            setLoading(true);
+            try {
+                const response = await api.get(`/estimates/${p.estimate}/`);
+                const est = response.data;
+
+                setFormData(prev => ({
+                    ...prev,
+                    proposal: proposalId,
+                    cost_sheet: est.cost_sheet || prev.cost_sheet,
+                    lead: est.deal ? (leads.find(l => l.customer_name === est.customer_name)?.id || prev.lead) : prev.lead
+                }));
+
+                if (est.items && est.items.length > 0) {
+                    setLineItems(est.items.map((item: any) => ({
+                        description: item.particulars + (item.description ? ` - ${item.description}` : ''),
+                        hsn_sac: item.hsn_sac || '',
+                        quantity: item.qty,
+                        rate: item.rate,
+                        discount: 0,
+                        gst_rate: 18
+                    })));
+                }
+            } catch (error) {
+                console.error('Error fetching estimate details', error);
+                showNotification('Error loading estimate items', 'error');
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            setFormData(prev => ({ ...prev, proposal: proposalId }));
         }
     };
 
@@ -284,7 +319,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     </div>
                     <div className="ae-input-group">
                         <label className="ae-label">Reference Proposal</label>
-                        <select className="ae-input" disabled={isReadOnly} value={formData.proposal} onChange={e => setFormData({ ...formData, proposal: e.target.value })}>
+                        <select className="ae-input" disabled={isReadOnly} value={formData.proposal} onChange={e => handleProposalChange(e.target.value)}>
                             <option value="">Select Proposal (Optional)</option>
                             {proposals.map(p => (
                                 <option key={p.id} value={p.id}>{p.filename} v{p.version}</option>

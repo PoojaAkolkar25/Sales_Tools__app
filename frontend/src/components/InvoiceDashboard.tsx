@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Download, CheckCircle, XCircle, Mail, BarChart3, Eye, Pencil, Send } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import InvoiceForm from './InvoiceForm';
 import { useNotification } from '../context/NotificationContext';
 
 const InvoiceDashboard: React.FC = () => {
+    const navigate = useNavigate();
     const { showNotification } = useNotification();
     const [invoices, setInvoices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -257,6 +259,7 @@ const InvoiceDashboard: React.FC = () => {
                         <thead>
                             <tr>
                                 <th>Invoice No</th>
+                                <th>Deal ID</th>
                                 <th>Customer</th>
                                 <th>Date</th>
                                 <th>Amount</th>
@@ -274,6 +277,12 @@ const InvoiceDashboard: React.FC = () => {
                                 invoices.map(inv => (
                                     <tr key={inv.id}>
                                         <td style={{ fontWeight: 700, color: '#FF6B00' }}>{inv.invoice_no}</td>
+                                        <td
+                                            style={{ fontWeight: 700, color: '#0066CC', cursor: 'pointer' }}
+                                            onClick={() => navigate(`/deal?id=${inv.deal}`)}
+                                        >
+                                            {inv.deal_no || '---'}
+                                        </td>
                                         <td>{inv.customer_name}</td>
                                         <td>{new Date(inv.invoice_date).toLocaleDateString()}</td>
                                         <td style={{ fontWeight: 600 }}>{inv.currency} {inv.total_amount.toLocaleString()}</td>

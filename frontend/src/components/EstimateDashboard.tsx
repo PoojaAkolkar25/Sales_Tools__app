@@ -14,6 +14,7 @@ import {
     Loader2,
     RefreshCcw
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
@@ -21,10 +22,13 @@ import { formatToAppDate } from '../utils/dateUtils';
 const ALL_COLUMNS = [
     { key: 'estimate_id', label: 'Est. ID' },
     { key: 'version', label: 'Version' },
+    { key: 'deal_id', label: 'Deal ID' },
     { key: 'customer_name', label: 'Customer' },
     { key: 'project_name', label: 'Project' },
     { key: 'total_price', label: 'Total Value' },
     { key: 'status', label: 'Status' },
+    { key: 'subscription_from', label: 'Sub. From' },
+    { key: 'subscription_to', label: 'Sub. To' },
     { key: 'proposal', label: 'Proposal' },
     { key: 'created_at', label: 'Date' }
 ];
@@ -37,11 +41,15 @@ interface Estimate {
     total_price: string;
     customer_name: string;
     project_name: string;
+    deal: number;
     deal_id: string;
+    cost_sheet: number;
     cost_sheet_no: string;
     created_at: string;
     is_latest: boolean;
     approval_status: string;
+    subscription_from?: string;
+    subscription_to?: string;
     customer_email?: string;
     proposals?: any[];
 }
@@ -72,6 +80,7 @@ const EMAIL_TEMPLATES = {
 };
 
 const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
+    const navigate = useNavigate();
     const { showNotification } = useNotification();
     const [estimates, setEstimates] = useState<Estimate[]>([]);
     const [loading, setLoading] = useState(true);
@@ -179,6 +188,8 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
             const matchesLatest = !filters.showOnlyLatest || est.is_latest;
             const matchesPrice = (est.total_price || '').toString().includes(filters.total_price);
             const matchesVersion = (est.version || '').toString().includes(filters.version);
+            const matchesSubFrom = (est.subscription_from || '').includes(filters.subscription_from || '');
+            const matchesSubTo = (est.subscription_to || '').includes(filters.subscription_to || '');
 
             let matchesDate = true;
             if (filters.period) {
@@ -361,6 +372,17 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
             link.parentNode?.removeChild(link);
         } catch (error) {
             showNotification('Failed to download PDF', 'error');
+        }
+    };
+
+    const handleAutoRenewal = async (id: number) => {
+        if (!window.confirm('Are you sure you want to auto-renew this estimate? This will create a new draft estimate.')) return;
+        try {
+            const response = await api.post(`/estimates/${id}/auto_renewal/`);
+            showNotification('Estimate auto-renewed successfully', 'success');
+            onView(response.data.id);
+        } catch (error: any) {
+            showNotification(error.response?.data?.error || 'Failed to auto-renew estimate', 'error');
         }
     };
 
@@ -628,11 +650,26 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                 const hasProposal = (est as any).proposals?.length > 0;
                                 return (
                                     <tr key={est.id}>
-                                        {visibleColumns.includes('estimate_id') && <td style={{ fontWeight: 700, color: '#0066CC' }}>{est.estimate_id}</td>}
+                                        {visibleColumns.includes('estimate_id') && (
+                                            <td
+                                                style={{ fontWeight: 700, color: '#0066CC', cursor: 'pointer', textDecoration: 'underline' }}
+                                                onClick={() => onView(est.id)}
+                                            >
+                                                {est.estimate_id}
+                                            </td>
+                                        )}
                                         {visibleColumns.includes('version') && (
                                             <td>
                                                 <span style={{ padding: '2px 8px', borderRadius: '4px', background: '#EDF2F7', fontSize: '0.7rem', fontWeight: 800 }}>v{est.version}</span>
                                                 {!est.is_latest && <span style={{ marginLeft: '4px', color: '#A0AEC0', fontSize: '0.65rem' }}>(Old)</span>}
+                                            </td>
+                                        )}
+                                        {visibleColumns.includes('deal_id') && (
+                                            <td
+                                                style={{ fontWeight: 700, color: '#0066CC', cursor: 'pointer' }}
+                                                onClick={() => navigate(`/deal?id=${est.deal}`)}
+                                            >
+                                                {est.deal_id}
                                             </td>
                                         )}
                                         {visibleColumns.includes('customer_name') && <td style={{ fontWeight: 500 }}>{est.customer_name}</td>}
@@ -658,6 +695,9 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
 
                                         <td style={{ textAlign: 'right' }}>
                                             <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                                {est.is_latest && est.approval_status === 'APPROVED' && (
+                                                    <button className="ae-btn-secondary" onClick={() => handleAutoRenewal(est.id)} style={{ padding: '6px 10px', color: '#FF6B00' }} title="Auto-Renewal"><RefreshCcw size={16} /></button>
+                                                )}
                                                 <button className="ae-btn-secondary" onClick={() => onView(est.id)} style={{ padding: '6px 10px' }} title="View Estimate"><FileText size={16} /></button>
                                                 <button className="ae-btn-secondary" onClick={() => handlePreviewPDF(est.id)} style={{ padding: '6px 10px' }} title="Preview Combined PDF"><Eye size={16} /></button>
                                                 <button className="ae-btn-secondary" onClick={() => handleDownloadPDF(est.id, est.estimate_id)} style={{ padding: '6px 10px' }} title="Download Combined PDF"><Download size={16} /></button>
