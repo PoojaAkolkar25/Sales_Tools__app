@@ -65,7 +65,7 @@ const getNavItems = (user: any) => {
 
   if (user?.role === 'app_admin') {
     items.push(
-      { id: 'user-management', label: 'User Management', path: '/user-management', icon: Shield }
+      { id: 'create', label: 'Create', path: '/user-management', icon: PlusCircle }
     );
   }
 

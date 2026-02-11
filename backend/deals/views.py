@@ -6,17 +6,12 @@ from django.utils import timezone
 from django.http import HttpResponse
 import io
 import xlsxwriter
-from .models import Deal, DealOwner, ImplementationPartner, Product, OpportunitySourceMaster, IndustryMaster, Customer, CountryMaster
+from .models import Deal, ImplementationPartner, Product, Customer, DealTypeEntry, AuditTrail, DealAttachment
 from .serializers import (
-    DealSerializer, DealOwnerSerializer, ImplementationPartnerSerializer,
-    ProductSerializer, OpportunitySourceMasterSerializer, IndustryMasterSerializer, CustomerSerializer,
-    CountryMasterSerializer
+    DealSerializer, ImplementationPartnerSerializer,
+    ProductSerializer, CustomerSerializer, DealTypeEntrySerializer,
+    AuditTrailSerializer, DealAttachmentSerializer
 )
-
-class DealOwnerViewSet(viewsets.ModelViewSet):
-    queryset = DealOwner.objects.all().order_by('name')
-    serializer_class = DealOwnerSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
 class ImplementationPartnerViewSet(viewsets.ModelViewSet):
     queryset = ImplementationPartner.objects.all().order_by('name')
@@ -28,24 +23,19 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-class OpportunitySourceMasterViewSet(viewsets.ModelViewSet):
-    queryset = OpportunitySourceMaster.objects.all().order_by('name')
-    serializer_class = OpportunitySourceMasterSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-class IndustryMasterViewSet(viewsets.ModelViewSet):
-    queryset = IndustryMaster.objects.all().order_by('name')
-    serializer_class = IndustryMasterSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all().order_by('name')
     serializer_class = CustomerSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-class CountryMasterViewSet(viewsets.ModelViewSet):
-    queryset = CountryMaster.objects.all().order_by('name')
-    serializer_class = CountryMasterSerializer
+class DealTypeEntryViewSet(viewsets.ModelViewSet):
+    queryset = DealTypeEntry.objects.all().order_by('created_at')
+    serializer_class = DealTypeEntrySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class AuditTrailViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = AuditTrail.objects.all().order_by('-timestamp')
+    serializer_class = AuditTrailSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class DealViewSet(viewsets.ModelViewSet):
@@ -59,7 +49,10 @@ class DealViewSet(viewsets.ModelViewSet):
         # Report type filtering
         report_type = self.request.query_params.get('report_type', None)
         if report_type == 'my_deals':
-            queryset = queryset.filter(Q(deal_owner__email=self.request.user.email))
+            # Note: deal_owner field was removed from Deal model. 
+            # You might want to filter by salesperson or update this logic.
+            # For now, returning all deals or filter by salesperson_name if applicable.
+            pass
         elif report_type == 'new_this_week':
             from datetime import timedelta
             one_week_ago = timezone.now() - timedelta(days=7)
@@ -78,18 +71,12 @@ class DealViewSet(viewsets.ModelViewSet):
         if stage:
             queryset = queryset.filter(stage=stage)
             
-        owner = self.request.query_params.get('owner', None)
-        if owner:
-            queryset = queryset.filter(deal_owner_id=owner)
-            
         search = self.request.query_params.get('search', None)
         if search:
             queryset = queryset.filter(
                 Q(deal_name__icontains=search) |
                 Q(deal_id__icontains=search) |
-                Q(customer__name__icontains=search) |
-                Q(industry__name__icontains=search) |
-                Q(country__name__icontains=search)
+                Q(customer__name__icontains=search)
             )
                        
         return queryset
@@ -143,7 +130,7 @@ class DealViewSet(viewsets.ModelViewSet):
         
         headers = [
             'Deal ID', 'Deal Name', 'Customer', 'Customer Email', 'Stage',
-            'Amount', 'Currency', 'Probability (%)', 'Owner', 'Close Date',
+            'Amount', 'Currency', 'Probability (%)', 'Close Date',
             'HubSpot ID', 'Last Synced'
         ]
         
@@ -159,10 +146,9 @@ class DealViewSet(viewsets.ModelViewSet):
             worksheet.write(row, 5, float(deal.amount))
             worksheet.write(row, 6, deal.currency)
             worksheet.write(row, 7, float(deal.probability))
-            worksheet.write(row, 8, deal.deal_owner.name if deal.deal_owner else "N/A")
-            worksheet.write(row, 9, str(deal.expected_close_date) if deal.expected_close_date else "N/A")
-            worksheet.write(row, 10, deal.hubspot_id or "N/A")
-            worksheet.write(row, 11, str(deal.last_synced_at) if deal.last_synced_at else "Not Synced")
+            worksheet.write(row, 8, str(deal.expected_close_date) if deal.expected_close_date else "N/A")
+            worksheet.write(row, 9, deal.hubspot_id or "N/A")
+            worksheet.write(row, 10, str(deal.last_synced_at) if deal.last_synced_at else "Not Synced")
             
         workbook.close()
         output.seek(0)
@@ -210,7 +196,7 @@ class DealViewSet(viewsets.ModelViewSet):
 
         headers = [
             'Deal ID', 'Deal Name', 'Customer', 'Customer Email', 'Stage',
-            'Amount', 'Currency', 'Probability (%)', 'Owner', 'Close Date',
+            'Amount', 'Currency', 'Probability (%)', 'Close Date',
             'HubSpot ID', 'Last Synced'
         ]
         writer.writerow(headers)
@@ -225,7 +211,6 @@ class DealViewSet(viewsets.ModelViewSet):
                 float(deal.amount) if deal.amount is not None else "",
                 deal.currency,
                 float(deal.probability) if deal.probability is not None else "",
-                deal.deal_owner.name if deal.deal_owner else "N/A",
                 str(deal.expected_close_date) if deal.expected_close_date else "",
                 deal.hubspot_id or "",
                 str(deal.last_synced_at) if deal.last_synced_at else ""

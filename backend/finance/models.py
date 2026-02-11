@@ -13,19 +13,62 @@ class StateMaster(models.Model):
         return f"{self.code} - {self.name}"
 
 class CompanyProfile(models.Model):
+    # 5.1 Company Basic Details
     name = models.CharField(max_length=255)
-    registered_address = models.TextField()
-    gstin = models.CharField(max_length=15, blank=True, null=True)
-    pan = models.CharField(max_length=10, blank=True, null=True)
-    cin = models.CharField(max_length=21, blank=True, null=True, verbose_name="CIN")
-    msme_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="MSME Number")
+    alias_name = models.CharField(max_length=100, blank=True, null=True)
+    logo = models.ImageField(upload_to='company/logos/', blank=True, null=True)
+    
+    # 5.2 Primary Mailing Address
+    address_line_1 = models.TextField(blank=True, null=True)
+    address_line_2 = models.TextField(blank=True, null=True)
+    country = models.CharField(max_length=100, default='India')
+    state = models.ForeignKey(StateMaster, on_delete=models.SET_NULL, null=True, blank=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    pincode = models.CharField(max_length=6, blank=True, null=True)
+    
+    # 5.3 Contact Details
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    mobile_number = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
     website_url = models.URLField(blank=True, null=True)
-    state = models.ForeignKey(StateMaster, on_delete=models.SET_NULL, null=True)
+    
+    # 5.4 Financial Configuration
+    financial_year_begins = models.CharField(max_length=20, default='01-Apr') # Storing as string or month-day
+    base_currency = models.CharField(max_length=10, default='INR')
+    currency_symbol = models.CharField(max_length=10, default='₹ / INR')
+    decimal_places = models.IntegerField(default=2)
+    
+    # 5.5 Statutory & Taxation Details
+    is_gst_applicable = models.BooleanField(default=True)
+    gstin = models.CharField(max_length=15, blank=True, null=True)
+    state_code = models.CharField(max_length=5, blank=True, null=True) # Auto-derived
+    
+    msme_registered = models.BooleanField(default=False)
+    msme_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="MSME Number")
+    pan = models.CharField(max_length=10, blank=True, null=True)
+    tan = models.CharField(max_length=10, blank=True, null=True)
+    cin = models.CharField(max_length=21, blank=True, null=True, verbose_name="CIN")
+    
+    # Existing fields
     authorized_signatory_name = models.CharField(max_length=255, blank=True, null=True, help_text="Name of authorized signatory")
     signature_image = models.ImageField(upload_to='company/signatures/', blank=True, null=True)
     company_seal = models.ImageField(upload_to='company/seals/', blank=True, null=True)
+    
+    registered_address = models.TextField(blank=True, null=True) # Keeping for backward compatibility
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        # Auto-derive state_code from GSTIN if present (first 2 digits)
+        if self.gstin and len(self.gstin) >= 2:
+            self.state_code = self.gstin[:2]
+            # Try to match with StateMaster as well
+            if not self.state:
+                state_match = StateMaster.objects.filter(code=self.state_code).first()
+                if state_match:
+                    self.state = state_match
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

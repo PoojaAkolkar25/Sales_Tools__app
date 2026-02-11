@@ -805,55 +805,56 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                 )}
                             </div>
 
-                        {attachments.length > 0 && (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '8px', marginTop: '4px' }}>
-                                {attachments.map((att) => (
-                                    <div key={att.id} style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '8px 12px',
-                                        background: 'white',
-                                        border: '1px solid #E2E8F0',
-                                        borderRadius: '8px',
-                                        transition: 'all 0.2s'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                            <File size={14} className="text-[#0066CC]" />
-                                            <p style={{
-                                                margin: 0,
-                                                fontSize: '0.75rem',
-                                                fontWeight: 600,
-                                                color: '#4A5568',
-                                                whiteSpace: 'nowrap',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis'
-                                            }} title={att.filename}>
-                                                {att.filename}
-                                            </p>
+                            {attachments.length > 0 && (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '8px', marginTop: '4px' }}>
+                                    {attachments.map((att) => (
+                                        <div key={att.id} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '8px 12px',
+                                            background: 'white',
+                                            border: '1px solid #E2E8F0',
+                                            borderRadius: '8px',
+                                            transition: 'all 0.2s'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                                <File size={14} className="text-[#0066CC]" />
+                                                <p style={{
+                                                    margin: 0,
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 600,
+                                                    color: '#4A5568',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis'
+                                                }} title={att.filename}>
+                                                    {att.filename}
+                                                </p>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '2px' }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDownload(att)}
+                                                    style={{ padding: '4px', color: '#0066CC', background: 'none', border: 'none', cursor: 'pointer' }}
+                                                    title="Download"
+                                                >
+                                                    <Download size={14} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteAttachment(att.id)}
+                                                    style={{ padding: '4px', color: '#E53E3E', background: 'none', border: 'none', cursor: 'pointer' }}
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div style={{ display: 'flex', gap: '2px' }}>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDownload(att)}
-                                                style={{ padding: '4px', color: '#0066CC', background: 'none', border: 'none', cursor: 'pointer' }}
-                                                title="Download"
-                                            >
-                                                <Download size={14} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDeleteAttachment(att.id)}
-                                                style={{ padding: '4px', color: '#E53E3E', background: 'none', border: 'none', cursor: 'pointer' }}
-                                                title="Delete"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 

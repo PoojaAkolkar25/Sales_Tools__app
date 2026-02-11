@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power } from 'lucide-react';
+import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const UserManagement: React.FC = () => {
     const { showNotification, showConfirm } = useNotification();
     const [users, setUsers] = useState<any[]>([]);
-    const [customers, setCustomers] = useState<any[]>([]);
+    const [companies, setCompanies] = useState<any[]>([]);
+    const [states, setStates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [viewMode, setViewMode] = useState<'user' | 'customer'>('user');
+    const [viewMode, setViewMode] = useState<'user' | 'company'>('user');
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({
         username: '',
@@ -20,19 +21,38 @@ const UserManagement: React.FC = () => {
     });
     const [error, setError] = useState('');
 
-    // Feature: Customer Creation
-    const [activeTab, setActiveTab] = useState<'user' | 'customer'>('user');
-    const [customerFormData, setCustomerFormData] = useState({
+    // Feature: Company Creation (Replacing Customer)
+    const [activeTab, setActiveTab] = useState<'user' | 'company'>('user');
+    const [companyFormData, setCompanyFormData] = useState({
         name: '',
+        alias_name: '',
+        logo: null as File | null,
+        address_line_1: '',
+        address_line_2: '',
+        country: 'India',
+        state: '',
+        city: '',
+        pincode: '',
+        phone_number: '',
+        mobile_number: '',
         email: '',
-        phone: '',
-        contact_person: '',
-        address: ''
+        website_url: '',
+        financial_year_begins: '01-Apr',
+        base_currency: 'INR',
+        currency_symbol: '₹ / INR',
+        decimal_places: 2,
+        is_gst_applicable: true,
+        gstin: '',
+        state_code: '',
+        msme_registered: false,
+        msme_number: '',
+        pan: '',
+        tan: '',
+        cin: ''
     });
-    const [customerError, setCustomerError] = useState('');
+    const [companyError, setCompanyError] = useState('');
 
     const location = useLocation();
-    const navigate = useNavigate();
 
     useEffect(() => {
         fetchData();
@@ -44,7 +64,7 @@ const UserManagement: React.FC = () => {
 
     const fetchData = async () => {
         setLoading(true);
-        await Promise.all([fetchUsers(), fetchCustomers()]);
+        await Promise.all([fetchUsers(), fetchCompanies(), fetchStates()]);
         setLoading(false);
     };
 
@@ -57,12 +77,21 @@ const UserManagement: React.FC = () => {
         }
     };
 
-    const fetchCustomers = async () => {
+    const fetchCompanies = async () => {
         try {
-            const response = await api.get('customers/');
-            setCustomers(response.data);
+            const response = await api.get('finance/company-profile/');
+            setCompanies(response.data);
         } catch (err) {
-            console.error('Error fetching customers', err);
+            console.error('Error fetching companies', err);
+        }
+    };
+
+    const fetchStates = async () => {
+        try {
+            const response = await api.get('finance/state-masters/');
+            setStates(response.data);
+        } catch (err) {
+            console.error('Error fetching states', err);
         }
     };
 
@@ -79,17 +108,35 @@ const UserManagement: React.FC = () => {
         }
     };
 
-    const handleCreateCustomer = async (e: React.FormEvent) => {
+    const handleCreateCompany = async (e: React.FormEvent) => {
         e.preventDefault();
-        setCustomerError('');
+        setCompanyError('');
         try {
-            await api.post('customers/', customerFormData);
-            showNotification('Customer created successfully', 'success');
-            setCustomerFormData({ name: '', email: '', phone: '', contact_person: '', address: '' });
-            navigate('/customer-dashboard');
+            const formData = new FormData();
+            Object.entries(companyFormData).forEach(([key, value]) => {
+                if (value !== null && value !== undefined) {
+                    formData.append(key, value as any);
+                }
+            });
+
+            await api.post('finance/company-profile/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            showNotification('Company created successfully', 'success');
+            setCompanyFormData({
+                name: '', alias_name: '', logo: null, address_line_1: '', address_line_2: '',
+                country: 'India', state: '', city: '', pincode: '', phone_number: '',
+                mobile_number: '', email: '', website_url: '', financial_year_begins: '01-Apr',
+                base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
+                is_gst_applicable: true, gstin: '', state_code: '',
+                msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
+            });
+            fetchCompanies();
+            setShowForm(false);
         } catch (err: any) {
-            console.error('Error creating customer', err);
-            setCustomerError(err.response?.data?.name?.[0] || err.response?.data?.message || 'Error creating customer');
+            console.error('Error creating company', err);
+            setCompanyError(err.response?.data?.message || 'Error creating company');
         }
     };
 
@@ -110,17 +157,41 @@ const UserManagement: React.FC = () => {
         });
     };
 
-    const handleToggleStatus = async (id: number, type: 'user' | 'customer') => {
+    const handleToggleStatus = async (id: number, type: 'user' | 'company') => {
         try {
-            const endpoint = type === 'user' ? `auth/users/${id}/toggle_status/` : `customers/${id}/toggle_status/`;
+            const endpoint = type === 'user' ? `auth/users/${id}/toggle_status/` : `finance/company-profile/${id}/`;
+            // For companies, we might just be editing the record.
+            // If there's no explicit toggle_status, we might need to implement it.
+            // Assuming for now it's just a placeholder or we can add it later.
             await api.post(endpoint);
-            showNotification(`${type === 'user' ? 'User' : 'Customer'} status updated`, 'success');
+            showNotification(`${type === 'user' ? 'User' : 'Company'} status updated`, 'success');
             if (type === 'user') fetchUsers();
-            else fetchCustomers();
+            else fetchCompanies();
         } catch (err) {
             console.error('Error toggling status', err);
             showNotification('Error updating status', 'error');
         }
+    };
+
+    const handleGSTINChange = (val: string) => {
+        const gstin = val.toUpperCase();
+        let stateCode = '';
+        let stateId = '';
+
+        if (gstin.length >= 2) {
+            stateCode = gstin.substring(0, 2);
+            const matchedState = states.find(s => s.code === stateCode);
+            if (matchedState) {
+                stateId = matchedState.id;
+            }
+        }
+
+        setCompanyFormData({
+            ...companyFormData,
+            gstin,
+            state_code: stateCode,
+            state: stateId || companyFormData.state
+        });
     };
 
     if (loading) {
@@ -180,16 +251,16 @@ const UserManagement: React.FC = () => {
                             <UserIcon size={14} /> Users
                         </button>
                         <button
-                            onClick={() => setViewMode('customer')}
+                            onClick={() => setViewMode('company')}
                             style={{
                                 padding: '6px 16px',
                                 fontSize: '0.8rem',
                                 fontWeight: 700,
                                 borderRadius: '7px',
                                 border: 'none',
-                                background: viewMode === 'customer' ? 'white' : 'transparent',
-                                color: viewMode === 'customer' ? '#1a1f36' : '#64748B',
-                                boxShadow: viewMode === 'customer' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                                background: viewMode === 'company' ? 'white' : 'transparent',
+                                color: viewMode === 'company' ? '#1a1f36' : '#64748B',
+                                boxShadow: viewMode === 'company' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -197,7 +268,7 @@ const UserManagement: React.FC = () => {
                                 transition: 'all 0.2s'
                             }}
                         >
-                            <Users size={14} /> Customers
+                            <Users size={14} /> Companies
                         </button>
                     </div>
                     <button
@@ -246,11 +317,13 @@ const UserManagement: React.FC = () => {
             <div style={{ display: 'flex', gap: '24px', flex: 1 }}>
                 {showForm && (
                     <div style={{
-                        width: '400px',
+                        width: '500px', // Increased width for the complex form
                         display: 'flex',
                         flexDirection: 'column',
                         borderRight: '1px solid #E0E6ED',
-                        paddingRight: '24px'
+                        paddingRight: '24px',
+                        overflowY: 'auto',
+                        maxHeight: 'calc(100vh - 150px)'
                     }}>
                         <div style={{ marginBottom: '20px' }}>
                             <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
@@ -271,7 +344,7 @@ const UserManagement: React.FC = () => {
                                     Add New User
                                 </button>
                                 <button
-                                    onClick={() => setActiveTab('customer')}
+                                    onClick={() => setActiveTab('company')}
                                     style={{
                                         flex: 1,
                                         padding: '8px',
@@ -279,24 +352,25 @@ const UserManagement: React.FC = () => {
                                         fontWeight: 700,
                                         borderRadius: '6px',
                                         border: 'none',
-                                        background: activeTab === 'customer' ? '#EBF8FF' : 'transparent',
-                                        color: activeTab === 'customer' ? '#3182CE' : '#718096',
+                                        background: activeTab === 'company' ? '#EBF8FF' : 'transparent',
+                                        color: activeTab === 'company' ? '#3182CE' : '#718096',
                                         cursor: 'pointer'
                                     }}
                                 >
-                                    Create Customer
+                                    Create Company
                                 </button>
                             </div>
                             <div style={{ paddingBottom: '10px', borderBottom: '1px solid #E0E6ED' }}>
                                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#2D3748' }}>
-                                    {activeTab === 'user' ? 'Add New User' : 'Add New Customer'}
+                                    {activeTab === 'user' ? 'Add New User' : 'Create Company'}
                                 </h3>
                             </div>
                         </div>
 
-                        <form onSubmit={activeTab === 'user' ? handleCreateUser : handleCreateCustomer}>
+                        <form onSubmit={activeTab === 'user' ? handleCreateUser : handleCreateCompany}>
                             {activeTab === 'user' ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {/* ... User form remains same ... */}
                                     <div>
                                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Username</label>
                                         <input
@@ -350,64 +424,315 @@ const UserManagement: React.FC = () => {
                                     {error && <div style={{ color: '#E53E3E', fontSize: '0.8rem', fontWeight: 600 }}>{error}</div>}
                                     <button
                                         type="submit"
-                                        style={{ marginTop: '8px', height: '40px', background: '#FF6B00', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                        style={{ marginTop: '16px', height: '40px', background: '#FF6B00', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                                     >
                                         <UserPlus size={16} /> Create User
                                     </button>
                                 </div>
                             ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Customer Name</label>
-                                        <input
-                                            type="text"
-                                            value={customerFormData.name}
-                                            onChange={(e) => setCustomerFormData({ ...customerFormData, name: e.target.value })}
-                                            style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
-                                            required
-                                        />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                    {/* 5.1 Company Basic Details */}
+                                    <div className="section">
+                                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#4A5568', marginBottom: '12px', borderBottom: '1px solid #EDF2F7', paddingBottom: '4px' }}>5.1 Company Basic Details</h4>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div>
+                                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Company Name *</label>
+                                                <input
+                                                    type="text"
+                                                    value={companyFormData.name}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
+                                                    style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Alias Name</label>
+                                                <input
+                                                    type="text"
+                                                    value={companyFormData.alias_name}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, alias_name: e.target.value })}
+                                                    style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Company Logo</label>
+                                                <input
+                                                    type="file"
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, logo: e.target.files?.[0] || null })}
+                                                    style={{ width: '100%', fontSize: '0.8rem' }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Email</label>
-                                        <input
-                                            type="email"
-                                            value={customerFormData.email}
-                                            onChange={(e) => setCustomerFormData({ ...customerFormData, email: e.target.value })}
-                                            style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
-                                        />
+
+                                    {/* 5.2 Primary Mailing Address */}
+                                    <div className="section">
+                                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#4A5568', marginBottom: '12px', borderBottom: '1px solid #EDF2F7', paddingBottom: '4px' }}>5.2 Primary Mailing Address</h4>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div>
+                                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Address Line 1 *</label>
+                                                <input
+                                                    type="text"
+                                                    value={companyFormData.address_line_1}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, address_line_1: e.target.value })}
+                                                    style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Address Line 2</label>
+                                                <input
+                                                    type="text"
+                                                    value={companyFormData.address_line_2}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, address_line_2: e.target.value })}
+                                                    style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Country *</label>
+                                                    <select
+                                                        value={companyFormData.country}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, country: e.target.value })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                        required
+                                                    >
+                                                        <option value="India">India</option>
+                                                        <option value="USA">USA</option>
+                                                    </select>
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>State *</label>
+                                                    <select
+                                                        value={companyFormData.state}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, state: e.target.value })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                        required
+                                                    >
+                                                        <option value="">Select State</option>
+                                                        {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>City *</label>
+                                                    <input
+                                                        type="text"
+                                                        value={companyFormData.city}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, city: e.target.value })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Pincode *</label>
+                                                    <input
+                                                        type="text"
+                                                        value={companyFormData.pincode}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, pincode: e.target.value })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Phone</label>
-                                        <input
-                                            type="text"
-                                            value={customerFormData.phone}
-                                            onChange={(e) => setCustomerFormData({ ...customerFormData, phone: e.target.value })}
-                                            style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
-                                        />
+
+                                    {/* 5.3 Contact Details */}
+                                    <div className="section">
+                                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#4A5568', marginBottom: '12px', borderBottom: '1px solid #EDF2F7', paddingBottom: '4px' }}>5.3 Contact Details</h4>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Phone Number</label>
+                                                    <input
+                                                        type="text"
+                                                        value={companyFormData.phone_number}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, phone_number: e.target.value })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                    />
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Mobile Number</label>
+                                                    <input
+                                                        type="text"
+                                                        value={companyFormData.mobile_number}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, mobile_number: e.target.value })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Email *</label>
+                                                <input
+                                                    type="email"
+                                                    value={companyFormData.email}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
+                                                    style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Website</label>
+                                                <input
+                                                    type="url"
+                                                    value={companyFormData.website_url}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, website_url: e.target.value })}
+                                                    style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Contact Person</label>
-                                        <input
-                                            type="text"
-                                            value={customerFormData.contact_person}
-                                            onChange={(e) => setCustomerFormData({ ...customerFormData, contact_person: e.target.value })}
-                                            style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem' }}
-                                        />
+
+                                    {/* 5.4 Financial Configuration */}
+                                    <div className="section">
+                                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#4A5568', marginBottom: '12px', borderBottom: '1px solid #EDF2F7', paddingBottom: '4px' }}>5.4 Financial Configuration</h4>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>FY Begins From *</label>
+                                                    <input
+                                                        type="text"
+                                                        value={companyFormData.financial_year_begins}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, financial_year_begins: e.target.value })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                        required
+                                                        placeholder="e.g., 01-Apr"
+                                                    />
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Decimal Places *</label>
+                                                    <input
+                                                        type="number"
+                                                        value={companyFormData.decimal_places}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, decimal_places: parseInt(e.target.value) })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Base Currency *</label>
+                                                    <input
+                                                        type="text"
+                                                        value={companyFormData.base_currency}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, base_currency: e.target.value })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Currency Symbol *</label>
+                                                    <input
+                                                        type="text"
+                                                        value={companyFormData.currency_symbol}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, currency_symbol: e.target.value })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>Address</label>
-                                        <textarea
-                                            value={customerFormData.address}
-                                            onChange={(e) => setCustomerFormData({ ...customerFormData, address: e.target.value })}
-                                            style={{ width: '100%', height: '80px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #E0E6ED', fontSize: '0.9rem', resize: 'none' }}
-                                        />
+
+                                    {/* 5.5 Statutory & Taxation Details */}
+                                    <div className="section">
+                                        <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#4A5568', marginBottom: '12px', borderBottom: '1px solid #EDF2F7', paddingBottom: '4px' }}>5.5 Statutory & Taxation Details</h4>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    id="gst_applicable"
+                                                    checked={companyFormData.is_gst_applicable}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, is_gst_applicable: e.target.checked })}
+                                                />
+                                                <label htmlFor="gst_applicable" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#718096' }}>GST Applicable</label>
+                                            </div>
+                                            {companyFormData.is_gst_applicable && (
+                                                <div style={{ display: 'flex', gap: '10px' }}>
+                                                    <div style={{ flex: 1 }}>
+                                                        <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>GSTIN</label>
+                                                        <input
+                                                            type="text"
+                                                            value={companyFormData.gstin}
+                                                            onChange={(e) => handleGSTINChange(e.target.value)}
+                                                            style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                            maxLength={15}
+                                                        />
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>State Code (Auto)</label>
+                                                        <input
+                                                            type="text"
+                                                            value={companyFormData.state_code}
+                                                            readOnly
+                                                            style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem', background: '#F7FAFC' }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>PAN *</label>
+                                                    <input
+                                                        type="text"
+                                                        value={companyFormData.pan}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, pan: e.target.value.toUpperCase() })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                        maxLength={10}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>TAN</label>
+                                                    <input
+                                                        type="text"
+                                                        value={companyFormData.tan}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, tan: e.target.value.toUpperCase() })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    id="msme_registered"
+                                                    checked={companyFormData.msme_registered}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, msme_registered: e.target.checked })}
+                                                />
+                                                <label htmlFor="msme_registered" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#718096' }}>MSME Registered</label>
+                                            </div>
+                                            {companyFormData.msme_registered && (
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>MSME Number</label>
+                                                    <input
+                                                        type="text"
+                                                        value={companyFormData.msme_number}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, msme_number: e.target.value })}
+                                                        style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                    />
+                                                </div>
+                                            )}
+                                            <div>
+                                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#718096', marginBottom: '4px', textTransform: 'uppercase' }}>CIN</label>
+                                                <input
+                                                    type="text"
+                                                    value={companyFormData.cin}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, cin: e.target.value.toUpperCase() })}
+                                                    style={{ width: '100%', height: '32px', padding: '0 10px', borderRadius: '6px', border: '1px solid #E0E6ED', fontSize: '0.85rem' }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                    {customerError && <div style={{ color: '#E53E3E', fontSize: '0.8rem', fontWeight: 600 }}>{customerError}</div>}
+
+                                    {companyError && <div style={{ color: '#E53E3E', fontSize: '0.8rem', fontWeight: 600 }}>{companyError}</div>}
                                     <button
                                         type="submit"
-                                        style={{ marginTop: '8px', height: '40px', background: '#FF6B00', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                        style={{ marginTop: '8px', height: '44px', background: '#FF6B00', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 4px 12px rgba(255, 107, 0, 0.25)' }}
                                     >
-                                        <UserPlus size={16} /> Create Customer
+                                        <CheckCircle size={18} /> SAVE COMPANY RECORD
                                     </button>
                                 </div>
                             )}
@@ -420,9 +745,9 @@ const UserManagement: React.FC = () => {
                         <table className="ae-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                             <thead style={{ position: 'sticky', top: 0, zIndex: 20 }}>
                                 <tr>
-                                    <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '30%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>{viewMode === 'user' ? 'User' : 'Customer'}</th>
+                                    <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '30%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>{viewMode === 'user' ? 'User' : 'Company'}</th>
                                     <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '25%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>Email</th>
-                                    <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>{viewMode === 'user' ? 'Role' : 'Contact Person'}</th>
+                                    <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>{viewMode === 'user' ? 'Role' : 'City / State'}</th>
                                     <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>Status</th>
                                     <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', position: 'sticky', top: 0, zIndex: 20 }}>Actions</th>
                                 </tr>
@@ -515,29 +840,29 @@ const UserManagement: React.FC = () => {
                                             </div>
                                         </td>
                                     </tr>
-                                )) : customers.map((customer) => (
-                                    <tr key={customer.id} style={{ borderBottom: '1px solid #F0F4F8' }}>
+                                )) : companies.map((comp) => (
+                                    <tr key={comp.id} style={{ borderBottom: '1px solid #F0F4F8' }}>
                                         <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                                             <div className="flex items-center">
                                                 <div className="h-10 w-10 flex-shrink-0 bg-[#FF6B00]/10 text-[#FF6B00] rounded-full flex items-center justify-center">
                                                     <Users size={20} />
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{customer.name}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{customer.customer_type}</div>
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{comp.name}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.alias_name || 'No Alias'}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                                             <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
-                                                <Mail size={14} className="text-gray-400" /> {customer.email || '—'}
+                                                <Mail size={14} className="text-gray-400" /> {comp.email || '—'}
                                             </div>
                                         </td>
                                         <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                                             <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>
-                                                {customer.contact_person || '—'}
+                                                {comp.city || '—'}
                                             </div>
-                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{customer.phone}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.state_name || '—'}</div>
                                         </td>
                                         <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                                             <span style={{
@@ -549,30 +874,35 @@ const UserManagement: React.FC = () => {
                                                 fontSize: '0.7rem',
                                                 fontWeight: 800,
                                                 textTransform: 'uppercase',
-                                                background: customer.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)',
-                                                color: customer.is_active ? '#00C853' : '#F44336',
-                                                transition: 'all 0.2s'
+                                                background: 'rgba(0, 200, 83, 0.1)',
+                                                color: '#00C853'
                                             }}>
-                                                {customer.is_active ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                {customer.is_active ? 'Active' : 'Inactive'}
+                                                <CheckCircle size={12} />
+                                                Active
                                             </span>
                                         </td>
                                         <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                 <button
-                                                    onClick={() => handleToggleStatus(customer.id, 'customer')}
+                                                    onClick={() => {
+                                                        setCompanyFormData({
+                                                            ...comp,
+                                                            logo: null // Handle file separately
+                                                        });
+                                                        setActiveTab('company');
+                                                        setShowForm(true);
+                                                    }}
                                                     style={{
                                                         padding: '8px',
-                                                        color: customer.is_active ? '#00C853' : '#F44336',
+                                                        color: '#0066CC',
                                                         border: 'none',
-                                                        background: customer.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                                                        background: 'rgba(0, 102, 204, 0.1)',
                                                         cursor: 'pointer',
-                                                        borderRadius: '6px',
-                                                        transition: 'all 0.2s'
+                                                        borderRadius: '6px'
                                                     }}
-                                                    title={customer.is_active ? "Deactivate Customer" : "Activate Customer"}
+                                                    title="Edit Company"
                                                 >
-                                                    <Power size={16} />
+                                                    <Pencil size={16} />
                                                 </button>
                                             </div>
                                         </td>
@@ -582,8 +912,8 @@ const UserManagement: React.FC = () => {
                         </table>
                     </div>
                 </div>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 };
 
