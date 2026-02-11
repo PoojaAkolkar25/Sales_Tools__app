@@ -103,16 +103,12 @@
         <table>
             <tr>
                 <td class="company-section">
-                    {% if company %}
                     <div class="bold" style="font-size: 11pt;">{{ company.name }}</div>
                     <div>{{ company.registered_address|linebreaksbr }}</div>
                     {% if company.gstin %}<div><span class="bold">GSTIN/UIN:</span> {{ company.gstin }}</div>{% endif %}
                     {% if company.pan %}<div><span class="bold">PAN No.:</span> {{ company.pan }}</div>{% endif %}
                     {% if company.cin %}<div><span class="bold">CIN:</span> {{ company.cin }}</div>{% endif %}
                     {% if company.msme_number %}<div><span class="bold">MSME No.:</span> {{ company.msme_number }}</div>
-                    {% endif %}
-                    {% else %}
-                    <div class="bold">No Company Profile Configured</div>
                     {% endif %}
                 </td>
                 <td class="estimate-details">
@@ -143,32 +139,22 @@
             <tr>
                 <td style="width: 50%;">
                     <div class="bold" style="background-color: #eee; padding: 2px;">Consignee (Ship to)</div>
-                    {% if estimate.deal.customer %}
                     <div class="bold">{{ estimate.deal.customer.name }}</div>
-                    <div>{{ estimate.deal.customer.address|default:estimate.deal.customer.state|default:""|linebreaksbr
-                        }}</div>
+                    <div>{{ estimate.deal.customer.address|default:estimate.deal.customer.state|linebreaksbr }}</div>
                     {% if estimate.deal.customer.gstin %}<div><span class="bold">GSTIN/UIN:</span> {{
                         estimate.deal.customer.gstin }}</div>{% endif %}
                     {% if estimate.deal.customer.state %}<div><span class="bold">State Name:</span> {{
                         estimate.deal.customer.state }}, Code: {{ estimate.deal.customer.state_code|default:"" }}</div>
-                    {% endif %}
-                    {% else %}
-                    <div>No customer details available.</div>
                     {% endif %}
                 </td>
                 <td style="width: 50%;">
                     <div class="bold" style="background-color: #eee; padding: 2px;">Buyer (Bill to)</div>
-                    {% if estimate.deal.customer %}
                     <div class="bold">{{ estimate.deal.customer.name }}</div>
-                    <div>{{ estimate.deal.customer.address|default:estimate.deal.customer.state|default:""|linebreaksbr
-                        }}</div>
+                    <div>{{ estimate.deal.customer.address|default:estimate.deal.customer.state|linebreaksbr }}</div>
                     {% if estimate.deal.customer.gstin %}<div><span class="bold">GSTIN/UIN:</span> {{
                         estimate.deal.customer.gstin }}</div>{% endif %}
                     {% if estimate.deal.customer.state %}<div><span class="bold">State Name:</span> {{
                         estimate.deal.customer.state }}, Code: {{ estimate.deal.customer.state_code|default:"" }}</div>
-                    {% endif %}
-                    {% else %}
-                    <div>No customer details available.</div>
                     {% endif %}
                 </td>
             </tr>

@@ -93,6 +93,7 @@ class EstimateItem(models.Model):
     description = models.TextField(blank=True, default='')
     hsn_sac = models.CharField(max_length=20, blank=True, default='', verbose_name="HSN/SAC")
     qty = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    unit = models.CharField(max_length=20, default='Nos')
     rate = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     

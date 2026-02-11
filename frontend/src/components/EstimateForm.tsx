@@ -248,6 +248,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                     sr_no: 'Sr.No.',
                     particulars: 'Particulars',
                     description: 'Description',
+                    hsn_sac: 'HSN/SAC',
                     qty: 'Qty',
                     rate: 'Rate',
                     amount: 'Amount'
@@ -857,7 +858,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                                     <input
                                         className="ae-input-subtle"
                                         style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none' }}
-                                        value={formData.column_labels.sr_no}
+                                        value={formData.column_labels.sr_no || 'Sr.No.'}
                                         onChange={(e) => handleHeaderChange('sr_no', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
@@ -867,7 +868,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                                     <input
                                         className="ae-input-subtle"
                                         style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none' }}
-                                        value={formData.column_labels.particulars}
+                                        value={formData.column_labels.particulars || 'Particulars'}
                                         onChange={(e) => handleHeaderChange('particulars', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
@@ -877,7 +878,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                                     <input
                                         className="ae-input-subtle"
                                         style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none' }}
-                                        value={formData.column_labels.description}
+                                        value={formData.column_labels.description || 'Description'}
                                         onChange={(e) => handleHeaderChange('description', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
@@ -897,7 +898,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                                     <input
                                         className="ae-input-subtle"
                                         style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none', textAlign: 'center' }}
-                                        value={formData.column_labels.qty}
+                                        value={formData.column_labels.qty || 'Qty'}
                                         onChange={(e) => handleHeaderChange('qty', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
@@ -907,7 +908,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                                     <input
                                         className="ae-input-subtle"
                                         style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none', textAlign: 'right' }}
-                                        value={formData.column_labels.rate}
+                                        value={formData.column_labels.rate || 'Rate'}
                                         onChange={(e) => handleHeaderChange('rate', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
@@ -917,7 +918,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                                     <input
                                         className="ae-input-subtle"
                                         style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none', textAlign: 'right' }}
-                                        value={formData.column_labels.amount}
+                                        value={formData.column_labels.amount || 'Amount'}
                                         onChange={(e) => handleHeaderChange('amount', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
