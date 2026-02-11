@@ -136,7 +136,15 @@ const UserManagement: React.FC = () => {
             setShowForm(false);
         } catch (err: any) {
             console.error('Error creating company', err);
-            setCompanyError(err.response?.data?.message || 'Error creating company');
+            const errorData = err.response?.data;
+            if (errorData && typeof errorData === 'object') {
+                const errorMessages = Object.entries(errorData)
+                    .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+                    .join(' | ');
+                setCompanyError(errorMessages || 'Error creating company');
+            } else {
+                setCompanyError(err.response?.data?.message || 'Error creating company');
+            }
         }
     };
 

@@ -15,6 +15,12 @@ class CompanyProfileSerializer(serializers.ModelSerializer):
         model = CompanyProfile
         fields = '__all__'
 
+    def to_internal_value(self, data):
+        # Handle empty strings for foreign keys from frontend
+        if 'state' in data and data['state'] == '':
+            data['state'] = None
+        return super().to_internal_value(data)
+
 class InvoiceLineItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceLineItem
