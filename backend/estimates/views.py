@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, decorators
+from rest_framework import viewsets, status, decorators, permissions
 from rest_framework.response import Response
 from django.contrib.contenttypes.models import ContentType
 from .models import Estimate, Proposal, Renewal, EstimateStatus, EstimateItem, ApprovalStatus, EmailLog
@@ -396,7 +396,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
              
         return Response({"message": "Email sent successfully"})
 
-    @decorators.action(detail=True, methods=['get'])
+    @decorators.action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny])
     def preview_pdf(self, request, pk=None):
         estimate = self.get_object()
         proposal = estimate.proposals.order_by('-version').first()
@@ -417,7 +417,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
-    @decorators.action(detail=True, methods=['get'])
+    @decorators.action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny])
     def download_pdf(self, request, pk=None):
         estimate = self.get_object()
         proposal = estimate.proposals.order_by('-version').first()
