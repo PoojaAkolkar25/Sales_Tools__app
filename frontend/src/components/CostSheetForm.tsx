@@ -617,7 +617,14 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             setCustomAlert({ message: 'Cost Sheet Approved!', type: 'success' });
             if (onBack) onBack();
         } catch (error: any) {
-            setCustomAlert({ message: error.response?.data?.error || 'Failed to approve', type: 'error' });
+            let errorMsg = error.response?.data?.error || 'Failed to approve';
+
+            if (error.response?.data?.validation_errors && Array.isArray(error.response.data.validation_errors)) {
+                const detailedErrors = error.response.data.validation_errors.join('\n• ');
+                errorMsg = `${errorMsg}\n\n• ${detailedErrors}`;
+            }
+
+            setCustomAlert({ message: errorMsg, type: 'error' });
         }
     };
 

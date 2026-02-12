@@ -72,6 +72,10 @@ class Estimate(models.Model):
             self.estimate_id = f'EST-{max_num + 1:04d}'
         super().save(*args, **kwargs)
 
+    @property
+    def total_qty(self):
+        return sum(item.qty for item in self.items.all())
+
     def __str__(self):
         return f"{self.estimate_id} v{self.version} ({self.status})"
 

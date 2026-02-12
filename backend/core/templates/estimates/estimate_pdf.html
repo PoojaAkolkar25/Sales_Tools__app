@@ -6,90 +6,180 @@
     <style>
         @page {
             size: A4;
-            margin: 1cm;
+            margin: 0.5cm 1cm;
         }
 
         body {
-            font-family: Arial, sans-serif;
-            font-size: 9pt;
-            color: #000;
-            line-height: 1.2;
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 8.5pt;
+            color: #333;
+            line-height: 1.3;
         }
 
         .header-title {
-            text-align: right;
+            text-align: center;
             font-size: 14pt;
             font-weight: bold;
-            margin-bottom: 5px;
+            color: #0056b3;
+            border-top: 1px dotted #0056b3;
+            border-bottom: 1px dotted #0056b3;
+            padding: 4px 0;
+            margin-bottom: 15px;
+            text-transform: uppercase;
         }
 
-        .main-container {
-            border: 1px solid #000;
+        .section-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
         }
 
-        table {
+        .section-table td {
+            vertical-align: top;
+            padding: 2px 0;
+            border: none;
+        }
+
+        .company-info {
+            width: 60%;
+            color: #1a1f36;
+        }
+
+        .company-name {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #0056b3;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .estimate-meta {
+            width: 40%;
+            text-align: right;
+        }
+
+        .logo-container {
+            text-align: right;
+            margin-bottom: 10px;
+        }
+
+        .logo {
+            max-height: 60px;
+            max-width: 180px;
+        }
+
+        .meta-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        td,
-        th {
-            border: 1px solid #000;
-            padding: 4px;
+        .meta-table td {
+            padding: 2px 0;
+            font-size: 9pt;
+        }
+
+        .meta-label {
+            color: #0056b3;
+            font-weight: bold;
+            text-align: left;
+            width: 40%;
+            text-transform: uppercase;
+        }
+
+        .meta-value {
+            text-align: left;
+            width: 60%;
+        }
+
+        .address-box {
+            width: 100%;
+            border-top: 1px dotted #0056b3;
+            border-bottom: 1px dotted #0056b3;
+            padding: 8px 0;
+            margin-bottom: 15px;
+        }
+
+        .address-col {
+            width: 50%;
+            padding-right: 15px;
+        }
+
+        .address-title {
+            font-weight: bold;
+            color: #1a1f36;
+            margin-bottom: 4px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        .items-table th {
+            border-top: 1px dotted #0056b3;
+            border-bottom: 1px dotted #0056b3;
+            color: #0056b3;
+            text-align: left;
+            padding: 6px 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 8pt;
+        }
+
+        .items-table td {
+            padding: 8px 4px;
             vertical-align: top;
+            border-bottom: 1px solid #eee;
         }
 
-        .no-border td {
-            border: none;
-        }
-
-        .company-section {
-            width: 50%;
-        }
-
-        .estimate-details {
-            width: 50%;
-        }
-
-        .label {
-            font-weight: bold;
-            width: 100px;
-            display: inline-block;
-        }
-
-        .items-header th {
-            background-color: #f2f2f2;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .dotted-border {
-            border-style: dotted;
-        }
-
-        .text-right {
+        .items-table .text-right {
             text-align: right;
         }
 
-        .text-center {
+        .items-table .text-center {
             text-align: center;
+        }
+
+        .total-row td {
+            border-top: 1px dotted #0056b3;
+            border-bottom: 1px dotted #0056b3;
+            font-weight: bold;
+            padding: 8px 4px;
+        }
+
+        .amount-words {
+            margin-bottom: 20px;
+            padding: 5px 0;
+        }
+
+        .footer-table {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .declaration {
+            width: 65%;
+            font-size: 7.5pt;
+            color: #666;
+        }
+
+        .signature {
+            width: 35%;
+            text-align: right;
+            vertical-align: bottom;
         }
 
         .bold {
             font-weight: bold;
         }
 
-        .footer-section {
-            margin-top: 10px;
+        .blue {
+            color: #0056b3;
         }
 
-        .bank-details {
-            width: 60%;
-        }
-
-        .signature-section {
-            width: 40%;
-            text-align: center;
+        .empty-space {
+            height: 20px;
         }
     </style>
 </head>
@@ -98,156 +188,155 @@
 <body>
     <div class="header-title">ESTIMATES</div>
 
-    <div class="main-container">
-        <!-- Top Section: Company and Estimate Info -->
-        <table>
-            <tr>
-                <td class="company-section">
-                    <div class="bold" style="font-size: 11pt;">{{ company.name }}</div>
-                    <div>{{ company.registered_address|linebreaksbr }}</div>
-                    {% if company.gstin %}<div><span class="bold">GSTIN/UIN:</span> {{ company.gstin }}</div>{% endif %}
-                    {% if company.pan %}<div><span class="bold">PAN No.:</span> {{ company.pan }}</div>{% endif %}
-                    {% if company.cin %}<div><span class="bold">CIN:</span> {{ company.cin }}</div>{% endif %}
-                    {% if company.msme_number %}<div><span class="bold">MSME No.:</span> {{ company.msme_number }}</div>
-                    {% endif %}
-                </td>
-                <td class="estimate-details">
-                    <table>
-                        <tr class="no-border">
-                            <td><span class="bold">Estimate No.:</span></td>
-                            <td><span class="bold">{{ estimate.estimate_id }}</span></td>
-                        </tr>
-                        <tr class="no-border">
-                            <td><span class="bold">Dated:</span></td>
-                            <td>{{ estimate.estimate_date|date_format }}</td>
-                        </tr>
-                        <tr class="no-border">
-                            <td><span class="bold">Deal No.:</span></td>
-                            <td>{{ estimate.deal.deal_id }}</td>
-                        </tr>
-                        <tr class="no-border">
-                            <td><span class="bold">Cost Sheet No.:</span></td>
-                            <td>{{ estimate.cost_sheet.cost_sheet_no }}</td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
+    <!-- Company and Logo Section -->
+    <table class="section-table">
+        <tr>
+            <td class="company-info">
+                <div class="company-name">{{ company.name|default:"AUTOMATIONEDGE TECHNOLOGIES PVT. LTD." }}</div>
+                <div>{{ company.address_line_1|default:"" }} {{ company.address_line_2|default:"" }}</div>
+                <div>{{ company.city|default:"" }} {{ company.state.name|default:"" }} {{ company.pincode|default:"" }}
+                </div>
+                {% if company.gstin %}
+                <div><span class="bold blue">GSTIN/UIN:</span> {{ company.gstin }}</div>
+                {% endif %}
+                {% if company.pan %}
+                <div><span class="bold blue">PAN No.:</span> {{ company.pan }}</div>
+                {% endif %}
+                {% if company.msme_number %}
+                <div><span class="bold blue">MSME No.:</span> {{ company.msme_number }}</div>
+                {% endif %}
+                {% if company.email %}
+                <div><span class="bold blue">E-Mail:</span> {{ company.email }}</div>
+                {% endif %}
+            </td>
+            <td class="estimate-meta">
+                <div class="logo-container">
 
-        <!-- Buyer and Consignee Section -->
-        <table>
-            <tr>
-                <td style="width: 50%;">
-                    <div class="bold" style="background-color: #eee; padding: 2px;">Consignee (Ship to)</div>
-                    <div class="bold">{{ estimate.deal.customer.name }}</div>
-                    <div>{{ estimate.deal.customer.address|default:estimate.deal.customer.state|linebreaksbr }}</div>
-                    {% if estimate.deal.customer.gstin %}<div><span class="bold">GSTIN/UIN:</span> {{
-                        estimate.deal.customer.gstin }}</div>{% endif %}
-                    {% if estimate.deal.customer.state %}<div><span class="bold">State Name:</span> {{
-                        estimate.deal.customer.state }}, Code: {{ estimate.deal.customer.state_code|default:"" }}</div>
+                    {% if company.logo %}
+                    <img src="{{ company.logo.path }}" class="logo">
+                    {% else %}
+                    <!-- Placeholder for logo if missing -->
+                    <div style="font-size: 14pt; font-weight: bold; color: #f90;">AutomationEdge</div>
+                    <div style="font-size: 8pt; color: #666;">https://automationedge.com/</div>
                     {% endif %}
-                </td>
-                <td style="width: 50%;">
-                    <div class="bold" style="background-color: #eee; padding: 2px;">Buyer (Bill to)</div>
-                    <div class="bold">{{ estimate.deal.customer.name }}</div>
-                    <div>{{ estimate.deal.customer.address|default:estimate.deal.customer.state|linebreaksbr }}</div>
-                    {% if estimate.deal.customer.gstin %}<div><span class="bold">GSTIN/UIN:</span> {{
-                        estimate.deal.customer.gstin }}</div>{% endif %}
-                    {% if estimate.deal.customer.state %}<div><span class="bold">State Name:</span> {{
-                        estimate.deal.customer.state }}, Code: {{ estimate.deal.customer.state_code|default:"" }}</div>
-                    {% endif %}
-                </td>
-            </tr>
-        </table>
 
-        <!-- Items Table -->
-        <table class="items-table">
-            <thead>
-                <tr class="items-header">
-                    <th style="width: 30px;">Sl No.</th>
-                    <th>Description of Goods</th>
-                    <th style="width: 80px;">HSN/SAC</th>
-                    <th style="width: 50px;">Quantity</th>
-                    <th style="width: 80px;">Rate</th>
-                    <th style="width: 30px;">per</th>
-                    <th style="width: 100px;">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in items %}
-                <tr>
-                    <td class="text-center">{{ item.sr_no }}</td>
-                    <td>
-                        <div class="bold">{{ item.particulars }}</div>
-                        <div style="font-size: 8pt; color: #444;">{{ item.description|linebreaksbr }}</div>
-                    </td>
-                    <td class="text-center">{{ item.hsn_sac|default:"" }}</td>
-                    <td class="text-center">{{ item.qty }}</td>
-                    <td class="text-right">{{ item.rate }}</td>
-                    <td class="text-center">Nos</td>
-                    <td class="text-right bold">{{ item.amount }}</td>
-                </tr>
-                {% endfor %}
-                <!-- Fill empty space if few items -->
-                <tr style="height: 100px;">
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="3" class="text-right bold">Total</td>
-                    <td class="text-center bold">{{ estimate.total_qty|default:"" }}</td>
-                    <td></td>
-                    <td></td>
-                    <td class="text-right bold">{{ estimate.total_price }}</td>
-                </tr>
-            </tfoot>
-        </table>
+                </div>
+                <table class="meta-table">
+                    <tr>
+                        <td class="meta-label">ESTIMATE</td>
+                        <td class="meta-value">: {{ estimate.estimate_id }}</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">DATE</td>
+                        <td class="meta-value">: {{ estimate.estimate_date|date_format }}</td>
+                    </tr>
+                    {% if estimate.deal.deal_id %}
+                    <tr>
+                        <td class="meta-label">DEAL NO.</td>
+                        <td class="meta-value">: {{ estimate.deal.deal_id }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </td>
+        </tr>
+    </table>
 
-        <!-- Amount in Words and Bottom Details -->
-        <table>
+    <!-- Buyer and Consignee Section -->
+    <table class="section-table address-box">
+        <tr>
+            <td class="address-col">
+                <div class="address-title blue">Buyer</div>
+                <div class="bold">{{ estimate.deal.customer.name }}</div>
+                <div>{{ estimate.deal.customer.address|default:estimate.deal.customer.state|linebreaksbr }}</div>
+                {% if estimate.deal.customer.gstin %}
+                <div><span class="bold">GSTIN/UIN:</span> {{ estimate.deal.customer.gstin }}</div>
+                {% endif %}
+                {% if estimate.deal.customer.pan %}
+                <div><span class="bold">PAN/TIN No.:</span> {{ estimate.deal.customer.pan }}</div>
+                {% endif %}
+                {% if estimate.deal.customer.state %}
+                <div><span class="bold">State Name:</span> {{ estimate.deal.customer.state }}, Code: {{
+                    estimate.deal.customer.state_code|default:"" }}</div>
+                {% endif %}
+            </td>
+            <td class="address-col">
+                <div class="address-title blue">Consignee</div>
+                <div class="bold">{{ estimate.deal.customer.name }}</div>
+                <div>{{ estimate.deal.customer.address|default:estimate.deal.customer.state|linebreaksbr }}</div>
+                {% if estimate.deal.customer.gstin %}
+                <div><span class="bold">GSTIN/UIN:</span> {{ estimate.deal.customer.gstin }}</div>
+                {% endif %}
+                {% if estimate.deal.customer.pan %}
+                <div><span class="bold">PAN/TIN No.:</span> {{ estimate.deal.customer.pan }}</div>
+                {% endif %}
+                {% if estimate.deal.customer.state %}
+                <div><span class="bold">State Name:</span> {{ estimate.deal.customer.state }}, Code: {{
+                    estimate.deal.customer.state_code|default:"" }}</div>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <!-- Items Table -->
+    <table class="items-table">
+        <thead>
             <tr>
-                <td colspan="7">
-                    <div>Amount Chargeable (in words)</div>
-                    <div class="bold">INR {{ estimate.total_price }} Only</div>
+                <th style="width: 45%;">{{ estimate.column_labels.description|default:"DESCRIPTION" }}</th>
+                <th style="width: 15%;" class="text-center">{{ estimate.column_labels.hsn_sac|default:"HSN/SAC" }}</th>
+                <th style="width: 10%;" class="text-center">{{ estimate.column_labels.qty|default:"QTY" }}</th>
+                <th style="width: 15%;" class="text-right">{{ estimate.column_labels.rate|default:"RATE" }}</th>
+                <th style="width: 15%;" class="text-right">{{ estimate.column_labels.amount|default:"AMO UNT" }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>
+                    <div class="bold">{{ item.particulars }}</div>
+                    <div style="font-size: 7.5pt; color: #555; margin-top: 2px;">{{ item.description|linebreaksbr }}
+                    </div>
+                </td>
+                <td class="text-center">{{ item.hsn_sac|default:"" }}</td>
+                <td class="text-center">{{ item.qty }} {{ item.unit|default:"" }}</td>
+                <td class="text-right">{{ estimate.deal.currency_symbol|default:"$" }}{{ item.rate }}</td>
+                <td class="text-right bold">{{ estimate.deal.currency_symbol|default:"$" }}{{ item.amount }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="total-row">
+                <td colspan="2" class="blue">TOTAL</td>
+                <td class="text-center">{{ estimate.total_qty }}</td>
+                <td></td>
+                <td class="text-right blue">{{ estimate.deal.currency_symbol|default:"$" }}{{ estimate.total_price }}
                 </td>
             </tr>
-            {% if estimate.description_memo or estimate.terms_conditions %}
-            <tr>
-                <td colspan="7">
-                    {% if estimate.description_memo %}
-                    <div class="bold">Remarks:</div>
-                    <div style="margin-bottom: 5px;">{{ estimate.description_memo|linebreaksbr }}</div>
-                    {% endif %}
-                    {% if estimate.terms_conditions %}
-                    <div class="bold">Terms & Conditions:</div>
-                    <div>{{ estimate.terms_conditions|linebreaksbr }}</div>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endif %}
-            <tr>
-                <td colspan="4" style="border-right: none;">
-                    <div class="bold">Declaration:</div>
-                    <div>We declare that this estimate shows the actual price of the goods described and that all
-                        particulars are true and correct.</div>
-                </td>
-                <td colspan="3" style="border-left: none; text-align: right;">
-                    <div>for <span class="bold">{{ company.name }}</span></div>
-                    <br><br><br>
-                    <div class="bold">Authorized Signatory</div>
-                </td>
-            </tr>
-        </table>
+        </tbody>
+    </table>
+
+    <!-- Amount in Words -->
+    <div class="amount-words">
+        <div>Amount Chargeable (in words)</div>
+        <div class="bold">{{ estimate.deal.currency|default:"INR" }} {{ estimate.total_price }} Only</div>
     </div>
 
-    <div style="text-align: center; margin-top: 5px; font-size: 8pt;">
+    <!-- Footer -->
+    <table class="footer-table">
+        <tr>
+            <td class="declaration">
+                <div class="bold blue">Declaration:</div>
+                <div>We declare that this estimate shows the actual price of the goods described and that all
+                    particulars are true and correct.</div>
+            </td>
+            <td class="signature">
+                <div>for <span class="bold">{{ company.name|default:"AutomationEdge Technologies" }}</span></div>
+                <div class="empty-space"></div>
+                <div class="empty-space"></div>
+                <div class="bold blue">Authorized Signatory</div>
+            </td>
+        </tr>
+    </table>
+
+    <div
+        style="text-align: center; margin-top: 30px; font-size: 7pt; color: #999; border-top: 1px solid #eee; padding-top: 5px;">
         This is a Computer Generated Estimate
     </div>
 </body>
