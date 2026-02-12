@@ -85,33 +85,41 @@ const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView, searchQuery }) =>
     return (
         <div className="space-y-6">
             <div className="ae-grid-4">
-                <div className="ae-card">
-                    <div className="ae-card-header">
-                        <div className="ae-icon-box bg-blue-soft text-blue"><Users size={18} /></div>
+                <div className="ae-card ae-card-sm">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div className="ae-card-label">Total Leads</div>
+                            <div className="ae-card-value">{stats.total_leads}</div>
+                        </div>
+                        <div className="ae-icon-box bg-blue-soft text-blue"><Users size={16} /></div>
                     </div>
-                    <div className="ae-card-label">Total Leads</div>
-                    <div className="ae-card-value">{stats.total_leads}</div>
                 </div>
-                <div className="ae-card">
-                    <div className="ae-card-header">
-                        <div className="ae-icon-box bg-green-soft text-green"><TrendingUp size={18} /></div>
+                <div className="ae-card ae-card-sm">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div className="ae-card-label">New Today</div>
+                            <div className="ae-card-value">{stats.new_today}</div>
+                        </div>
+                        <div className="ae-icon-box bg-green-soft text-green"><TrendingUp size={16} /></div>
                     </div>
-                    <div className="ae-card-label">New Today</div>
-                    <div className="ae-card-value">{stats.new_today}</div>
                 </div>
-                <div className="ae-card">
-                    <div className="ae-card-header">
-                        <div className="ae-icon-box bg-orange-soft text-orange"><LayoutDashboard size={18} /></div>
+                <div className="ae-card ae-card-sm">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div className="ae-card-label">AE IND Leads</div>
+                            <div className="ae-card-value">{stats.ind_leads}</div>
+                        </div>
+                        <div className="ae-icon-box bg-orange-soft text-orange"><LayoutDashboard size={16} /></div>
                     </div>
-                    <div className="ae-card-label">AE IND Leads</div>
-                    <div className="ae-card-value">{stats.ind_leads}</div>
                 </div>
-                <div className="ae-card">
-                    <div className="ae-card-header">
-                        <div className="ae-icon-box bg-purple-soft text-purple"><LayoutDashboard size={18} /></div>
+                <div className="ae-card ae-card-sm">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div className="ae-card-label">AE USA Leads</div>
+                            <div className="ae-card-value">{stats.usa_leads}</div>
+                        </div>
+                        <div className="ae-icon-box bg-purple-soft text-purple"><LayoutDashboard size={16} /></div>
                     </div>
-                    <div className="ae-card-label">AE USA Leads</div>
-                    <div className="ae-card-value">{stats.usa_leads}</div>
                 </div>
             </div>
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, TrendingUp, Percent, Wallet, BarChart4, Sparkles, Plus } from 'lucide-react';
+import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, MessageSquare, ArrowLeft } from 'lucide-react';
 import api from '../api';
 
 interface Lead {
@@ -182,7 +182,6 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
     // Remark States
     const [overallRemarks, setOverallRemarks] = useState('');
-    const [showRemarksModal, setShowRemarksModal] = useState(false);
 
     // Toast State
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -685,12 +684,26 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
 
 
+    const Separator = () => (
+        <div style={{ height: '1px', background: '#E2E8F0', margin: '16px 0 24px 0' }} />
+    );
+
+    const SectionHeader = ({ title }: { title: string }) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+            <span style={{
+                width: '3px',
+                height: '14px',
+                background: '#0066CC',
+                borderRadius: '2px'
+            }}></span>
+            <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', margin: 0 }}>
+                {title}
+            </h2>
+        </div>
+    );
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Header removed and moved to App.tsx */}
-
-            {/* Header removed and moved to App.tsx */}
-
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Tabs */}
             <div style={{
                 display: 'flex',
@@ -740,7 +753,17 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             </div>
 
             {activeTab === 'form' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                <div style={{
+                    background: 'white',
+                    border: '1px solid #E0E6ED',
+                    borderRadius: '12px',
+                    width: '100%',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                    padding: '24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '32px'
+                }}>
                     {status === 'REJECTED' && approvalComments && (
                         <div className="section-panel remark-panel rejection-pulse" style={{
                             background: 'rgba(239, 68, 68, 0.04)',
@@ -814,212 +837,180 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     )}
 
-                    {/* Lead & Metadata Section */}
-                    <section className="section-panel" style={{
-                        padding: '12px 24px',
-                        opacity: isReadOnly ? 0.7 : 1,
-                        pointerEvents: isReadOnly ? 'none' : 'auto'
-                    }}>
-                        <h3 style={{
-                            fontSize: '1rem',
-                            fontWeight: 700,
-                            margin: '0 0 2px 0',
-                            color: '#FF6B00',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}>
-                            <span style={{
-                                width: '3px',
-                                height: '16px',
-                                background: '#0066CC',
-                                borderRadius: '2px'
-                            }}></span>
-                            Cost Sheet Information
-                        </h3>
+                    <div className="metadata-section">
+                        <SectionHeader title="Cost Sheet Information" />
+                        {/* Row 1: Customer Name, Lead No, Project Name */}
                         <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1fr',
                             gap: '20px'
                         }}>
-                            {/* Row 1: Customer Name, Lead No, Project Name */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr 1fr 1fr',
-                                gap: '20px'
-                            }}>
-                                {/* Customer Name */}
-                                <div style={{ padding: '4px' }}>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Name</label>
-                                    {!isReadOnly ? (
-                                        <select
-                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', cursor: 'pointer', outline: 'none' }}
-                                            value={selectedCustomerName}
-                                            onChange={e => handleCustomerChange(e.target.value)}
-                                        >
-                                            <option value="">Select Customer</option>
-                                            {uniqueCustomers.map(name => (
-                                                <option key={name} value={name}>{name}</option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{selectedCustomerName || '—'}</div>
-                                    )}
-                                </div>
-
-                                {/* Lead No */}
-                                <div style={{ padding: '4px' }}>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead No.</label>
-                                    {!isReadOnly ? (
-                                        <select
-                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', cursor: 'pointer', outline: 'none' }}
-                                            value={lead?.id || ''}
-                                            onChange={e => handleLeadChange(e.target.value)}
-                                        >
-                                            <option value="">Select Lead No.</option>
-                                            {(selectedCustomerName ? leads.filter(l => l.customer_name === selectedCustomerName) : leads).map(l => (
-                                                <option key={l.id} value={l.id}>{l.lead_no} ({l.project_name})</option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{leadNo || '—'}</div>
-                                    )}
-                                </div>
-
-                                {/* Deal No */}
-                                <div style={{ padding: '4px' }}>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal No.</label>
-                                    {!isReadOnly ? (
-                                        <select
-                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', cursor: 'pointer', outline: 'none' }}
-                                            value={dealId || ''}
-                                            onChange={e => handleDealChange(e.target.value)}
-                                            disabled={!selectedCustomerName}
-                                        >
-                                            <option value="">Select Deal No.</option>
-                                            {(selectedCustomerName ? deals.filter(d => d.customer_name === selectedCustomerName) : deals).map(d => (
-                                                <option key={d.id} value={d.id}>{d.deal_id} ({d.deal_name})</option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <div style={{
-                                            width: '100%',
-                                            padding: '10px 12px',
-                                            background: '#F7FAFC',
-                                            border: '1px solid #E0E6ED',
-                                            borderRadius: '8px',
-                                            fontSize: '0.9rem',
-                                            fontWeight: 500,
-                                            color: dealId ? '#1a1f36' : '#718096',
-                                            minHeight: '42px'
-                                        }}>
-                                            {dealId ? (() => {
-                                                const d = deals.find(x => x.id === dealId);
-                                                return d ? `${d.deal_id} (${d.deal_name})` : '—';
-                                            })() : '—'}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Project Name */}
-                                <div style={{ padding: '4px' }}>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Name</label>
-                                    {!isReadOnly ? (
-                                        <input
-                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                            value={projectName}
-                                            onChange={e => setProjectName(e.target.value)}
-                                            placeholder=""
-                                        />
-                                    ) : (
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{projectName || '—'}</div>
-                                    )}
-                                </div>
+                            {/* Customer Name */}
+                            <div style={{ padding: '4px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Name</label>
+                                {!isReadOnly ? (
+                                    <select
+                                        style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', cursor: 'pointer', outline: 'none' }}
+                                        value={selectedCustomerName}
+                                        onChange={e => handleCustomerChange(e.target.value)}
+                                    >
+                                        <option value="">Select Customer</option>
+                                        {uniqueCustomers.map(name => (
+                                            <option key={name} value={name}>{name}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{selectedCustomerName || '—'}</div>
+                                )}
                             </div>
 
-                            {/* Row 2: Cost Sheet No, Project Manager, Sales Person, Cost Sheet Date */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'minmax(150px, 1fr) 1.5fr 1.5fr 1fr',
-                                gap: '20px'
-                            }}>
-                                {/* Cost Sheet No */}
-                                <div style={{ padding: '4px' }}>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet No.</label>
-                                    {!isReadOnly ? (
-                                        <div style={{
-                                            width: '100%',
-                                            padding: '10px 12px',
-                                            background: '#F7FAFC',
-                                            border: '1px solid #E0E6ED',
-                                            borderRadius: '8px',
-                                            height: '42px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            cursor: 'default'
+                            {/* Lead No */}
+                            <div style={{ padding: '4px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead No.</label>
+                                {!isReadOnly ? (
+                                    <select
+                                        style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', cursor: 'pointer', outline: 'none' }}
+                                        value={lead?.id || ''}
+                                        onChange={e => handleLeadChange(e.target.value)}
+                                    >
+                                        <option value="">Select Lead No.</option>
+                                        {(selectedCustomerName ? leads.filter(l => l.customer_name === selectedCustomerName) : leads).map(l => (
+                                            <option key={l.id} value={l.id}>{l.lead_no} ({l.project_name})</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{leadNo || '—'}</div>
+                                )}
+                            </div>
+
+                            {/* Deal No */}
+                            <div style={{ padding: '4px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal No.</label>
+                                {!isReadOnly ? (
+                                    <select
+                                        style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', cursor: 'pointer', outline: 'none' }}
+                                        value={dealId || ''}
+                                        onChange={e => handleDealChange(e.target.value)}
+                                        disabled={!selectedCustomerName}
+                                    >
+                                        <option value="">Select Deal No.</option>
+                                        {(selectedCustomerName ? deals.filter(d => d.customer_name === selectedCustomerName) : deals).map(d => (
+                                            <option key={d.id} value={d.id}>{d.deal_id} ({d.deal_name})</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <div style={{
+                                        width: '100%',
+                                        padding: '10px 12px',
+                                        background: '#F7FAFC',
+                                        border: '1px solid #E0E6ED',
+                                        borderRadius: '8px',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 500,
+                                        color: dealId ? '#1a1f36' : '#718096',
+                                        minHeight: '42px'
+                                    }}>
+                                        {dealId ? (() => {
+                                            const d = deals.find(x => x.id === dealId);
+                                            return d ? `${d.deal_id} (${d.deal_name})` : '—';
+                                        })() : '—'}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Project Name */}
+                            <div style={{ padding: '4px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Name</label>
+                                {!isReadOnly ? (
+                                    <input
+                                        style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                        value={projectName}
+                                        onChange={e => setProjectName(e.target.value)}
+                                        placeholder=""
+                                    />
+                                ) : (
+                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{projectName || '—'}</div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Row 2: Cost Sheet No, Project Manager, Sales Person, Cost Sheet Date */}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'minmax(150px, 1fr) 1.5fr 1.5fr 1fr',
+                            gap: '20px'
+                        }}>
+                            {/* Cost Sheet No */}
+                            <div style={{ padding: '4px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet No.</label>
+                                {!isReadOnly ? (
+                                    <div style={{
+                                        width: '100%',
+                                        padding: '10px 12px',
+                                        background: '#F7FAFC',
+                                        border: '1px solid #E0E6ED',
+                                        borderRadius: '8px',
+                                        height: '42px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        cursor: 'default'
+                                    }}>
+                                        <span style={{
+                                            fontSize: '0.95rem',
+                                            fontWeight: 700,
+                                            color: '#FF6B00',
                                         }}>
-                                            <span style={{
-                                                fontSize: '0.95rem',
-                                                fontWeight: 700,
-                                                color: '#FF6B00',
-                                            }}>
-                                                {costSheetNo || 'Auto-generated'}
-                                            </span>
-                                        </div>
-                                    ) : (
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', padding: '10px 0' }}>
                                             {costSheetNo || 'Auto-generated'}
-                                        </div>
-                                    )}
-                                </div>
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', padding: '10px 0' }}>
+                                        {costSheetNo || 'Auto-generated'}
+                                    </div>
+                                )}
+                            </div>
 
-                                {/* Project Manager */}
-                                <div style={{ padding: '4px' }}>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Manager</label>
-                                    {!isReadOnly ? (
-                                        <input
-                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                            value={projectManager}
-                                            onChange={e => setProjectManager(e.target.value)}
-                                            placeholder="Enter Project Manager"
-                                        />
-                                    ) : (
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{projectManager || '—'}</div>
-                                    )}
-                                </div>
+                            {/* Project Manager */}
+                            <div style={{ padding: '4px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Manager</label>
+                                {!isReadOnly ? (
+                                    <input
+                                        style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                        value={projectManager}
+                                        onChange={e => setProjectManager(e.target.value)}
+                                        placeholder="Enter Project Manager"
+                                    />
+                                ) : (
+                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{projectManager || '—'}</div>
+                                )}
+                            </div>
 
-                                {/* Sales Person */}
-                                <div style={{ padding: '4px' }}>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Person</label>
-                                    {!isReadOnly ? (
-                                        <input
-                                            style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                            value={salesPerson}
-                                            onChange={e => setSalesPerson(e.target.value)}
-                                            placeholder="Enter Sales Person"
-                                        />
-                                    ) : (
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{salesPerson || '—'}</div>
-                                    )}
-                                </div>
+                            {/* Sales Person */}
+                            <div style={{ padding: '4px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Person</label>
+                                {!isReadOnly ? (
+                                    <input
+                                        style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                        value={salesPerson}
+                                        onChange={e => setSalesPerson(e.target.value)}
+                                        placeholder="Enter Sales Person"
+                                    />
+                                ) : (
+                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{salesPerson || '—'}</div>
+                                )}
+                            </div>
 
-                                {/* Cost Sheet Date */}
-                                <div style={{ padding: '4px' }}>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet Date</label>
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{formatDateDisplay(costSheetDate)}</div>
-                                </div>
+                            {/* Cost Sheet Date */}
+                            <div style={{ padding: '4px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet Date</label>
+                                <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{formatDateDisplay(costSheetDate)}</div>
                             </div>
                         </div>
-                    </section>
+                    </div>
 
-                    {/* License Section */}
-                    <section style={{ marginBottom: '32px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                                License
-                            </h3>
-                        </div>
+                    <Separator />
+                    <section className="license-section">
+                        <SectionHeader title="License" />
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['License Name', 'License Type', 'Rate', 'Qty', 'Period', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
@@ -1110,14 +1101,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    {/* Implementation Section */}
-                    <section style={{ marginBottom: '32px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                                Services - Implementation
-                            </h3>
-                        </div>
+                    <Separator />
+                    <section className="implementation-section">
+                        <SectionHeader title="Services - Implementation" />
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
@@ -1208,13 +1194,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <section className="section-panel" style={{ padding: '12px 24px', marginBottom: '32px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                                Services - Support
-                            </h3>
-                        </div>
+                    <Separator />
+                    <section className="support-section">
+                        <SectionHeader title="Services - Support" />
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
@@ -1305,13 +1287,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <section className="section-panel" style={{ padding: '12px 24px', marginBottom: '32px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                                Infrastructure Cost
-                            </h3>
-                        </div>
+                    <Separator />
+                    <section className="infra-section">
+                        <SectionHeader title="Infrastructure Cost" />
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1000px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['Infra Name', 'Qty', 'Months', 'Rate/Month', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
@@ -1400,13 +1378,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <section className="section-panel" style={{ padding: '12px 24px', marginBottom: '32px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                                Other Category
-                            </h3>
-                        </div>
+                    <Separator />
+                    <section className="other-section">
+                        <SectionHeader title="Other Category" />
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '800px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['Description', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
@@ -1492,52 +1466,59 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    {/* Overall Remarks Section */}
-                    <section className="section-panel" style={{ padding: '12px 24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', minHeight: '32px' }}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#FF6B00', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ width: '4px', height: '20px', background: '#0066CC', borderRadius: '2px' }}></span>
-                                Description/Remark
-                            </h3>
-                        </div>
-                        <div style={{ padding: '8px' }}>
-                            <div
-                                onClick={() => !isReadOnly && setShowRemarksModal(true)}
-                                style={{
-                                    width: '100%',
-                                    padding: '16px',
-                                    background: 'white',
-                                    border: '1px solid #E0E6ED',
-                                    borderRadius: '12px',
-                                    fontSize: '0.9rem',
-                                    color: overallRemarks ? '#2D3748' : '#718096',
-                                    cursor: isReadOnly ? 'default' : 'pointer',
-                                    minHeight: '60px',
-                                    transition: 'all 0.2s',
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: '12px'
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (!isReadOnly) {
-                                        e.currentTarget.style.borderColor = '#FF6B00';
-                                        e.currentTarget.style.background = '#FFFAF5';
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (!isReadOnly) {
-                                        e.currentTarget.style.borderColor = '#E0E6ED';
-                                        e.currentTarget.style.background = 'white';
-                                    }
-                                }}
-                            >
-                                <div style={{ flex: 1, whiteSpace: 'pre-wrap' }}>
-                                    {overallRemarks || "Click to add description/remark for this cost sheet..."}
+                    <Separator />
+                    <section className="remarks-section">
+                        <SectionHeader title="Summary & Overall Remarks" />
+                        <div style={{ padding: '0 4px', marginTop: '12px' }}>
+                            <div style={{
+                                background: '#F8FAFC',
+                                border: '1.5px solid #E2E8F0',
+                                borderRadius: '12px',
+                                padding: '16px',
+                                transition: 'all 0.3s ease',
+                                position: 'relative'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                    <MessageSquare size={16} color="#FF6B00" />
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1f36', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Observations & Notes</span>
                                 </div>
+                                <textarea
+                                    value={overallRemarks}
+                                    onChange={(e) => setOverallRemarks(e.target.value)}
+                                    readOnly={isReadOnly}
+                                    placeholder="Type your overall remarks here directly..."
+                                    style={{
+                                        width: '100%',
+                                        height: '70px',
+                                        background: isReadOnly ? 'transparent' : 'white',
+                                        border: isReadOnly ? 'none' : '1px solid #E2E8F0',
+                                        borderRadius: '8px',
+                                        padding: isReadOnly ? '0' : '10px 12px',
+                                        fontSize: '0.85rem',
+                                        color: '#1e293b',
+                                        outline: 'none',
+                                        resize: 'none',
+                                        fontWeight: 500,
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onFocus={(e) => {
+                                        if (!isReadOnly) {
+                                            e.currentTarget.style.borderColor = '#FF6B00';
+                                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.05)';
+                                        }
+                                    }}
+                                    onBlur={(e) => {
+                                        if (!isReadOnly) {
+                                            e.currentTarget.style.borderColor = '#E2E8F0';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }
+                                    }}
+                                />
                             </div>
                         </div>
-                    </section >
+                    </section>
 
+                    <Separator />
                     {/* Document Attachments & Actions Layout - Standalone Row */}
                     {/* Refined Action bar: [Attachment Panel] --- [Standalone Actions] */}
                     <div style={{
@@ -1549,19 +1530,18 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         width: '100%',
                         padding: '0 4px'
                     }}>
-                        {/* LEFT & MIDDLE: Attachment Panel (Dynamic background) */}
+                        {/* Compact Attachment Panel */}
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '24px',
-                            padding: '6px 16px',
-                            background: '#FAFBFC',
-                            borderRadius: '16px',
+                            gap: '16px',
+                            padding: '4px 12px',
+                            background: '#F8FAFC',
+                            borderRadius: '12px',
                             border: '1px solid #E0E6ED',
                             width: 'fit-content',
                             minWidth: 'fit-content',
-                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                            boxShadow: '0 2px 12px rgba(0,0,0,0.02)'
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
                         }}>
                             {!isReadOnly && (
                                 <>
@@ -1578,47 +1558,42 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         style={{
                                             display: 'flex',
                                             alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '12px',
+                                            gap: '8px',
                                             background: 'white',
                                             color: '#1a1f36',
                                             border: '1px solid #E0E6ED',
-                                            height: '56px',
-                                            padding: '0 44px',
-                                            borderRadius: '12px',
+                                            height: '34px',
+                                            padding: '0 16px',
+                                            borderRadius: '8px',
                                             fontWeight: 700,
-                                            fontSize: '15px',
+                                            fontSize: '0.85rem',
                                             cursor: 'pointer',
                                             transition: 'all 0.2s ease',
-                                            whiteSpace: 'nowrap',
-                                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                            whiteSpace: 'nowrap'
                                         }}
                                         onMouseEnter={(e) => {
                                             e.currentTarget.style.background = '#FF6B00';
                                             e.currentTarget.style.color = 'white';
                                             e.currentTarget.style.borderColor = '#FF6B00';
-                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.3)';
                                         }}
                                         onMouseLeave={(e) => {
                                             e.currentTarget.style.background = 'white';
                                             e.currentTarget.style.color = '#1a1f36';
                                             e.currentTarget.style.borderColor = '#E0E6ED';
-                                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
                                         }}
                                     >
-                                        <Paperclip size={20} /> Attachments
+                                        <Paperclip size={14} /> Attachments
                                     </button>
                                 </>
                             )}
 
-                            {/* MIDDLE: File List pills (Custom styling from image 0) */}
+                            {/* MIDDLE: File List pills - More Compact */}
                             <div style={{
                                 flex: 1,
                                 display: 'flex',
-                                gap: '12px',
+                                gap: '8px',
                                 overflowX: 'auto',
-                                padding: '8px 0',
-                                scrollbarWidth: 'thin',
+                                padding: '4px 0',
                                 alignItems: 'center'
                             }}>
                                 {attachments.length > 0 ? (
@@ -1628,90 +1603,63 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '12px',
-                                                padding: '6px 14px',
+                                                gap: '8px',
+                                                padding: '4px 10px',
                                                 background: 'white',
-                                                borderRadius: '10px',
+                                                borderRadius: '8px',
                                                 border: '1px solid #E0E6ED',
-                                                transition: 'all 0.2s',
-                                                minWidth: 'fit-content',
-                                                boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+                                                minWidth: 'fit-content'
                                             }}
                                         >
-                                            {/* Icon Background (Light Orange) */}
-                                            <div style={{
-                                                width: '30px',
-                                                height: '30px',
-                                                borderRadius: '6px',
-                                                background: 'rgba(255, 107, 0, 0.1)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                flexShrink: 0
+                                            <File size={12} style={{ color: '#FF6B00' }} />
+                                            <span style={{
+                                                fontSize: '0.8rem',
+                                                fontWeight: 600,
+                                                color: '#1a1f36',
+                                                maxWidth: '120px',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
                                             }}>
-                                                <File size={16} style={{ color: '#FF6B00' }} />
-                                            </div>
-
-                                            {/* Filename & Label */}
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                <span style={{
-                                                    fontSize: '0.9rem',
-                                                    fontWeight: 700,
-                                                    color: '#0066CC',
-                                                    maxWidth: '140px',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap'
-                                                }}>
-                                                    {att.filename}
-                                                </span>
-                                                <span style={{ fontSize: '0.7rem', color: '#718096', fontWeight: 500 }}>Document</span>
-                                            </div>
-
-                                            {/* Action Buttons (Circled) */}
-                                            <div style={{ display: 'flex', gap: '8px', marginLeft: '4px' }}>
+                                                {att.filename}
+                                            </span>
+                                            <div style={{ display: 'flex', gap: '4px' }}>
                                                 <button
                                                     onClick={() => handleDownload(att)}
                                                     style={{
-                                                        width: '28px',
-                                                        height: '28px',
+                                                        width: '22px',
+                                                        height: '22px',
                                                         borderRadius: '50%',
-                                                        border: '1px solid #E0E6ED',
-                                                        background: 'white',
-                                                        cursor: 'pointer',
-                                                        color: '#718096',
+                                                        border: 'none',
+                                                        background: '#f1f5f9',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
-                                                        transition: 'all 0.2s'
+                                                        cursor: 'pointer',
+                                                        color: '#475569'
                                                     }}
-                                                    onMouseEnter={(e) => e.currentTarget.style.borderColor = '#FF6B00'}
-                                                    onMouseLeave={(e) => e.currentTarget.style.borderColor = '#E0E6ED'}
                                                     title="Download"
                                                 >
-                                                    <Download size={16} />
+                                                    <Download size={10} />
                                                 </button>
                                                 {!isReadOnly && (
                                                     <button
                                                         onClick={() => handleDeleteAttachment(att.id)}
                                                         style={{
-                                                            width: '28px',
-                                                            height: '28px',
+                                                            width: '22px',
+                                                            height: '22px',
                                                             borderRadius: '50%',
-                                                            border: '1px solid #E0E6ED',
-                                                            background: 'white',
-                                                            cursor: 'pointer',
-                                                            color: '#718096',
+                                                            border: 'none',
+                                                            background: '#fee2e2',
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             justifyContent: 'center',
-                                                            transition: 'all 0.2s'
+                                                            cursor: 'pointer',
+                                                            color: '#ef4444'
                                                         }}
-                                                        onMouseEnter={(e) => e.currentTarget.style.borderColor = '#EF4444'}
-                                                        onMouseLeave={(e) => e.currentTarget.style.borderColor = '#E0E6ED'}
-                                                        title="Remove"
+                                                        title="Delete"
                                                     >
-                                                        <X size={16} />
+                                                        <Trash2 size={10} />
                                                     </button>
                                                 )}
                                             </div>
@@ -1742,170 +1690,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 )}
                             </div>
                         </div>
-
-                        {/* RIGHT: Standalone Actions (No background container) */}
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', paddingLeft: '12px' }}>
-                            {(status === 'PENDING' || status === 'REVERTED') && (
-                                <>
-                                    <button
-                                        onClick={() => handleSave('PENDING')}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '8px',
-                                            background: 'white',
-                                            color: '#1a1f36',
-                                            border: '1px solid #E0E6ED',
-                                            height: '40px',
-                                            padding: '0 16px',
-                                            borderRadius: '8px',
-                                            fontWeight: 600,
-                                            fontSize: '13px',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            whiteSpace: 'nowrap'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#FF6B00';
-                                            e.currentTarget.style.color = 'white';
-                                            e.currentTarget.style.borderColor = '#FF6B00';
-                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.3)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = 'white';
-                                            e.currentTarget.style.color = '#1a1f36';
-                                            e.currentTarget.style.borderColor = '#E0E6ED';
-                                            e.currentTarget.style.boxShadow = 'none';
-                                        }}
-                                    >
-                                        <Save size={16} /> Save as Draft
-                                    </button>
-                                    <button
-                                        onClick={() => handleSave('SUBMITTED')}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '8px',
-                                            background: 'white',
-                                            color: '#1a1f36',
-                                            border: '1px solid #E0E6ED',
-                                            height: '40px',
-                                            padding: '0 16px',
-                                            borderRadius: '8px',
-                                            fontWeight: 600,
-                                            fontSize: '13px',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            whiteSpace: 'nowrap'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#FF6B00';
-                                            e.currentTarget.style.color = 'white';
-                                            e.currentTarget.style.borderColor = '#FF6B00';
-                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.3)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = 'white';
-                                            e.currentTarget.style.color = '#1a1f36';
-                                            e.currentTarget.style.borderColor = '#E0E6ED';
-                                            e.currentTarget.style.boxShadow = 'none';
-                                        }}
-                                    >
-                                        <PlusCircle size={18} /> Submit for Approval
-                                    </button>
-                                </>
-                            )}
-
-                            {status === 'SUBMITTED' && (
-                                <>
-                                    <button
-                                        onClick={handleApprove}
-                                        style={{
-                                            background: '#E8FBF0',
-                                            color: '#00C853',
-                                            border: '1px solid rgba(0, 200, 83, 0.2)',
-                                            padding: '0 20px',
-                                            height: '40px',
-                                            borderRadius: '8px',
-                                            fontWeight: 700,
-                                            fontSize: '13px',
-                                            cursor: 'pointer',
-                                            whiteSpace: 'nowrap',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#00C853';
-                                            e.currentTarget.style.color = 'white';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = '#E8FBF0';
-                                            e.currentTarget.style.color = '#00C853';
-                                        }}
-                                    >
-                                        Approve
-                                    </button>
-                                    <button
-                                        onClick={() => setShowRevertModal(true)}
-                                        style={{
-                                            background: '#FFFBEB',
-                                            color: '#D69E2E',
-                                            border: '1px solid rgba(214, 158, 46, 0.2)',
-                                            padding: '0 20px',
-                                            height: '40px',
-                                            borderRadius: '8px',
-                                            fontWeight: 700,
-                                            fontSize: '13px',
-                                            cursor: 'pointer',
-                                            whiteSpace: 'nowrap',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#D69E2E';
-                                            e.currentTarget.style.color = 'white';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = '#FFFBEB';
-                                            e.currentTarget.style.color = '#D69E2E';
-                                        }}
-                                    >
-                                        Revert
-                                    </button>
-                                    <button
-                                        onClick={() => setShowRejectModal(true)}
-                                        style={{
-                                            background: '#FFF5F5',
-                                            color: '#EF4444',
-                                            border: '1px solid rgba(239, 68, 68, 0.2)',
-                                            padding: '0 20px',
-                                            height: '40px',
-                                            borderRadius: '8px',
-                                            fontWeight: 700,
-                                            fontSize: '13px',
-                                            cursor: 'pointer',
-                                            whiteSpace: 'nowrap',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#EF4444';
-                                            e.currentTarget.style.color = 'white';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = '#FFF5F5';
-                                            e.currentTarget.style.color = '#EF4444';
-                                        }}
-                                    >
-                                        Reject
-                                    </button>
-                                </>
-                            )}
-                        </div>
                     </div>
 
-
-
-                </div >
+                </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {/* Consolidated Category Breakdown Table */}
@@ -2000,610 +1787,580 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 </div>
             )}
 
+            {/* Footer Actions (Outside Tab Container) */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'white',
+                padding: '6px',
+                borderRadius: '12px',
+                border: '1px solid #E0E6ED',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                width: 'fit-content',
+                flexShrink: 0,
+                zIndex: 10,
+                marginTop: '10px'
+            }}>
+                {(status === 'PENDING' || status === 'REVERTED') && (
+                    <>
+                        <button
+                            onClick={() => handleSave('PENDING')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                background: 'white',
+                                color: '#1a1f36',
+                                border: '1px solid #E0E6ED',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#f8fafc';
+                                e.currentTarget.style.borderColor = '#cbd5e1';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'white';
+                                e.currentTarget.style.borderColor = '#E0E6ED';
+                            }}
+                        >
+                            <Save size={16} />
+                            <span>Save as Draft</span>
+                        </button>
 
+                        <button
+                            onClick={() => handleSave('SUBMITTED')}
+                            className="ae-btn-primary"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 20px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 800
+                            }}
+                        >
+                            <PlusCircle size={18} />
+                            <span>Submit for Approval</span>
+                        </button>
+                    </>
+                )}
+
+                {status === 'SUBMITTED' && (
+                    <>
+                        <button
+                            onClick={handleApprove}
+                            className="ae-btn-primary"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 20px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 800,
+                                background: '#E8FBF0',
+                                color: '#00C853',
+                                border: '1px solid rgba(0, 200, 83, 0.2)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#00C853';
+                                e.currentTarget.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = '#E8FBF0';
+                                e.currentTarget.style.color = '#00C853';
+                            }}
+                        >
+                            <CheckCircle size={18} />
+                            <span>Approve</span>
+                        </button>
+
+                        <button
+                            onClick={() => setShowRevertModal(true)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 20px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                background: '#FFFBEB',
+                                color: '#D89614',
+                                border: '1px solid rgba(216, 150, 20, 0.2)',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#D89614';
+                                e.currentTarget.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = '#FFFBEB';
+                                e.currentTarget.style.color = '#D89614';
+                            }}
+                        >
+                            <ArrowLeft size={18} />
+                            <span>Revert</span>
+                        </button>
+
+                        <button
+                            onClick={() => setShowRejectModal(true)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 20px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                background: '#FFF5F5',
+                                color: '#EF4444',
+                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#EF4444';
+                                e.currentTarget.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = '#FFF5F5';
+                                e.currentTarget.style.color = '#EF4444';
+                            }}
+                        >
+                            <XCircle size={18} />
+                            <span>Reject</span>
+                        </button>
+                    </>
+                )}
+
+                <button
+                    onClick={() => onBack()}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        background: 'transparent',
+                        color: '#718096',
+                        border: 'none',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                    }}
+                >
+                    <X size={16} />
+                    <span>Cancel</span>
+                </button>
+            </div>
 
             {/* Custom Alert Modal */}
-            {
-                customAlert && (
+            {customAlert && createPortal(
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 10000,
+                        animation: 'fadeIn 0.2s ease',
+                        backdropFilter: 'blur(4px)'
+                    }}
+                    onClick={() => setCustomAlert(null)}
+                >
                     <div
                         style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            background: 'rgba(0, 0, 0, 0.6)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 10000,
-                            animation: 'fadeIn 0.2s ease',
-                            backdropFilter: 'blur(4px)'
+                            background: '#1a1f36',
+                            borderRadius: '16px',
+                            padding: '32px',
+                            maxWidth: '500px',
+                            width: '90%',
+                            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+                            animation: 'slideUp 0.3s ease',
+                            border: `2px solid ${customAlert.type === 'success' ? '#00C853' : customAlert.type === 'error' ? '#EF4444' : '#0066CC'}`
                         }}
-                        onClick={() => setCustomAlert(null)}
+                        onClick={(e) => e.stopPropagation()}
                     >
-                        <div
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                            <div style={{
+                                width: '48px',
+                                height: '48px',
+                                borderRadius: '50%',
+                                background: customAlert.type === 'success' ? 'rgba(0, 200, 83, 0.2)' : customAlert.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0, 102, 204, 0.2)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                            }}>
+                                {customAlert.type === 'success' && <CheckCircle size={28} style={{ color: '#00C853' }} />}
+                                {customAlert.type === 'error' && <XCircle size={28} style={{ color: '#EF4444' }} />}
+                                {customAlert.type === 'info' && <Clock size={28} style={{ color: '#0066CC' }} />}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <h3 style={{
+                                    fontSize: '1.25rem',
+                                    fontWeight: 700,
+                                    color: 'white',
+                                    margin: '0 0 8px 0'
+                                }}>
+                                    {customAlert.type === 'success' ? 'Success' : customAlert.type === 'error' ? 'Error' : 'Information'}
+                                </h3>
+                                <p style={{
+                                    fontSize: '0.95rem',
+                                    color: '#E0E6ED',
+                                    margin: 0,
+                                    lineHeight: '1.6',
+                                    whiteSpace: 'pre-line'
+                                }}>
+                                    {customAlert.message}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setCustomAlert(null)}
+                                style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: 'rgba(255, 255, 255, 0.1)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: 'white',
+                                    flexShrink: 0,
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <button
+                            onClick={() => setCustomAlert(null)}
                             style={{
-                                background: '#1a1f36',
-                                borderRadius: '16px',
-                                padding: '32px',
-                                maxWidth: '500px',
-                                width: '90%',
-                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-                                animation: 'slideUp 0.3s ease',
-                                border: `2px solid ${customAlert.type === 'success' ? '#00C853' : customAlert.type === 'error' ? '#EF4444' : '#0066CC'}`
+                                marginTop: '24px',
+                                width: '100%',
+                                padding: '12px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                background: customAlert.type === 'success' ? '#00C853' : customAlert.type === 'error' ? '#EF4444' : '#0066CC',
+                                color: 'white',
+                                fontWeight: 700,
+                                fontSize: '0.95rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
                             }}
-                            onClick={(e) => e.stopPropagation()}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }}
                         >
+                            OK
+                        </button>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Branded Action Modal (Template Style) */}
+            {(showRejectModal || showRevertModal) && createPortal(
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 10000,
+                        background: 'rgba(0, 0, 0, 0.45)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        padding: '24px',
+                    }}
+                >
+                    <div
+                        style={{
+                            background: 'white',
+                            width: '100%',
+                            maxWidth: '400px',
+                            borderRadius: '24px',
+                            boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
+                            overflow: 'hidden',
+                            position: 'relative',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Orange Header Section */}
+                        <div style={{
+                            background: '#FF6B00',
+                            padding: '28px 24px 24px',
+                            position: 'relative',
+                        }}>
+                            <button
+                                onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
+                                style={{
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: 'white',
+                                    opacity: 0.7,
+                                    transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'transparent'; }}
+                            >
+                                <X size={16} strokeWidth={3} />
+                            </button>
+
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
                                 <div style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    borderRadius: '50%',
-                                    background: customAlert.type === 'success' ? 'rgba(0, 200, 83, 0.2)' : customAlert.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0, 102, 204, 0.2)',
+                                    width: '36px',
+                                    height: '36px',
+                                    background: 'rgba(255,255,255,0.2)',
+                                    borderRadius: '10px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     flexShrink: 0
                                 }}>
-                                    {customAlert.type === 'success' && <CheckCircle size={28} style={{ color: '#00C853' }} />}
-                                    {customAlert.type === 'error' && <XCircle size={28} style={{ color: '#EF4444' }} />}
-                                    {customAlert.type === 'info' && <Clock size={28} style={{ color: '#0066CC' }} />}
+                                    <Sparkles size={18} color="white" />
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <h3 style={{
                                         fontSize: '1.25rem',
-                                        fontWeight: 700,
+                                        fontWeight: 800,
                                         color: 'white',
-                                        margin: '0 0 8px 0'
+                                        margin: '0 0 4px 0',
+                                        lineHeight: 1.2
                                     }}>
-                                        {customAlert.type === 'success' ? 'Success' : customAlert.type === 'error' ? 'Error' : 'Information'}
+                                        {showRevertModal ? 'Revert Cost Sheet' : 'Reject Cost Sheet'}
                                     </h3>
                                     <p style={{
-                                        fontSize: '0.95rem',
-                                        color: '#E0E6ED',
                                         margin: 0,
-                                        lineHeight: '1.6',
-                                        whiteSpace: 'pre-line'
+                                        color: 'rgba(255,255,255,0.95)',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 500,
+                                        lineHeight: 1.4
                                     }}>
-                                        {customAlert.message}
+                                        {showRevertModal
+                                            ? 'Provide a reason for reverting this cost sheet back to the creator.'
+                                            : 'Provide a reason for rejecting this cost sheet for the records.'}
                                     </p>
                                 </div>
-                                <button
-                                    onClick={() => setCustomAlert(null)}
-                                    style={{
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '50%',
-                                        border: 'none',
-                                        background: 'rgba(255, 255, 255, 0.1)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        color: 'white',
-                                        flexShrink: 0,
-                                        transition: 'all 0.2s'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-                                >
-                                    <X size={18} />
-                                </button>
                             </div>
-                            <button
-                                onClick={() => setCustomAlert(null)}
-                                style={{
-                                    marginTop: '24px',
-                                    width: '100%',
-                                    padding: '12px',
-                                    borderRadius: '8px',
-                                    border: 'none',
-                                    background: customAlert.type === 'success' ? '#00C853' : customAlert.type === 'error' ? '#EF4444' : '#0066CC',
-                                    color: 'white',
-                                    fontWeight: 700,
-                                    fontSize: '0.95rem',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = 'none';
-                                }}
-                            >
-                                OK
-                            </button>
                         </div>
-                    </div>
-                )
-            }
 
+                        {/* White Input Section */}
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    color: '#1e293b',
+                                    marginBottom: '8px'
+                                }}>
+                                    {showRevertModal ? 'Reversion Reason' : 'Rejection Reason'}
+                                </label>
+                                <textarea
+                                    value={showRevertModal ? revertComment : rejectComment}
+                                    onChange={e => showRevertModal ? setRevertComment(e.target.value) : setRejectComment(e.target.value)}
+                                    placeholder={showRevertModal ? "Type your reason here..." : "Type your reason here..."}
+                                    autoFocus
+                                    style={{
+                                        width: '100%',
+                                        height: '90px',
+                                        background: '#f8fafc',
+                                        border: '1.5px solid #e2e8f0',
+                                        borderRadius: '12px',
+                                        padding: '12px 16px',
+                                        fontSize: '0.9rem',
+                                        color: '#1e293b',
+                                        outline: 'none',
+                                        resize: 'none',
+                                        transition: 'all 0.2s',
+                                        fontWeight: 500
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.borderColor = '#FF6B00';
+                                        e.currentTarget.style.background = 'white';
+                                        e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 107, 0, 0.08)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.borderColor = '#e2e8f0';
+                                        e.currentTarget.style.background = '#f8fafc';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                />
+                            </div>
 
-            {/* Branded Action Modal (Template Style) */}
-            {/* Branded Action Modal (Template Style) */}
-            {
-                (showRejectModal || showRevertModal) && createPortal(
-                    <div
-                        style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 10000,
-                            background: 'rgba(0, 0, 0, 0.45)',
-                            backdropFilter: 'blur(12px)',
-                            WebkitBackdropFilter: 'blur(12px)',
-                            padding: '24px',
-                        }}
-                    >
-                        <div
-                            style={{
-                                background: 'white',
-                                width: '100%',
-                                maxWidth: '400px',
-                                borderRadius: '24px',
-                                boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
-                                overflow: 'hidden',
-                                position: 'relative',
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {/* Orange Header Section */}
                             <div style={{
-                                background: '#FF6B00',
-                                padding: '28px 24px 24px',
-                                position: 'relative',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: '10px'
                             }}>
                                 <button
                                     onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
                                     style={{
-                                        position: 'absolute',
-                                        top: '16px',
-                                        right: '16px',
-                                        width: '24px',
-                                        height: '24px',
-                                        borderRadius: '50%',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        color: 'white',
-                                        opacity: 0.7,
-                                        transition: 'all 0.2s',
-                                    }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'transparent'; }}
-                                >
-                                    <X size={16} strokeWidth={3} />
-                                </button>
-
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                    <div style={{
-                                        width: '36px',
-                                        height: '36px',
-                                        background: 'rgba(255,255,255,0.2)',
-                                        borderRadius: '10px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        flexShrink: 0
-                                    }}>
-                                        <Sparkles size={18} color="white" />
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <h3 style={{
-                                            fontSize: '1.25rem',
-                                            fontWeight: 800,
-                                            color: 'white',
-                                            margin: '0 0 4px 0',
-                                            lineHeight: 1.2
-                                        }}>
-                                            {showRevertModal ? 'Revert Cost Sheet' : 'Reject Cost Sheet'}
-                                        </h3>
-                                        <p style={{
-                                            margin: 0,
-                                            color: 'rgba(255,255,255,0.95)',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 500,
-                                            lineHeight: 1.4
-                                        }}>
-                                            {showRevertModal
-                                                ? 'Provide a reason for reverting this cost sheet back to the creator.'
-                                                : 'Provide a reason for rejecting this cost sheet for the records.'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* White Input Section */}
-                            <div style={{ padding: '24px' }}>
-                                <div style={{ marginBottom: '20px' }}>
-                                    <label style={{
-                                        display: 'block',
-                                        fontSize: '0.85rem',
+                                        padding: '10px 20px',
+                                        borderRadius: '12px',
+                                        background: '#f1f5f9',
+                                        color: '#475569',
                                         fontWeight: 700,
-                                        color: '#1e293b',
-                                        marginBottom: '8px'
-                                    }}>
-                                        {showRevertModal ? 'Reversion Reason' : 'Rejection Reason'}
-                                    </label>
-                                    <textarea
-                                        value={showRevertModal ? revertComment : rejectComment}
-                                        onChange={e => showRevertModal ? setRevertComment(e.target.value) : setRejectComment(e.target.value)}
-                                        placeholder={showRevertModal ? "Type your reason here..." : "Type your reason here..."}
-                                        autoFocus
-                                        style={{
-                                            width: '100%',
-                                            height: '90px',
-                                            background: '#f8fafc',
-                                            border: '1.5px solid #e2e8f0',
-                                            borderRadius: '12px',
-                                            padding: '12px 16px',
-                                            fontSize: '0.9rem',
-                                            color: '#1e293b',
-                                            outline: 'none',
-                                            resize: 'none',
-                                            transition: 'all 0.2s',
-                                            fontWeight: 500
-                                        }}
-                                        onFocus={(e) => {
-                                            e.currentTarget.style.borderColor = '#FF6B00';
-                                            e.currentTarget.style.background = 'white';
-                                            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 107, 0, 0.08)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.currentTarget.style.borderColor = '#e2e8f0';
-                                            e.currentTarget.style.background = '#f8fafc';
-                                            e.currentTarget.style.boxShadow = 'none';
-                                        }}
-                                    />
-                                </div>
-
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'flex-end',
-                                    gap: '10px'
-                                }}>
-                                    <button
-                                        onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
-                                        style={{
-                                            padding: '10px 20px',
-                                            borderRadius: '12px',
-                                            background: '#f1f5f9',
-                                            color: '#475569',
-                                            fontWeight: 700,
-                                            fontSize: '0.85rem',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
-                                        onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={showRevertModal ? handleRevert : handleReject}
-                                        style={{
-                                            padding: '10px 24px',
-                                            borderRadius: '12px',
-                                            background: '#FF6B00',
-                                            color: 'white',
-                                            fontWeight: 700,
-                                            fontSize: '0.85rem',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                            boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(-1px)';
-                                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 107, 0, 0.3)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(0)';
-                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
-                                        }}
-                                    >
-                                        {showRevertModal ? 'Revert' : 'Reject'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>,
-                    document.body
-                )
-            }
-
-            {/* Overall Remarks Modal */}
-            {
-                showRemarksModal && createPortal(
-                    <div
-                        style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 10000,
-                            background: 'rgba(0, 0, 0, 0.45)',
-                            backdropFilter: 'blur(12px)',
-                            WebkitBackdropFilter: 'blur(12px)',
-                            padding: '24px',
-                        }}
-                    >
-                        <div
-                            style={{
-                                background: 'white',
-                                width: '100%',
-                                maxWidth: '400px',
-                                borderRadius: '24px',
-                                boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
-                                overflow: 'hidden',
-                                position: 'relative',
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {/* Orange Header Section */}
-                            <div style={{
-                                background: '#FF6B00',
-                                padding: '28px 24px 24px',
-                                position: 'relative',
-                            }}>
+                                        fontSize: '0.85rem',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                                >
+                                    Cancel
+                                </button>
                                 <button
-                                    onClick={() => setShowRemarksModal(false)}
+                                    onClick={showRevertModal ? handleRevert : handleReject}
                                     style={{
-                                        position: 'absolute',
-                                        top: '16px',
-                                        right: '16px',
-                                        width: '24px',
-                                        height: '24px',
-                                        borderRadius: '50%',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
+                                        padding: '10px 24px',
+                                        borderRadius: '12px',
+                                        background: '#FF6B00',
                                         color: 'white',
-                                        opacity: 0.7,
-                                        transition: 'all 0.2s',
-                                    }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'transparent'; }}
-                                >
-                                    <X size={16} strokeWidth={3} />
-                                </button>
-
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                    <div style={{
-                                        width: '36px',
-                                        height: '36px',
-                                        background: 'rgba(255,255,255,0.2)',
-                                        borderRadius: '10px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        flexShrink: 0
-                                    }}>
-                                        <Sparkles size={18} color="white" />
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <h3 style={{
-                                            fontSize: '1.25rem',
-                                            fontWeight: 800,
-                                            color: 'white',
-                                            margin: '0 0 4px 0',
-                                            lineHeight: 1.2
-                                        }}>
-                                            Cost Sheet Remarks
-                                        </h3>
-                                        <p style={{
-                                            margin: 0,
-                                            color: 'rgba(255,255,255,0.95)',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 500,
-                                            lineHeight: 1.4
-                                        }}>
-                                            Add final context or overall observations for this cost sheet submission.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* White Input Section */}
-                            <div style={{ padding: '24px' }}>
-                                <div style={{ marginBottom: '20px' }}>
-                                    <label style={{
-                                        display: 'block',
-                                        fontSize: '0.85rem',
                                         fontWeight: 700,
-                                        color: '#1e293b',
-                                        marginBottom: '8px'
-                                    }}>
-                                        Overall Remarks
-                                    </label>
-                                    <textarea
-                                        value={overallRemarks}
-                                        onChange={(e) => setOverallRemarks(e.target.value)}
-                                        placeholder="Type your overall remarks here..."
-                                        autoFocus
-                                        style={{
-                                            width: '100%',
-                                            height: '110px',
-                                            background: '#f8fafc',
-                                            border: '1.5px solid #e2e8f0',
-                                            borderRadius: '12px',
-                                            padding: '12px 16px',
-                                            fontSize: '0.9rem',
-                                            color: '#1e293b',
-                                            outline: 'none',
-                                            resize: 'none',
-                                            transition: 'all 0.2s',
-                                            fontWeight: 500
-                                        }}
-                                        onFocus={(e) => {
-                                            e.currentTarget.style.borderColor = '#FF6B00';
-                                            e.currentTarget.style.background = 'white';
-                                            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 107, 0, 0.08)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.currentTarget.style.borderColor = '#e2e8f0';
-                                            e.currentTarget.style.background = '#f8fafc';
-                                            e.currentTarget.style.boxShadow = 'none';
-                                        }}
-                                    />
-                                </div>
-
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'flex-end',
-                                    gap: '10px'
-                                }}>
-                                    <button
-                                        onClick={() => setShowRemarksModal(false)}
-                                        style={{
-                                            padding: '10px 20px',
-                                            borderRadius: '12px',
-                                            background: '#f1f5f9',
-                                            color: '#475569',
-                                            fontWeight: 700,
-                                            fontSize: '0.85rem',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
-                                        onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={() => setShowRemarksModal(false)}
-                                        style={{
-                                            padding: '10px 24px',
-                                            borderRadius: '12px',
-                                            background: '#FF6B00',
-                                            color: 'white',
-                                            fontWeight: 700,
-                                            fontSize: '0.85rem',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                            boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#e65a00';
-                                            e.currentTarget.style.transform = 'translateY(-1px)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = '#FF6B00';
-                                            e.currentTarget.style.transform = 'translateY(0)';
-                                        }}
-                                    >
-                                        Save Remarks
-                                    </button>
-                                </div>
+                                        fontSize: '0.85rem',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 107, 0, 0.3)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
+                                    }}
+                                >
+                                    {showRevertModal ? 'Revert' : 'Reject'}
+                                </button>
                             </div>
                         </div>
-                    </div>,
-                    document.body
-                )
-            }
+                    </div>
+                </div>,
+                document.body
+            )}
+
+
 
             {/* Premium Toast Notification */}
-            {
-                toast && createPortal(
-                    <div
+            {toast && createPortal(
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: '24px',
+                        right: '24px',
+                        zIndex: 10001,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        background: 'white',
+                        padding: '16px 20px',
+                        borderRadius: '16px',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
+                        border: '1px solid #E2E8F0',
+                        borderLeft: `4px solid ${toast.type === 'success' ? '#10B981' : '#EF4444'}`,
+                        animation: 'toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                        minWidth: '300px'
+                    }}
+                >
+                    <div style={{
+                        width: '32px',
+                        height: '32px',
+                        background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                    }}>
+                        {toast.type === 'success' ? (
+                            <CheckCircle size={18} color="#10B981" />
+                        ) : (
+                            <XCircle size={18} color="#EF4444" />
+                        )}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <p style={{
+                            margin: 0,
+                            fontSize: '0.9rem',
+                            fontWeight: 700,
+                            color: '#1e293b'
+                        }}>
+                            {toast.type === 'success' ? 'Success' : 'Error'}
+                        </p>
+                        <p style={{
+                            margin: 0,
+                            fontSize: '0.85rem',
+                            fontWeight: 500,
+                            color: '#64748b'
+                        }}>
+                            {toast.message}
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setToast(null)}
                         style={{
-                            position: 'fixed',
-                            top: '24px',
-                            right: '24px',
-                            zIndex: 10001,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            background: 'white',
-                            padding: '16px 20px',
-                            borderRadius: '16px',
-                            boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
-                            border: '1px solid #E2E8F0',
-                            borderLeft: `4px solid ${toast.type === 'success' ? '#10B981' : '#EF4444'}`,
-                            animation: 'toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                            minWidth: '300px'
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#94a3b8',
+                            padding: '4px'
                         }}
                     >
-                        <div style={{
-                            width: '32px',
-                            height: '32px',
-                            background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0
-                        }}>
-                            {toast.type === 'success' ? (
-                                <CheckCircle size={18} color="#10B981" />
-                            ) : (
-                                <XCircle size={18} color="#EF4444" />
-                            )}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <p style={{
-                                margin: 0,
-                                fontSize: '0.9rem',
-                                fontWeight: 700,
-                                color: '#1e293b'
-                            }}>
-                                {toast.type === 'success' ? 'Success' : 'Error'}
-                            </p>
-                            <p style={{
-                                margin: 0,
-                                fontSize: '0.85rem',
-                                fontWeight: 500,
-                                color: '#64748b'
-                            }}>
-                                {toast.message}
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setToast(null)}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: 'pointer',
-                                color: '#94a3b8',
-                                padding: '4px'
-                            }}
-                        >
-                            <X size={16} />
-                        </button>
+                        <X size={16} />
+                    </button>
 
-                        <style>{`
+                    <style>{`
                         @keyframes toastIn {
-                            from { transform: translateX(100%) opacity: 0; }
-                            to { transform: translateX(0) opacity: 1; }
+                            from { transform: translateX(100%); opacity: 0; }
+                            to { transform: translateX(0); opacity: 1; }
                         }
                     `}</style>
-                    </div>,
-                    document.body
-                )
-            }
-        </div >
+                </div>,
+                document.body
+            )}
+        </div>
     );
 };
 

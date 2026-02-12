@@ -84,17 +84,19 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                         { label: 'Open Deals', value: '18', icon: Briefcase, color: 'text-orange', bg: 'bg-orange-soft', trend: '3 closing' },
                         { label: 'Monthly Growth', value: '32%', icon: Target, color: 'text-purple', bg: 'bg-purple-soft', trend: '+2.4%' },
                     ].map((stat, idx) => (
-                        <div key={idx} className="ae-card">
-                            <div className="ae-card-header">
-                                <div className={`ae-icon-box ${stat.bg} ${stat.color}`}>
-                                    <stat.icon size={18} />
+                        <div key={idx} className="ae-card ae-card-sm">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <div className="ae-card-label">{stat.label}</div>
+                                    <div className="ae-card-value">{stat.value}</div>
+                                    <span style={{ fontSize: '0.65rem', color: '#718096', display: 'block', marginTop: '2px' }}>
+                                        {stat.trend}
+                                    </span>
                                 </div>
-                                <span className="ae-trend-badge" style={{ background: '#F7FAFC', color: '#718096', fontSize: '0.7rem', padding: '2px 6px' }}>
-                                    {stat.trend}
-                                </span>
+                                <div className={`ae-icon-box ${stat.bg} ${stat.color}`}>
+                                    <stat.icon size={16} />
+                                </div>
                             </div>
-                            <div className="ae-card-label">{stat.label}</div>
-                            <div className="ae-card-value">{stat.value}</div>
                         </div>
                     ))}
                 </div>

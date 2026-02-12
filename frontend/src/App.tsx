@@ -17,7 +17,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  Shield
+  Upload,
 } from 'lucide-react';
 
 
@@ -31,7 +31,7 @@ import Payment from './components/Payment';
 import InvoiceDashboard from './components/InvoiceDashboard';
 import api from './api';
 import './index.css';
-import { NotificationProvider } from './context/NotificationContext';
+import { NotificationProvider, useNotification } from './context/NotificationContext';
 import DealDashboard from './components/DealDashboard';
 import DealForm from './components/DealForm';
 import EstimateDashboard from './components/EstimateDashboard';
@@ -161,8 +161,12 @@ const AppContent: React.FC = () => {
   const [editingLeadId, setEditingLeadId] = useState<number | null>(null);
   const [leadView, setLeadView] = useState<'form' | 'dashboard'>('dashboard');
   const [leadSearchQuery, setLeadSearchQuery] = useState('');
+  const [costSheetSearchQuery, setCostSheetSearchQuery] = useState('');
   const [dealSearchQuery, setDealSearchQuery] = useState('');
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const [isExtractingSO, setIsExtractingSO] = useState(false);
+  const [soRefreshTrigger, setSoRefreshTrigger] = useState(0);
+  const { showNotification } = useNotification();
 
 
   const [user, setUser] = useState<any>(null);
@@ -230,6 +234,36 @@ const AppContent: React.FC = () => {
     localStorage.removeItem('token');
     setUser(null);
     navigate('/login');
+  };
+
+  const handleSOUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setIsExtractingSO(true);
+      showNotification('Uploading and processing Purchase Order...', 'info');
+      const response = await api.post('/po-files/process_po/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setIsExtractingSO(false);
+      showNotification(response.data.message, 'success');
+      setSoRefreshTrigger(prev => prev + 1);
+
+      if (response.data.so_id) {
+        setEditingSalesOrderId(response.data.so_id);
+        setSalesOrderView('dashboard'); // Stay on dashboard but it will be refreshed
+        // Or if the user wants to jump to details:
+        // handleViewSalesOrderDetails(response.data.so_id);
+      }
+    } catch (error) {
+      setIsExtractingSO(false);
+      showNotification('Extraction failed, please create manually or try again.', 'error');
+    }
   };
 
 
@@ -308,81 +342,126 @@ const AppContent: React.FC = () => {
       <Route path="/cost-sheet" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="space-y-6">
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 8px',
-                marginBottom: '16px'
-              }}>
+            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+              <div className="space-y-8">
                 <div style={{
                   display: 'flex',
-                  gap: '4px',
                   alignItems: 'center',
-                  background: 'white',
-                  padding: '6px',
-                  borderRadius: '12px',
-                  border: '1px solid #E0E6ED',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '24px'
                 }}>
-                  <button
-                    onClick={() => setCostSheetView('dashboard')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '6px 16px',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      background: costSheetView === 'dashboard' ? '#FF6B00' : 'transparent',
-                      color: costSheetView === 'dashboard' ? 'white' : '#718096',
-                      boxShadow: costSheetView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                    }}
-                  >
-                    <LayoutDashboard size={18} /> Dashboard
-                  </button>
-                  <button
-                    onClick={handleCreateNew}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '6px 16px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: 700,
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      background: (costSheetView === 'form' && !editingId) ? '#FF6B00' : 'transparent',
-                      color: (costSheetView === 'form' && !editingId) ? 'white' : '#718096',
-                      boxShadow: (costSheetView === 'form' && !editingId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                    }}
-                  >
-                    <PlusCircle size={18} /> Create New
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Cost Sheet Management</h1>
+                  </div>
                 </div>
-              </div>
 
-              {costSheetView === 'form' ? (
-                <CostSheetForm
-                  id={editingId}
-                  onBack={() => {
-                    setCostSheetView('dashboard');
-                  }}
-                  onSave={() => setCostSheetView('dashboard')}
-                />
-              ) : (
-                <CostSheetDashboard
-                  onView={handleViewDetails}
-                />
-              )}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '12px',
+                  gap: '24px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    alignItems: 'center',
+                    background: 'white',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                  }}>
+                    <button
+                      onClick={() => setCostSheetView('dashboard')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: costSheetView === 'dashboard' ? '#FF6B00' : 'transparent',
+                        color: costSheetView === 'dashboard' ? 'white' : '#718096',
+                        boxShadow: costSheetView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                      }}
+                    >
+                      <LayoutDashboard size={18} /> Dashboard
+                    </button>
+                    <button
+                      onClick={handleCreateNew}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: (costSheetView === 'form' && !editingId) ? '#FF6B00' : 'transparent',
+                        color: (costSheetView === 'form' && !editingId) ? 'white' : '#718096',
+                        boxShadow: (costSheetView === 'form' && !editingId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                      }}
+                    >
+                      <PlusCircle size={18} /> Create New
+                    </button>
+                  </div>
+
+                  {costSheetView === 'dashboard' && (
+                    <div className="ae-input-group !bg-white !shadow-sm !border-[#E0E6ED]" style={{
+                      flex: 1,
+                      maxWidth: '500px',
+                      margin: 0,
+                      height: '44px',
+                      borderRadius: '12px',
+                      position: 'relative',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <span className="ae-search-icon" style={{ left: '16px', zIndex: 2 }}><Search size={20} className="text-[#A0AEC0]" /></span>
+                      <input
+                        type="text"
+                        className="ae-input !border-none !bg-transparent !pl-12 !font-semibold"
+                        placeholder="Search by CS Number, Lead, Customer or Project..."
+                        value={costSheetSearchQuery}
+                        onChange={(e) => setCostSheetSearchQuery(e.target.value)}
+                        style={{
+                          fontSize: '0.9rem',
+                          color: '#1a1f36',
+                          width: '100%',
+                          height: '100%',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {costSheetView === 'form' ? (
+                  <CostSheetForm
+                    id={editingId}
+                    onBack={() => {
+                      setCostSheetView('dashboard');
+                    }}
+                    onSave={() => setCostSheetView('dashboard')}
+                  />
+                ) : (
+                  <CostSheetDashboard
+                    onView={handleViewDetails}
+                    searchQuery={costSheetSearchQuery}
+                  />
+                )}
+              </div>
             </div>
           </ModuleWrapper>
         ) : <Navigate to="/login" />
@@ -390,7 +469,9 @@ const AppContent: React.FC = () => {
       <Route path="/user-management" element={
         user && user.role === 'app_admin' ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <UserManagement />
+            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+              <UserManagement />
+            </div>
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
@@ -650,81 +731,97 @@ const AppContent: React.FC = () => {
       <Route path="/estimates" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="space-y-6">
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 8px',
-                marginBottom: '16px'
-              }}>
+            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+              <div className="space-y-8">
                 <div style={{
                   display: 'flex',
-                  gap: '4px',
                   alignItems: 'center',
-                  background: 'white',
-                  padding: '6px',
-                  borderRadius: '12px',
-                  border: '1px solid #E0E6ED',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '24px'
                 }}>
-                  <button
-                    onClick={() => setEstimateView('dashboard')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '6px 16px',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      background: estimateView === 'dashboard' ? '#FF6B00' : 'transparent',
-                      color: estimateView === 'dashboard' ? 'white' : '#718096',
-                      boxShadow: estimateView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                    }}
-                  >
-                    <LayoutDashboard size={18} /> Dashboard
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingEstimateId(null);
-                      setEstimateView('form');
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '6px 16px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: 700,
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      background: (estimateView === 'form' && !editingEstimateId) ? '#FF6B00' : 'transparent',
-                      color: (estimateView === 'form' && !editingEstimateId) ? 'white' : '#718096',
-                      boxShadow: (estimateView === 'form' && !editingEstimateId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                    }}
-                  >
-                    <PlusCircle size={18} /> Create New
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Estimate Management</h1>
+                  </div>
                 </div>
-              </div>
 
-              {estimateView === 'form' ? (
-                <EstimateForm
-                  id={editingEstimateId!}
-                  onBack={() => setEstimateView('dashboard')}
-                />
-              ) : (
-                <EstimateDashboard
-                  onView={handleViewEstimateDetails}
-                />
-              )}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '12px',
+                  gap: '24px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    alignItems: 'center',
+                    background: 'white',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                  }}>
+                    <button
+                      onClick={() => setEstimateView('dashboard')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: estimateView === 'dashboard' ? '#FF6B00' : 'transparent',
+                        color: estimateView === 'dashboard' ? 'white' : '#718096',
+                        boxShadow: estimateView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                      }}
+                    >
+                      <LayoutDashboard size={18} /> Dashboard
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingEstimateId(null);
+                        setEstimateView('form');
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: (estimateView === 'form' && !editingEstimateId) ? '#FF6B00' : 'transparent',
+                        color: (estimateView === 'form' && !editingEstimateId) ? 'white' : '#718096',
+                        boxShadow: (estimateView === 'form' && !editingEstimateId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                      }}
+                    >
+                      <PlusCircle size={18} /> Create New
+                    </button>
+                  </div>
+                </div>
+
+                {estimateView === 'form' ? (
+                  <EstimateForm
+                    id={editingEstimateId!}
+                    onBack={() => setEstimateView('dashboard')}
+                  />
+                ) : (
+                  <EstimateDashboard
+                    onView={handleViewEstimateDetails}
+                  />
+                )}
+              </div>
             </div>
           </ModuleWrapper>
         ) : <Navigate to="/login" />
@@ -732,17 +829,75 @@ const AppContent: React.FC = () => {
       <Route path="/sales-order" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            {salesOrderView === 'form' ? (
-              <SalesOrderForm
-                id={editingSalesOrderId}
-                onBack={() => setSalesOrderView('dashboard')}
-                onSave={() => setSalesOrderView('dashboard')}
-              />
-            ) : (
-              <SalesOrderDashboard
-                onView={handleViewSalesOrderDetails}
-              />
-            )}
+            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+              <div className="space-y-8">
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '24px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Sales Order Management</h1>
+                  </div>
+
+                  {salesOrderView === 'dashboard' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 20px',
+                        borderRadius: '10px',
+                        fontSize: '0.9rem',
+                        fontWeight: 700,
+                        cursor: isExtractingSO ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        background: '#FF6B00',
+                        color: 'white',
+                        boxShadow: '0 4px 14px rgba(255, 107, 0, 0.35)',
+                        border: 'none',
+                        opacity: isExtractingSO ? 0.7 : 1
+                      }}
+                        onMouseEnter={(e) => {
+                          if (!isExtractingSO) {
+                            e.currentTarget.style.background = '#E65F00';
+                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 107, 0, 0.45)';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isExtractingSO) {
+                            e.currentTarget.style.background = '#FF6B00';
+                            e.currentTarget.style.boxShadow = '0 4px 14px rgba(255, 107, 0, 0.35)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }
+                        }}
+                      >
+                        {isExtractingSO ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Upload size={18} />}
+                        {isExtractingSO ? 'Processing...' : 'Upload PO'}
+                        <input type="file" className="hidden" onChange={handleSOUpload} accept=".pdf" disabled={isExtractingSO} />
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                {salesOrderView === 'form' ? (
+                  <SalesOrderForm
+                    id={editingSalesOrderId}
+                    onBack={() => setSalesOrderView('dashboard')}
+                    onSave={() => setSalesOrderView('dashboard')}
+                  />
+                ) : (
+                  <SalesOrderDashboard
+                    onView={handleViewSalesOrderDetails}
+                    refreshKey={soRefreshTrigger}
+                  />
+                )}
+              </div>
+            </div>
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />

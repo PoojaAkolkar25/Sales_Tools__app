@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-    ChevronLeft,
     Save,
     Plus,
     RefreshCw,
@@ -535,9 +534,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
             {/* Header Controls */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <button onClick={onBack} className="ae-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <ChevronLeft size={18} /> Back
-                    </button>
                     {getApprovalStatusBadge()}
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
@@ -611,12 +607,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                         )}
                     </div>
 
-                    {/* Save Button - Hidden if Read Only */}
-                    {!isReadOnly && (
-                        <button onClick={handleSave} disabled={saving} className="ae-btn-secondary">
-                            <Save size={18} /> {saving ? 'Saving...' : 'Save Draft'}
-                        </button>
-                    )}
+
 
                     {/* Submit to Customer button (via Email Modal) */}
                     {(estimate?.status === 'SUBMITTED' || estimate?.approval_status === 'APPROVED') && (
@@ -641,7 +632,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
             </div>
 
             {/* Excel-like Grid Layout */}
-            <div className="ae-card" style={{ padding: '0', overflow: 'hidden', border: '1px solid #99b6d8' }}>
+            <div style={{ padding: '0', overflow: 'hidden', border: '1px solid #99b6d8', background: 'white', borderRadius: '12px' }}>
                 {/* Top Information Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', background: '#dce6f1', borderBottom: '1px solid #99b6d8' }}>
                     <div style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
@@ -1034,33 +1025,33 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                         </tfoot>
                     </table>
                 </div>
+
+                {/* Bottom Sections */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0', borderTop: '1px solid #99b6d8' }}>
+                    <div style={{ borderRight: '1px solid #99b6d8', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ background: '#dce6f1', padding: '8px', borderBottom: '1px solid #99b6d8', fontWeight: 700 }}>Description / Memo</div>
+                        <textarea
+                            style={{ flex: 1, border: 'none', padding: '12px', minHeight: '100px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'transparent' }}
+                            placeholder="Type here..."
+                            value={formData.description_memo || ''}
+                            onChange={(e) => setFormData({ ...formData, description_memo: e.target.value })}
+                            disabled={isReadOnly}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ background: '#dce6f1', padding: '8px', borderBottom: '1px solid #99b6d8', fontWeight: 700 }}>Terms & Conditions</div>
+                        <textarea
+                            style={{ flex: 1, border: 'none', padding: '12px', minHeight: '100px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'transparent' }}
+                            placeholder="Type here..."
+                            value={formData.terms_conditions || ''}
+                            onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}
+                            disabled={isReadOnly}
+                        />
+                    </div>
+                </div>
             </div>
 
-            {/* Bottom Sections */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0', borderTop: '1px solid #99b6d8' }}>
-                <div style={{ borderRight: '1px solid #99b6d8', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ background: '#dce6f1', padding: '8px', borderBottom: '1px solid #99b6d8', fontWeight: 700 }}>Description / Memo</div>
-                    <textarea
-                        style={{ flex: 1, border: 'none', padding: '12px', minHeight: '100px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'transparent' }}
-                        placeholder="Type here..."
-                        value={formData.description_memo || ''}
-                        onChange={(e) => setFormData({ ...formData, description_memo: e.target.value })}
-                        disabled={isReadOnly}
-                    />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ background: '#dce6f1', padding: '8px', borderBottom: '1px solid #99b6d8', fontWeight: 700 }}>Terms & Conditions</div>
-                    <textarea
-                        style={{ flex: 1, border: 'none', padding: '12px', minHeight: '100px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'transparent' }}
-                        placeholder="Type here..."
-                        value={formData.terms_conditions || ''}
-                        onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}
-                        disabled={isReadOnly}
-                    />
-                </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '16px', background: '#F7FAFC', borderTop: '1px solid #99b6d8' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '16px', background: 'white', borderTop: '1px solid #99b6d8' }}>
                 <div className="flex items-center gap-3">
                     {id && (
                         <button
@@ -1073,15 +1064,26 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                         </button>
                     )}
                     {!isReadOnly && (
-                        <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="ae-btn-primary flex items-center gap-2"
-                            style={{ padding: '8px 24px' }}
-                        >
-                            <Save size={18} />
-                            {saving ? 'Saving...' : 'Save Estimate'}
-                        </button>
+                        <>
+                            <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="ae-btn-secondary flex items-center gap-2"
+                                style={{ padding: '8px 24px' }}
+                            >
+                                <Save size={18} />
+                                {saving ? 'Saving...' : 'Save Draft'}
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="ae-btn-primary flex items-center gap-2"
+                                style={{ padding: '8px 24px' }}
+                            >
+                                <Save size={18} />
+                                {saving ? 'Saving...' : 'Save Estimate'}
+                            </button>
+                        </>
                     )}
                 </div>
 

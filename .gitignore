@@ -18,3 +18,4 @@ node_modules/
 # Django Migrations
 **/migrations/*.py
 !**/migrations/__init__.py
+inital.__pycache__

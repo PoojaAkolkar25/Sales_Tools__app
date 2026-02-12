@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-    ArrowLeft,
     Save,
     Loader2,
     Calendar,
