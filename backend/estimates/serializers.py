@@ -59,16 +59,20 @@ class EstimateSerializer(serializers.ModelSerializer):
             if items_data is not None:
                 # If items are provided in the request (create or update)
                 total_estimate_price = sum((float(item.get('qty', 0)) * float(item.get('rate', 0))) for item in items_data)
+            elif self.instance and self.instance.items.exists():
+                # If items are NOT provided (partial update) AND instance has items, use the instance's items
+                total_estimate_price = sum(float(item.qty) * float(item.rate) for item in self.instance.items.all())
             elif self.instance:
-                # If items are NOT provided (likely a partial update), use existing items
-                total_estimate_price = sum(float(item.amount) for item in self.instance.items.all())
+                # If items are NOT provided (partial update) AND instance has NO items, use the stored total_price
+                # This fixes the bug where partial updates failed for auto-created estimates with no items
+                total_estimate_price = float(self.instance.total_price)
             else:
-                # New estimate with no items yet (unlikely given serializers.many=True)
                 total_estimate_price = 0
 
-            if total_estimate_price < float(cost_sheet.total_estimated_price):
+            cost_sheet_price = float(cost_sheet.total_estimated_price)
+            if total_estimate_price < cost_sheet_price:
                 raise serializers.ValidationError({
-                    "items": f"Total Estimate Price (${total_estimate_price:,.2f}) must be greater than or equal to the approved Cost Sheet Price (${float(cost_sheet.total_estimated_price):,.2f})."
+                    "items": f"Total Estimate Price (${total_estimate_price:,.2f}) must be greater than or equal to the approved Cost Sheet Price (${cost_sheet_price:,.2f})."
                 })
 
         # MANDATORY: Check for proposal attachment if updating (creation might not have it yet, 

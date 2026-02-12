@@ -1,3 +1,4 @@
+
 from django.core.management.base import BaseCommand
 from finance.models import StateMaster, CompanyProfile
 from django.db import transaction
@@ -37,7 +38,7 @@ class Command(BaseCommand):
                     'gstin': "27AAACA1234A1Z5",
                     'pan': "AAACA1234A",
                     'website_url': "https://automationedge.com",
-                    'state': maha
+                    'state': "Maharashtra"
                 }
             )
             self.stdout.write(self.style.SUCCESS('Successfully seeded default CompanyProfile'))

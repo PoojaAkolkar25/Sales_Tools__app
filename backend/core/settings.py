@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "estimates.apps.EstimatesConfig",
     "sales_orders",
     "milestones",
+    "inventory",
 ]
 
 MIDDLEWARE = [

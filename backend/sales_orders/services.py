@@ -45,8 +45,8 @@ class PDFExtractor:
                     "STRICT RULES:\n"
                     "- OUTPUT FORMAT: Return ONLY the raw JSON object. DO NOT include markdown code blocks (like ```json), backticks, or any conversational text.\n"
                     "- CUSTOMER: Identify the BUYER/ISSUER of the PO. IGNORE 'AutomationEdge Technologies' as the customer (they are the supplier).\n"
-                    "- PO NUMBER: Extract identifying PO Number (labeled as PO No, Order No, P.O., etc.).\n"
-                    "- MAPPING: Match the customer in the PO to one of the EXISTING CUSTOMERS listed below if it's a clear match. If not, return the name as found in the PO.\n\n"
+                    "- PO NUMBER: Extract the identifying PO Number. Look for labels like 'PO No', 'Order No', 'P.O.', 'Purchase Order #', 'Ref'. PO numbers often contain slashes (e.g., MACM/IT/PO/2026/015) or are alphanumeric. Ensure the COMPLETE number is extracted, including all special characters.\n"
+                    "- MAPPING: Match the customer in the PO to one of the EXISTING CUSTOMERS listed below if it's a clear match. If NO match is found in the list, return 'not match with company profile' as the customer_name.\n\n"
                     "EXISTING CUSTOMERS:\n"
                     f"- {customers_context}\n\n"
                     "OUTPUT JSON SCHEMA:\n"
@@ -456,8 +456,12 @@ class SalesOrderCreator:
             customer_obj = Customer.objects.filter(name__iexact=cust_name.strip()).first()
             
             # If not found, try contains match if the name is long enough to be specific
-            if not customer_obj and len(cust_name) > 4:
+            if not customer_obj and len(cust_name) > 4 and cust_name != 'Not Customer Match':
                 customer_obj = Customer.objects.filter(name__icontains=cust_name.strip()).first()
+        
+        # BRD Requirement: If no customer match is found, display "Not Customer Match"
+        if not customer_obj:
+            cust_name = 'Not Customer Match'
         
         # Create SO Draft
         so = SalesOrder.objects.create(

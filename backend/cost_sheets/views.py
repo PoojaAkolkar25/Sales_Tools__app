@@ -38,43 +38,21 @@ class CostSheetViewSet(viewsets.ModelViewSet):
         if instance.status != CostSheetStatus.SUBMITTED:
             return Response({'error': 'Only submitted cost sheets can be approved'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Check if there are any related estimates
-        related_estimates = instance.estimates.all()
-        
-        if related_estimates.exists():
-            # If estimates exist, perform comprehensive validation
-            from estimates.models import ApprovalStatus
-            
-            validation_errors = []
-            
-            for estimate in related_estimates:
-                # Check 1: Estimate must be approved
-                if estimate.approval_status != ApprovalStatus.APPROVED:
-                    validation_errors.append(f"Estimate {estimate.estimate_id} is not approved (Status: {estimate.get_approval_status_display()})")
-                
-                # Check 2: Estimate must have a proposal attachment
-                if not estimate.proposals.exists():
-                    validation_errors.append(f"Estimate {estimate.estimate_id} does not have a proposal attachment")
-                
-                # Check 3: Estimate total amount must be >= Cost Sheet total price
-                estimate_total = sum(float(item.amount) for item in estimate.items.all())
-                cost_sheet_price = float(instance.total_estimated_price)
-                
-                if estimate_total < cost_sheet_price:
-                    validation_errors.append(
-                        f"Estimate {estimate.estimate_id} total amount (${estimate_total:,.2f}) is less than "
-                        f"Cost Sheet total price (${cost_sheet_price:,.2f})"
-                    )
-            
-            # If any validation errors exist, return them
-            if validation_errors:
-                return Response({
-                    'error': 'Cannot approve Cost Sheet. Please resolve the following issues:',
-                    'validation_errors': validation_errors
-                }, status=status.HTTP_400_BAD_REQUEST)
-        
         instance.status = CostSheetStatus.APPROVED
         instance.save()
+        
+        # Log audit trail for approval
+        content_type = ContentType.objects.get_for_model(CostSheet)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=instance.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='status',
+            old_value='SUBMITTED',
+            new_value='APPROVED'
+        )
+        
         return Response({'status': 'approved'})
 
     @action(detail=True, methods=['post'])

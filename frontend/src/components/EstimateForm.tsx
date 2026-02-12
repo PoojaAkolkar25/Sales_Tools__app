@@ -12,7 +12,8 @@ import {
     ThumbsUp,
     ThumbsDown,
     Mail,
-    Eye
+    Eye,
+    Trash2
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -20,9 +21,10 @@ import { useNotification } from '../context/NotificationContext';
 interface EstimateFormProps {
     id: number;
     onBack: () => void;
+    onSave?: () => void;
 }
 
-const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
+const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
     const { showNotification } = useNotification();
     const [estimate, setEstimate] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -51,6 +53,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
 
     const [deals, setDeals] = useState<any[]>([]);
     const [costSheets, setCostSheets] = useState<any[]>([]);
+    const [companyProfile, setCompanyProfile] = useState<any>(null);
 
     // Email Modal State
     const [emailModal, setEmailModal] = useState<{
@@ -97,7 +100,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
     const openEmailModal = (type: keyof typeof EMAIL_TEMPLATES = 'standard') => {
         const clientName = estimate?.customer_name || '[Client Name]';
         const projectName = estimate?.project_name || '[Project Name]';
-        const companyName = "Your Company Name"; // Should ideally be dynamic
+        const companyName = companyProfile?.name || "Automation Edge";
         const yourName = "Your Name"; // Should ideally be from user profile
         const expirationDate = "[Expiration Date]";
         const sentDate = "[Date]";
@@ -131,7 +134,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
     const handleTemplateChange = (type: keyof typeof EMAIL_TEMPLATES) => {
         const clientName = estimate?.customer_name || '[Client Name]';
         const projectName = estimate?.project_name || '[Project Name]';
-        const companyName = "Your Company Name";
+        const companyName = companyProfile?.name || "Automation Edge";
         const yourName = "Your Name";
         const expirationDate = "[Expiration Date]";
         const sentDate = "[Date]";
@@ -213,12 +216,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
 
     const fetchInitialData = async () => {
         try {
-            const [dealsRes, csRes] = await Promise.all([
+            const [dealsRes, csRes, companyRes] = await Promise.all([
                 api.get('/deals/'),
-                api.get('/cost-sheets/?status=APPROVED')
+                api.get('/cost-sheets/?status=APPROVED'),
+                api.get('/finance/company-profile/')
             ]);
             setDeals(dealsRes.data);
             setCostSheets(csRes.data);
+            setCompanyProfile(companyRes.data[0]); // Get first company profile
         } catch (error) {
             console.error('Error fetching initial data', error);
             showNotification('Error loading deals or cost sheets', 'error');
@@ -230,8 +235,12 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
 
         setLoading(true);
         try {
-            const response = await api.get(`/estimates/${id}/`);
+            const [response, companyRes] = await Promise.all([
+                api.get(`/estimates/${id}/`),
+                api.get('/finance/company-profile/')
+            ]);
             setEstimate(response.data);
+            setCompanyProfile(companyRes.data[0]); // Get first company profile
             setFormData({
                 estimate_date: response.data.estimate_date || new Date().toISOString().split('T')[0],
                 subscription_from: response.data.subscription_from || '',
@@ -340,6 +349,22 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
             showNotification('Failed to upload proposal', 'error');
         }
     };
+    const handleRemoveProposal = async (proposalId: number) => {
+        if (!window.confirm('Are you sure you want to remove this attachment?')) return;
+
+        try {
+            await api.delete(`/proposals/${proposalId}/`);
+            showNotification('Proposal attachment removed', 'success');
+            // Update state to remove the proposal
+            setEstimate((prev: any) => ({
+                ...prev,
+                proposals: prev.proposals.filter((p: any) => p.id !== proposalId)
+            }));
+        } catch (error: any) {
+            console.error('Error removing proposal', error);
+            showNotification(error.response?.data?.error || 'Failed to remove proposal', 'error');
+        }
+    };
 
     const handleSave = async () => {
         const total = calculateTotal();
@@ -371,7 +396,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
             if (id) {
                 await api.patch(`/estimates/${id}/`, payload);
                 showNotification('Estimate updated successfully', 'success');
-                fetchEstimateDetails();
+                if (onSave) {
+                    onSave();
+                } else {
+                    onBack();
+                }
             } else {
                 const response = await api.post('/estimates/', payload);
                 const newEstimateId = response.data.id;
@@ -398,8 +427,41 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                 onBack();
             }
         } catch (error: any) {
-            const errorMsg = error.response?.data?.items || error.response?.data?.error || 'Failed to save estimate';
-            showNotification(errorMsg, 'error');
+            console.error('Save error details:', error.response?.data);
+
+            let errorMsg = 'Failed to save estimate';
+            const errorData = error.response?.data;
+
+            if (errorData) {
+                if (typeof errorData === 'string') {
+                    errorMsg = errorData;
+                } else if (errorData.error) {
+                    errorMsg = errorData.error;
+                } else if (errorData.items) {
+                    // Handle nested items errors
+                    if (Array.isArray(errorData.items)) {
+                        const firstError = errorData.items.find((item: any) => item && Object.keys(item).length > 0);
+                        if (firstError) {
+                            const field = Object.keys(firstError)[0];
+                            const message = firstError[field];
+                            errorMsg = `Item error (${field}): ${Array.isArray(message) ? message[0] : message}`;
+                        } else if (typeof errorData.items[0] === 'string') {
+                            errorMsg = errorData.items[0];
+                        }
+                    } else if (typeof errorData.items === 'string') {
+                        errorMsg = errorData.items;
+                    }
+                } else if (errorData.proposals) {
+                    errorMsg = Array.isArray(errorData.proposals) ? errorData.proposals[0] : errorData.proposals;
+                } else {
+                    // Fallback: extract first available error message
+                    const firstKey = Object.keys(errorData)[0];
+                    const firstVal = errorData[firstKey];
+                    errorMsg = `${firstKey}: ${Array.isArray(firstVal) ? firstVal[0] : firstVal}`;
+                }
+            }
+
+            showNotification(String(errorMsg), 'error');
         } finally {
             setSaving(false);
         }
@@ -805,9 +867,20 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack }) => {
                                                     By: {prop.uploaded_by_name || 'System'} | {new Date(prop.uploaded_at).toLocaleString()}
                                                 </span>
                                             </div>
-                                            <a href={prop.file} target="_blank" rel="noopener noreferrer" style={{ alignSelf: 'center', color: '#0066CC' }}>
-                                                <CheckCircle2 size={16} />
-                                            </a>
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                <a href={prop.file} target="_blank" rel="noopener noreferrer" style={{ color: '#0066CC' }} title="View File">
+                                                    <CheckCircle2 size={16} />
+                                                </a>
+                                                {!isReadOnly && (
+                                                    <button
+                                                        onClick={() => handleRemoveProposal(prop.id)}
+                                                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#E53E3E', padding: '2px' }}
+                                                        title="Remove Attachment"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

@@ -42,6 +42,8 @@ import MilestoneDashboard from './components/MilestoneDashboard';
 import LeadDashboard from './components/LeadDashboard';
 import LeadForm from './components/LeadForm';
 import CustomerDashboard from './components/CustomerDashboard';
+import ResourceDashboard from './components/ResourceDashboard';
+import ResourceRequestForm from './components/ResourceRequestForm';
 
 
 
@@ -166,6 +168,8 @@ const AppContent: React.FC = () => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [isExtractingSO, setIsExtractingSO] = useState(false);
   const [soRefreshTrigger, setSoRefreshTrigger] = useState(0);
+  const [inventoryView, setInventoryView] = useState<'form' | 'dashboard'>('dashboard');
+  const [editingInventoryId, setEditingInventoryId] = useState<number | null>(null);
   const { showNotification } = useNotification();
 
 
@@ -815,6 +819,7 @@ const AppContent: React.FC = () => {
                   <EstimateForm
                     id={editingEstimateId!}
                     onBack={() => setEstimateView('dashboard')}
+                    onSave={() => setEstimateView('dashboard')}
                   />
                 ) : (
                   <EstimateDashboard
@@ -928,8 +933,51 @@ const AppContent: React.FC = () => {
             <CustomerDashboard />
           </ModuleWrapper>
         ) : <Navigate to="/login" />
+      }
+      />
+      <Route path="/inventory" element={
+        user ? (
+          <ModuleWrapper {...commonWrapperProps}>
+            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+              <div className="space-y-8">
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '24px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Inventory - Resource Management</h1>
+                  </div>
+                </div>
+
+                {inventoryView === 'form' ? (
+                  <ResourceRequestForm
+                    id={editingInventoryId}
+                    user={user}
+                    onBack={() => setInventoryView('dashboard')}
+                    onSave={() => setInventoryView('dashboard')}
+                  />
+                ) : (
+                  <ResourceDashboard
+                    onView={(id: number) => {
+                      setEditingInventoryId(id);
+                      setInventoryView('form');
+                    }}
+                    onCreate={() => {
+                      setEditingInventoryId(null);
+                      setInventoryView('form');
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          </ModuleWrapper>
+        ) : <Navigate to="/login" />
       } />
-      {getNavItems(user).filter(item => !['lead', 'cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order', 'milestone', 'user-management', 'customer-dashboard'].includes(item.id)).map(item => (
+      {getNavItems(user).filter(item => !['lead', 'cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order', 'milestone', 'user-management', 'customer-dashboard', 'inventory'].includes(item.id)).map(item => (
         <Route key={item.id} path={item.path} element={
           user ? (
             <ModuleWrapper {...commonWrapperProps}>

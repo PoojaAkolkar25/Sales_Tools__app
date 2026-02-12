@@ -584,9 +584,8 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
             if (!isAutoDraft) {
                 setCustomAlert({ message: newStatus === 'PENDING' ? 'Cost Sheet saved as Draft.' : 'Cost Sheet submitted for approval!', type: 'success' });
-                if (newStatus === 'PENDING') {
-                    setActiveTab('summary');
-                } else if (onBack) {
+                // Always redirect to dashboard on save
+                if (onBack) {
                     onBack();
                 }
             }

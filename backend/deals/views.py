@@ -220,3 +220,34 @@ class DealViewSet(viewsets.ModelViewSet):
         response = HttpResponse(buf.getvalue(), content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="Deals_Report_{timezone.now().strftime("%Y%m%d")}.csv"'
         return response
+
+    @action(detail=True, methods=['post'])
+    def upload_attachment(self, request, pk=None):
+        """Upload an attachment to a deal."""
+        deal = self.get_object()
+        file = request.FILES.get('file')
+        
+        if not file:
+            return Response({
+                'status': 'error',
+                'message': 'No file provided'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            attachment = DealAttachment.objects.create(
+                deal=deal,
+                file=file,
+                filename=file.name
+            )
+            
+            serializer = DealAttachmentSerializer(attachment)
+            return Response({
+                'status': 'success',
+                'message': 'File uploaded successfully',
+                'attachment': serializer.data
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': f'File upload failed: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

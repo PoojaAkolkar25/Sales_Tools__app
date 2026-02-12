@@ -338,49 +338,28 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             </div>
                             <div className="ae-input-group">
                                 <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Customer Name</label>
-                                {salesOrder.customer ? (
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        background: 'rgba(0, 200, 83, 0.05)',
-                                        padding: '6px 12px',
-                                        borderRadius: '6px',
-                                        border: '1px solid rgba(0, 200, 83, 0.1)'
-                                    }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    background: salesOrder.customer ? 'rgba(0, 200, 83, 0.05)' : 'rgba(255, 107, 0, 0.05)',
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    border: `1px solid ${salesOrder.customer ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 107, 0, 0.1)'}`
+                                }}>
+                                    {salesOrder.customer ? (
                                         <CheckCircle2 size={16} className="text-green-600" />
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1f36' }}>{salesOrder.customer_detail?.name || salesOrder.customer_name}</span>
-                                        {!isSubmitted && (
-                                            <button
-                                                onClick={() => setSalesOrder({ ...salesOrder, customer: null, customer_detail: null })}
-                                                style={{ marginLeft: 'auto', fontSize: '0.65rem', color: '#C53030', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-                                            >
-                                                Change
-                                            </button>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <select
-                                        value={salesOrder.customer || ''}
-                                        onChange={handleCustomerChange}
-                                        style={{
-                                            width: '100%',
-                                            padding: '6px 12px',
-                                            background: '#FFF',
-                                            border: '1px solid #E0E6ED',
-                                            borderRadius: '6px',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 700,
-                                            color: '#2D3748'
-                                        }}
-                                        disabled={isSubmitted}
-                                    >
-                                        <option value="">Select Customer...</option>
-                                        {customers.map(c => (
-                                            <option key={c.id} value={c.id}>{c.name}</option>
-                                        ))}
-                                    </select>
-                                )}
+                                    ) : (
+                                        <X size={16} className="text-orange-600" />
+                                    )}
+                                    <span style={{
+                                        fontSize: '0.8rem',
+                                        fontWeight: 700,
+                                        color: salesOrder.customer_name === 'not match with company profile' ? '#C53030' : '#1a1f36'
+                                    }}>
+                                        {salesOrder.customer_detail?.name || salesOrder.customer_name || 'No Customer Extracted'}
+                                    </span>
+                                </div>
                             </div>
                             <div className="ae-input-group">
                                 <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Customer Code</label>

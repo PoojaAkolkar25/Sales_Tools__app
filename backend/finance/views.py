@@ -105,6 +105,19 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             # Similarly, automatic via FK relationship 'invoices'
             pass
         
+        # Log audit trail for invoice creation
+        from deals.models import AuditTrail
+        content_type = ContentType.objects.get_for_model(Invoice)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=invoice.id,
+            user=self.request.user,
+            action_type='CREATE',
+            field_name='created',
+            old_value='',
+            new_value=f'Invoice {invoice.invoice_no} created'
+        )
+        
         return invoice
 
     def perform_update(self, serializer):
@@ -177,16 +190,33 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         invoice = self.get_object()
+        old_status = invoice.status
+        comments = request.data.get('comments', '') # Define comments here
         invoice.status = 'APPROVED'
         invoice.approved_by = request.user
         invoice.approved_at = timezone.now()
-        invoice.approval_comments = request.data.get('comments', '')
+        invoice.approval_comments = comments
         invoice.save()
+        
+        # Log audit trail for approval
+        from deals.models import AuditTrail
+        content_type = ContentType.objects.get_for_model(Invoice)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=invoice.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='status',
+            old_value=old_status,
+            new_value='APPROVED'
+        )
+        
         return Response({'status': 'Invoice approved'})
 
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         invoice = self.get_object()
+        old_status = invoice.status
         comments = request.data.get('approval_comments', '').strip()
         
         # Require comments for rejection
@@ -199,6 +229,20 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         invoice.status = 'DRAFT' # Or a REJECTED status if we add one
         invoice.approval_comments = comments
         invoice.save()
+        
+        # Log audit trail for rejection
+        from deals.models import AuditTrail
+        content_type = ContentType.objects.get_for_model(Invoice)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=invoice.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='status',
+            old_value=old_status,
+            new_value='DRAFT'
+        )
+        
         return Response({'status': 'Invoice rejected', 'comments': comments})
 
     @action(detail=True, methods=['get'])

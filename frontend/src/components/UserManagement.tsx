@@ -57,8 +57,15 @@ const UserManagement: React.FC = () => {
     useEffect(() => {
         fetchData();
         const params = new URLSearchParams(location.search);
-        if (params.get('action') === 'create') {
+        const action = params.get('action');
+        const mode = params.get('mode');
+
+        if (action === 'create') {
             setShowForm(true);
+        }
+
+        if (mode === 'company') {
+            setViewMode('company');
         }
     }, [location.search]);
 
@@ -180,6 +187,21 @@ const UserManagement: React.FC = () => {
             console.error('Error toggling status', err);
             showNotification('Error updating status', 'error');
         }
+    };
+
+    const handleCurrencyChange = (val: string) => {
+        let symbol = '';
+        switch (val) {
+            case 'INR': symbol = '₹ / INR'; break;
+            case 'USD': symbol = '$ / USD'; break;
+            case 'EURO': symbol = '€ / EURO'; break;
+        }
+
+        setCompanyFormData({
+            ...companyFormData,
+            base_currency: val,
+            currency_symbol: symbol
+        });
     };
 
     const handleGSTINChange = (val: string) => {
@@ -649,12 +671,15 @@ const UserManagement: React.FC = () => {
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
                                                     Base Currency
                                                 </label>
-                                                <input
-                                                    type="text"
+                                                <select
                                                     value={companyFormData.base_currency}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, base_currency: e.target.value })}
+                                                    onChange={(e) => handleCurrencyChange(e.target.value)}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                />
+                                                >
+                                                    <option value="INR">INR</option>
+                                                    <option value="USD">USD</option>
+                                                    <option value="EURO">EURO</option>
+                                                </select>
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>

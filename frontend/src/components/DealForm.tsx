@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-    ChevronLeft,
     Plus,
     Trash2,
     Paperclip,
@@ -11,6 +10,7 @@ import {
     History as HistoryIcon,
     Save,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import AuditTrail from './AuditTrail';
@@ -22,17 +22,30 @@ interface DealFormProps {
 }
 
 const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
+    const navigate = useNavigate();
     const { showNotification } = useNotification();
     const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [leads, setLeads] = useState<any[]>([]);
     const [partners, setPartners] = useState<any[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
+    const [companies, setCompanies] = useState<any[]>([]);
+    const [states, setStates] = useState<any[]>([]);
 
     // Modal states for "Add New"
     const [showAddModal, setShowAddModal] = useState<{ type: string, show: boolean }>({ type: '', show: false });
     const [newItemName, setNewItemName] = useState('');
     const [newItemExtra, setNewItemExtra] = useState({ email: '', contact: '' });
+    const [newCompanyData, setNewCompanyData] = useState({
+        name: '',
+        email: '',
+        state: '',
+        city: '',
+        gstin: '',
+        pan: '',
+        phone_number: '',
+        mobile_number: ''
+    });
 
     // Attachment states
     const [attachments, setAttachments] = useState<any[]>([]);
@@ -80,14 +93,18 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
 
     const fetchInitialData = async () => {
         try {
-            const [leadsRes, partnersRes, customersRes] = await Promise.all([
+            const [leadsRes, partnersRes, customersRes, companiesRes, statesRes] = await Promise.all([
                 api.get('/leads/'),
                 api.get('/partners/'),
-                api.get('/customers/')
+                api.get('/customers/'),
+                api.get('/finance/company-profile/'),
+                api.get('/finance/state-masters/')
             ]);
             setLeads(leadsRes.data);
             setPartners(partnersRes.data);
             setCustomers(customersRes.data);
+            setCompanies(companiesRes.data);
+            setStates(statesRes.data);
         } catch (error) {
             console.error('Error fetching initial data', error);
         }
@@ -122,7 +139,11 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
         const { name, value } = e.target;
 
         if (value === 'ADD_NEW') {
-            setShowAddModal({ type: name, show: true });
+            if (name === 'customer') {
+                navigate('/user-management?action=create&mode=company');
+            } else {
+                setShowAddModal({ type: name, show: true });
+            }
             return;
         }
 
@@ -221,7 +242,16 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
     };
 
     const handleAddNew = async () => {
-        if (!newItemName) return;
+        // For Company Profile, validate required fields
+        if (showAddModal.type === 'customer') {
+            if (!newCompanyData.name || !newCompanyData.email) {
+                showNotification('Company Name and Email are required', 'warning');
+                return;
+            }
+        } else if (!newItemName) {
+            return;
+        }
+
         setLoading(true);
         try {
             let res;
@@ -231,17 +261,56 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                     setPartners([...partners, res.data]);
                     break;
                 case 'customer':
-                    res = await api.post('/customers/', { name: newItemName, email: newItemExtra.email });
-                    setCustomers([...customers, res.data]);
+                    // Create Company Profile
+                    const companyPayload = {
+                        name: newCompanyData.name,
+                        email: newCompanyData.email,
+                        state: newCompanyData.state || null,
+                        city: newCompanyData.city,
+                        gstin: newCompanyData.gstin,
+                        pan: newCompanyData.pan,
+                        phone_number: newCompanyData.phone_number,
+                        mobile_number: newCompanyData.mobile_number
+                    };
+                    res = await api.post('/finance/company-profile/', companyPayload);
+                    setCompanies([...companies, res.data]);
+
+                    // Also create in Customer model for backward compatibility
+                    const customerPayload = {
+                        name: newCompanyData.name,
+                        email: newCompanyData.email,
+                        state: states.find(s => s.id === parseInt(newCompanyData.state))?.name || '',
+                        state_code: states.find(s => s.id === parseInt(newCompanyData.state))?.code || '',
+                        gstin: newCompanyData.gstin,
+                        pan: newCompanyData.pan,
+                        phone: newCompanyData.phone_number || newCompanyData.mobile_number
+                    };
+                    const customerRes = await api.post('/customers/', customerPayload);
+                    setCustomers([...customers, customerRes.data]);
+
+                    // Set the customer ID in form
+                    setFormData((prev: any) => ({ ...prev, customer: customerRes.data.id }));
                     break;
             }
             if (res) {
-                setFormData((prev: any) => ({ ...prev, [showAddModal.type]: res.data.id }));
+                if (showAddModal.type !== 'customer') {
+                    setFormData((prev: any) => ({ ...prev, [showAddModal.type]: res.data.id }));
+                }
                 showNotification('Added successfully', 'success');
             }
             setShowAddModal({ type: '', show: false });
             setNewItemName('');
             setNewItemExtra({ email: '', contact: '' });
+            setNewCompanyData({
+                name: '',
+                email: '',
+                state: '',
+                city: '',
+                gstin: '',
+                pan: '',
+                phone_number: '',
+                mobile_number: ''
+            });
         } catch (error: any) {
             const errorMsg = error.response?.data?.name?.[0] || error.response?.data?.detail || 'Error adding new item';
             showNotification(errorMsg, 'error');
@@ -287,9 +356,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
         }
     };
 
-    const handleRemovePending = (index: number) => {
-        setPendingFiles(prev => prev.filter((_, i) => i !== index));
-    };
+    // const handleRemovePending = (index: number) => {
+    //     setPendingFiles(prev => prev.filter((_, i) => i !== index));
+    // };
 
     const handleDownload = (att: any) => {
         const link = document.createElement('a');
@@ -500,7 +569,10 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                 <label className="ae-label">Customer/Partner Name</label>
                                 <select name="customer" value={formData.customer} onChange={handleInputChange} className="ae-input">
                                     <option value="">Select Customer</option>
-                                    {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    {companies.map(c => {
+                                        const customerId = customers.find(cust => cust.name === c.name)?.id || '';
+                                        return <option key={c.id} value={customerId}>{c.name}</option>;
+                                    })}
                                     <option value="ADD_NEW" style={{ fontWeight: 700, color: '#FF6B00' }}>+ Add New Customer</option>
                                 </select>
                             </div>
@@ -919,24 +991,138 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
             {/* Add New Modal */}
             {showAddModal.show && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div style={{ background: 'white', padding: '32px', borderRadius: '12px', width: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-                        <h3 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 800 }}>Add New {showAddModal.type.replace('_', ' ').toUpperCase()}</h3>
-                        <div className="space-y-4">
-                            <div className="ae-input-group">
-                                <label className="ae-label">Name</label>
-                                <input type="text" className="ae-input" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} autoFocus />
-                            </div>
-                            {showAddModal.type === 'customer' && (
+                    <div style={{ background: 'white', padding: '32px', borderRadius: '12px', width: showAddModal.type === 'customer' ? '600px' : '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <h3 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 800 }}>
+                            {showAddModal.type === 'customer' ? 'Add New Company Profile' : `Add New ${showAddModal.type.replace('_', ' ').toUpperCase()}`}
+                        </h3>
+
+                        {showAddModal.type === 'customer' ? (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                                 <div className="ae-input-group">
-                                    <label className="ae-label">Email (Optional)</label>
-                                    <input type="email" className="ae-input" value={newItemExtra.email} onChange={(e) => setNewItemExtra({ ...newItemExtra, email: e.target.value })} />
+                                    <label className="ae-label">Company Name *</label>
+                                    <input
+                                        type="text"
+                                        className="ae-input"
+                                        value={newCompanyData.name}
+                                        onChange={(e) => setNewCompanyData({ ...newCompanyData, name: e.target.value })}
+                                        autoFocus
+                                        required
+                                    />
                                 </div>
-                            )}
-                        </div>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Email *</label>
+                                    <input
+                                        type="email"
+                                        className="ae-input"
+                                        value={newCompanyData.email}
+                                        onChange={(e) => setNewCompanyData({ ...newCompanyData, email: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">State</label>
+                                    <select
+                                        className="ae-input"
+                                        value={newCompanyData.state}
+                                        onChange={(e) => setNewCompanyData({ ...newCompanyData, state: e.target.value })}
+                                    >
+                                        <option value="">Select State</option>
+                                        {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    </select>
+                                </div>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">City</label>
+                                    <input
+                                        type="text"
+                                        className="ae-input"
+                                        value={newCompanyData.city}
+                                        onChange={(e) => setNewCompanyData({ ...newCompanyData, city: e.target.value })}
+                                    />
+                                </div>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">GSTIN</label>
+                                    <input
+                                        type="text"
+                                        className="ae-input"
+                                        value={newCompanyData.gstin}
+                                        onChange={(e) => setNewCompanyData({ ...newCompanyData, gstin: e.target.value })}
+                                        maxLength={15}
+                                    />
+                                </div>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">PAN</label>
+                                    <input
+                                        type="text"
+                                        className="ae-input"
+                                        value={newCompanyData.pan}
+                                        onChange={(e) => setNewCompanyData({ ...newCompanyData, pan: e.target.value })}
+                                        maxLength={10}
+                                    />
+                                </div>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Phone Number</label>
+                                    <input
+                                        type="tel"
+                                        className="ae-input"
+                                        value={newCompanyData.phone_number}
+                                        onChange={(e) => setNewCompanyData({ ...newCompanyData, phone_number: e.target.value })}
+                                    />
+                                </div>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Mobile Number</label>
+                                    <input
+                                        type="tel"
+                                        className="ae-input"
+                                        value={newCompanyData.mobile_number}
+                                        onChange={(e) => setNewCompanyData({ ...newCompanyData, mobile_number: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Name</label>
+                                    <input type="text" className="ae-input" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} autoFocus />
+                                </div>
+                                {showAddModal.type === 'implementation_partner' && (
+                                    <div className="ae-input-group">
+                                        <label className="ae-label">Email (Optional)</label>
+                                        <input type="email" className="ae-input" value={newItemExtra.email} onChange={(e) => setNewItemExtra({ ...newItemExtra, email: e.target.value })} />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
-                            <button onClick={() => setShowAddModal({ type: '', show: false })} className="ae-btn-secondary" style={{ flex: 1 }}>Cancel</button>
-                            <button onClick={handleAddNew} className="ae-btn-primary" style={{ flex: 1 }} disabled={!newItemName || loading}>
-                                {loading ? 'Adding...' : 'Add Item'}
+                            <button
+                                onClick={() => {
+                                    setShowAddModal({ type: '', show: false });
+                                    setNewCompanyData({
+                                        name: '',
+                                        email: '',
+                                        state: '',
+                                        city: '',
+                                        gstin: '',
+                                        pan: '',
+                                        phone_number: '',
+                                        mobile_number: ''
+                                    });
+                                }}
+                                className="ae-btn-secondary"
+                                style={{ flex: 1 }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleAddNew}
+                                className="ae-btn-primary"
+                                style={{ flex: 1 }}
+                                disabled={
+                                    loading ||
+                                    (showAddModal.type === 'customer' ? (!newCompanyData.name || !newCompanyData.email) : !newItemName)
+                                }
+                            >
+                                {loading ? 'Adding...' : 'Add Company'}
                             </button>
                         </div>
                     </div>

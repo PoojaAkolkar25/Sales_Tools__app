@@ -47,8 +47,8 @@ class EstimateViewSet(viewsets.ModelViewSet):
         if search:
             queryset = queryset.filter(
                 Q(estimate_id__icontains=search) |
-                Q(project_name__icontains=search) |
-                Q(customer_name__icontains=search)
+                Q(deal__deal_name__icontains=search) |
+                Q(deal__customer__name__icontains=search)
             )
             
         return queryset
@@ -110,7 +110,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
                     new_value=str(new_value)
                 )
         
-        return super().update(request, *args, **kwargs)
+        return Response(serializer.data)
 
     @decorators.action(detail=True, methods=['post'])
     def submit(self, request, pk=None):
@@ -159,6 +159,19 @@ class EstimateViewSet(viewsets.ModelViewSet):
         
         estimate.status = EstimateStatus.SUBMITTED
         estimate.save()
+        
+        # Log audit trail for submission
+        content_type = ContentType.objects.get_for_model(Estimate)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=estimate.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='status',
+            old_value='DRAFT',
+            new_value='SUBMITTED'
+        )
+        
         return Response(EstimateSerializer(estimate).data)
 
     @decorators.action(detail=True, methods=['post'])
@@ -288,12 +301,31 @@ class EstimateViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # BRD: Estimate can be approved ONLY if the associated Cost Sheet is Approved.
+        if estimate.cost_sheet.status != 'APPROVED':
+            return Response(
+                {"error": "Estimate cannot be approved until the associated Cost Sheet is approved."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         estimate.approval_status = ApprovalStatus.APPROVED
         estimate.approved_by = request.user
         estimate.approved_at = timezone.now()
         estimate.approval_notes = notes
         estimate.status = EstimateStatus.DRAFT  # Return to draft so they can submit
         estimate.save()
+        
+        # Log audit trail for approval
+        content_type = ContentType.objects.get_for_model(Estimate)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=estimate.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='approval_status',
+            old_value='PENDING',
+            new_value='APPROVED'
+        )
         
         return Response({
             "message": "Estimate approved successfully.",
@@ -456,6 +488,18 @@ class EstimateViewSet(viewsets.ModelViewSet):
         estimate.approval_notes = notes
         estimate.status = EstimateStatus.REJECTED
         estimate.save()
+        
+        # Log audit trail for rejection
+        content_type = ContentType.objects.get_for_model(Estimate)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=estimate.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='approval_status',
+            old_value='PENDING',
+            new_value='REJECTED'
+        )
         
         return Response({
             "message": "Estimate rejected.",
