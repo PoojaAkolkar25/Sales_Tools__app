@@ -82,6 +82,10 @@ option {
   font-family: 'Work Sans', sans-serif !important;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -630,6 +634,34 @@ option {
   font-weight: 800;
   color: var(--ae-navy);
   margin: 0;
+}
+
+/* Compact Card Variant */
+.ae-card-sm {
+    padding: 12px;
+}
+
+.ae-card-sm .ae-card-header {
+    margin-bottom: 4px;
+}
+
+.ae-card-sm .ae-icon-box {
+    padding: 6px;
+    border-radius: 8px;
+}
+
+.ae-card-sm .ae-icon-box svg {
+    width: 16px;
+    height: 16px;
+}
+
+.ae-card-sm .ae-card-label {
+    font-size: 0.65rem;
+    margin-bottom: 2px;
+}
+
+.ae-card-sm .ae-card-value {
+    font-size: 1.25rem;
 }
 
 
