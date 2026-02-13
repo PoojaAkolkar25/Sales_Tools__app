@@ -89,13 +89,13 @@ const BankConnectionSetup: React.FC = () => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '18px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
                         Bank Account Connections
-                    </h1>
+                    </h2>
                 </div>
 
                 <div style={{
@@ -113,24 +113,25 @@ const BankConnectionSetup: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            padding: '6px 14px',
+                            padding: '6px 16px',
+                            height: '32px',
                             borderRadius: '8px',
-                            fontSize: '0.8rem',
+                            fontSize: '0.85rem',
                             fontWeight: 700,
                             border: 'none',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
                             background: '#F7FAFC',
-                            color: '#4A5568'
+                            color: '#718096'
                         }}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.background = '#FF6B00';
                             e.currentTarget.style.color = 'white';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 107, 0, 0.3)';
                         }}
                         onMouseLeave={(e) => {
                             e.currentTarget.style.background = '#F7FAFC';
-                            e.currentTarget.style.color = '#4A5568';
+                            e.currentTarget.style.color = '#718096';
                             e.currentTarget.style.boxShadow = 'none';
                         }}
                     >

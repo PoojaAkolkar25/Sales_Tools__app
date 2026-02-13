@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { ChevronLeft, Plus, X, Save, AlertCircle, Calendar, Clock } from 'lucide-react';
+import { Plus, X, Save, AlertCircle, Calendar, Clock } from 'lucide-react';
 
 interface MilestoneFormProps {
     onBack: () => void;
@@ -15,6 +15,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
     const [milestones, setMilestones] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
     const { showNotification } = useNotification();
 
     useEffect(() => {
@@ -187,299 +188,459 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Top Toolbar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
                 background: 'white',
-                padding: '8px 16px',
-                borderRadius: '12px',
                 border: '1px solid #E0E6ED',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                borderRadius: '12px',
+                width: '100%',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                padding: '24px'
             }}>
-                <button
-                    onClick={onBack}
-                    style={{
+                {/* Header with Title */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+                    <span style={{
+                        width: '3px',
+                        height: '14px',
+                        background: '#FF6B00',
+                        borderRadius: '2px'
+                    }}></span>
+                    <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', margin: 0 }}>
+                        Create New Milestone Plan
+                    </h2>
+                </div>
+
+                {/* Selection & Summary Section - Side-by-Side */}
+                <div style={{ marginBottom: '24px' }}>
+                    <h3 style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        margin: '0 0 16px 0',
+                        color: '#0066CC',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        background: 'none',
-                        border: 'none',
-                        color: '#718096',
-                        fontWeight: 700,
-                        fontSize: '0.8rem',
-                        cursor: 'pointer'
-                    }}
-                >
-                    <ChevronLeft size={18} /> Back
-                </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{
-                        padding: '4px 12px',
-                        borderRadius: '20px',
-                        fontSize: '10px',
-                        fontWeight: 900,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        background: 'rgba(255, 107, 0, 0.1)',
-                        color: '#FF6B00',
-                        border: '1px solid rgba(255, 107, 0, 0.2)'
-                    }}>MILESTONE PLAN</span>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving || !selectedSO}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 20px',
-                            borderRadius: '8px',
-                            background: '#FF6B00',
-                            color: 'white',
-                            border: 'none',
-                            fontWeight: 700,
-                            fontSize: '0.8rem',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
-                        }}
-                    >
-                        {saving ? <Clock size={16} className="animate-spin" /> : <Save size={16} />} Save Plan
-                    </button>
-                </div>
-            </div>
+                        gap: '8px',
+                        textTransform: 'uppercase'
+                    }}>
+                        <span style={{
+                            width: '2px',
+                            height: '10px',
+                            background: '#0066CC',
+                            borderRadius: '1px'
+                        }}></span>
+                        Selection & Summary
+                    </h3>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left: Context */}
-                <div className="space-y-6">
-                    <section className="section-panel" style={{ padding: '16px 24px' }}>
-                        <h3 style={{
-                            fontSize: '0.9rem',
-                            fontWeight: 800,
-                            margin: '0 0 16px 0',
-                            color: '#0066CC',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            textTransform: 'uppercase'
-                        }}>
-                            <span style={{ width: '3px', height: '14px', background: '#FF6B00', borderRadius: '2px' }}></span>
-                            Selection & Summary
-                        </h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <div className="ae-input-group">
-                                <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Select Customer</label>
-                                <select
-                                    style={{ width: '100%', padding: '6px 12px', border: '1px solid #E0E6ED', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700 }}
-                                    onChange={(e) => handleCustomerChange(e.target.value)}
-                                    value={selectedCustomer?.id || ''}
-                                >
-                                    <option value="">Select Customer...</option>
-                                    {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                </select>
-                            </div>
-
-                            <div className="ae-input-group">
-                                <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Select Sales Order</label>
-                                <select
-                                    style={{ width: '100%', padding: '6px 12px', border: '1px solid #E0E6ED', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700 }}
-                                    onChange={(e) => handleSOChange(e.target.value)}
-                                    value={selectedSO?.id || ''}
-                                    disabled={!selectedCustomer || loading}
-                                >
-                                    <option value="">{loading ? 'Loading...' : 'Select Sales Order...'}</option>
-                                    {salesOrders.map(so => (
-                                        <option key={so.id} value={so.id}>
-                                            {so.so_number} - {so.currency} {parseFloat(so.total_amount).toLocaleString()}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {selectedSO && (
-                                <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E0E6ED', marginTop: '8px' }}>
-                                    <h4 style={{ fontSize: '0.7rem', fontWeight: 800, color: '#0066CC', textTransform: 'uppercase', marginBottom: '12px' }}>Order Details</h4>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#718096' }}>Total Amount:</span>
-                                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36' }}>{parseFloat(selectedSO.total_amount).toLocaleString()} {selectedSO.currency}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#718096' }}>Order Date:</span>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{selectedSO.order_date}</span>
-                                    </div>
-                                </div>
-                            )}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '16px' }}>
+                        <div className="ae-input-group">
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                Select Customer <span style={{ color: '#FF6B00' }}>*</span>
+                            </label>
+                            <select
+                                style={{
+                                    width: '100%',
+                                    padding: '6px 10px',
+                                    background: 'white',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '6px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 500,
+                                    color: '#1a1f36',
+                                    outline: 'none',
+                                    height: '34px'
+                                }}
+                                onChange={(e) => handleCustomerChange(e.target.value)}
+                                value={selectedCustomer?.id || ''}
+                            >
+                                <option value="">Select Customer...</option>
+                                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
                         </div>
-                    </section>
-                </div>
 
-                {/* Right: Milestones */}
-                <div className="lg:col-span-2">
-                    <section className="section-panel" style={{ padding: '0', overflow: 'hidden' }}>
+                        <div className="ae-input-group">
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                Select Sales Order <span style={{ color: '#FF6B00' }}>*</span>
+                            </label>
+                            <select
+                                style={{
+                                    width: '100%',
+                                    padding: '6px 10px',
+                                    background: 'white',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '6px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 500,
+                                    color: '#1a1f36',
+                                    outline: 'none',
+                                    height: '34px'
+                                }}
+                                onChange={(e) => handleSOChange(e.target.value)}
+                                value={selectedSO?.id || ''}
+                                disabled={!selectedCustomer || loading}
+                            >
+                                <option value="">{loading ? 'Loading...' : 'Select Sales Order...'}</option>
+                                {salesOrders.map(so => (
+                                    <option key={so.id} value={so.id}>
+                                        {so.so_number} - {so.currency} {parseFloat(so.total_amount).toLocaleString()}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {selectedSO && (
                         <div style={{
-                            padding: '12px 24px',
-                            borderBottom: '1px solid #E0E6ED',
                             background: '#F8FAFC',
+                            padding: '12px 20px',
+                            borderRadius: '8px',
+                            border: '1px solid #E2E8F0',
                             display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            gap: '40px'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Calendar size={16} style={{ color: '#FF6B00' }} />
-                                <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#FF6B00', margin: 0, textTransform: 'uppercase' }}>Milestone Breakdown</h3>
+                            <div style={{ flexShrink: 0 }}>
+                                <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0066CC', textTransform: 'uppercase', margin: 0 }}>Order Details</h4>
                             </div>
-                            {selectedSO && (
-                                <button
-                                    onClick={handleAddMilestone}
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        color: '#0066CC',
-                                        fontSize: '0.7rem',
-                                        fontWeight: 800,
-                                        cursor: 'pointer',
-                                        textTransform: 'uppercase',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '4px'
-                                    }}
-                                >
-                                    <Plus size={14} /> Add Row
-                                </button>
-                            )}
-                        </div>
 
-                        {!selectedSO ? (
-                            <div className="p-12 text-center text-[#A0AEC0] italic text-sm">Please select a Sales Order to define milestones.</div>
-                        ) : (
-                            <div className="p-0">
-                                <div className="overflow-x-auto">
-                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                        <thead>
-                                            <tr>
-                                                <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '60px' }}>No.</th>
-                                                <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED' }}>Description</th>
-                                                <th style={{ padding: '8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '120px' }}>Due Date</th>
-                                                <th style={{ padding: '8px', textAlign: 'center', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '80px' }}>Amount %</th>
-                                                <th style={{ padding: '8px', textAlign: 'right', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E0E6ED', width: '120px' }}>Amount</th>
-                                                <th style={{ padding: '8px', borderBottom: '2px solid #E0E6ED', width: '40px' }}></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {milestones.map((milestone, index) => {
-                                                const isInvoiced = milestone.status === 'INVOICED';
-                                                return (
-                                                    <tr key={index} style={{
-                                                        borderBottom: '1px solid #F1F5F9',
-                                                        background: isInvoiced ? '#F8FAFC' : 'transparent'
-                                                    }}>
-                                                        <td style={{ padding: '4px 8px' }}>
-                                                            <input
-                                                                type="text"
-                                                                value={milestone.milestone_no}
-                                                                onChange={(e) => handleMilestoneChange(index, 'milestone_no', e.target.value)}
-                                                                disabled={isInvoiced}
-                                                                style={{
-                                                                    width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED',
-                                                                    borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700,
-                                                                    textAlign: 'center', opacity: isInvoiced ? 0.7 : 1
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td style={{ padding: '4px 8px' }}>
-                                                            <textarea
-                                                                value={milestone.description}
-                                                                onChange={(e) => handleMilestoneChange(index, 'description', e.target.value)}
-                                                                disabled={isInvoiced}
-                                                                style={{
-                                                                    width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED',
-                                                                    borderRadius: '4px', fontSize: '0.75rem', resize: 'none',
-                                                                    opacity: isInvoiced ? 0.7 : 1
-                                                                }}
-                                                                rows={1}
-                                                            />
-                                                        </td>
-                                                        <td style={{ padding: '4px 8px' }}>
-                                                            <input
-                                                                type="date"
-                                                                value={milestone.due_date || ''}
-                                                                onChange={(e) => handleMilestoneChange(index, 'due_date', e.target.value)}
-                                                                disabled={isInvoiced}
-                                                                style={{
-                                                                    width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED',
-                                                                    borderRadius: '4px', fontSize: '0.75rem',
-                                                                    opacity: isInvoiced ? 0.7 : 1
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td style={{ padding: '4px 8px' }}>
-                                                            <input
-                                                                type="number"
-                                                                value={milestone.percentage || ''}
-                                                                onChange={(e) => handleMilestoneChange(index, 'percentage', e.target.value)}
-                                                                disabled={isInvoiced}
-                                                                style={{
-                                                                    width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED',
-                                                                    borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700,
-                                                                    textAlign: 'center', color: '#0066CC',
-                                                                    opacity: isInvoiced ? 0.7 : 1
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td style={{ padding: '4px 8px' }}>
-                                                            <input
-                                                                type="number"
-                                                                value={milestone.amount || ''}
-                                                                onChange={(e) => handleMilestoneChange(index, 'amount', e.target.value)}
-                                                                disabled={isInvoiced}
-                                                                style={{
-                                                                    width: '100%', padding: '4px 8px', border: '1px solid #E0E6ED',
-                                                                    borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800,
-                                                                    textAlign: 'right',
-                                                                    opacity: isInvoiced ? 0.7 : 1
-                                                                }}
-                                                            />
-                                                        </td>
-                                                        <td style={{ padding: '4px 8px', textAlign: 'center' }}>
-                                                            {!isInvoiced && (
-                                                                <button onClick={() => handleRemoveMilestone(index)} style={{ background: 'none', border: 'none', color: '#FEB2B2', cursor: 'pointer' }}>
-                                                                    <X size={16} />
-                                                                </button>
-                                                            )}
-                                                            {isInvoiced && (
-                                                                <span title="Invoiced milestones cannot be deleted" style={{ color: '#CBD5E0' }}>
-                                                                    <X size={16} />
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                        <tfoot>
-                                            <tr style={{ background: '#F8FAFC' }}>
-                                                <td colSpan={4} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.65rem', fontWeight: 900, color: '#718096', textTransform: 'uppercase' }}>Total Planned</td>
-                                                <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 900, color: calculateTotal() > parseFloat(selectedSO.total_amount) ? '#C53030' : '#1a1f36' }}>
-                                                    {selectedSO.currency} {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                </td>
-                                                <td></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#718096' }}>Total Amount:</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36' }}>
+                                    {parseFloat(selectedSO.total_amount).toLocaleString()} {selectedSO.currency}
+                                </span>
                             </div>
-                        )}
-                    </section>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#718096' }}>Order Date:</span>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{selectedSO.order_date}</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
+                {/* Milestone Breakdown Section */}
+                <div>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '16px'
+                    }}>
+                        <h3 style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: '#FF6B00',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            textTransform: 'uppercase',
+                            margin: 0
+                        }}>
+                            <Calendar size={14} />
+                            Milestone Breakdown
+                        </h3>
+                        {selectedSO && (
+                            <button
+                                onClick={handleAddMilestone}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#0066CC',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    textTransform: 'uppercase',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                }}
+                            >
+                                <Plus size={14} /> Add Row
+                            </button>
+                        )}
+                    </div>
+
+                    {!selectedSO ? (
+                        <div style={{
+                            padding: '40px',
+                            textAlign: 'center',
+                            color: '#A0AEC0',
+                            fontStyle: 'italic',
+                            fontSize: '0.85rem',
+                            background: '#F8FAFC',
+                            borderRadius: '8px',
+                            border: '1px dashed #E2E8F0'
+                        }}>
+                            Please select a Sales Order to define milestones.
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E2E8F0', width: '60px' }}>No.</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E2E8F0' }}>Description</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E2E8F0', width: '140px' }}>Due Date</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E2E8F0', width: '100px' }}>Amount %</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E2E8F0', width: '140px' }}>Amount</th>
+                                        <th style={{ padding: '12px 8px', borderBottom: '2px solid #E2E8F0', width: '40px' }}></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {milestones.map((milestone, index) => {
+                                        const isInvoiced = milestone.status === 'INVOICED';
+                                        return (
+                                            <tr key={index} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                                <td style={{ padding: '8px' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={milestone.milestone_no}
+                                                        onChange={(e) => handleMilestoneChange(index, 'milestone_no', e.target.value)}
+                                                        disabled={isInvoiced}
+                                                        style={{
+                                                            width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
+                                                            borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700,
+                                                            textAlign: 'center', opacity: isInvoiced ? 0.7 : 1
+                                                        }}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: '8px' }}>
+                                                    <textarea
+                                                        value={milestone.description}
+                                                        onChange={(e) => handleMilestoneChange(index, 'description', e.target.value)}
+                                                        disabled={isInvoiced}
+                                                        style={{
+                                                            width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
+                                                            borderRadius: '6px', fontSize: '0.75rem', resize: 'none',
+                                                            opacity: isInvoiced ? 0.7 : 1
+                                                        }}
+                                                        rows={1}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: '8px' }}>
+                                                    <input
+                                                        type="date"
+                                                        value={milestone.due_date || ''}
+                                                        onChange={(e) => handleMilestoneChange(index, 'due_date', e.target.value)}
+                                                        disabled={isInvoiced}
+                                                        style={{
+                                                            width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
+                                                            borderRadius: '6px', fontSize: '0.75rem',
+                                                            opacity: isInvoiced ? 0.7 : 1
+                                                        }}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: '8px' }}>
+                                                    <input
+                                                        type="number"
+                                                        value={milestone.percentage || ''}
+                                                        onChange={(e) => handleMilestoneChange(index, 'percentage', e.target.value)}
+                                                        disabled={isInvoiced}
+                                                        style={{
+                                                            width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
+                                                            borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700,
+                                                            textAlign: 'center', color: '#0066CC',
+                                                            opacity: isInvoiced ? 0.7 : 1
+                                                        }}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: '8px' }}>
+                                                    <input
+                                                        type="number"
+                                                        value={milestone.amount || ''}
+                                                        onChange={(e) => handleMilestoneChange(index, 'amount', e.target.value)}
+                                                        disabled={isInvoiced}
+                                                        style={{
+                                                            width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
+                                                            borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800,
+                                                            textAlign: 'right',
+                                                            opacity: isInvoiced ? 0.7 : 1
+                                                        }}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: '8px', textAlign: 'center' }}>
+                                                    {!isInvoiced && (
+                                                        <button onClick={() => handleRemoveMilestone(index)} style={{ background: 'none', border: 'none', color: '#FEB2B2', cursor: 'pointer' }}>
+                                                            <X size={16} />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                                <tfoot>
+                                    <tr style={{ background: '#F8FAFC' }}>
+                                        <td colSpan={4} style={{ padding: '16px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 900, color: '#718096', textTransform: 'uppercase' }}>Total Planned</td>
+                                        <td style={{ padding: '16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: calculateTotal() > parseFloat(selectedSO.total_amount) ? '#C53030' : '#1a1f36' }}>
+                                            {selectedSO.currency} {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    )}
+                </div>
+
+                {/* Error Message */}
                 {selectedSO && calculateTotal() !== parseFloat(selectedSO.total_amount) && (
-                    <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl mt-4 text-amber-800 text-xs font-bold">
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 16px',
+                        background: '#FFF5F5',
+                        border: '1px solid #FEB2B2',
+                        borderRadius: '8px',
+                        marginTop: '20px',
+                        color: '#C53030',
+                        fontSize: '0.75rem',
+                        fontWeight: 700
+                    }}>
                         <AlertCircle size={18} />
-                        Total milestone value must equal the Sales Order value ({parseFloat(selectedSO.total_amount).toLocaleString()})
+                        Total milestone value must equal the Sales Order value ({parseFloat(selectedSO.total_amount).toLocaleString()} {selectedSO.currency})
                     </div>
                 )}
             </div>
+
+            {/* Footer Actions */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: 'white',
+                padding: '6px',
+                borderRadius: '12px',
+                border: '1px solid #E0E6ED',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                width: 'fit-content',
+                marginBottom: '20px'
+            }}>
+                <button
+                    onClick={handleSave}
+                    disabled={saving || !selectedSO}
+                    className="ae-btn-primary"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem'
+                    }}
+                >
+                    {saving ? <Clock className="animate-spin" size={16} /> : <Save size={16} />}
+                    <span style={{ fontWeight: 800 }}>Save Milestone Plan</span>
+                </button>
+
+                <button
+                    onClick={() => setShowCancelModal(true)}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        background: 'transparent',
+                        color: '#718096',
+                        border: 'none',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                    }}
+                >
+                    <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
+                    <span>Cancel</span>
+                </button>
+            </div>
+
+            {/* Cancel Confirmation Modal */}
+            {showCancelModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    backdropFilter: 'blur(2px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }}>
+                    <div style={{
+                        background: 'white',
+                        width: '100%',
+                        maxWidth: '450px',
+                        borderRadius: '12px',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        overflow: 'hidden'
+                    }}>
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '10px',
+                                    background: '#FFF5F5',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <AlertCircle size={24} color="#E53E3E" />
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
+                                        Leave this page?
+                                    </h3>
+                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                        If you leave, your unsaved changes will be discarded.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
+                                <button
+                                    onClick={() => setShowCancelModal(false)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        background: '#3B82F6',
+                                        color: 'white',
+                                        border: 'none',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        height: '40px'
+                                    }}
+                                >
+                                    Stay Here
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowCancelModal(false);
+                                        onBack();
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        background: 'white',
+                                        color: '#1a1f36',
+                                        border: '1px solid #E2E8F0',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        height: '40px'
+                                    }}
+                                >
+                                    Leave & Discard Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

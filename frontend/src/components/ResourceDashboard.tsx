@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
     PlusCircle,
-    Search,
     Server,
     ArrowRight
 } from 'lucide-react';
@@ -16,7 +15,6 @@ interface ResourceDashboardProps {
 const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView, onCreate }) => {
     const [requests, setRequests] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
     const { showNotification } = useNotification();
 
     useEffect(() => {
@@ -56,11 +54,7 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView, onCreate 
         }
     };
 
-    const filteredRequests = requests.filter(req =>
-        req.form_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        req.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        req.requestor_detail?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredRequests = requests;
 
     return (
         <div className="space-y-6">
@@ -99,25 +93,6 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView, onCreate 
                     >
                         <PlusCircle size={18} /> Raise Resource Request
                     </button>
-                </div>
-
-                <div className="ae-input-group !bg-white !shadow-sm !border-[#E0E6ED]" style={{
-                    flex: 1,
-                    maxWidth: '500px',
-                    margin: 0,
-                    height: '44px',
-                    borderRadius: '12px',
-                    position: 'relative'
-                }}>
-                    <span className="ae-search-icon" style={{ left: '16px', zIndex: 2 }}><Search size={20} className="text-[#A0AEC0]" /></span>
-                    <input
-                        type="text"
-                        className="ae-input !border-none !bg-transparent !pl-12 !font-semibold"
-                        placeholder="Search by Form No, Project or Requestor..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{ fontSize: '0.9rem', color: '#1a1f36', width: '100%', height: '100%', outline: 'none' }}
-                    />
                 </div>
             </div>
 

@@ -638,30 +638,30 @@ option {
 
 /* Compact Card Variant */
 .ae-card-sm {
-    padding: 12px;
+  padding: 12px;
 }
 
 .ae-card-sm .ae-card-header {
-    margin-bottom: 4px;
+  margin-bottom: 4px;
 }
 
 .ae-card-sm .ae-icon-box {
-    padding: 6px;
-    border-radius: 8px;
+  padding: 6px;
+  border-radius: 8px;
 }
 
 .ae-card-sm .ae-icon-box svg {
-    width: 16px;
-    height: 16px;
+  width: 16px;
+  height: 16px;
 }
 
 .ae-card-sm .ae-card-label {
-    font-size: 0.65rem;
-    margin-bottom: 2px;
+  font-size: 0.65rem;
+  margin-bottom: 2px;
 }
 
 .ae-card-sm .ae-card-value {
-    font-size: 1.25rem;
+  font-size: 1.25rem;
 }
 
 
@@ -894,7 +894,7 @@ option {
 }
 
 .ae-label {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--ae-gray-800);
   margin-bottom: 4px;
@@ -902,13 +902,15 @@ option {
 
 .ae-input {
   width: 100%;
-  padding: 12px 16px;
+  padding: 6px 10px;
   border: 1px solid var(--ae-gray-100);
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  font-weight: 500;
   outline: none;
   transition: all 0.2s;
   background: white;
+  height: 34px;
 }
 
 .ae-input:focus {

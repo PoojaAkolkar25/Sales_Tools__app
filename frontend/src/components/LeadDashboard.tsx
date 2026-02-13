@@ -28,10 +28,9 @@ interface Lead {
 
 interface LeadDashboardProps {
     onView: (id: number) => void;
-    searchQuery: string;
 }
 
-const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView, searchQuery }) => {
+const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView }) => {
     const navigate = useNavigate();
 
 
@@ -76,9 +75,7 @@ const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView, searchQuery }) =>
 
 
     const filteredLeads = leads.filter((lead: Lead) =>
-        lead.lead_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.project_name.toLowerCase().includes(searchQuery.toLowerCase())
+        true
     );
 
 

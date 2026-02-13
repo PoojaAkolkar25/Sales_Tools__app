@@ -34,11 +34,10 @@ interface CostSheet {
 }
 
 interface CostSheetDashboardProps {
-    onView: (id: number) => void;
-    searchQuery?: string;
+    onView?: (id: number) => void;
 }
 
-const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView, searchQuery }) => {
+const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
     const navigate = useNavigate();
     const [costSheets, setCostSheets] = useState<CostSheet[]>([]);
     const [loading, setLoading] = useState(true);
@@ -49,7 +48,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView, searchQ
         dealNo: '',
         customerName: '',
         projectName: '',
-        status: '',
+        status: 'PENDING',
         period: '',
         startDate: '',
         endDate: ''
@@ -191,20 +190,6 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView, searchQ
             const matchesProject = (cs.project_name || '').toLowerCase().includes(filters.projectName.toLowerCase());
             const matchesStatus = filters.status === '' || cs.status === filters.status;
 
-            // Global Search Filter
-            let matchesGlobal = true;
-            if (searchQuery) {
-                const query = searchQuery.toLowerCase();
-                const searchableText = [
-                    cs.cost_sheet_no,
-                    cs.lead_no,
-                    cs.deal_no,
-                    cs.customer_name,
-                    cs.project_name
-                ].filter(Boolean).join(' ').toLowerCase();
-                matchesGlobal = searchableText.includes(query);
-            }
-
             // Date Selection Logic
             let matchesDate = true;
             if (filters.period) {
@@ -246,7 +231,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView, searchQ
                 }
             }
 
-            return matchesCs && matchesLead && matchesDeal && matchesCustomer && matchesProject && matchesStatus && matchesDate && matchesGlobal;
+            return matchesCs && matchesLead && matchesDeal && matchesCustomer && matchesProject && matchesStatus && matchesDate;
         }).sort((a, b) => {
             // Priority 1: SUBMITTED (Pending Approval) items at the absolute top
             if (a.status === 'SUBMITTED' && b.status !== 'SUBMITTED') return -1;

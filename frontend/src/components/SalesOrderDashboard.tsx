@@ -64,6 +64,10 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
         }
     };
 
+    const filteredSalesOrders = salesOrders.filter((so: any) =>
+        true
+    );
+
     return (
         <div className="space-y-6">
             <div className="ae-grid-4">
@@ -104,6 +108,8 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                     </div>
                 </div>
             </div>
+
+            <div style={{ height: '24px' }}></div>
 
             <div className="ae-table-container" style={{
                 marginBottom: '60px',
@@ -187,13 +193,13 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                     Loading Sales Orders...
                                 </td>
                             </tr>
-                        ) : salesOrders.length === 0 ? (
+                        ) : filteredSalesOrders.length === 0 ? (
                             <tr>
                                 <td colSpan={10} className="px-6 py-12 text-center text-[#718096] font-medium italic">
-                                    No Sales Orders found. Upload a PO to get started.
+                                    No Sales Orders found.
                                 </td>
                             </tr>
-                        ) : salesOrders.map((so) => (
+                        ) : filteredSalesOrders.map((so) => (
                             <tr key={so.id}>
                                 <td className="whitespace-nowrap">
                                     <span style={{ fontWeight: 700, color: '#0066CC', fontSize: '0.8rem' }}>{so.so_number || '---'}</span>
