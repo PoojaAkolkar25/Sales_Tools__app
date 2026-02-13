@@ -24,7 +24,6 @@ const UserManagement: React.FC = () => {
 
     const [companyFormData, setCompanyFormData] = useState({
         name: '',
-        alias_name: '',
         logo: null as File | null,
         address_line_1: '',
         address_line_2: '',
@@ -133,7 +132,7 @@ const UserManagement: React.FC = () => {
 
             showNotification('Customer created successfully', 'success');
             setCompanyFormData({
-                name: '', alias_name: '', logo: null, address_line_1: '', address_line_2: '',
+                name: '', logo: null, address_line_1: '', address_line_2: '',
                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
                 mobile_number: '', email: '', website_url: '', financial_year_begins: '01-Apr',
                 base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
@@ -240,7 +239,6 @@ const UserManagement: React.FC = () => {
         const searchStr = searchTerm.toLowerCase();
         return (
             comp.name?.toLowerCase().includes(searchStr) ||
-            comp.alias_name?.toLowerCase().includes(searchStr) ||
             comp.email?.toLowerCase().includes(searchStr) ||
             comp.city?.toLowerCase().includes(searchStr) ||
             comp.state_name?.toLowerCase().includes(searchStr)
@@ -480,17 +478,6 @@ const UserManagement: React.FC = () => {
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                                    Alias Name
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={companyFormData.alias_name}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, alias_name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>

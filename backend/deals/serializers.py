@@ -90,16 +90,12 @@ class DealSerializer(serializers.ModelSerializer):
     lead_no = serializers.ReadOnlyField(source='lead.lead_no')
     deal_types = DealTypeEntrySerializer(many=True, required=False)
     deal_attachments = DealAttachmentSerializer(many=True, read_only=True)
-    current_stage = serializers.SerializerMethodField()
     
     class Meta:
         model = Deal
         fields = '__all__'
         read_only_fields = ['deal_id', 'deal_date', 'created_at', 'updated_at']
     
-    def get_current_stage(self, obj):
-        """Return the dynamically calculated current stage"""
-        return obj.get_current_stage()
 
     def create(self, validated_data):
         deal_types_data = validated_data.pop('deal_types', [])

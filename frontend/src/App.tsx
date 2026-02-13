@@ -216,6 +216,9 @@ const AppContent: React.FC = () => {
       } else if (location.pathname === '/sales-order') {
         setEditingSalesOrderId(numId);
         setSalesOrderView('form');
+      } else if (location.pathname === '/cost-sheet') {
+        setEditingId(numId);
+        setCostSheetView('form');
       }
     }
   }, [location.pathname, location.search]);

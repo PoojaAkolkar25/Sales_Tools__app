@@ -13,7 +13,10 @@ import {
     ThumbsDown,
     Mail,
     Eye,
-    Trash2
+    Trash2,
+    Pencil,
+    Sparkles,
+    PlusCircle
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -75,6 +78,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
     });
     const [sendingEmail, setSendingEmail] = useState(false);
     const [pendingFile, setPendingFile] = useState<File | null>(null);
+    const [editingColumn, setEditingColumn] = useState<string | null>(null);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectComment, setRejectComment] = useState('');
 
     const EMAIL_TEMPLATES = {
         standard: {
@@ -201,7 +207,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
         }
     };
 
-    const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.status === 'SUBMITTED';
+    const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.approval_status === 'PENDING' || estimate?.status === 'SUBMITTED';
+
+    const handleSaveAndSubmit = () => handleSave(true);
 
     useEffect(() => {
         if (id) {
@@ -366,7 +374,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
         }
     };
 
-    const handleSave = async () => {
+    const handleSave = async (shouldSubmit = false) => {
         const total = calculateTotal();
         const costSheetPrice = parseFloat(estimate?.total_price || '0'); // Snapshot of CS price in estimate
 
@@ -375,8 +383,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
             return;
         }
 
-        if (id && !estimate?.proposals?.length) {
-            showNotification('Please attach a proposal file before saving.', 'error');
+        if ((id || shouldSubmit) && !estimate?.proposals?.length && !pendingFile) {
+            showNotification('Please attach a proposal file before submitting for approval.', 'error');
             return;
         }
 
@@ -393,37 +401,39 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
             column_labels: formData.column_labels
         };
         try {
+            let savedId = id;
             if (id) {
                 await api.patch(`/estimates/${id}/`, payload);
-                showNotification('Estimate updated successfully', 'success');
-                if (onSave) {
-                    onSave();
-                } else {
-                    onBack();
-                }
             } else {
                 const response = await api.post('/estimates/', payload);
-                const newEstimateId = response.data.id;
+                savedId = response.data.id;
 
                 // If there's a pending file, upload it now
                 if (pendingFile) {
                     const formDataFile = new FormData();
                     formDataFile.append('file', pendingFile);
-                    formDataFile.append('estimate', newEstimateId.toString());
+                    formDataFile.append('estimate', savedId.toString());
                     formDataFile.append('filename', pendingFile.name);
 
                     try {
                         await api.post('/proposals/', formDataFile);
-                        showNotification('Estimate created and proposal uploaded', 'success');
                     } catch (fileErr) {
                         console.error('File upload failed after creation', fileErr);
                         showNotification('Estimate created but proposal upload failed', 'warning');
                     }
-                } else {
-                    showNotification('Estimate created successfully', 'success');
                 }
+            }
 
-                // Redirect back to dashboard
+            if (shouldSubmit) {
+                await api.post(`/estimates/${savedId}/request_approval/`);
+                showNotification('Estimate saved and submitted for approval successfully', 'success');
+            } else {
+                showNotification(id ? 'Estimate updated successfully' : 'Estimate created successfully', 'success');
+            }
+
+            if (onSave) {
+                onSave();
+            } else {
                 onBack();
             }
         } catch (error: any) {
@@ -483,20 +493,10 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
 
 
 
-    const handleRequestApproval = async () => {
-        try {
-            await api.post(`/estimates/${id}/request_approval/`);
-            showNotification('Approval requested successfully', 'success');
-            fetchEstimateDetails();
-        } catch (error: any) {
-            showNotification(error.response?.data?.error || 'Failed to request approval', 'error');
-        }
-    };
 
     const handleApprove = async () => {
-        const notes = prompt('Approval notes (optional):');
         try {
-            await api.post(`/estimates/${id}/approve/`, { notes });
+            await api.post(`/estimates/${id}/approve/`, { notes: 'Approved' });
             showNotification('Estimate approved successfully', 'success');
             fetchEstimateDetails();
         } catch (error: any) {
@@ -505,14 +505,15 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
     };
 
     const handleReject = async () => {
-        const notes = prompt('Rejection notes (required):');
-        if (!notes) {
-            showNotification('Rejection notes are required', 'error');
+        if (!rejectComment) {
+            showNotification('Rejection comments are required', 'error');
             return;
         }
         try {
-            await api.post(`/estimates/${id}/reject/`, { notes });
-            showNotification('Estimate rejected', 'success');
+            await api.post(`/estimates/${id}/reject/`, { notes: rejectComment });
+            showNotification('Estimate rejected successfully', 'success');
+            setShowRejectModal(false);
+            setRejectComment('');
             fetchEstimateDetails();
         } catch (error: any) {
             showNotification(error.response?.data?.error || 'Failed to reject estimate', 'error');
@@ -556,16 +557,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
         );
     };
 
-    const handleUnapprove = async () => {
-        if (!window.confirm('Are you sure you want to unapprove this estimate? This will make it editable again.')) return;
-        try {
-            await api.post(`/estimates/${id}/unapprove/`);
-            showNotification('Estimate unapproved and is now editable', 'success');
-            fetchEstimateDetails();
-        } catch (error: any) {
-            showNotification(error.response?.data?.error || 'Failed to unapprove estimate', 'error');
-        }
-    };
+
 
     if (loading) {
         return (
@@ -599,22 +591,60 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                     {getApprovalStatusBadge()}
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
-                    {/* Approval Actions for Sales Head/Finance Manager */}
-                    {estimate?.approval_status === 'PENDING' && (
+                    {/* Approval Actions for Sales Head/Finance Manager - ONLY visible after saving (ID exists) */}
+                    {id && estimate?.approval_status === 'PENDING' && (
                         <>
                             <button onClick={handleApprove} className="ae-btn-secondary" style={{ color: '#38A169', borderColor: '#38A169' }}>
                                 <ThumbsUp size={18} /> Approve
                             </button>
-                            <button onClick={handleReject} className="ae-btn-secondary" style={{ color: '#E53E3E', borderColor: '#E53E3E' }}>
+                            <button onClick={() => setShowRejectModal(true)} className="ae-btn-secondary" style={{ color: '#E53E3E', borderColor: '#E53E3E' }}>
                                 <ThumbsDown size={18} /> Reject
                             </button>
                         </>
                     )}
 
-                    {/* Request Approval Button */}
-                    {(estimate?.status === 'DRAFT' || estimate?.status === 'NEGOTIATION') && estimate?.approval_status !== 'PENDING' && estimate?.approval_status !== 'APPROVED' && (
-                        <button onClick={handleRequestApproval} className="ae-btn-secondary" style={{ color: '#0066CC', borderColor: '#0066CC' }}>
-                            <Clock size={18} /> Request Approval
+                    {/* Rejection Comments Banner */}
+                    {estimate?.approval_status === 'REJECTED' && estimate?.approval_notes && (
+                        <div style={{
+                            background: 'rgba(239, 68, 68, 0.04)',
+                            border: '1px solid rgba(239, 68, 68, 0.1)',
+                            borderLeft: '4px solid #EF4444',
+                            borderRadius: '16px',
+                            padding: '12px 20px',
+                            margin: '0 24px 20px 24px'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#EF4444', marginBottom: '8px' }}>
+                                <XCircle size={16} strokeWidth={2.5} />
+                                <span style={{ fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rejection Comments</span>
+                            </div>
+                            <div style={{
+                                background: 'white',
+                                padding: '10px 16px',
+                                borderRadius: '12px',
+                                border: '1px solid rgba(239, 68, 68, 0.08)',
+                                color: '#1e293b',
+                                fontSize: '0.85rem',
+                                fontWeight: 500,
+                                lineHeight: 1.4,
+                                fontStyle: 'italic',
+                                position: 'relative'
+                            }}>
+                                <span style={{ color: '#EF4444', fontSize: '1.2rem', fontWeight: 900, position: 'absolute', top: '4px', left: '6px', opacity: 0.2 }}>"</span>
+                                {estimate.approval_notes}
+                                <span style={{ color: '#EF4444', fontSize: '1.2rem', fontWeight: 900, position: 'absolute', bottom: '-4px', right: '6px', opacity: 0.2 }}>"</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Submit for Approval Button */}
+                    {id && !isReadOnly && (
+                        <button
+                            onClick={handlePreview}
+                            className="ae-btn-secondary flex items-center gap-2"
+                            title="Preview PDF"
+                            style={{ padding: '6px 16px', color: '#718096', borderColor: '#E2E8F0' }}
+                        >
+                            <Eye size={16} /> Preview
                         </button>
                     )}
 
@@ -623,8 +653,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
 
                         {/* Unapprove/Reopen button removed - Approved estimates are now locked */}
 
-                        {/* Rewind Logic: Visible if Latest Version (Removed version < 2 restriction) */}
-                        {estimate?.is_latest && (
+                        {/* Rewind Logic: Visible if Latest Version AND Approved (per user request) */}
+                        {id && estimate?.is_latest && estimate?.approval_status === 'APPROVED' && (
                             <button
                                 onClick={handleRewind}
                                 disabled={saving}
@@ -647,26 +677,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                         )}
 
                         {/* Unapprove Button - Visible for Approved/Rejected estimates if latest */}
-                        {estimate?.is_latest && (estimate?.approval_status === 'APPROVED' || estimate?.approval_status === 'REJECTED') && (
-                            <button
-                                onClick={handleUnapprove}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '6px 16px',
-                                    borderRadius: '8px',
-                                    background: '#FFF5F5',
-                                    color: '#C53030',
-                                    border: '1px solid #FED7D7',
-                                    fontWeight: 700,
-                                    fontSize: '0.8rem',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <RefreshCw size={16} /> Unapprove / Reopen
-                            </button>
-                        )}
+
                     </div>
 
 
@@ -676,16 +687,16 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                         <button
                             onClick={() => openEmailModal()}
                             className="ae-btn-primary"
-                            disabled={!estimate?.proposals?.length || estimate?.approval_status !== 'APPROVED'}
+                            disabled={estimate?.approval_status !== 'APPROVED'}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
                                 background: '#38A169',
-                                opacity: (!estimate?.proposals?.length || estimate?.approval_status !== 'APPROVED') ? 0.5 : 1,
-                                cursor: (!estimate?.proposals?.length || estimate?.approval_status !== 'APPROVED') ? 'not-allowed' : 'pointer'
+                                opacity: (estimate?.approval_status !== 'APPROVED') ? 0.5 : 1,
+                                cursor: (estimate?.approval_status !== 'APPROVED') ? 'not-allowed' : 'pointer'
                             }}
-                            title={estimate?.approval_status !== 'APPROVED' ? "Estimate must be approved to send email" : (!estimate?.proposals?.length ? "Attach a proposal first" : "Submit to Customer")}
+                            title={estimate?.approval_status !== 'APPROVED' ? "Estimate must be approved to send email" : "Submit to Customer"}
                         >
                             <Mail size={18} /> Submit to Customer
                         </button>
@@ -699,7 +710,12 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                 <div className="ae-grid-3" style={{ marginBottom: '24px', gap: '16px' }}>
                     <div className="ae-input-group">
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>
-                            Cost Sheet No. <span style={{ color: '#FF6B00' }}>*</span>
+                            Cost Sheet Amount <span style={{ color: '#FF6B00' }}>*</span>
+                            {(estimate?.cost_sheet_price || (formData.cost_sheet && (costSheets.find(cs => cs.id.toString() === formData.cost_sheet.toString())?.total_estimated_price))) && (
+                                <span style={{ marginLeft: '8px', color: '#2b6cb0', fontWeight: 600 }}>
+                                    (CS Amt:₹{parseFloat(estimate?.cost_sheet_price || costSheets.find(cs => cs.id.toString() === formData.cost_sheet.toString())?.total_estimated_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })})
+                                </span>
+                            )}
                         </label>
                         {!id ? (
                             <select
@@ -764,6 +780,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                             customer_name: csData.customer_name,
                                             cost_sheet_no: csData.cost_sheet_no,
                                             deal_id: csData.deal_no,
+                                            deal_amount: csData.deal_amount,
                                             total_price: csData.total_estimated_price // For validation
                                         });
 
@@ -783,7 +800,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                         )}
                     </div>
                     <div className="ae-input-group">
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Deal No.</label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>
+                            Deal No.
+                            {(estimate?.deal_amount || (formData.deal && (deals.find(d => d.id.toString() === formData.deal.toString())?.deal_amount))) && (
+                                <span style={{ marginLeft: '8px', color: '#38A169', fontWeight: 600 }}>
+                                    (Deal Amt: ₹{parseFloat(estimate?.deal_amount || deals.find(d => d.id.toString() === formData.deal.toString())?.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })})
+                                </span>
+                            )}
+                        </label>
                         {!id ? (
                             <select
                                 className="ae-input"
@@ -857,14 +881,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                 id="proposal-upload"
                                 style={{ display: 'none' }}
                                 onChange={handleFileChange}
-                                disabled={isReadOnly}
+                                disabled={estimate?.status === 'SUBMITTED'}
                             />
-                            {!id && !isReadOnly && (
+                            {!id && (
                                 <label htmlFor="proposal-upload" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#0066CC', fontWeight: 600 }}>
                                     <Upload size={14} /> Upload Proposal
                                 </label>
                             )}
-                            {id && !isReadOnly && (
+                            {id && estimate?.status !== 'SUBMITTED' && (
                                 <label htmlFor="proposal-upload" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#0066CC', fontWeight: 600 }}>
                                     <Upload size={14} /> Upload New Version
                                 </label>
@@ -907,7 +931,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                                 <a href={prop.file} target="_blank" rel="noopener noreferrer" style={{ color: '#0066CC' }} title="View File">
                                                     <CheckCircle2 size={16} />
                                                 </a>
-                                                {!isReadOnly && (
+                                                {estimate?.status !== 'SUBMITTED' && (
                                                     <button
                                                         onClick={() => handleRemoveProposal(prop.id)}
                                                         style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#E53E3E', padding: '2px' }}
@@ -932,74 +956,131 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                             <tr style={{ background: '#F8FAFC' }}>
                                 <th style={{ padding: '12px 8px', width: '40px' }}></th>
                                 <th style={{ width: '60px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center' }}
-                                        value={formData.column_labels.sr_no || 'Sr.No.'}
-                                        onChange={(e) => handleHeaderChange('sr_no', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                        {editingColumn === 'sr_no' && !isReadOnly ? (
+                                            <input
+                                                id="header-sr_no"
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center', padding: '2px 4px' }}
+                                                value={formData.column_labels.sr_no || 'Sr.No.'}
+                                                onChange={(e) => handleHeaderChange('sr_no', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') setEditingColumn(null); }}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.sr_no || 'Sr.No.'}</span>
+                                                {!isReadOnly && <Pencil size={12} color="#94a3b8" style={{ minWidth: '12px', cursor: 'pointer' }} onClick={() => setEditingColumn('sr_no')} />}
+                                            </>
+                                        )}
+                                    </div>
                                 </th>
                                 <th style={{ width: '200px', padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
-                                        value={formData.column_labels.particulars || 'Particulars'}
-                                        onChange={(e) => handleHeaderChange('particulars', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {editingColumn === 'particulars' && !isReadOnly ? (
+                                            <input
+                                                id="header-particulars"
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', padding: '2px 4px' }}
+                                                value={formData.column_labels.particulars || 'Particulars'}
+                                                onChange={(e) => handleHeaderChange('particulars', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') setEditingColumn(null); }}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.particulars || 'Particulars'}</span>
+                                                {!isReadOnly && <Pencil size={12} color="#94a3b8" style={{ minWidth: '12px', cursor: 'pointer' }} onClick={() => setEditingColumn('particulars')} />}
+                                            </>
+                                        )}
+                                    </div>
                                 </th>
                                 <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
-                                        value={formData.column_labels.description || 'Description'}
-                                        onChange={(e) => handleHeaderChange('description', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {editingColumn === 'description' && !isReadOnly ? (
+                                            <input
+                                                id="header-description"
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', padding: '2px 4px' }}
+                                                value={formData.column_labels.description || 'Description'}
+                                                onChange={(e) => handleHeaderChange('description', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') setEditingColumn(null); }}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.description || 'Description'}</span>
+                                                {!isReadOnly && <Pencil size={12} color="#94a3b8" style={{ minWidth: '12px', cursor: 'pointer' }} onClick={() => setEditingColumn('description')} />}
+                                            </>
+                                        )}
+                                    </div>
                                 </th>
-                                <th style={{ width: '100px', padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
-                                        value={formData.column_labels.hsn_sac || 'HSN/SAC'}
-                                        onChange={(e) => handleHeaderChange('hsn_sac', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
-                                </th>
+
                                 <th style={{ width: '80px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
-                                        value={formData.column_labels.qty || 'Qty'}
-                                        onChange={(e) => handleHeaderChange('qty', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                        {editingColumn === 'qty' && !isReadOnly ? (
+                                            <input
+                                                id="header-qty"
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center', padding: '2px 4px' }}
+                                                value={formData.column_labels.qty || 'Qty'}
+                                                onChange={(e) => handleHeaderChange('qty', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') setEditingColumn(null); }}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.qty || 'Qty'}</span>
+                                                {!isReadOnly && <Pencil size={12} color="#94a3b8" style={{ minWidth: '12px', cursor: 'pointer' }} onClick={() => setEditingColumn('qty')} />}
+                                            </>
+                                        )}
+                                    </div>
                                 </th>
                                 <th style={{ width: '120px', padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
-                                        value={formData.column_labels.rate || 'Rate'}
-                                        onChange={(e) => handleHeaderChange('rate', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                        {editingColumn === 'rate' && !isReadOnly ? (
+                                            <input
+                                                id="header-rate"
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'right', padding: '2px 4px' }}
+                                                value={formData.column_labels.rate || 'Rate'}
+                                                onChange={(e) => handleHeaderChange('rate', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') setEditingColumn(null); }}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.rate || 'Rate'}</span>
+                                                {!isReadOnly && <Pencil size={12} color="#94a3b8" style={{ minWidth: '12px', cursor: 'pointer' }} onClick={() => setEditingColumn('rate')} />}
+                                            </>
+                                        )}
+                                    </div>
                                 </th>
                                 <th style={{ width: '140px', padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
-                                        value={formData.column_labels.amount || 'Amount'}
-                                        onChange={(e) => handleHeaderChange('amount', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                        {editingColumn === 'amount' && !isReadOnly ? (
+                                            <input
+                                                id="header-amount"
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'right', padding: '2px 4px' }}
+                                                value={formData.column_labels.amount || 'Amount'}
+                                                onChange={(e) => handleHeaderChange('amount', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') setEditingColumn(null); }}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.amount || 'Amount'}</span>
+                                                {!isReadOnly && <Pencil size={12} color="#94a3b8" style={{ minWidth: '12px', cursor: 'pointer' }} onClick={() => setEditingColumn('amount')} />}
+                                            </>
+                                        )}
+                                    </div>
                                 </th>
                                 <th style={{ width: '40px', padding: '12px 8px' }}></th>
                             </tr>
@@ -1053,16 +1134,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                             placeholder="Enter description"
                                         />
                                     </td>
-                                    <td style={{ padding: '8px' }}>
-                                        <input
-                                            className="ae-input"
-                                            style={{ height: '36px', padding: '4px 8px', width: '100%' }}
-                                            value={item.hsn_sac || ''}
-                                            onChange={(e) => handleItemChange(item.id, 'hsn_sac', e.target.value)}
-                                            disabled={isReadOnly}
-                                            placeholder="HSN/SAC"
-                                        />
-                                    </td>
+
                                     <td style={{ padding: '8px' }}>
                                         <input
                                             type="number"
@@ -1108,7 +1180,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                         </tbody>
                         <tfoot>
                             <tr style={{ background: '#F8FAFC' }}>
-                                <td colSpan={7} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#4A5568' }}>Total:</td>
+                                <td colSpan={6} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#4A5568' }}>Total:</td>
                                 <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '1.1rem', fontWeight: 800, color: '#FF6B00' }}>
                                     {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </td>
@@ -1145,7 +1217,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '16px', background: 'white', borderTop: '1px solid #99b6d8' }}>
                 <div className="flex items-center gap-3">
-                    {id && (
+                    {id && isReadOnly && estimate?.approval_status !== 'PENDING' && (
                         <button
                             onClick={handlePreview}
                             className="ae-btn-secondary flex items-center gap-2"
@@ -1156,26 +1228,133 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                         </button>
                     )}
                     {!isReadOnly && (
-                        <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <button
-                                onClick={handleSave}
+                                onClick={() => handleSave(false)}
                                 disabled={saving}
-                                className="ae-btn-secondary flex items-center gap-2"
-                                style={{ padding: '8px 24px' }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    background: 'white',
+                                    color: '#1a1f36',
+                                    border: '1px solid #E2E8F0',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#f8fafc';
+                                    e.currentTarget.style.borderColor = '#cbd5e1';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'white';
+                                    e.currentTarget.style.borderColor = '#E2E8F0';
+                                }}
                             >
-                                <Save size={18} />
-                                {saving ? 'Saving...' : 'Save Draft'}
+                                <Save size={16} />
+                                <span>Save as Draft</span>
                             </button>
+
                             <button
-                                onClick={handleSave}
+                                onClick={handleSaveAndSubmit}
                                 disabled={saving}
-                                className="ae-btn-primary flex items-center gap-2"
-                                style={{ padding: '8px 24px' }}
+                                className="ae-btn-primary"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px 20px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
+                                    background: '#FF6B00',
+                                    border: 'none',
+                                    color: 'white'
+                                }}
                             >
-                                <Save size={18} />
-                                {saving ? 'Saving...' : 'Save Estimate'}
+                                <PlusCircle size={18} />
+                                <span>Submit for Approval</span>
                             </button>
-                        </>
+
+                            <button
+                                onClick={() => onBack()}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    background: 'transparent',
+                                    color: '#718096',
+                                    border: 'none',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <X size={16} />
+                                <span>Cancel</span>
+                            </button>
+                        </div>
+                    )}
+                    {estimate?.approval_status === 'PENDING' && (
+                        <span style={{
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            background: '#FFFAF0',
+                            color: '#DD6B20',
+                            fontWeight: 700,
+                            fontSize: '0.85rem',
+                            border: '1px solid #FBD38D',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}>
+                            <Clock size={18} /> Pending Approval
+                        </span>
+                    )}
+                    {estimate?.approval_status === 'APPROVED' && (
+                        <div className="flex items-center gap-3">
+                            <span style={{
+                                padding: '6px 16px',
+                                borderRadius: '8px',
+                                background: '#E6F7ED',
+                                color: '#38A169',
+                                fontWeight: 700,
+                                fontSize: '0.85rem',
+                                border: '1px solid #38A169',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                <CheckCircle2 size={18} /> Approved
+                            </span>
+                            {estimate?.is_latest && (
+                                <button
+                                    onClick={handleRewind}
+                                    disabled={saving}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '8px 20px',
+                                        borderRadius: '8px',
+                                        background: '#EBF8FF',
+                                        color: '#3182CE',
+                                        border: '1px solid #BEE3F8',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <History size={18} /> Rewind (New Version)
+                                </button>
+                            )}
+                        </div>
                     )}
                 </div>
 
@@ -1306,6 +1485,164 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                 >
                                     {sendingEmail ? 'Sending...' : 'Send Now'}
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Rejection Modal */}
+                {showRejectModal && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10000,
+                            background: 'rgba(0, 0, 0, 0.45)',
+                            backdropFilter: 'blur(12px)',
+                            padding: '24px',
+                        }}
+                    >
+                        <div
+                            style={{
+                                background: 'white',
+                                width: '100%',
+                                maxWidth: '400px',
+                                borderRadius: '24px',
+                                boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
+                                overflow: 'hidden',
+                                position: 'relative',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div style={{
+                                background: '#FF6B00',
+                                padding: '28px 24px 24px',
+                                position: 'relative',
+                            }}>
+                                <button
+                                    onClick={() => setShowRejectModal(false)}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '16px',
+                                        right: '16px',
+                                        width: '24px',
+                                        height: '24px',
+                                        borderRadius: '50%',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        color: 'white',
+                                        opacity: 0.7,
+                                    }}
+                                >
+                                    <X size={16} strokeWidth={3} />
+                                </button>
+
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                    <div style={{
+                                        width: '36px',
+                                        height: '36px',
+                                        background: 'rgba(255,255,255,0.2)',
+                                        borderRadius: '10px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        <Sparkles size={18} color="white" />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <h3 style={{
+                                            fontSize: '1.25rem',
+                                            fontWeight: 800,
+                                            color: 'white',
+                                            margin: '0 0 4px 0',
+                                            lineHeight: 1.2
+                                        }}>Reject Estimate</h3>
+                                        <p style={{
+                                            margin: 0,
+                                            color: 'rgba(255,255,255,0.95)',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 500,
+                                            lineHeight: 1.4
+                                        }}>
+                                            Provide a reason for rejecting this estimate for the records.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ padding: '24px' }}>
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{
+                                        display: 'block',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 700,
+                                        color: '#1e293b',
+                                        marginBottom: '8px'
+                                    }}>Rejection Reason</label>
+                                    <textarea
+                                        value={rejectComment}
+                                        onChange={e => setRejectComment(e.target.value)}
+                                        placeholder="Type your reason here..."
+                                        autoFocus
+                                        style={{
+                                            width: '100%',
+                                            height: '90px',
+                                            background: '#f8fafc',
+                                            border: '1.5px solid #e2e8f0',
+                                            borderRadius: '12px',
+                                            padding: '12px 16px',
+                                            fontSize: '0.9rem',
+                                            color: '#1e293b',
+                                            outline: 'none',
+                                            resize: 'none',
+                                            fontWeight: 500
+                                        }}
+                                    />
+                                </div>
+
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '10px'
+                                }}>
+                                    <button
+                                        onClick={() => setShowRejectModal(false)}
+                                        style={{
+                                            padding: '10px 20px',
+                                            borderRadius: '12px',
+                                            background: '#f1f5f9',
+                                            color: '#475569',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            border: 'none',
+                                            cursor: 'pointer'
+                                        }}
+                                    >Cancel</button>
+                                    <button
+                                        onClick={handleReject}
+                                        style={{
+                                            padding: '10px 24px',
+                                            borderRadius: '12px',
+                                            background: '#FF6B00',
+                                            color: 'white',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            border: 'none',
+                                            cursor: 'pointer'
+                                        }}
+                                    >Reject</button>
+                                </div>
                             </div>
                         </div>
                     </div>

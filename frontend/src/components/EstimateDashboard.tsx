@@ -20,12 +20,14 @@ import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
 
 const ALL_COLUMNS = [
-    { key: 'estimate_id', label: 'Est. ID' },
-    { key: 'version', label: 'Version' },
     { key: 'deal_id', label: 'Deal ID' },
+    { key: 'deal_amount', label: 'Deal Amount' },
+    { key: 'cost_sheet_no', label: 'Cost Sheet No' },
+    { key: 'cost_sheet_price', label: 'CS Amount' },
+    { key: 'estimate_id', label: 'Est. ID' },
     { key: 'customer_name', label: 'Customer' },
     { key: 'project_name', label: 'Project' },
-    { key: 'total_price', label: 'Total Value' },
+    { key: 'total_price', label: 'Est. Total Value' },
     { key: 'status', label: 'Status' },
     { key: 'subscription_from', label: 'Sub. From' },
     { key: 'subscription_to', label: 'Sub. To' },
@@ -39,6 +41,8 @@ interface Estimate {
     version: number;
     status: string;
     total_price: string;
+    deal_amount?: string;
+    cost_sheet_price?: string;
     customer_name: string;
     project_name: string;
     deal: number;
@@ -48,6 +52,7 @@ interface Estimate {
     created_at: string;
     is_latest: boolean;
     approval_status: string;
+    estimate_date?: string;
     subscription_from?: string;
     subscription_to?: string;
     customer_email?: string;
@@ -88,7 +93,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
     const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
-        const saved = localStorage.getItem('estimateDashboard_visibleColumns');
+        const saved = localStorage.getItem('estimateDashboard_visibleColumns_v2');
         return saved ? JSON.parse(saved) : ALL_COLUMNS.map(col => col.key);
     });
 
@@ -100,6 +105,8 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
         return saved ? JSON.parse(saved) : {
             estimate_id: '',
             version: '',
+            deal_id: '',
+            cost_sheet_no: '',
             customer_name: '',
             project_name: '',
             total_price: '',
@@ -139,7 +146,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('estimateDashboard_visibleColumns', JSON.stringify(visibleColumns));
+        localStorage.setItem('estimateDashboard_visibleColumns_v2', JSON.stringify(visibleColumns));
     }, [visibleColumns]);
 
     useEffect(() => {
@@ -178,6 +185,8 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
     const filteredEstimates = useMemo(() => {
         return estimates.filter(est => {
             const matchesId = (est.estimate_id || '').toLowerCase().includes(filters.estimate_id.toLowerCase());
+            const matchesDealId = (est.deal_id || '').toLowerCase().includes((filters as any).deal_id?.toLowerCase() || '');
+            const matchesCsNo = (est.cost_sheet_no || '').toLowerCase().includes((filters as any).cost_sheet_no?.toLowerCase() || '');
             const matchesCustomer = (est.customer_name || '').toLowerCase().includes(filters.customer_name.toLowerCase());
             const matchesProject = (est.project_name || '').toLowerCase().includes(filters.project_name.toLowerCase());
             const matchesStatus = filters.status === '' ? true :
@@ -188,9 +197,8 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                 est.status === filters.status;
             const matchesLatest = !filters.showOnlyLatest || est.is_latest;
             const matchesPrice = (est.total_price || '').toString().includes(filters.total_price);
-            const matchesVersion = (est.version || '').toString().includes(filters.version);
-            const matchesSubFrom = (est.subscription_from || '').includes(filters.subscription_from || '');
-            const matchesSubTo = (est.subscription_to || '').includes(filters.subscription_to || '');
+            // const matchesSubFrom = (est.subscription_from || '').includes(filters.subscription_from || '');
+            // const matchesSubTo = (est.subscription_to || '').includes(filters.subscription_to || '');
 
             let matchesDate = true;
             if (filters.period) {
@@ -224,7 +232,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                 }
             }
 
-            return matchesId && matchesCustomer && matchesProject && matchesStatus && matchesLatest && matchesPrice && matchesVersion && matchesDate;
+            return matchesId && matchesDealId && matchesCsNo && matchesCustomer && matchesProject && matchesStatus && matchesLatest && matchesPrice && matchesDate;
         });
     }, [estimates, filters]);
 
@@ -372,7 +380,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
         switch (status) {
             case 'DRAFT':
                 return approvalStatus === 'APPROVED'
-                    ? { bg: '#E6FFFA', text: '#38A169', label: 'Approved (Draft)' }
+                    ? { bg: '#E6FFFA', text: '#38A169', label: 'Approved' }
                     : { bg: '#F7FAFC', text: '#4A5568', label: 'Draft' };
             case 'SUBMITTED': return { bg: '#EBF8FF', text: '#3182CE', label: 'Submitted to Customer' };
             case 'NEGOTIATION': return { bg: '#FFF9F5', text: '#FF6B00', label: 'Negotiation' };
@@ -631,7 +639,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                 <th style={{ textAlign: 'center', backgroundColor: '#F7FAFC' }}>
                                     <button
                                         onClick={() => setFilters({
-                                            estimate_id: '', version: '', customer_name: '', project_name: '',
+                                            estimate_id: '', version: '', deal_id: '', cost_sheet_no: '', customer_name: '', project_name: '',
                                             total_price: '', status: '', created_at: '', period: '',
                                             startDate: '', endDate: '', showOnlyLatest: filters.showOnlyLatest
                                         })}
@@ -653,6 +661,32 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                     const hasProposal = (est as any).proposals?.length > 0;
                                     return (
                                         <tr key={est.id}>
+                                            {visibleColumns.includes('deal_id') && (
+                                                <td
+                                                    style={{ fontWeight: 700, color: '#0066CC', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    onClick={() => navigate(`/deal?id=${est.deal}`)}
+                                                >
+                                                    {est.deal_id}
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('deal_amount') && (
+                                                <td style={{ fontWeight: 600, color: '#38A169' }}>
+                                                    ₹{parseFloat(est.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('cost_sheet_no') && (
+                                                <td
+                                                    style={{ fontWeight: 700, color: '#0066CC', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    onClick={() => navigate(`/cost-sheet?id=${est.cost_sheet}`)}
+                                                >
+                                                    {est.cost_sheet_no}
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('cost_sheet_price') && (
+                                                <td style={{ fontWeight: 600, color: '#2b6cb0' }}>
+                                                    ₹{parseFloat(est.cost_sheet_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                </td>
+                                            )}
                                             {visibleColumns.includes('estimate_id') && (
                                                 <td
                                                     style={{ fontWeight: 700, color: '#0066CC', cursor: 'pointer', textDecoration: 'underline' }}
@@ -661,28 +695,17 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                     {est.estimate_id}
                                                 </td>
                                             )}
-                                            {visibleColumns.includes('version') && (
-                                                <td>
-                                                    <span style={{ padding: '2px 8px', borderRadius: '4px', background: '#EDF2F7', fontSize: '0.7rem', fontWeight: 800 }}>v{est.version}</span>
-                                                    {!est.is_latest && <span style={{ marginLeft: '4px', color: '#A0AEC0', fontSize: '0.65rem' }}>(Old)</span>}
-                                                </td>
-                                            )}
-                                            {visibleColumns.includes('deal_id') && (
-                                                <td
-                                                    style={{ fontWeight: 700, color: '#0066CC', cursor: 'pointer' }}
-                                                    onClick={() => navigate(`/deal?id=${est.deal}`)}
-                                                >
-                                                    {est.deal_id}
-                                                </td>
-                                            )}
+
                                             {visibleColumns.includes('customer_name') && <td style={{ fontWeight: 500 }}>{est.customer_name}</td>}
                                             {visibleColumns.includes('project_name') && <td style={{ color: '#4A5568' }}>{est.project_name}</td>}
-                                            {visibleColumns.includes('total_price') && <td style={{ fontWeight: 700 }}>${parseFloat(est.total_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>}
+                                            {visibleColumns.includes('total_price') && <td style={{ fontWeight: 700 }}>₹{parseFloat(est.total_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>}
                                             {visibleColumns.includes('status') && (
                                                 <td>
                                                     <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: style.bg, color: style.text, whiteSpace: 'nowrap' }}>{style.label}</span>
                                                 </td>
                                             )}
+                                            {visibleColumns.includes('subscription_from') && <td style={{ color: '#4A5568', fontSize: '0.75rem' }}>{est.subscription_from ? formatToAppDate(est.subscription_from) : '-'}</td>}
+                                            {visibleColumns.includes('subscription_to') && <td style={{ color: '#4A5568', fontSize: '0.75rem' }}>{est.subscription_to ? formatToAppDate(est.subscription_to) : '-'}</td>}
                                             {visibleColumns.includes('proposal') && (
                                                 <td>
                                                     {hasProposal ? (
@@ -694,7 +717,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                     )}
                                                 </td>
                                             )}
-                                            {visibleColumns.includes('created_at') && <td style={{ color: '#4A5568', fontSize: '0.75rem' }}>{formatToAppDate(est.created_at)}</td>}
+                                            {visibleColumns.includes('created_at') && <td style={{ color: '#4A5568', fontSize: '0.75rem' }}>{formatToAppDate(est.estimate_date || est.created_at)}</td>}
 
                                             <td style={{ textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
                                                 <button
@@ -719,41 +742,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                 >
                                                     <Eye size={14} />
                                                 </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        openEmailModal(est);
-                                                    }}
-                                                    style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '6px',
-                                                        padding: '6px 12px',
-                                                        background: '#10B981',
-                                                        color: 'white',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 600,
-                                                        transition: 'all 0.2s',
-                                                        opacity: (est as any).proposals?.length > 0 && est.approval_status === 'APPROVED' ? 1 : 0.4,
-                                                        cursor: (est as any).proposals?.length > 0 && est.approval_status === 'APPROVED' ? 'pointer' : 'not-allowed'
-                                                    }}
-                                                    onMouseOver={(e) => {
-                                                        if ((est as any).proposals?.length > 0 && est.approval_status === 'APPROVED') {
-                                                            e.currentTarget.style.background = '#059669';
-                                                        }
-                                                    }}
-                                                    onMouseOut={(e) => {
-                                                        if ((est as any).proposals?.length > 0 && est.approval_status === 'APPROVED') {
-                                                            e.currentTarget.style.background = '#10B981';
-                                                        }
-                                                    }}
-                                                    disabled={!((est as any).proposals?.length > 0 && est.approval_status === 'APPROVED')}
-                                                    title={est.approval_status !== 'APPROVED' ? "Estimate must be approved to send email" : (!((est as any).proposals?.length > 0) ? "Attach a proposal first" : "Send Email")}
-                                                >
-                                                    <Mail size={14} />
-                                                </button>
+
                                                 {est.approval_status === 'APPROVED' && (
                                                     <button
                                                         onClick={(e) => {

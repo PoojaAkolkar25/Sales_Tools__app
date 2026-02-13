@@ -131,6 +131,7 @@ class CostSheetSerializer(serializers.ModelSerializer):
     attachments = CostSheetAttachmentSerializer(many=True, read_only=True)
     deal_no = serializers.CharField(source='deal.deal_id', read_only=True, allow_null=True)
     deal_name = serializers.CharField(source='deal.deal_name', read_only=True, allow_null=True)
+    deal_amount = serializers.DecimalField(source='deal.deal_amount', max_digits=15, decimal_places=2, read_only=True, allow_null=True)
     currency = serializers.CharField(source='deal.currency', read_only=True, allow_null=True)
     lead_no = serializers.SerializerMethodField()
     lead_details = serializers.SerializerMethodField()
