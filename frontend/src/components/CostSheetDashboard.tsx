@@ -684,7 +684,11 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                             {visibleColumns.includes('project_name') && <td style={{ color: '#2D3748', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={cs.project_name || '—'}>
                                                 {cs.project_name || '—'}
                                             </td>}
-                                            {visibleColumns.includes('cost_sheet_no') && <td style={{ fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace' }}>
+                                            {visibleColumns.includes('cost_sheet_no') && <td
+                                                style={{ fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace', cursor: 'pointer', textDecoration: 'underline' }}
+                                                onClick={() => onView(cs.id)}
+                                                title="Click to view/edit cost sheet"
+                                            >
                                                 {cs.cost_sheet_no}
                                             </td>}
                                             {visibleColumns.includes('date') && <td style={{ color: '#4A5568', fontWeight: 600 }}>

@@ -2,7 +2,13 @@ import React, { useState, useEffect } from 'react';
 import {
     Clock,
     Database,
-    Shield
+    Shield,
+    ChevronLeft,
+    Send,
+    User,
+    Briefcase,
+    Settings,
+    Server
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -263,6 +269,20 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     <option value="Engineering">Engineering</option>
                                     <option value="Product">Product</option>
                                     <option value="IT">IT</option>
+                                    <option value="Sales">Sales</option>
+                                    <option value="HR">HR</option>
+                                </select>
+                            </div>
+                            <div className="ae-input-group">
+                                <label className="ae-label">Designation</label>
+                                <select name="designation" value={formData.designation} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
+                                    <option value="">Select Designation</option>
+                                    <option value="Project Manager">Project Manager</option>
+                                    <option value="Senior Developer">Senior Developer</option>
+                                    <option value="Developer">Developer</option>
+                                    <option value="QA Engineer">QA Engineer</option>
+                                    <option value="DevOps Engineer">DevOps Engineer</option>
+                                    <option value="Solution Architect">Solution Architect</option>
                                 </select>
                             </div>
                             <div className="ae-input-group">
@@ -290,6 +310,16 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 <input type="text" name="project_code" value={formData.project_code} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
                             </div>
                             <div className="ae-input-group">
+                                <label className="ae-label">Client Name</label>
+                                <select name="client_name" value={formData.client_name} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
+                                    <option value="">Select Client</option>
+                                    <option value="ABC Corp">ABC Corp</option>
+                                    <option value="XYZ Ltd">XYZ Ltd</option>
+                                    <option value="Global Tech">Global Tech</option>
+                                    <option value="Innovate Inc">Innovate Inc</option>
+                                </select>
+                            </div>
+                            <div className="ae-input-group">
                                 <label className="ae-label">Environment</label>
                                 <select name="environment" value={formData.environment} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
                                     <option value="DEVELOPMENT">Development</option>
@@ -310,11 +340,73 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         </h3>
                         <div className="space-y-4">
                             <div className="ae-input-group">
-                                <label className="ae-label">Server Type</label>
-                                <select name="server_type" value={formData.server_type} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                    <option value="EC2">EC2</option>
-                                    <option value="Physical">Physical Server</option>
+                                <label className="ae-label">Resource Type</label>
+                                <select name="resource_type_requested" value={formData.resource_type_requested} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
+                                    <option value="Server">Server</option>
+                                    <option value="Database">Database</option>
+                                    <option value="Storage">Storage</option>
                                 </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Server Type</label>
+                                    <select name="server_type" value={formData.server_type} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
+                                        <option value="EC2">EC2</option>
+                                        <option value="Physical">Physical Server</option>
+                                        <option value="Virtual Machine">Virtual Machine</option>
+                                    </select>
+                                </div>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Server Category</label>
+                                    <select name="server_category" value={formData.server_category} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
+                                        <option value="Virtual">Virtual</option>
+                                        <option value="Physical">Physical</option>
+                                        <option value="Hybrid">Hybrid</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Cloud Provider</label>
+                                    <select name="cloud_provider" value={formData.cloud_provider} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
+                                        <option value="">Select Provider</option>
+                                        <option value="AWS">AWS</option>
+                                        <option value="Azure">Azure</option>
+                                        <option value="GCP">GCP</option>
+                                        <option value="On-Premise">On-Premise</option>
+                                    </select>
+                                </div>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Region</label>
+                                    <select name="region" value={formData.region} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
+                                        <option value="">Select Region</option>
+                                        <option value="ap-south-1">ap-south-1 (Mumbai)</option>
+                                        <option value="us-east-1">us-east-1 (N. Virginia)</option>
+                                        <option value="eu-west-1">eu-west-1 (Ireland)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Instance Type</label>
+                                    <select name="instance_type" value={formData.instance_type} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
+                                        <option value="">Select Instance</option>
+                                        <option value="t3a.2xlarge">t3a.2xlarge</option>
+                                        <option value="t3.medium">t3.medium</option>
+                                        <option value="m5.large">m5.large</option>
+                                        <option value="c5.xlarge">c5.xlarge</option>
+                                    </select>
+                                </div>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Operating System</label>
+                                    <select name="os" value={formData.os} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
+                                        <option value="">Select OS</option>
+                                        <option value="Amazon Linux 2">Amazon Linux 2</option>
+                                        <option value="Ubuntu 20.04">Ubuntu 20.04</option>
+                                        <option value="Windows Server 2019">Windows Server 2019</option>
+                                        <option value="RHEL 8">RHEL 8</option>
+                                    </select>
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="ae-input-group">
@@ -326,9 +418,19 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     <input type="number" name="ram_gb" value={formData.ram_gb} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
                                 </div>
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Storage Size (GB)</label>
-                                <input type="number" name="storage_size_gb" value={formData.storage_size_gb} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Storage Type</label>
+                                    <select name="storage_type" value={formData.storage_type} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
+                                        <option value="SSD">SSD</option>
+                                        <option value="HDD">HDD</option>
+                                        <option value="NVMe">NVMe</option>
+                                    </select>
+                                </div>
+                                <div className="ae-input-group">
+                                    <label className="ae-label">Storage Size (GB)</label>
+                                    <input type="number" name="storage_size_gb" value={formData.storage_size_gb} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -459,6 +561,50 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     </section>
                 </div>
             </div>
+
+            {/* 8. Issuance Details (Visible only when ISSUED) */}
+            {formData.status === 'ISSUED' && (
+                <section className="section-panel" style={{ padding: '24px', borderLeft: '4px solid #0066CC' }}>
+                    <h3 className="section-title text-[#0066CC] flex items-center gap-2 mb-4">
+                        <Server size={18} /> 8. Issuance Details (Server Issuing Authority)
+                    </h3>
+                    <div className="grid grid-cols-3 gap-6">
+                        <div className="ae-input-group">
+                            <label className="ae-label">Server Asset ID / Name</label>
+                            <input
+                                type="text"
+                                value={formData.resource_assigned_detail?.server_name || 'N/A'}
+                                className="ae-input !bg-gray-50 !font-bold"
+                                disabled
+                            />
+                        </div>
+                        <div className="ae-input-group">
+                            <label className="ae-label">Issued Date</label>
+                            <input
+                                type="text"
+                                value={formData.issued_at ? new Date(formData.issued_at).toLocaleDateString() : 'N/A'}
+                                className="ae-input !bg-gray-50"
+                                disabled
+                            />
+                        </div>
+                        <div className="ae-input-group">
+                            <label className="ae-label">Issued By</label>
+                            <input
+                                type="text"
+                                value={formData.issued_by_detail?.full_name || 'System'}
+                                className="ae-input !bg-gray-50"
+                                disabled
+                            />
+                        </div>
+                        <div className="ae-input-group col-span-3">
+                            <label className="ae-label">Allocation Status</label>
+                            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-[#E3F2FD] text-[#1E88E5]">
+                                ISSUED / ALLOCATED
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            )}
         </div>
     );
 };

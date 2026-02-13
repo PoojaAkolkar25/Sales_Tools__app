@@ -24,7 +24,6 @@ const UserManagement: React.FC = () => {
 
     const [companyFormData, setCompanyFormData] = useState({
         name: '',
-        alias_name: '',
         logo: null as File | null,
         address_line_1: '',
         address_line_2: '',
@@ -131,9 +130,9 @@ const UserManagement: React.FC = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            showNotification('Company created successfully', 'success');
+            showNotification('Customer created successfully', 'success');
             setCompanyFormData({
-                name: '', alias_name: '', logo: null, address_line_1: '', address_line_2: '',
+                name: '', logo: null, address_line_1: '', address_line_2: '',
                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
                 mobile_number: '', email: '', website_url: '', financial_year_begins: '01-Apr',
                 base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
@@ -149,9 +148,9 @@ const UserManagement: React.FC = () => {
                 const errorMessages = Object.entries(errorData)
                     .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
                     .join(' | ');
-                setCompanyError(errorMessages || 'Error creating company');
+                setCompanyError(errorMessages || 'Error creating customer');
             } else {
-                setCompanyError(err.response?.data?.message || 'Error creating company');
+                setCompanyError(err.response?.data?.message || 'Error creating customer');
             }
         }
     };
@@ -180,7 +179,7 @@ const UserManagement: React.FC = () => {
             // If there's no explicit toggle_status, we might need to implement it.
             // Assuming for now it's just a placeholder or we can add it later.
             await api.post(endpoint);
-            showNotification(`${type === 'user' ? 'User' : 'Company'} status updated`, 'success');
+            showNotification(`${type === 'user' ? 'User' : 'Customer'} status updated`, 'success');
             if (type === 'user') fetchUsers();
             else fetchCompanies();
         } catch (err) {
@@ -240,7 +239,6 @@ const UserManagement: React.FC = () => {
         const searchStr = searchTerm.toLowerCase();
         return (
             comp.name?.toLowerCase().includes(searchStr) ||
-            comp.alias_name?.toLowerCase().includes(searchStr) ||
             comp.email?.toLowerCase().includes(searchStr) ||
             comp.city?.toLowerCase().includes(searchStr) ||
             comp.state_name?.toLowerCase().includes(searchStr)
@@ -267,7 +265,7 @@ const UserManagement: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
-                        {showForm ? `Create New ${viewMode === 'user' ? 'User' : 'Company'}` : 'User Management'}
+                        {showForm ? `Create New ${viewMode === 'user' ? 'User' : 'Customer'}` : 'User Management'}
                     </h1>
                 </div>
                 {!showForm && (
@@ -344,7 +342,7 @@ const UserManagement: React.FC = () => {
                                 gap: '8px'
                             }}
                         >
-                            <Users size={14} /> Companies
+                            <Users size={14} /> Customers
                         </button>
                     </div>
 
@@ -364,7 +362,7 @@ const UserManagement: React.FC = () => {
                         </div>
                         <input
                             type="text"
-                            placeholder={`Search by ${viewMode === 'user' ? 'Username, Email or Role' : 'Company Name, City or Email'}...`}
+                            placeholder={`Search by ${viewMode === 'user' ? 'Username, Email or Role' : 'Customer Name, City or Email'}...`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             style={{ border: 'none', outline: 'none', fontSize: '0.9rem', width: '100%', color: '#1a1f36', fontWeight: 600 }}
@@ -467,12 +465,12 @@ const UserManagement: React.FC = () => {
                                     <div className="section">
                                         <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div style={{ width: '3px', height: '14px', background: '#0066CC', borderRadius: '2px' }}></div>
-                                            Company Basic Details
+                                            Customer Basic Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                                    Company Name <span style={{ color: '#FF6B00' }}>*</span>
+                                                    Customer Name <span style={{ color: '#FF6B00' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="text"
@@ -480,17 +478,6 @@ const UserManagement: React.FC = () => {
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                                    Alias Name
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={companyFormData.alias_name}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, alias_name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -826,7 +813,7 @@ const UserManagement: React.FC = () => {
                                     cursor: 'pointer'
                                 }}
                             >
-                                <CheckCircle size={16} /> {viewMode === 'user' ? 'CREATE USER' : 'SAVE COMPANY RECORD'}
+                                <CheckCircle size={16} /> {viewMode === 'user' ? 'CREATE USER' : 'SAVE CUSTOMER RECORD'}
                             </button>
                             <button
                                 type="button"
@@ -855,7 +842,7 @@ const UserManagement: React.FC = () => {
                             <table className="ae-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                                 <thead style={{ position: 'sticky', top: 0, zIndex: 20 }}>
                                     <tr>
-                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '30%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase' }}>{viewMode === 'user' ? 'User' : 'Company'}</th>
+                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '30%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase' }}>{viewMode === 'user' ? 'User' : 'Customer'}</th>
                                         <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '25%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase' }}>Email</th>
                                         <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase' }}>{viewMode === 'user' ? 'Role' : 'City / State'}</th>
                                         <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase' }}>Status</th>
@@ -970,7 +957,7 @@ const UserManagement: React.FC = () => {
                                                             setShowForm(true);
                                                         }}
                                                         style={{ padding: '8px', color: '#0066CC', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                        title="Edit Company"
+                                                        title="Edit Customer"
                                                     >
                                                         <Pencil size={16} />
                                                     </button>

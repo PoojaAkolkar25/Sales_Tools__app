@@ -32,8 +32,6 @@ const ALL_COLUMNS = [
     { key: 'project_manager', label: 'Proj. Manager' },
     { key: 'project_manager_head', label: 'PM Head' },
     { key: 'expected_close_date', label: 'Exp. Close Date' },
-    { key: 'remark', label: 'Remarks/Description' },
-    { key: 'won_lost_reason', label: 'Won/Lost Reason' },
     { key: 'hubspot_id', label: 'HubSpot ID' },
     { key: 'last_synced_at', label: 'Last Synced' }
 ];
@@ -47,7 +45,6 @@ interface Deal {
     customer_email?: string;
     end_customer?: string;
     stage: string;
-    current_stage: string; // Dynamic stage calculated by backend
     deal_amount: string;
     currency: string;
     fx_rate?: number;
@@ -111,8 +108,6 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
             project_manager_head: '',
             expected_close_date: '',
             deal_date: '',
-            remark: '',
-            won_lost_reason: '',
             hubspot_id: '',
             last_synced_at: '',
             period: '',
@@ -177,7 +172,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
             const matchesName = (deal.deal_name || '').toLowerCase().includes(filters.deal_name.toLowerCase());
             const matchesCompany = filters.company === '' || deal.company === filters.company;
             const matchesLead = ((deal as any).lead_no || '').toLowerCase().includes(filters.lead_no.toLowerCase());
-            const matchesStage = filters.stage === '' || (deal.current_stage || deal.stage) === filters.stage;
+            const matchesStage = filters.stage === '' || deal.stage === filters.stage;
             const matchesCurrency = filters.currency === '' || deal.currency === filters.currency;
             const matchesAmount = (deal.deal_amount || '').toString().includes(filters.deal_amount);
             const matchesType = filters.deal_type === '' || (deal as any).deal_type === filters.deal_type;
@@ -190,8 +185,6 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
             const matchesHead = ((deal as any).sales_head || '').toLowerCase().includes((filters.sales_head || '').toLowerCase());
             const matchesPM = ((deal as any).project_manager || '').toLowerCase().includes((filters.project_manager || '').toLowerCase());
             const matchesPMHead = ((deal as any).project_manager_head || '').toLowerCase().includes((filters.project_manager_head || '').toLowerCase());
-            const matchesRemark = ((deal as any).remark || '').toLowerCase().includes((filters.remark || '').toLowerCase());
-            const matchesWonLost = ((deal as any).won_lost_reason || '').toLowerCase().includes((filters.won_lost_reason || '').toLowerCase());
             const matchesHubSpot = ((deal as any).hubspot_id || '').toLowerCase().includes((filters.hubspot_id || '').toLowerCase());
             const matchesSync = ((deal as any).last_synced_at || '').toLowerCase().includes((filters.last_synced_at || '').toLowerCase());
 
@@ -234,18 +227,18 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                 matchesCustomer && matchesEndCustomer && matchesClient &&
                 matchesInsideSales && matchesInsideHead && matchesSales &&
                 matchesHead && matchesPM && matchesPMHead && matchesDate &&
-                matchesRemark && matchesWonLost && matchesHubSpot && matchesSync && matchesSearchQuery;
+                matchesHubSpot && matchesSync && matchesSearchQuery;
         });
     }, [deals, filters]);
 
     const counts = useMemo(() => ({
         all: deals.length,
-        dealCreated: deals.filter(d => (d.current_stage || d.stage) === 'DEAL_CREATED').length,
-        costSheet: deals.filter(d => (d.current_stage || d.stage) === 'COST_SHEET').length,
-        estimates: deals.filter(d => (d.current_stage || d.stage) === 'ESTIMATES').length,
-        salesOrder: deals.filter(d => (d.current_stage || d.stage) === 'SALES_ORDER').length,
-        invoice: deals.filter(d => (d.current_stage || d.stage) === 'INVOICE').length,
-        payment: deals.filter(d => (d.current_stage || d.stage) === 'PAYMENT').length
+        dealCreated: deals.filter(d => d.stage === 'DEAL_CREATED').length,
+        costSheet: deals.filter(d => d.stage === 'COST_SHEET').length,
+        estimates: deals.filter(d => d.stage === 'ESTIMATES').length,
+        salesOrder: deals.filter(d => d.stage === 'SALES_ORDER').length,
+        invoice: deals.filter(d => d.stage === 'INVOICE').length,
+        payment: deals.filter(d => d.stage === 'PAYMENT').length
     }), [deals]);
 
     const statusFlow = [
@@ -535,7 +528,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                         inside_sales_head: '', salesperson_name: '', sales_head: '',
                                         project_manager: '', project_manager_head: '',
                                         expected_close_date: '', deal_date: '',
-                                        remark: '', won_lost_reason: '', hubspot_id: '', last_synced_at: '',
+                                        hubspot_id: '', last_synced_at: '',
                                         period: '', startDate: '', endDate: ''
                                     })}
                                     style={{ height: '24px', width: '100%', fontSize: '10px', color: '#FF6B00', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
@@ -552,7 +545,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                             <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No projects found.</td></tr>
                         ) : (
                             filteredDeals.map((deal: Deal) => {
-                                const stageStyle = getStageColor(deal.current_stage || deal.stage);
+                                const stageStyle = getStageColor(deal.stage);
                                 return (
                                     <tr key={deal.id}>
                                         {visibleColumns.includes('deal_id') && (
@@ -570,7 +563,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                         {visibleColumns.includes('stage') && (
                                             <td>
                                                 <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: stageStyle.bg, color: stageStyle.text }}>
-                                                    {(deal.current_stage || deal.stage).replace('_', ' ')}
+                                                    {deal.stage.replace('_', ' ')}
                                                 </span>
                                             </td>
                                         )}
@@ -593,8 +586,6 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                         {visibleColumns.includes('project_manager') && <td>{(deal as any).project_manager || '—'}</td>}
                                         {visibleColumns.includes('project_manager_head') && <td>{(deal as any).project_manager_head || '—'}</td>}
                                         {visibleColumns.includes('expected_close_date') && <td>{formatToAppDate((deal as any).expected_close_date)}</td>}
-                                        {visibleColumns.includes('remark') && <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(deal as any).remark || '—'}</td>}
-                                        {visibleColumns.includes('won_lost_reason') && <td>{(deal as any).won_lost_reason || '—'}</td>}
                                         {visibleColumns.includes('hubspot_id') && <td>{(deal as any).hubspot_id || '—'}</td>}
                                         {visibleColumns.includes('last_synced_at') && <td>{deal.last_synced_at ? new Date(deal.last_synced_at).toLocaleString() : '—'}</td>}
                                         <td style={{ textAlign: 'center' }}>
