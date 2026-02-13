@@ -778,74 +778,68 @@ const AppContent: React.FC = () => {
                   marginBottom: '12px',
                   gap: '24px'
                 }}>
-                  {salesOrderView === 'dashboard' && (
-                    <>
-                      <div style={{
+                  <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    alignItems: 'center',
+                    background: 'white',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                  }}>
+                    <button
+                      onClick={() => setSalesOrderView('dashboard')}
+                      style={{
                         display: 'flex',
-                        gap: '4px',
                         alignItems: 'center',
-                        background: 'white',
-                        padding: '6px',
-                        borderRadius: '12px',
-                        border: '1px solid #E0E6ED',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                      }}>
-                        <button
-                          onClick={() => setSalesOrderView('dashboard')}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: salesOrderView === 'dashboard' ? '#FF6B00' : 'transparent',
-                            color: salesOrderView === 'dashboard' ? 'white' : '#718096',
-                            boxShadow: salesOrderView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                          }}
-                        >
-                          <LayoutDashboard size={18} /> Dashboard
-                        </button>
-                        <label style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          padding: '6px 16px',
-                          height: '32px',
-                          borderRadius: '8px',
-                          fontSize: '0.85rem',
-                          fontWeight: 700,
-                          border: 'none',
-                          cursor: isExtractingSO ? 'not-allowed' : 'pointer',
-                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                          background: 'transparent',
-                          color: '#718096',
-                          opacity: isExtractingSO ? 0.7 : 1
-                        }}
-                          onMouseEnter={(e) => {
-                            if (!isExtractingSO) {
-                              e.currentTarget.style.background = '#f8fafc';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isExtractingSO) {
-                              e.currentTarget.style.background = 'transparent';
-                            }
-                          }}
-                        >
-                          {isExtractingSO ? <div className="w-4 h-4 border-2 border-[#718096] border-t-transparent rounded-full animate-spin" /> : <Upload size={18} />}
-                          {isExtractingSO ? 'Processing...' : 'Upload PO'}
-                          <input type="file" className="hidden" onChange={handleSOUpload} accept=".pdf" disabled={isExtractingSO} />
-                        </label>
-                      </div>
-
-
-                    </>
-                  )}
+                        gap: '8px',
+                        padding: '6px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: salesOrderView === 'dashboard' ? '#FF6B00' : 'transparent',
+                        color: salesOrderView === 'dashboard' ? 'white' : '#718096',
+                        boxShadow: salesOrderView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                      }}
+                    >
+                      <LayoutDashboard size={18} /> Dashboard
+                    </button>
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 16px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: isExtractingSO ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      background: 'transparent',
+                      color: '#718096',
+                      opacity: isExtractingSO ? 0.7 : 1
+                    }}
+                      onMouseEnter={(e) => {
+                        if (!isExtractingSO) {
+                          e.currentTarget.style.background = '#f8fafc';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isExtractingSO) {
+                          e.currentTarget.style.background = 'transparent';
+                        }
+                      }}
+                    >
+                      {isExtractingSO ? <div className="w-4 h-4 border-2 border-[#718096] border-t-transparent rounded-full animate-spin" /> : <Upload size={18} />}
+                      {isExtractingSO ? 'Processing...' : 'Upload PO'}
+                      <input type="file" className="hidden" onChange={handleSOUpload} accept=".pdf" disabled={isExtractingSO} />
+                    </label>
+                  </div>
                 </div>
 
                 {salesOrderView === 'form' ? (
@@ -853,6 +847,8 @@ const AppContent: React.FC = () => {
                     id={editingSalesOrderId}
                     onBack={() => setSalesOrderView('dashboard')}
                     onSave={() => setSalesOrderView('dashboard')}
+                    onUploadPO={handleSOUpload}
+                    isExtractingSO={isExtractingSO}
                   />
                 ) : (
                   <SalesOrderDashboard

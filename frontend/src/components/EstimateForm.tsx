@@ -203,6 +203,37 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
 
     const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.status === 'SUBMITTED';
 
+    const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
+        <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px'
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                    width: '4px',
+                    height: '18px',
+                    background: '#0066CC',
+                    borderRadius: '2px'
+                }}></span>
+                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#FF6B00', margin: 0 }}>
+                    {title}
+                </h2>
+            </div>
+            {extra}
+        </div>
+    );
+
+    const getCurrencySymbol = (currency: string) => {
+        switch (currency) {
+            case 'INR': return '₹';
+            case 'USD': return '$';
+            case 'EURO': return '€';
+            default: return currency;
+        }
+    };
+
     useEffect(() => {
         if (id) {
             fetchEstimateDetails();
@@ -926,82 +957,83 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                 </div>
 
                 {/* Line Items Table */}
-                <div style={{ minHeight: '300px', marginTop: '20px' }}>
+                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                    <SectionHeader title="Product Line Items" />
                     <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
                         <thead>
                             <tr style={{ background: '#F8FAFC' }}>
                                 <th style={{ padding: '12px 8px', width: '40px' }}></th>
-                                <th style={{ width: '60px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
+                                <th style={{ width: '60px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 800, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center', textTransform: 'uppercase' }}
                                         value={formData.column_labels.sr_no || 'Sr.No.'}
                                         onChange={(e) => handleHeaderChange('sr_no', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ width: '200px', padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
+                                <th style={{ width: '200px', padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 800, width: '100%', outline: 'none', fontSize: '0.75rem', textTransform: 'uppercase' }}
                                         value={formData.column_labels.particulars || 'Particulars'}
                                         onChange={(e) => handleHeaderChange('particulars', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
+                                <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 800, width: '100%', outline: 'none', fontSize: '0.75rem', textTransform: 'uppercase' }}
                                         value={formData.column_labels.description || 'Description'}
                                         onChange={(e) => handleHeaderChange('description', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ width: '100px', padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
+                                <th style={{ width: '100px', padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 800, width: '100%', outline: 'none', fontSize: '0.75rem', textTransform: 'uppercase' }}
                                         value={formData.column_labels.hsn_sac || 'HSN/SAC'}
                                         onChange={(e) => handleHeaderChange('hsn_sac', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ width: '80px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
+                                <th style={{ width: '80px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 800, width: '100%', outline: 'none', textAlign: 'center', fontSize: '0.75rem', textTransform: 'uppercase' }}
                                         value={formData.column_labels.qty || 'Qty'}
                                         onChange={(e) => handleHeaderChange('qty', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ width: '120px', padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
+                                <th style={{ width: '120px', padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 800, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase' }}
                                         value={formData.column_labels.rate || 'Rate'}
                                         onChange={(e) => handleHeaderChange('rate', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ width: '140px', padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
+                                <th style={{ width: '140px', padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 800, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase' }}
                                         value={formData.column_labels.amount || 'Amount'}
                                         onChange={(e) => handleHeaderChange('amount', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ width: '40px', padding: '12px 8px' }}></th>
+                                <th style={{ width: '40px', padding: '12px 8px', borderBottom: '1px solid #E0E6ED' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1074,29 +1106,46 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                         />
                                     </td>
                                     <td style={{ padding: '8px' }}>
-                                        <input
-                                            type="number"
-                                            className="ae-input"
-                                            style={{ height: '36px', padding: '4px 8px', textAlign: 'right', width: '100%' }}
-                                            value={item.rate || 0}
-                                            onChange={(e) => handleItemChange(item.id, 'rate', e.target.value)}
-                                            disabled={isReadOnly}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Tab' && !e.shiftKey && index === formData.items.length - 1) {
-                                                    e.preventDefault();
-                                                    handleAddItem();
-                                                }
-                                            }}
-                                        />
+                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                            <span style={{ position: 'absolute', left: '8px', fontSize: '0.8rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
+                                            <input
+                                                type="number"
+                                                className="ae-input"
+                                                style={{ height: '36px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%' }}
+                                                value={item.rate || 0}
+                                                onChange={(e) => handleItemChange(item.id, 'rate', e.target.value)}
+                                                disabled={isReadOnly}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Tab' && !e.shiftKey && index === formData.items.length - 1) {
+                                                        e.preventDefault();
+                                                        handleAddItem();
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     </td>
                                     <td style={{ padding: '8px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>
-                                        {item.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}
+                                        {getCurrencySymbol(formData.currency || 'INR')}{item.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}
                                     </td>
                                     <td style={{ padding: '8px', textAlign: 'center' }}>
                                         {formData.items.length > 1 && !isReadOnly && (
                                             <button
                                                 onClick={() => handleRemoveItem(item.id)}
-                                                style={{ color: '#E53E3E', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+                                                style={{
+                                                    background: '#FFF5F5',
+                                                    border: '1px solid #FED7D7',
+                                                    borderRadius: '6px',
+                                                    color: '#E53E3E',
+                                                    cursor: 'pointer',
+                                                    padding: '6px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    transition: 'all 0.2s',
+                                                    margin: '0 auto'
+                                                }}
+                                                onMouseOver={(e) => { e.currentTarget.style.background = '#FED7D7'; }}
+                                                onMouseOut={(e) => { e.currentTarget.style.background = '#FFF5F5'; }}
                                                 title="Remove Row"
                                             >
                                                 <Trash2 size={16} />
@@ -1110,7 +1159,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                             <tr style={{ background: '#F8FAFC' }}>
                                 <td colSpan={7} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#4A5568' }}>Total:</td>
                                 <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '1.1rem', fontWeight: 800, color: '#FF6B00' }}>
-                                    {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                    {getCurrencySymbol(formData.currency || 'INR')}{calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </td>
                                 <td></td>
                             </tr>
@@ -1119,11 +1168,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                 </div>
 
                 {/* Bottom Sections */}
-                <div className="ae-grid-2" style={{ gap: '20px', marginTop: '20px' }}>
-                    <div>
+                <div style={{ marginTop: '24px' }}>
+                    <div style={{ marginBottom: '16px' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Description / Memo</label>
                         <textarea
-                            style={{ width: '100%', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px', minHeight: '120px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'white', fontSize: '0.85rem' }}
+                            style={{ width: '100%', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px', minHeight: '80px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'white', fontSize: '0.85rem' }}
                             placeholder="Type here..."
                             value={formData.description_memo || ''}
                             onChange={(e) => setFormData({ ...formData, description_memo: e.target.value })}
@@ -1133,7 +1182,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                     <div>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Terms & Conditions</label>
                         <textarea
-                            style={{ width: '100%', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px', minHeight: '120px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'white', fontSize: '0.85rem' }}
+                            style={{ width: '100%', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px', minHeight: '80px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'white', fontSize: '0.85rem' }}
                             placeholder="Type here..."
                             value={formData.terms_conditions || ''}
                             onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}

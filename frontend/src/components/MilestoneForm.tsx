@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { Plus, X, Save, AlertCircle, Calendar, Clock } from 'lucide-react';
+import { Plus, Save, AlertCircle, Clock, Trash2 } from 'lucide-react';
 
 interface MilestoneFormProps {
     onBack: () => void;
@@ -17,6 +17,15 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
     const [saving, setSaving] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const { showNotification } = useNotification();
+
+    const getCurrencySymbol = (currency: string) => {
+        switch (currency) {
+            case 'INR': return '₹';
+            case 'USD': return '$';
+            case 'EURO': return '€';
+            default: return currency;
+        }
+    };
 
     useEffect(() => {
         fetchCustomers();
@@ -107,9 +116,8 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
         const newMilestones = [...milestones];
         newMilestones[index] = { ...newMilestones[index], [field]: value };
 
-        // Auto-calculate amount if rate/qty changes (though simpler to just use amount directly for milestones)
+        // Auto-calculate amount if rate/qty changes
         if (field === 'amount') {
-            // Update percentage?
             if (selectedSO && parseFloat(selectedSO.total_amount) > 0) {
                 newMilestones[index].percentage = ((parseFloat(value) / parseFloat(selectedSO.total_amount)) * 100).toFixed(2);
             }
@@ -138,7 +146,13 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
     };
 
     const handleRemoveMilestone = (index: number) => {
-        setMilestones(milestones.filter((_, i) => i !== index));
+        const filteredMilestones = milestones.filter((_, i) => i !== index);
+        // Re-index to ensure strictly sequential M1, M2, M3...
+        const reindexedMilestones = filteredMilestones.map((m, i) => ({
+            ...m,
+            milestone_no: `M${i + 1}`
+        }));
+        setMilestones(reindexedMilestones);
     };
 
     const calculateTotal = () => {
@@ -305,7 +319,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#718096' }}>Total Amount:</span>
                                 <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36' }}>
-                                    {parseFloat(selectedSO.total_amount).toLocaleString()} {selectedSO.currency}
+                                    {getCurrencySymbol(selectedSO.currency)} {parseFloat(selectedSO.total_amount).toLocaleString()}
                                 </span>
                             </div>
 
@@ -326,8 +340,8 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                         marginBottom: '16px'
                     }}>
                         <h3 style={{
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
+                            fontSize: '0.8rem',
+                            fontWeight: 800,
                             color: '#FF6B00',
                             display: 'flex',
                             alignItems: 'center',
@@ -335,28 +349,15 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                             textTransform: 'uppercase',
                             margin: 0
                         }}>
-                            <Calendar size={14} />
+                            <span style={{
+                                width: '4px',
+                                height: '14px',
+                                background: '#0066CC',
+                                borderRadius: '2px'
+                            }}></span>
                             Milestone Breakdown
                         </h3>
-                        {selectedSO && (
-                            <button
-                                onClick={handleAddMilestone}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    color: '#0066CC',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 800,
-                                    cursor: 'pointer',
-                                    textTransform: 'uppercase',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
-                                }}
-                            >
-                                <Plus size={14} /> Add Row
-                            </button>
-                        )}
+                        {/* Remove top-right Add Row button */}
                     </div>
 
                     {!selectedSO ? (
@@ -374,15 +375,16 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
                                 <thead>
-                                    <tr>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E2E8F0', width: '60px' }}>No.</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E2E8F0' }}>Description</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E2E8F0', width: '140px' }}>Due Date</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E2E8F0', width: '100px' }}>Amount %</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.65rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '2px solid #E2E8F0', width: '140px' }}>Amount</th>
-                                        <th style={{ padding: '12px 8px', borderBottom: '2px solid #E2E8F0', width: '40px' }}></th>
+                                    <tr style={{ background: '#F8FAFC' }}>
+                                        <th style={{ padding: '12px 8px', width: '40px', borderBottom: '1px solid #E0E6ED' }}></th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '80px' }}>Sr.No.</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Description</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '140px' }}>Due Date</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '100px' }}>Amount %</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '160px' }}>Amount</th>
+                                        <th style={{ padding: '12px 8px', borderBottom: '1px solid #E0E6ED', width: '40px' }}></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -390,16 +392,38 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                                         const isInvoiced = milestone.status === 'INVOICED';
                                         return (
                                             <tr key={index} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                                <td style={{ padding: '8px', textAlign: 'center' }}>
+                                                    {index === milestones.length - 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleAddMilestone}
+                                                            style={{
+                                                                padding: '4px',
+                                                                background: '#F0F9FF',
+                                                                border: '1px solid #BAE6FD',
+                                                                borderRadius: '6px',
+                                                                color: '#0284C7',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                margin: '0 auto'
+                                                            }}
+                                                            title="Add row"
+                                                        >
+                                                            <Plus size={16} />
+                                                        </button>
+                                                    )}
+                                                </td>
                                                 <td style={{ padding: '8px' }}>
                                                     <input
                                                         type="text"
                                                         value={milestone.milestone_no}
-                                                        onChange={(e) => handleMilestoneChange(index, 'milestone_no', e.target.value)}
-                                                        disabled={isInvoiced}
+                                                        readOnly
                                                         style={{
                                                             width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
                                                             borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700,
-                                                            textAlign: 'center', opacity: isInvoiced ? 0.7 : 1
+                                                            textAlign: 'center', background: '#F8FAFC', color: '#4A5568'
                                                         }}
                                                     />
                                                 </td>
@@ -444,23 +468,43 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                                                     />
                                                 </td>
                                                 <td style={{ padding: '8px' }}>
-                                                    <input
-                                                        type="number"
-                                                        value={milestone.amount || ''}
-                                                        onChange={(e) => handleMilestoneChange(index, 'amount', e.target.value)}
-                                                        disabled={isInvoiced}
-                                                        style={{
-                                                            width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
-                                                            borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800,
-                                                            textAlign: 'right',
-                                                            opacity: isInvoiced ? 0.7 : 1
-                                                        }}
-                                                    />
+                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                                        <span style={{ position: 'absolute', left: '10px', fontSize: '0.8rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(selectedSO.currency)}</span>
+                                                        <input
+                                                            type="number"
+                                                            value={milestone.amount || ''}
+                                                            onChange={(e) => handleMilestoneChange(index, 'amount', e.target.value)}
+                                                            disabled={isInvoiced}
+                                                            style={{
+                                                                width: '100%', padding: '6px 8px 6px 24px', border: '1px solid #E2E8F0',
+                                                                borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800,
+                                                                textAlign: 'right',
+                                                                opacity: isInvoiced ? 0.7 : 1
+                                                            }}
+                                                        />
+                                                    </div>
                                                 </td>
                                                 <td style={{ padding: '8px', textAlign: 'center' }}>
-                                                    {!isInvoiced && (
-                                                        <button onClick={() => handleRemoveMilestone(index)} style={{ background: 'none', border: 'none', color: '#FEB2B2', cursor: 'pointer' }}>
-                                                            <X size={16} />
+                                                    {milestones.length > 1 && !isInvoiced && (
+                                                        <button
+                                                            onClick={() => handleRemoveMilestone(index)}
+                                                            style={{
+                                                                background: '#FFF5F5',
+                                                                border: '1px solid #FED7D7',
+                                                                borderRadius: '6px',
+                                                                color: '#E53E3E',
+                                                                cursor: 'pointer',
+                                                                padding: '6px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseOver={(e) => { e.currentTarget.style.background = '#FED7D7'; }}
+                                                            onMouseOut={(e) => { e.currentTarget.style.background = '#FFF5F5'; }}
+                                                            title="Remove Milestone"
+                                                        >
+                                                            <Trash2 size={16} />
                                                         </button>
                                                     )}
                                                 </td>
@@ -470,9 +514,10 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                                 </tbody>
                                 <tfoot>
                                     <tr style={{ background: '#F8FAFC' }}>
-                                        <td colSpan={4} style={{ padding: '16px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 900, color: '#718096', textTransform: 'uppercase' }}>Total Planned</td>
+                                        <td colSpan={5} style={{ padding: '16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: '#718096', textTransform: 'uppercase' }}>Total Planned</td>
                                         <td style={{ padding: '16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: calculateTotal() > parseFloat(selectedSO.total_amount) ? '#C53030' : '#1a1f36' }}>
-                                            {selectedSO.currency} {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            <span style={{ color: '#FF6B00', marginRight: '4px' }}>{getCurrencySymbol(selectedSO.currency)}</span>
+                                            {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                         <td></td>
                                     </tr>
@@ -498,7 +543,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                         fontWeight: 700
                     }}>
                         <AlertCircle size={18} />
-                        Total milestone value must equal the Sales Order value ({parseFloat(selectedSO.total_amount).toLocaleString()} {selectedSO.currency})
+                        Total milestone value must equal the Sales Order value ({getCurrencySymbol(selectedSO.currency)}{parseFloat(selectedSO.total_amount).toLocaleString()})
                     </div>
                 )}
             </div>
