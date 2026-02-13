@@ -27,32 +27,33 @@ interface EstimateFormProps {
     onSave?: () => void;
 }
 
+const getInitialFormData = () => ({
+    estimate_date: new Date().toISOString().split('T')[0],
+    subscription_from: '',
+    subscription_to: '',
+    description_memo: '',
+    terms_conditions: '',
+    deal: '',
+    cost_sheet: '',
+    items: [
+        { id: Date.now(), sr_no: 1, particulars: '', description: '', qty: 0, rate: 0, amount: 0 }
+    ],
+    column_labels: {
+        sr_no: 'Sr.No.',
+        particulars: 'Particulars',
+        description: 'Description',
+        qty: 'Qty',
+        rate: 'Rate',
+        amount: 'Amount'
+    }
+});
+
 const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
     const { showNotification } = useNotification();
     const [estimate, setEstimate] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [formData, setFormData] = useState<any>({
-        estimate_date: new Date().toISOString().split('T')[0],
-        subscription_from: '',
-        subscription_to: '',
-        description_memo: '',
-        terms_conditions: '',
-        deal: '',
-        cost_sheet: '',
-        items: [
-            { id: Date.now(), sr_no: 1, particulars: '', description: '', hsn_sac: '', qty: 0, rate: 0, amount: 0 }
-        ],
-        column_labels: {
-            sr_no: 'Sr.No.',
-            particulars: 'Particulars',
-            description: 'Description',
-            hsn_sac: 'HSN/SAC',
-            qty: 'Qty',
-            rate: 'Rate',
-            amount: 'Amount'
-        }
-    });
+    const [formData, setFormData] = useState<any>(getInitialFormData());
 
     const [deals, setDeals] = useState<any[]>([]);
     const [costSheets, setCostSheets] = useState<any[]>([]);
@@ -207,7 +208,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
         }
     };
 
-    const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.approval_status === 'PENDING' || estimate?.status === 'SUBMITTED';
+    const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.status === 'PENDING_APPROVAL' || estimate?.status === 'SUBMITTED';
 
     const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
         <div style={{
@@ -246,9 +247,10 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
         if (id) {
             fetchEstimateDetails();
         } else {
-            // Creating new estimate - set loading to false
+            // Creating new estimate - reset form and set loading to false
             setLoading(false);
             setEstimate(null);
+            setFormData(getInitialFormData());
             fetchInitialData();
         }
     }, [id]);
@@ -289,13 +291,12 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                 deal: response.data.deal || '',
                 cost_sheet: response.data.cost_sheet || '',
                 items: response.data.items?.length > 0 ? response.data.items : [
-                    { id: Date.now(), sr_no: 1, particulars: '', description: '', hsn_sac: '', qty: 0, rate: 0, amount: 0 }
+                    { id: Date.now(), sr_no: 1, particulars: '', description: '', qty: 0, rate: 0, amount: 0 }
                 ],
                 column_labels: response.data.column_labels || {
                     sr_no: 'Sr.No.',
                     particulars: 'Particulars',
                     description: 'Description',
-                    hsn_sac: 'HSN/SAC',
                     qty: 'Qty',
                     rate: 'Rate',
                     amount: 'Amount'
@@ -313,7 +314,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
         const nextSrNo = formData.items.length + 1;
         setFormData({
             ...formData,
-            items: [...formData.items, { id: Date.now(), sr_no: nextSrNo, particulars: '', description: '', hsn_sac: '', qty: 0, rate: 0, amount: 0 }]
+            items: [...formData.items, { id: Date.now(), sr_no: nextSrNo, particulars: '', description: '', qty: 0, rate: 0, amount: 0 }]
         });
     };
 
@@ -554,6 +555,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
     const getApprovalStatusBadge = () => {
         if (!estimate) return null;
 
+        // Hide Pending Approval badge for Draft/Negotiation
+        if (estimate.approval_status === 'PENDING' && (estimate.status === 'DRAFT' || estimate.status === 'NEGOTIATION')) {
+            return null;
+        }
+
         const statusConfig: any = {
             'PENDING': { color: '#FFA500', bg: '#FFF4E5', icon: Clock, label: 'Pending Approval' },
             'APPROVED': { color: '#38A169', bg: '#E6F7ED', icon: CheckCircle2, label: 'Approved' },
@@ -623,7 +629,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
                     {/* Approval Actions for Sales Head/Finance Manager - ONLY visible after saving (ID exists) */}
-                    {id && estimate?.approval_status === 'PENDING' && (
+                    {id && estimate?.status === 'PENDING_APPROVAL' && (
                         <>
                             <button onClick={handleApprove} className="ae-btn-secondary" style={{ color: '#38A169', borderColor: '#38A169' }}>
                                 <ThumbsUp size={18} /> Approve
@@ -988,74 +994,124 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                             <tr style={{ background: '#F8FAFC' }}>
                                 <th style={{ padding: '12px 8px', width: '40px' }}></th>
                                 <th style={{ width: '60px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center' }}
-                                        value={formData.column_labels.sr_no || 'Sr.No.'}
-                                        onChange={(e) => handleHeaderChange('sr_no', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                        {editingColumn === 'sr_no' ? (
+                                            <input
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center' }}
+                                                value={formData.column_labels.sr_no}
+                                                onChange={(e) => handleHeaderChange('sr_no', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.sr_no || 'Sr.No.'}</span>
+                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('sr_no')} />}
+                                            </>
+                                        )}
+                                    </div>
                                 </th>
                                 <th style={{ width: '200px', padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
-                                        value={formData.column_labels.particulars || 'Particulars'}
-                                        onChange={(e) => handleHeaderChange('particulars', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {editingColumn === 'particulars' ? (
+                                            <input
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                value={formData.column_labels.particulars}
+                                                onChange={(e) => handleHeaderChange('particulars', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.particulars || 'Particulars'}</span>
+                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('particulars')} />}
+                                            </>
+                                        )}
+                                    </div>
                                 </th>
                                 <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
-                                        value={formData.column_labels.description || 'Description'}
-                                        onChange={(e) => handleHeaderChange('description', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
-                                </th>
-                                <th style={{ width: '100px', padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
-                                        value={formData.column_labels.hsn_sac || 'HSN/SAC'}
-                                        onChange={(e) => handleHeaderChange('hsn_sac', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {editingColumn === 'description' ? (
+                                            <input
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                value={formData.column_labels.description}
+                                                onChange={(e) => handleHeaderChange('description', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.description || 'Description'}</span>
+                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('description')} />}
+                                            </>
+                                        )}
+                                    </div>
                                 </th>
                                 <th style={{ width: '80px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
-                                        value={formData.column_labels.qty || 'Qty'}
-                                        onChange={(e) => handleHeaderChange('qty', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                        {editingColumn === 'qty' ? (
+                                            <input
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
+                                                value={formData.column_labels.qty}
+                                                onChange={(e) => handleHeaderChange('qty', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.qty || 'Qty'}</span>
+                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('qty')} />}
+                                            </>
+                                        )}
+                                    </div>
                                 </th>
                                 <th style={{ width: '120px', padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
-                                        value={formData.column_labels.rate || 'Rate'}
-                                        onChange={(e) => handleHeaderChange('rate', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                        {editingColumn === 'rate' ? (
+                                            <input
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
+                                                value={formData.column_labels.rate}
+                                                onChange={(e) => handleHeaderChange('rate', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.rate || 'Rate'}</span>
+                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('rate')} />}
+                                            </>
+                                        )}
+                                    </div>
                                 </th>
                                 <th style={{ width: '140px', padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
-                                    <input
-                                        className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
-                                        value={formData.column_labels.amount || 'Amount'}
-                                        onChange={(e) => handleHeaderChange('amount', e.target.value)}
-                                        disabled={isReadOnly}
-                                        title="Click to edit column name"
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                        {editingColumn === 'amount' ? (
+                                            <input
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
+                                                value={formData.column_labels.amount}
+                                                onChange={(e) => handleHeaderChange('amount', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.amount || 'Amount'}</span>
+                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('amount')} />}
+                                            </>
+                                        )}
+                                    </div>
                                 </th>
                                 <th style={{ width: '40px', padding: '12px 8px', borderBottom: '1px solid #E0E6ED' }}></th>
                             </tr>
@@ -1293,7 +1349,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                             </button>
                         </div>
                     )}
-                    {estimate?.approval_status === 'PENDING' && (
+                    {estimate?.status === 'PENDING_APPROVAL' && (
                         <span style={{
                             padding: '6px 16px',
                             borderRadius: '8px',

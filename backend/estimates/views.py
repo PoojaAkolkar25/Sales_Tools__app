@@ -178,16 +178,6 @@ class EstimateViewSet(viewsets.ModelViewSet):
     def rewind(self, request, pk=None):
         original_estimate = self.get_object()
 
-        
-        # BRD: Estimate rewind shall be allowed only once per Estimate (based on version 1).
-        # OR "only once per Estimate" might mean only one rewind from the current version.
-        # Let's check version.
-        if original_estimate.version >= 2:
-             return Response(
-                {"error": "Estimate rewind is allowed only once per Estimate."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         # Mark previous version as not latest
         original_estimate.is_latest = False
         original_estimate.save()
@@ -207,6 +197,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
             total_cost=original_estimate.total_cost,
             total_margin=original_estimate.total_margin,
             total_price=original_estimate.total_price,
+            column_labels=original_estimate.column_labels,  # Copy custom column labels
             parent_estimate=original_estimate,
             is_latest=True,
             approval_status=ApprovalStatus.PENDING,
@@ -254,6 +245,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
             total_cost=original_estimate.total_cost,
             total_margin=original_estimate.total_margin,
             total_price=original_estimate.total_price,
+            column_labels=original_estimate.column_labels,  # Copy custom column labels
             parent_estimate=None,
             is_latest=True,
             approval_status=ApprovalStatus.PENDING,
