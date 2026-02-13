@@ -103,7 +103,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
             customer_name: '',
             project_name: '',
             total_price: '',
-            status: '',
+            status: 'DRAFT',
             created_at: '',
             period: '',
             startDate: '',

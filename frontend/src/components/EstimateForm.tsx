@@ -694,15 +694,17 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
             </div>
 
             {/* Excel-like Grid Layout */}
-            <div style={{ padding: '0', overflow: 'hidden', border: '1px solid #99b6d8', background: 'white', borderRadius: '12px' }}>
-                {/* Top Information Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', background: '#dce6f1', borderBottom: '1px solid #99b6d8' }}>
-                    <div style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>Cost Sheet No. <span style={{ color: '#E53E3E' }}>*</span></label>
+            <div style={{ padding: '24px', background: 'white', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                {/* First Row: Cost Sheet, Deal, Customer Name */}
+                <div className="ae-grid-3" style={{ marginBottom: '24px', gap: '16px' }}>
+                    <div className="ae-input-group">
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>
+                            Cost Sheet No. <span style={{ color: '#FF6B00' }}>*</span>
+                        </label>
                         {!id ? (
                             <select
                                 className="ae-input"
-                                style={{ width: '100%', border: '1px solid #99b6d8', background: 'white', fontWeight: 600, padding: '2px 4px', height: '28px' }}
+                                style={{ height: '34px', padding: '6px 10px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500 }}
                                 value={formData.cost_sheet}
                                 onChange={async (e) => {
                                     const csId = e.target.value;
@@ -777,15 +779,15 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                 ))}
                             </select>
                         ) : (
-                            <div style={{ fontWeight: 600 }}>{estimate?.cost_sheet_no || 'XXXX'}</div>
+                            <div style={{ padding: '6px 10px', background: '#F7FAFC', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '0.85rem', fontWeight: 600, height: '34px', display: 'flex', alignItems: 'center' }}>{estimate?.cost_sheet_no || 'XXXX'}</div>
                         )}
                     </div>
-                    <div style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>Deal No.</label>
+                    <div className="ae-input-group">
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Deal No.</label>
                         {!id ? (
                             <select
                                 className="ae-input"
-                                style={{ width: '100%', border: '1px solid #99b6d8', background: 'white', fontWeight: 600, padding: '2px 4px', height: '28px' }}
+                                style={{ height: '34px', padding: '6px 10px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500 }}
                                 value={formData.deal}
                                 onChange={(e) => setFormData({ ...formData, deal: e.target.value })}
                             >
@@ -795,26 +797,60 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                 ))}
                             </select>
                         ) : (
-                            <div style={{ fontWeight: 600 }}>{estimate?.deal_id || 'XXXX'}</div>
+                            <div style={{ padding: '6px 10px', background: '#F7FAFC', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '0.85rem', fontWeight: 600, height: '34px', display: 'flex', alignItems: 'center' }}>{estimate?.deal_id || 'XXXX'}</div>
                         )}
                     </div>
-                    <div style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>Estimate No.</label>
-                        <div style={{ fontWeight: 600, color: '#718096' }}>{estimate?.estimate_id || 'Generating...'}</div>
+                    <div className="ae-input-group">
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Customer Name</label>
+                        <div style={{ padding: '6px 10px', background: '#F7FAFC', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '0.85rem', fontWeight: 600, color: '#1a1f36', height: '34px', display: 'flex', alignItems: 'center' }}>{estimate?.customer_name || 'Select Cost Sheet'}</div>
                     </div>
-                    <div style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>Estimate Date</label>
+                </div>
+
+                {/* Second Row: Estimate No, Estimate Date, Subscription Period */}
+                <div className="ae-grid-3" style={{ marginBottom: '24px', gap: '16px' }}>
+                    <div className="ae-input-group">
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Estimate No.</label>
+                        <div style={{ padding: '6px 10px', background: '#F7FAFC', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '0.85rem', fontWeight: 600, color: '#718096', height: '34px', display: 'flex', alignItems: 'center' }}>{estimate?.estimate_id || 'Generating...'}</div>
+                    </div>
+                    <div className="ae-input-group">
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Estimate Date</label>
                         <input
                             type="date"
-                            style={{ width: '100%', border: 'none', background: 'transparent', fontWeight: 600, padding: 0 }}
+                            style={{ height: '34px', padding: '6px 10px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, background: 'white', width: '100%' }}
                             value={formData.estimate_date}
                             onChange={(e) => setFormData({ ...formData, estimate_date: e.target.value })}
                         />
                     </div>
-                    <div style={{ padding: '8px', gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>
-                                Proposal Attachments (Versioning) <span style={{ color: '#E53E3E' }}>*</span>
+                    <div className="ae-input-group">
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Subscription Period</label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <input
+                                type="date"
+                                style={{ height: '34px', padding: '6px 10px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, background: 'white', flex: 1 }}
+                                value={formData.subscription_from}
+                                onChange={(e) => setFormData({ ...formData, subscription_from: e.target.value })}
+                                disabled={isReadOnly}
+                                placeholder="From"
+                            />
+                            <span style={{ color: '#718096' }}>to</span>
+                            <input
+                                type="date"
+                                style={{ height: '34px', padding: '6px 10px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, background: 'white', flex: 1 }}
+                                value={formData.subscription_to}
+                                onChange={(e) => setFormData({ ...formData, subscription_to: e.target.value })}
+                                disabled={isReadOnly}
+                                placeholder="To"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Third Row: Proposal Attachments (full width) */}
+                <div style={{ marginBottom: '24px' }}>
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black' }}>
+                                Proposal Attachments (Versioning) <span style={{ color: '#FF6B00' }}>*</span>
                             </label>
                             <input
                                 type="file"
@@ -887,210 +923,193 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                             )}
                         </div>
                     </div>
-                    <div style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>Customer Name</label>
-                        <div style={{ fontWeight: 600, color: '#718096' }}>{estimate?.customer_name || 'Select Cost Sheet'}</div>
-                    </div>
-                    <div style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>Subscription From</label>
-                        <input
-                            type="date"
-                            style={{ width: '100%', border: 'none', background: 'transparent', fontWeight: 600, padding: 0 }}
-                            value={formData.subscription_from}
-                            onChange={(e) => setFormData({ ...formData, subscription_from: e.target.value })}
-                            disabled={isReadOnly}
-                        />
-                    </div>
-                    <div style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#4a5568' }}>Subscription To</label>
-                        <input
-                            type="date"
-                            style={{ width: '100%', border: 'none', background: 'transparent', fontWeight: 600, padding: 0 }}
-                            value={formData.subscription_to}
-                            onChange={(e) => setFormData({ ...formData, subscription_to: e.target.value })}
-                            disabled={isReadOnly}
-                        />
-                    </div>
                 </div>
 
                 {/* Line Items Table */}
-                <div style={{ minHeight: '300px' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div style={{ minHeight: '300px', marginTop: '20px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
                         <thead>
-                            <tr style={{ background: '#dce6f1', borderBottom: '1px solid #99b6d8' }}>
-                                <th style={{ width: '80px', padding: '10px', textAlign: 'left', borderRight: '1px solid #99b6d8' }}>
+                            <tr style={{ background: '#F8FAFC' }}>
+                                <th style={{ padding: '12px 8px', width: '40px' }}></th>
+                                <th style={{ width: '60px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center' }}
                                         value={formData.column_labels.sr_no || 'Sr.No.'}
                                         onChange={(e) => handleHeaderChange('sr_no', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ width: '200px', padding: '10px', textAlign: 'left', borderRight: '1px solid #99b6d8' }}>
+                                <th style={{ width: '200px', padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
                                         value={formData.column_labels.particulars || 'Particulars'}
                                         onChange={(e) => handleHeaderChange('particulars', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ padding: '10px', textAlign: 'left', borderRight: '1px solid #99b6d8' }}>
+                                <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
                                         value={formData.column_labels.description || 'Description'}
                                         onChange={(e) => handleHeaderChange('description', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ width: '100px', padding: '10px', textAlign: 'left', borderRight: '1px solid #99b6d8' }}>
+                                <th style={{ width: '100px', padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
                                         value={formData.column_labels.hsn_sac || 'HSN/SAC'}
                                         onChange={(e) => handleHeaderChange('hsn_sac', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ width: '100px', padding: '10px', textAlign: 'center', borderRight: '1px solid #99b6d8' }}>
+                                <th style={{ width: '80px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none', textAlign: 'center' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
                                         value={formData.column_labels.qty || 'Qty'}
                                         onChange={(e) => handleHeaderChange('qty', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ width: '120px', padding: '10px', textAlign: 'right', borderRight: '1px solid #99b6d8' }}>
+                                <th style={{ width: '120px', padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none', textAlign: 'right' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
                                         value={formData.column_labels.rate || 'Rate'}
                                         onChange={(e) => handleHeaderChange('rate', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ width: '150px', padding: '10px', textAlign: 'right', borderRight: '1px solid #99b6d8' }}>
+                                <th style={{ width: '140px', padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>
                                     <input
                                         className="ae-input-subtle"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 'bold', width: '100%', outline: 'none', textAlign: 'right' }}
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
                                         value={formData.column_labels.amount || 'Amount'}
                                         onChange={(e) => handleHeaderChange('amount', e.target.value)}
                                         disabled={isReadOnly}
                                         title="Click to edit column name"
                                     />
                                 </th>
-                                <th style={{ width: '50px', padding: '10px' }}></th>
+                                <th style={{ width: '40px', padding: '12px 8px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {formData.items.map((item: any) => (
-                                <tr key={item.id} style={{ borderBottom: '1px solid #e2e8f0', background: isReadOnly ? '#f7fafc' : '#f8fbff' }}>
-                                    <td style={{ padding: '8px', borderRight: '1px solid #99b6d8', textAlign: 'center' }}>
-                                        <input
-                                            type="number"
-                                            className="ae-input-subtle"
-                                            style={{ background: 'transparent', border: 'none', padding: '4px', textAlign: 'center', width: '100%', outline: 'none' }}
-                                            value={item.sr_no || ''}
-                                            onChange={(e) => handleItemChange(item.id, 'sr_no', parseInt(e.target.value) || 0)}
-                                            disabled={isReadOnly}
-                                        />
+                            {formData.items.map((item: any, index: number) => (
+                                <tr key={item.id} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
+                                    <td style={{ padding: '8px', textAlign: 'center' }}>
+                                        {index === formData.items.length - 1 && !isReadOnly && (
+                                            <button
+                                                type="button"
+                                                onClick={handleAddItem}
+                                                style={{
+                                                    padding: '4px',
+                                                    background: '#F0F9FF',
+                                                    border: '1px solid #BAE6FD',
+                                                    borderRadius: '6px',
+                                                    color: '#0284C7',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    margin: '0 auto'
+                                                }}
+                                                title="Add row"
+                                            >
+                                                <Plus size={16} />
+                                            </button>
+                                        )}
                                     </td>
-                                    <td style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
+                                    <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>
+                                        {index + 1}
+                                    </td>
+                                    <td style={{ padding: '8px' }}>
                                         <input
-                                            className="ae-input-subtle"
-                                            style={{ background: 'transparent', border: 'none', padding: '4px', width: '100%', outline: 'none' }}
+                                            className="ae-input"
+                                            style={{ height: '36px', padding: '4px 8px', width: '100%' }}
                                             value={item.particulars || ''}
                                             onChange={(e) => handleItemChange(item.id, 'particulars', e.target.value)}
                                             disabled={isReadOnly}
+                                            placeholder="Enter particulars"
                                         />
                                     </td>
-                                    <td style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
+                                    <td style={{ padding: '8px' }}>
                                         <textarea
-                                            className="ae-input-subtle"
-                                            style={{ background: 'transparent', border: 'none', padding: '4px', minHeight: '40px', width: '100%', outline: 'none', resize: 'vertical' }}
+                                            className="ae-input"
+                                            style={{ padding: '4px 8px', minHeight: '36px', width: '100%', resize: 'vertical' }}
                                             value={item.description || ''}
                                             onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
                                             disabled={isReadOnly}
+                                            placeholder="Enter description"
                                         />
                                     </td>
-                                    <td style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
+                                    <td style={{ padding: '8px' }}>
                                         <input
-                                            className="ae-input-subtle"
-                                            style={{ background: 'transparent', border: 'none', padding: '4px', width: '100%', outline: 'none' }}
+                                            className="ae-input"
+                                            style={{ height: '36px', padding: '4px 8px', width: '100%' }}
                                             value={item.hsn_sac || ''}
                                             onChange={(e) => handleItemChange(item.id, 'hsn_sac', e.target.value)}
                                             disabled={isReadOnly}
+                                            placeholder="HSN/SAC"
                                         />
                                     </td>
-                                    <td style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
+                                    <td style={{ padding: '8px' }}>
                                         <input
                                             type="number"
-                                            className="ae-input-subtle"
-                                            style={{ background: 'transparent', border: 'none', padding: '4px', textAlign: 'center', width: '100%', outline: 'none' }}
+                                            className="ae-input"
+                                            style={{ height: '36px', padding: '4px 8px', textAlign: 'center', width: '100%' }}
                                             value={item.qty || 0}
                                             onChange={(e) => handleItemChange(item.id, 'qty', e.target.value)}
                                             disabled={isReadOnly}
                                         />
                                     </td>
-                                    <td style={{ padding: '8px', borderRight: '1px solid #99b6d8' }}>
+                                    <td style={{ padding: '8px' }}>
                                         <input
                                             type="number"
-                                            className="ae-input-subtle"
-                                            style={{ background: 'transparent', border: 'none', padding: '4px', textAlign: 'right', width: '100%', outline: 'none' }}
+                                            className="ae-input"
+                                            style={{ height: '36px', padding: '4px 8px', textAlign: 'right', width: '100%' }}
                                             value={item.rate || 0}
                                             onChange={(e) => handleItemChange(item.id, 'rate', e.target.value)}
                                             disabled={isReadOnly}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Tab' && !e.shiftKey && index === formData.items.length - 1) {
+                                                    e.preventDefault();
+                                                    handleAddItem();
+                                                }
+                                            }}
                                         />
                                     </td>
-                                    <td style={{ padding: '8px', borderRight: '1px solid #99b6d8', textAlign: 'right' }}>
-                                        <input
-                                            type="number"
-                                            className="ae-input-subtle"
-                                            style={{ background: 'transparent', border: 'none', padding: '4px', textAlign: 'right', width: '100%', outline: 'none', fontWeight: 700 }}
-                                            value={item.amount || 0}
-                                            onChange={(e) => handleItemChange(item.id, 'amount', e.target.value)}
-                                            disabled={isReadOnly}
-                                        />
+                                    <td style={{ padding: '8px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>
+                                        {item.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}
                                     </td>
                                     <td style={{ padding: '8px', textAlign: 'center' }}>
-                                        <button
-                                            onClick={() => handleRemoveItem(item.id)}
-                                            className="text-red-500 hover:text-red-700"
-                                            disabled={isReadOnly}
-                                            style={{ opacity: isReadOnly ? 0.3 : 1, cursor: isReadOnly ? 'not-allowed' : 'pointer', background: 'transparent', border: 'none' }}
-                                        >
-                                            <X size={16} />
-                                        </button>
+                                        {formData.items.length > 1 && !isReadOnly && (
+                                            <button
+                                                onClick={() => handleRemoveItem(item.id)}
+                                                style={{ color: '#E53E3E', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+                                                title="Remove Row"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
-                            {/* Add Row Button Row */}
-                            <tr style={{ background: '#f1f5f9' }}>
-                                <td colSpan={8} style={{ padding: '8px' }}>
-                                    <button
-                                        onClick={handleAddItem}
-                                        className="ae-btn-secondary"
-                                        style={{ padding: '4px 12px', fontSize: '0.8rem', width: '100%', justifyContent: 'center', opacity: isReadOnly ? 0.3 : 1, cursor: isReadOnly ? 'not-allowed' : 'pointer' }}
-                                        disabled={isReadOnly}
-                                    >
-                                        <Plus size={16} /> Add Item
-                                    </button>
-                                </td>
-                            </tr>
                         </tbody>
                         <tfoot>
-                            <tr style={{ background: '#dce6f1', fontWeight: 900 }}>
-                                <td colSpan={5} style={{ padding: '12px', textAlign: 'right', borderRight: '1px solid #99b6d8' }}>Total</td>
-                                <td style={{ padding: '12px', textAlign: 'right', borderRight: '1px solid #99b6d8', color: '#FF6B00', fontSize: '1.2rem' }}>
+                            <tr style={{ background: '#F8FAFC' }}>
+                                <td colSpan={7} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#4A5568' }}>Total:</td>
+                                <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '1.1rem', fontWeight: 800, color: '#FF6B00' }}>
                                     {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </td>
                                 <td></td>
@@ -1100,21 +1119,21 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                 </div>
 
                 {/* Bottom Sections */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0', borderTop: '1px solid #99b6d8' }}>
-                    <div style={{ borderRight: '1px solid #99b6d8', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ background: '#dce6f1', padding: '8px', borderBottom: '1px solid #99b6d8', fontWeight: 700 }}>Description / Memo</div>
+                <div className="ae-grid-2" style={{ gap: '20px', marginTop: '20px' }}>
+                    <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Description / Memo</label>
                         <textarea
-                            style={{ flex: 1, border: 'none', padding: '12px', minHeight: '100px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'transparent' }}
+                            style={{ width: '100%', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px', minHeight: '120px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'white', fontSize: '0.85rem' }}
                             placeholder="Type here..."
                             value={formData.description_memo || ''}
                             onChange={(e) => setFormData({ ...formData, description_memo: e.target.value })}
                             disabled={isReadOnly}
                         />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ background: '#dce6f1', padding: '8px', borderBottom: '1px solid #99b6d8', fontWeight: 700 }}>Terms & Conditions</div>
+                    <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Terms & Conditions</label>
                         <textarea
-                            style={{ flex: 1, border: 'none', padding: '12px', minHeight: '100px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'transparent' }}
+                            style={{ width: '100%', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px', minHeight: '120px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'white', fontSize: '0.85rem' }}
                             placeholder="Type here..."
                             value={formData.terms_conditions || ''}
                             onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}

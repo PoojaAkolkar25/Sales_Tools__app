@@ -39,6 +39,7 @@ import EstimateForm from './components/EstimateForm';
 import SalesOrderDashboard from './components/SalesOrderDashboard';
 import SalesOrderForm from './components/SalesOrderForm';
 import MilestoneDashboard from './components/MilestoneDashboard';
+import MilestoneForm from './components/MilestoneForm';
 import LeadDashboard from './components/LeadDashboard';
 import LeadForm from './components/LeadForm';
 import CustomerDashboard from './components/CustomerDashboard';
@@ -170,6 +171,9 @@ const AppContent: React.FC = () => {
   const [soRefreshTrigger, setSoRefreshTrigger] = useState(0);
   const [inventoryView, setInventoryView] = useState<'form' | 'dashboard'>('dashboard');
   const [editingInventoryId, setEditingInventoryId] = useState<number | null>(null);
+  const [salesOrderSearchQuery, setSalesOrderSearchQuery] = useState('');
+  const [milestoneView, setMilestoneView] = useState<'form' | 'dashboard'>('dashboard');
+  const [milestoneSearchQuery, setMilestoneSearchQuery] = useState('');
   const { showNotification } = useNotification();
 
 
@@ -422,33 +426,7 @@ const AppContent: React.FC = () => {
                     </button>
                   </div>
 
-                  {costSheetView === 'dashboard' && (
-                    <div className="ae-input-group !bg-white !shadow-sm !border-[#E0E6ED]" style={{
-                      flex: 1,
-                      maxWidth: '500px',
-                      margin: 0,
-                      height: '44px',
-                      borderRadius: '12px',
-                      position: 'relative',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <span className="ae-search-icon" style={{ left: '16px', zIndex: 2 }}><Search size={20} className="text-[#A0AEC0]" /></span>
-                      <input
-                        type="text"
-                        className="ae-input !border-none !bg-transparent !pl-12 !font-semibold"
-                        placeholder="Search by CS Number, Lead, Customer or Project..."
-                        value={costSheetSearchQuery}
-                        onChange={(e) => setCostSheetSearchQuery(e.target.value)}
-                        style={{
-                          fontSize: '0.9rem',
-                          color: '#1a1f36',
-                          width: '100%',
-                          height: '100%',
-                          outline: 'none'
-                        }}
-                      />
-                    </div>
-                  )}
+
                 </div>
 
                 {costSheetView === 'form' ? (
@@ -462,7 +440,6 @@ const AppContent: React.FC = () => {
                 ) : (
                   <CostSheetDashboard
                     onView={handleViewDetails}
-                    searchQuery={costSheetSearchQuery}
                   />
                 )}
               </div>
@@ -558,33 +535,6 @@ const AppContent: React.FC = () => {
                     </button>
                   </div>
 
-                  {leadView === 'dashboard' && (
-                    <div className="ae-input-group !bg-white !shadow-sm !border-[#E0E6ED]" style={{
-                      flex: 1,
-                      maxWidth: '500px',
-                      margin: 0,
-                      height: '44px',
-                      borderRadius: '12px',
-                      position: 'relative',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <span className="ae-search-icon" style={{ left: '16px', zIndex: 2 }}><Search size={20} className="text-[#A0AEC0]" /></span>
-                      <input
-                        type="text"
-                        className="ae-input !border-none !bg-transparent !pl-12 !font-semibold"
-                        placeholder="Search by Lead ID, Customer or Project..."
-                        value={leadSearchQuery}
-                        onChange={(e) => setLeadSearchQuery(e.target.value)}
-                        style={{
-                          fontSize: '0.9rem',
-                          color: '#1a1f36',
-                          width: '100%',
-                          height: '100%',
-                          outline: 'none'
-                        }}
-                      />
-                    </div>
-                  )}
 
                 </div>
 
@@ -597,7 +547,6 @@ const AppContent: React.FC = () => {
                 ) : (
                   <LeadDashboard
                     onView={handleViewLeadDetails}
-                    searchQuery={leadSearchQuery}
                   />
 
                 )}
@@ -686,33 +635,6 @@ const AppContent: React.FC = () => {
                     </button>
                   </div>
 
-                  {dealView === 'dashboard' && (
-                    <div className="ae-input-group !bg-white !shadow-sm !border-[#E0E6ED]" style={{
-                      flex: 1,
-                      maxWidth: '500px',
-                      margin: 0,
-                      height: '44px',
-                      borderRadius: '12px',
-                      position: 'relative',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <span className="ae-search-icon" style={{ left: '16px', zIndex: 2 }}><Search size={20} className="text-[#A0AEC0]" /></span>
-                      <input
-                        type="text"
-                        className="ae-input !border-none !bg-transparent !pl-12 !font-semibold"
-                        placeholder="Search by Deal ID, Customer or Project..."
-                        value={dealSearchQuery}
-                        onChange={(e) => setDealSearchQuery(e.target.value)}
-                        style={{
-                          fontSize: '0.9rem',
-                          color: '#1a1f36',
-                          width: '100%',
-                          height: '100%',
-                          outline: 'none'
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
 
                 {dealView === 'form' ? (
@@ -724,7 +646,6 @@ const AppContent: React.FC = () => {
                 ) : (
                   <DealDashboard
                     onView={handleViewDealDetails}
-                    searchQuery={dealSearchQuery}
                   />
                 )}
               </div>
@@ -847,45 +768,83 @@ const AppContent: React.FC = () => {
                     <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Sales Order Management</h1>
                   </div>
+                </div>
 
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '12px',
+                  gap: '24px'
+                }}>
                   {salesOrderView === 'dashboard' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <label style={{
+                    <>
+                      <div style={{
                         display: 'flex',
+                        gap: '4px',
                         alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 20px',
-                        borderRadius: '10px',
-                        fontSize: '0.9rem',
-                        fontWeight: 700,
-                        cursor: isExtractingSO ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                        background: '#FF6B00',
-                        color: 'white',
-                        boxShadow: '0 4px 14px rgba(255, 107, 0, 0.35)',
-                        border: 'none',
-                        opacity: isExtractingSO ? 0.7 : 1
-                      }}
-                        onMouseEnter={(e) => {
-                          if (!isExtractingSO) {
-                            e.currentTarget.style.background = '#E65F00';
-                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 107, 0, 0.45)';
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                          }
+                        background: 'white',
+                        padding: '6px',
+                        borderRadius: '12px',
+                        border: '1px solid #E0E6ED',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                      }}>
+                        <button
+                          onClick={() => setSalesOrderView('dashboard')}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: salesOrderView === 'dashboard' ? '#FF6B00' : 'transparent',
+                            color: salesOrderView === 'dashboard' ? 'white' : '#718096',
+                            boxShadow: salesOrderView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                          }}
+                        >
+                          <LayoutDashboard size={18} /> Dashboard
+                        </button>
+                        <label style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: isExtractingSO ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                          background: 'transparent',
+                          color: '#718096',
+                          opacity: isExtractingSO ? 0.7 : 1
                         }}
-                        onMouseLeave={(e) => {
-                          if (!isExtractingSO) {
-                            e.currentTarget.style.background = '#FF6B00';
-                            e.currentTarget.style.boxShadow = '0 4px 14px rgba(255, 107, 0, 0.35)';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                          }
-                        }}
-                      >
-                        {isExtractingSO ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Upload size={18} />}
-                        {isExtractingSO ? 'Processing...' : 'Upload PO'}
-                        <input type="file" className="hidden" onChange={handleSOUpload} accept=".pdf" disabled={isExtractingSO} />
-                      </label>
-                    </div>
+                          onMouseEnter={(e) => {
+                            if (!isExtractingSO) {
+                              e.currentTarget.style.background = '#f8fafc';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isExtractingSO) {
+                              e.currentTarget.style.background = 'transparent';
+                            }
+                          }}
+                        >
+                          {isExtractingSO ? <div className="w-4 h-4 border-2 border-[#718096] border-t-transparent rounded-full animate-spin" /> : <Upload size={18} />}
+                          {isExtractingSO ? 'Processing...' : 'Upload PO'}
+                          <input type="file" className="hidden" onChange={handleSOUpload} accept=".pdf" disabled={isExtractingSO} />
+                        </label>
+                      </div>
+
+
+                    </>
                   )}
                 </div>
 
@@ -916,14 +875,120 @@ const AppContent: React.FC = () => {
       <Route path="/payment" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <Payment />
+            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+              <div className="space-y-8">
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '24px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Payment Module</h1>
+                  </div>
+                </div>
+                <Payment />
+              </div>
+            </div>
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
       <Route path="/milestone" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <MilestoneDashboard />
+            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+              <div className="space-y-8">
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '24px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Milestone Management</h1>
+                  </div>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '12px',
+                  gap: '24px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    alignItems: 'center',
+                    background: 'white',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                  }}>
+                    <button
+                      onClick={() => setMilestoneView('dashboard')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: milestoneView === 'dashboard' ? '#FF6B00' : 'transparent',
+                        color: milestoneView === 'dashboard' ? 'white' : '#718096',
+                        boxShadow: milestoneView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                      }}
+                    >
+                      <LayoutDashboard size={18} /> Dashboard
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMilestoneView('form');
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: milestoneView === 'form' ? '#FF6B00' : 'transparent',
+                        color: milestoneView === 'form' ? 'white' : '#718096',
+                        boxShadow: milestoneView === 'form' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                      }}
+                    >
+                      <PlusCircle size={18} /> Create New
+                    </button>
+                  </div>
+
+
+                </div>
+
+                {milestoneView === 'form' ? (
+                  <MilestoneForm
+                    onBack={() => setMilestoneView('dashboard')}
+                  />
+                ) : (
+                  <MilestoneDashboard
+                  />
+                )}
+              </div>
+            </div>
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />

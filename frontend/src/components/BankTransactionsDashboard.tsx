@@ -165,7 +165,7 @@ const BankTransactionsDashboard: React.FC = () => {
     const filteredTransactions = transactions.filter(t => t.status === activeTab);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: 'calc(100vh - 85px)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
             {/* Hidden File Input */}
             <input
                 type="file"
@@ -176,12 +176,12 @@ const BankTransactionsDashboard: React.FC = () => {
             />
 
             {/* Header & Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '18px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
                         Bank Transactions
-                    </h1>
+                    </h2>
                 </div>
 
                 <div style={{
@@ -195,18 +195,19 @@ const BankTransactionsDashboard: React.FC = () => {
                     boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>Format:</label>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#718096' }}>Format:</label>
                         <select
                             value={bankType}
                             onChange={(e) => setBankType(e.target.value)}
                             style={{
-                                padding: '6px 12px',
+                                padding: '4px 8px',
                                 borderRadius: '8px',
                                 border: '1px solid #E0E6ED',
                                 fontSize: '0.8rem',
                                 fontWeight: 600,
                                 outline: 'none',
-                                color: '#2D3748'
+                                color: '#2D3748',
+                                background: '#F8FAFC'
                             }}
                         >
                             <option value="generic">Generic (CSV)</option>
@@ -225,31 +226,34 @@ const BankTransactionsDashboard: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            padding: '6px 14px',
+                            padding: '6px 16px',
+                            height: '32px',
                             borderRadius: '8px',
-                            fontSize: '0.8rem',
+                            fontSize: '0.85rem',
                             fontWeight: 700,
                             border: 'none',
                             cursor: syncing ? 'not-allowed' : 'pointer',
                             transition: 'all 0.2s',
                             background: '#F7FAFC',
-                            color: '#4A5568'
+                            color: '#718096'
                         }}
                         onMouseEnter={(e) => {
                             if (!syncing) {
                                 e.currentTarget.style.background = '#FF6B00';
                                 e.currentTarget.style.color = 'white';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 107, 0, 0.3)';
                             }
                         }}
                         onMouseLeave={(e) => {
                             if (!syncing) {
                                 e.currentTarget.style.background = '#F7FAFC';
-                                e.currentTarget.style.color = '#4A5568';
+                                e.currentTarget.style.color = '#718096';
+                                e.currentTarget.style.boxShadow = 'none';
                             }
                         }}
                     >
                         {syncing ? <RefreshCw className="animate-spin" size={16} /> : <Cloud size={16} />}
-                        Sync Bank Feed
+                        Sync
                     </button>
                     <button
                         onClick={handleUploadClick}
@@ -258,26 +262,29 @@ const BankTransactionsDashboard: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            padding: '6px 14px',
+                            padding: '6px 16px',
+                            height: '32px',
                             borderRadius: '8px',
-                            fontSize: '0.8rem',
+                            fontSize: '0.85rem',
                             fontWeight: 700,
                             border: 'none',
                             cursor: uploading ? 'not-allowed' : 'pointer',
                             transition: 'all 0.2s',
                             background: '#F7FAFC',
-                            color: '#4A5568'
+                            color: '#718096'
                         }}
                         onMouseEnter={(e) => {
                             if (!uploading) {
                                 e.currentTarget.style.background = '#FF6B00';
                                 e.currentTarget.style.color = 'white';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 107, 0, 0.3)';
                             }
                         }}
                         onMouseLeave={(e) => {
                             if (!uploading) {
                                 e.currentTarget.style.background = '#F7FAFC';
-                                e.currentTarget.style.color = '#4A5568';
+                                e.currentTarget.style.color = '#718096';
+                                e.currentTarget.style.boxShadow = 'none';
                             }
                         }}
                     >
@@ -287,13 +294,15 @@ const BankTransactionsDashboard: React.FC = () => {
                 </div>
             </div>
 
+            {/* Tabs */}
             <div style={{
                 display: 'flex',
-                gap: '8px',
+                gap: '4px',
                 background: 'white',
-                padding: '4px',
+                padding: '6px',
                 borderRadius: '12px',
-                border: '1px solid #E0E6ED',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
                 width: 'fit-content'
             }}>
                 {(['FOR_REVIEW', 'CATEGORIZED', 'EXCLUDED'] as const).map(tab => (
@@ -303,13 +312,14 @@ const BankTransactionsDashboard: React.FC = () => {
                         style={{
                             padding: '6px 16px',
                             borderRadius: '8px',
-                            fontSize: '0.75rem',
+                            fontSize: '0.85rem',
                             fontWeight: 700,
                             border: 'none',
                             cursor: 'pointer',
+                            transition: 'all 0.2s',
                             background: activeTab === tab ? '#FF6B00' : 'transparent',
                             color: activeTab === tab ? 'white' : '#718096',
-                            transition: 'all 0.2s'
+                            boxShadow: activeTab === tab ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
                         }}
                     >
                         {tab.replace('_', ' ')}

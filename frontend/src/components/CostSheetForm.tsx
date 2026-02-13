@@ -1066,19 +1066,21 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                 />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                                                        <button
-                                                            onClick={() => setLicenseItems(licenseItems.filter((_, i) => i !== idx))}
-                                                            style={{
-                                                                background: 'rgba(239, 68, 68, 0.1)',
-                                                                border: 'none',
-                                                                padding: '6px',
-                                                                borderRadius: '6px',
-                                                                cursor: 'pointer',
-                                                                color: '#EF4444'
-                                                            }}
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
+                                                        {licenseItems.length > 1 && (
+                                                            <button
+                                                                onClick={() => setLicenseItems(licenseItems.filter((_, i) => i !== idx))}
+                                                                style={{
+                                                                    background: 'rgba(239, 68, 68, 0.1)',
+                                                                    border: 'none',
+                                                                    padding: '6px',
+                                                                    borderRadius: '6px',
+                                                                    cursor: 'pointer',
+                                                                    color: '#EF4444'
+                                                                }}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 )}
                                             </tr>
@@ -1159,19 +1161,21 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                 />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                                                        <button
-                                                            onClick={() => setImplementationItems(implementationItems.filter((_, i) => i !== idx))}
-                                                            style={{
-                                                                background: 'rgba(239, 68, 68, 0.1)',
-                                                                border: 'none',
-                                                                padding: '6px',
-                                                                borderRadius: '6px',
-                                                                cursor: 'pointer',
-                                                                color: '#EF4444'
-                                                            }}
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
+                                                        {implementationItems.length > 1 && (
+                                                            <button
+                                                                onClick={() => setImplementationItems(implementationItems.filter((_, i) => i !== idx))}
+                                                                style={{
+                                                                    background: 'rgba(239, 68, 68, 0.1)',
+                                                                    border: 'none',
+                                                                    padding: '6px',
+                                                                    borderRadius: '6px',
+                                                                    cursor: 'pointer',
+                                                                    color: '#EF4444'
+                                                                }}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 )}
                                             </tr>
@@ -1252,19 +1256,21 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                 />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                                                        <button
-                                                            onClick={() => setSupportItems(supportItems.filter((_, i) => i !== idx))}
-                                                            style={{
-                                                                background: 'rgba(239, 68, 68, 0.1)',
-                                                                border: 'none',
-                                                                padding: '6px',
-                                                                borderRadius: '6px',
-                                                                cursor: 'pointer',
-                                                                color: '#EF4444'
-                                                            }}
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
+                                                        {supportItems.length > 1 && (
+                                                            <button
+                                                                onClick={() => setSupportItems(supportItems.filter((_, i) => i !== idx))}
+                                                                style={{
+                                                                    background: 'rgba(239, 68, 68, 0.1)',
+                                                                    border: 'none',
+                                                                    padding: '6px',
+                                                                    borderRadius: '6px',
+                                                                    cursor: 'pointer',
+                                                                    color: '#EF4444'
+                                                                }}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 )}
                                             </tr>
@@ -1343,19 +1349,21 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                 />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                                                        <button
-                                                            onClick={() => setInfraItems(infraItems.filter((_, i) => i !== idx))}
-                                                            style={{
-                                                                background: 'rgba(239, 68, 68, 0.1)',
-                                                                border: 'none',
-                                                                padding: '6px',
-                                                                borderRadius: '6px',
-                                                                cursor: 'pointer',
-                                                                color: '#EF4444'
-                                                            }}
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
+                                                        {infraItems.length > 1 && (
+                                                            <button
+                                                                onClick={() => setInfraItems(infraItems.filter((_, i) => i !== idx))}
+                                                                style={{
+                                                                    background: 'rgba(239, 68, 68, 0.1)',
+                                                                    border: 'none',
+                                                                    padding: '6px',
+                                                                    borderRadius: '6px',
+                                                                    cursor: 'pointer',
+                                                                    color: '#EF4444'
+                                                                }}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 )}
                                             </tr>
@@ -1431,19 +1439,21 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                 />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                                                        <button
-                                                            onClick={() => setOtherItems(otherItems.filter((_, i) => i !== idx))}
-                                                            style={{
-                                                                background: 'rgba(239, 68, 68, 0.1)',
-                                                                border: 'none',
-                                                                padding: '6px',
-                                                                borderRadius: '6px',
-                                                                cursor: 'pointer',
-                                                                color: '#EF4444'
-                                                            }}
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
+                                                        {otherItems.length > 1 && (
+                                                            <button
+                                                                onClick={() => setOtherItems(otherItems.filter((_, i) => i !== idx))}
+                                                                style={{
+                                                                    background: 'rgba(239, 68, 68, 0.1)',
+                                                                    border: 'none',
+                                                                    padding: '6px',
+                                                                    borderRadius: '6px',
+                                                                    cursor: 'pointer',
+                                                                    color: '#EF4444'
+                                                                }}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 )}
                                             </tr>

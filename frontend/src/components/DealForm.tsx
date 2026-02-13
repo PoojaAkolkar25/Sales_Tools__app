@@ -81,7 +81,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
         won_lost_reason: '',
         hubspot_id: '',
         last_synced_at: '',
-        deal_types: [{ type: '', description: '', amount: '0', quantity: 1 }]
+        deal_types: [{ type: '', description: '', amount: '', quantity: '' }]
     });
 
     useEffect(() => {
@@ -204,7 +204,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
     const addDealTypeRow = () => {
         setFormData((prev: any) => ({
             ...prev,
-            deal_types: [...(prev.deal_types || []), { type: '', description: '', amount: '0', quantity: 1 }]
+            deal_types: [...(prev.deal_types || []), { type: '', description: '', amount: '', quantity: '' }]
         }));
     };
 
@@ -694,6 +694,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                                         onChange={(e) => handleDealTypeChange(index, 'quantity', e.target.value)}
                                                         className="ae-input"
                                                         min="1"
+                                                        placeholder="0"
                                                         style={{ height: '36px', padding: '4px 8px', textAlign: 'center' }}
                                                     />
                                                 </td>
@@ -707,7 +708,14 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                                             value={item.amount}
                                                             onChange={(e) => handleDealTypeChange(index, 'amount', e.target.value)}
                                                             className="ae-input"
+                                                            placeholder="0"
                                                             style={{ height: '36px', padding: '4px 8px 4px 24px', textAlign: 'right' }}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Tab' && !e.shiftKey && index === (formData.deal_types || []).length - 1) {
+                                                                    e.preventDefault();
+                                                                    addDealTypeRow();
+                                                                }
+                                                            }}
                                                             required
                                                         />
                                                     </div>
