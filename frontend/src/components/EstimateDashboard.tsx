@@ -190,10 +190,10 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
             const matchesCustomer = (est.customer_name || '').toLowerCase().includes(filters.customer_name.toLowerCase());
             const matchesProject = (est.project_name || '').toLowerCase().includes(filters.project_name.toLowerCase());
             const matchesStatus = filters.status === '' ? true :
-                filters.status === 'APPROVED' ? est.approval_status === 'APPROVED' :
+                filters.status === 'APPROVED' ? (est.approval_status === 'APPROVED' && est.status !== 'SUBMITTED') :
                     filters.status === 'REJECTED' ? est.approval_status === 'REJECTED' :
-                        filters.status === 'PENDING_APPROVAL' ? (est.status === 'PENDING_APPROVAL' || est.approval_status === 'PENDING') :
-                            filters.status === 'DRAFT' ? (est.status === 'PENDING' || est.status === 'DRAFT') :
+                        filters.status === 'PENDING_APPROVAL' ? est.status === 'PENDING_APPROVAL' :
+                            filters.status === 'DRAFT' ? ((est.status === 'DRAFT' || est.status === 'NEGOTIATION') && est.approval_status === 'PENDING') :
                                 est.status === filters.status;
             const matchesLatest = !filters.showOnlyLatest || est.is_latest;
             const matchesPrice = (est.total_price || '').toString().includes(filters.total_price);
@@ -395,11 +395,10 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
         const latestEstimates = estimates.filter(e => e.is_latest);
         return {
             all: latestEstimates.length,
-            // Assuming 'PENDING' or 'DRAFT' as draft status. Adjusting to match common patterns if needed.
-            draft: latestEstimates.filter(e => e.status === 'PENDING' || e.status === 'DRAFT').length,
+            draft: latestEstimates.filter(e => (e.status === 'DRAFT' || e.status === 'NEGOTIATION') && e.approval_status === 'PENDING').length,
             submitted: latestEstimates.filter(e => e.status === 'SUBMITTED').length,
-            pending: latestEstimates.filter(e => e.status === 'PENDING_APPROVAL' || e.approval_status === 'PENDING').length,
-            approved: latestEstimates.filter(e => e.approval_status === 'APPROVED').length,
+            pending: latestEstimates.filter(e => e.status === 'PENDING_APPROVAL').length,
+            approved: latestEstimates.filter(e => e.approval_status === 'APPROVED' && e.status !== 'SUBMITTED').length,
             rejected: latestEstimates.filter(e => e.approval_status === 'REJECTED').length
         };
     }, [estimates]);
