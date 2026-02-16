@@ -20,11 +20,15 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
     const { showNotification } = useNotification();
 
     const getCurrencySymbol = (currency: string) => {
-        switch (currency) {
+        if (!currency) return '';
+        const code = currency.toUpperCase().trim();
+        switch (code) {
             case 'INR': return '₹';
             case 'USD': return '$';
+            case 'EUR':
             case 'EURO': return '€';
-            default: return currency;
+            case 'GBP': return '£';
+            default: return code; // Return the code itself if no symbol matches
         }
     };
 
@@ -55,10 +59,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
         try {
             // Only fetch Submitted (Active) Sales Orders
             const response = await api.get(`/sales-orders/?customer=${customerId}&status_filter=SUBMITTED`);
-            // Note: Check backend filtering support in SalesOrderViewSet. 
-            // If not supported, I might need to filter client side or update backend. 
-            // update: 'status' field exists.
-            setSalesOrders(response.data.filter((so: any) => so.status === 'SUBMITTED' || so.so_number));
+            setSalesOrders(response.data);
         } catch (error) {
             console.error('Error fetching sales orders', error);
         } finally {
@@ -78,36 +79,19 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
         setSelectedSO(so || null);
 
         if (so) {
-            setLoading(true);
-            try {
-                const response = await api.get(`/milestones/?sales_order=${so.id}`);
-                if (response.data && response.data.length > 0) {
-                    // Populate from existing milestones
-                    const loadedMilestones = response.data.map((m: any) => ({
-                        ...m,
-                        percentage: ((parseFloat(m.amount) / parseFloat(so.total_amount)) * 100).toFixed(2)
-                    }));
-                    setMilestones(loadedMilestones);
-                } else {
-                    // Initialize with one empty milestone if none exist
-                    setMilestones([{
-                        milestone_no: 'M1',
-                        period_from: so.order_date,
-                        period_to: so.delivery_date,
-                        due_date: so.delivery_date,
-                        description: 'Initial Milestone',
-                        percentage: '100.00',
-                        qty: 1,
-                        rate: parseFloat(so.total_amount),
-                        amount: parseFloat(so.total_amount)
-                    }]);
-                }
-            } catch (error) {
-                console.error('Error fetching milestones', error);
-                showNotification('Failed to fetch existing milestones', 'error');
-            } finally {
-                setLoading(false);
-            }
+            // Always start with a fresh single milestone row for a new SO as requested
+            // This ensures we always have 1 row and 100% by default, ignoring any existing test data.
+            setMilestones([{
+                milestone_no: 'M1',
+                period_from: so.order_date,
+                period_to: so.delivery_date,
+                due_date: so.delivery_date,
+                description: 'Initial Milestone',
+                percentage: 100,
+                qty: 1,
+                rate: parseFloat(so.total_amount).toFixed(2),
+                amount: parseFloat(so.total_amount).toFixed(2)
+            }]);
         } else {
             setMilestones([]);
         }
@@ -296,7 +280,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                                 <option value="">{loading ? 'Loading...' : 'Select Sales Order...'}</option>
                                 {salesOrders.map(so => (
                                     <option key={so.id} value={so.id}>
-                                        {so.so_number} - {so.currency} {parseFloat(so.total_amount).toLocaleString()}
+                                        {so.so_number} - {getCurrencySymbol(so.currency)} {parseFloat(so.total_amount).toLocaleString()}
                                     </option>
                                 ))}
                             </select>

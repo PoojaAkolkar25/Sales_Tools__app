@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        @page {
+            size: a4 landscape;
+            margin: 1cm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #0066CC;
+            padding-bottom: 10px;
+        }
+
+        .header h1 {
+            color: #0066CC;
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .report-info {
+            float: right;
+            text-align: right;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th {
+            background-color: #0066CC;
+            color: white;
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        td {
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 8px;
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Sales Order Report</h1>
+        <div class="report-info">
+            Generated on: {{ now|date:"Y-m-d H:i" }}
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Deal ID</th>
+                <th>SO Number</th>
+                <th>Order Date</th>
+                <th>Customer</th>
+                <th>Cust Code</th>
+                <th>PO Number</th>
+                <th>Items (Summary)</th>
+                <th>Status</th>
+                <th>Total Amount</th>
+                <th>Currency</th>
+                <th>PO Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for so in sales_orders %}
+            <tr>
+                <td>
+                    {% with est=so.estimates.first %}
+                    {% if est and est.deal %}
+                    {{ est.deal.deal_id }}
+                    {% else %}
+                    —
+                    {% endif %}
+                    {% endwith %}
+                </td>
+                <td>{{ so.so_number|default:"—" }}</td>
+                <td>{{ so.order_date|date:"Y-m-d"|default:"—" }}</td>
+                <td>
+                    {% if so.customer_name %}
+                    {{ so.customer_name }}
+                    {% elif so.customer %}
+                    {{ so.customer.name }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <td>{{ so.customer_code|default:"—" }}</td>
+                <td>{{ so.po_number|default:"—" }}</td>
+                <td>
+                    {% with item=so.items.first %}
+                    {% if item %}
+                    {% if item.description %}
+                    {{ item.description|truncatechars:30 }}
+                    {% elif item.product %}
+                    {{ item.product.name|truncatechars:30 }}
+                    {% else %}
+                    Unmapped Item
+                    {% endif %}
+                    {% if so.items.count > 1 %}
+                    (+{{ so.items.count|add:"-1" }} more)
+                    {% endif %}
+                    {% else %}
+                    —
+                    {% endif %}
+                    {% endwith %}
+                </td>
+                <td>{{ so.get_status_display }}</td>
+                <td>{{ so.total_amount|floatformat:2 }}</td>
+                <td>{{ so.currency }}</td>
+                <td>{{ so.po_date|date:"Y-m-d"|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="11" style="text-align: center;">No Sales Orders found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        SalesEdge Application - Confidential
+    </div>
+</body>
+
+</html>

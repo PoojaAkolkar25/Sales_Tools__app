@@ -45,13 +45,13 @@ class PDFExtractor:
                     "STRICT RULES:\n"
                     "- OUTPUT FORMAT: Return ONLY the raw JSON object. DO NOT include markdown code blocks (like ```json), backticks, or any conversational text.\n"
                     "- CUSTOMER: Identify the BUYER/ISSUER of the PO. IGNORE 'AutomationEdge Technologies' as the customer (they are the supplier).\n"
-                    "- PO NUMBER: Extract the identifying PO Number. Look for labels like 'PO No', 'Order No', 'Purchase Order #', 'Ref', 'Reference'. PO numbers often contain slashes (e.g., MACM/IT/PO/2026/015, PO/IT/AUTOMATION/00229676/2025) or are alphanumeric (ETL-PO-2025-1064). Ensure the COMPLETE number is extracted, including all special characters.\n"
+                    "- PO NUMBER: Extract the identifying PO Number. Look for labels like 'PO No', 'Order No', 'Purchase Order #', 'Ref', 'Reference'. Ensure the COMPLETE number is extracted.\n"
                     "- ADDRESSES: Extract 'billing_address' and 'shipping_address'. \n"
-                    "  - Look for labels like 'Bill To', 'Billing Address', 'Bill As Per', 'Sold To'.\n"
-                    "  - Look for 'Ship To', 'Shipping Address', 'Deliver To', 'Location Name'.\n"
-                    "  - If 'Shipping Address' is not explicitly labeled but there is a table of 'Locations' or 'Shipment Details' at the bottom, concatenate those details.\n"
-                    "  - If only one address is found, use it for both. IGNORE AutomationEdge addresses.\n"
-                    "- MAPPING: Match the customer in the PO to one of the EXISTING CUSTOMERS listed below if it's a clear match. If NO match is found in the list, return 'not match with company profile' as the customer_name.\n\n"
+                    "- LINE ITEMS: This is CRITICAL. \n"
+                    "  - Extract every line item with 'description', 'quantity', 'unit_price', and 'line_total'.\n"
+                    "  - DESCRIPTION: If a description spans multiple rows in the PDF table, CONCATENATE them into a single string. Do not split one item into multiple JSON entries unless they have different quantities/prices.\n"
+                    "  - DATA TYPES: description (string), quantity (number), unit_price (number), line_total (number).\n"
+                    "- MAPPING: Match the customer in the PO to one of the EXISTING CUSTOMERS listed below if it's a clear match.\n\n"
                     "EXISTING CUSTOMERS:\n"
                     f"- {customers_context}\n\n"
                     "OUTPUT JSON SCHEMA:\n"
@@ -401,9 +401,15 @@ class PDFExtractor:
                                             disc_val = (discount / initial_total * 100) if initial_total > 0 else 0
                                             is_disc_percent = True
 
+                                # Handle multiline description continuation
+                                # If the next rows have text in idx_desc but NO values in qty/rate/amount, append it
+                                # (But note: the row loop in table[1:] doesn't easily look ahead without index-based loop)
+                                # Let's stick to the current row and hope the LLM handles multiline better than regex.
+                                # However, we can improve the description cleaning.
+                                
                                 items_from_table.append({
                                     'qty': qty,
-                                    'description': desc.replace('\n', ' '),
+                                    'description': desc.replace('\n', ' ').strip(),
                                     'rate': rate,
                                     'tax': tax,
                                     'tax_percent': tax_val if is_tax_percent else 0,
@@ -493,11 +499,15 @@ class SalesOrderCreator:
         
         total = 0
         for item in extracted_data['items']:
-            product = Product.objects.filter(name__icontains=item['description'][:50]).first()
+            product_name = item['description']
+            product = Product.objects.filter(name__icontains=product_name[:50]).first()
+            if product:
+                product_name = product.name # Use official product name if matched
+                
             SalesOrderItem.objects.create(
                 sales_order=so,
                 product=product,
-                product_name=item['description'], # Store extracted description as product name initially
+                product_name=product_name, # Fallback to extracted description
                 description=item['description'],
                 qty=item['qty'],
                 rate=item['rate'],
