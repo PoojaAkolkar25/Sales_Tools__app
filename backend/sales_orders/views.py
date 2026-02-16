@@ -1,13 +1,31 @@
-from rest_framework import viewsets, status, decorators
+from rest_framework import viewsets, decorators, permissions, status
 from rest_framework.response import Response
 from .models import SalesOrder, SalesOrderItem, IncomingEmail, PurchaseOrderFile
 from .serializers import SalesOrderSerializer, SalesOrderItemSerializer, IncomingEmailSerializer, PurchaseOrderFileSerializer
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.db import models
+from django.http import HttpResponse
+from django.utils import timezone
+import io
+import xlsxwriter
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa
 
 class SalesOrderViewSet(viewsets.ModelViewSet):
-    queryset = SalesOrder.objects.all().order_by('-updated_at')
+    queryset = SalesOrder.objects.all()
     serializer_class = SalesOrderSerializer
+
+    def get_queryset(self):
+        queryset = SalesOrder.objects.all().order_by('-updated_at')
+        customer_id = self.request.query_params.get('customer')
+        status_filter = self.request.query_params.get('status_filter')
+
+        if customer_id:
+            queryset = queryset.filter(customer_id=customer_id)
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        return queryset
 
     @decorators.action(detail=True, methods=['post'])
     def submit(self, request, pk=None):
@@ -39,6 +57,116 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         sales_order.save() # save method handles SO number generation
         
         return Response(SalesOrderSerializer(sales_order).data)
+
+    @decorators.action(detail=False, methods=['get'])
+    def export_excel(self, request):
+        sales_orders = self.get_queryset()
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output)
+        worksheet = workbook.add_worksheet("Sales Orders Report")
+        
+        header_format = workbook.add_format({
+            'bold': True,
+            'bg_color': '#0066CC',
+            'font_color': 'white',
+            'border': 1
+        })
+        
+        headers = [
+            'Deal ID', 'SO Number', 'Order Date', 'Customer', 'Cust Code', 
+            'PO Number', 'Items (Summary)', 'Status', 'Total Amount', 'Currency', 'PO Date'
+        ]
+        
+        for col, header in enumerate(headers):
+            worksheet.write(0, col, header, header_format)
+            
+        for row, so in enumerate(sales_orders, start=1):
+            worksheet.write(row, 0, so.estimates.first().deal.deal_id if so.estimates.exists() and so.estimates.first().deal else '—')
+            worksheet.write(row, 1, so.so_number or '—')
+            worksheet.write(row, 2, so.order_date.strftime("%Y-%m-%d") if so.order_date else '—')
+            worksheet.write(row, 3, so.customer_name or (so.customer.name if so.customer else '—'))
+            worksheet.write(row, 4, so.customer_code or '—')
+            worksheet.write(row, 5, so.po_number or '—')
+            
+            # Items Summary
+            items = so.items.all()
+            if items.exists():
+                summary = items.first().description or (items.first().product.name if items.first().product else 'Unmapped Item')
+                if items.count() > 1:
+                    summary += f" (+{items.count() - 1} more)"
+            else:
+                summary = '—'
+            worksheet.write(row, 6, summary)
+            
+            worksheet.write(row, 7, so.get_status_display())
+            worksheet.write(row, 8, float(so.total_amount))
+            worksheet.write(row, 9, so.currency)
+            worksheet.write(row, 10, so.po_date.strftime("%Y-%m-%d") if so.po_date else '—')
+            
+        workbook.close()
+        output.seek(0)
+        
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="Sales_Orders_Report_{timezone.now().strftime("%Y%m%d")}.xlsx"'
+        return response
+
+    @decorators.action(detail=False, methods=['get'])
+    def export_pdf(self, request):
+        try:
+            sales_orders = self.get_queryset()
+            html_string = render_to_string('sales_orders/report_pdf.html', {
+                'sales_orders': sales_orders, 
+                'now': timezone.now()
+            })
+            
+            result = io.BytesIO()
+            pisa_status = pisa.CreatePDF(html_string, dest=result)
+            
+            if pisa_status.err:
+                return Response({
+                    "status": "error",
+                    "message": "PDF generation error occurred."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="Sales_Orders_Report_{timezone.now().strftime("%Y%m%d")}.pdf"'
+            return response
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": f"PDF export failed: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @decorators.action(detail=True, methods=['get'])
+    def download_pdf(self, request, pk=None):
+        try:
+            sales_order = self.get_object()
+            html_string = render_to_string('sales_orders/report_pdf.html', {
+                'sales_orders': [sales_order], 
+                'now': timezone.now()
+            })
+            
+            result = io.BytesIO()
+            pisa_status = pisa.CreatePDF(html_string, dest=result)
+            
+            if pisa_status.err:
+                return Response({
+                    "status": "error",
+                    "message": "PDF generation error occurred."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            filename = f"Sales_Order_{sales_order.so_number or sales_order.id}.pdf"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": f"Individual PDF download failed: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class IncomingEmailViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = IncomingEmail.objects.all().order_by('-received_at')
