@@ -153,9 +153,9 @@ const AllAuditTrail: React.FC<AllAuditTrailProps> = ({ show, onClose }) => {
             {/* Header */}
             <div style={{
                 padding: '24px',
-                borderBottom: '2px solid #E5E7EB',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white'
+                borderBottom: '1px solid var(--border-primary)',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)'
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -165,8 +165,8 @@ const AllAuditTrail: React.FC<AllAuditTrailProps> = ({ show, onClose }) => {
                     <button
                         onClick={onClose}
                         style={{
-                            background: 'rgba(255,255,255,0.2)',
-                            border: 'none',
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-primary)',
                             borderRadius: '50%',
                             width: '32px',
                             height: '32px',
@@ -174,8 +174,8 @@ const AllAuditTrail: React.FC<AllAuditTrailProps> = ({ show, onClose }) => {
                             alignItems: 'center',
                             justifyContent: 'center',
                             cursor: 'pointer',
-                            color: 'white',
-                            transition: 'background 0.2s'
+                            color: 'var(--text-secondary)',
+                            transition: 'all 0.2s'
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
@@ -196,9 +196,9 @@ const AllAuditTrail: React.FC<AllAuditTrailProps> = ({ show, onClose }) => {
                             width: '100%',
                             padding: '10px 12px 10px 40px',
                             borderRadius: '8px',
-                            border: '1px solid rgba(255,255,255,0.3)',
+                            border: '1px solid var(--border-primary)',
                             background: 'white',
-                            color: '#1F2937',
+                            color: 'var(--text-primary)',
                             fontSize: '14px',
                             outline: 'none',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
@@ -212,8 +212,8 @@ const AllAuditTrail: React.FC<AllAuditTrailProps> = ({ show, onClose }) => {
                 display: 'flex',
                 gap: '8px',
                 padding: '16px 24px',
-                background: '#F9FAFB',
-                borderBottom: '1px solid #E5E7EB',
+                background: 'var(--bg-primary)',
+                borderBottom: '1px solid var(--border-primary)',
                 overflowX: 'auto',
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none'
@@ -242,7 +242,7 @@ const AllAuditTrail: React.FC<AllAuditTrailProps> = ({ show, onClose }) => {
             </div>
 
             {/* Filters Dropdown Trigger (Optional now but keeping for Action) */}
-            <div style={{ padding: '8px 24px', borderBottom: '1px solid #E5E7EB', background: '#F9FAFB' }}>
+            <div style={{ padding: '8px 24px', borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-primary)' }}>
                 <button
                     onClick={() => setShowFilters(!showFilters)}
                     style={{
@@ -251,7 +251,7 @@ const AllAuditTrail: React.FC<AllAuditTrailProps> = ({ show, onClose }) => {
                         gap: '6px',
                         background: 'transparent',
                         border: 'none',
-                        color: '#6B7280',
+                        color: 'var(--text-secondary)',
                         fontSize: '12px',
                         fontWeight: 600,
                         cursor: 'pointer'
@@ -309,9 +309,9 @@ const AllAuditTrail: React.FC<AllAuditTrailProps> = ({ show, onClose }) => {
                                     key={log.id}
                                     style={{
                                         padding: '16px',
-                                        background: '#F9FAFB',
+                                        background: 'var(--bg-primary)',
                                         borderRadius: '16px',
-                                        border: '1px solid #E5E7EB',
+                                        border: '1px solid var(--border-primary)',
                                         transition: 'all 0.2s'
                                     }}
                                     onMouseEnter={(e) => {
@@ -364,7 +364,7 @@ const AllAuditTrail: React.FC<AllAuditTrailProps> = ({ show, onClose }) => {
                                                     {log.object_display}
                                                 </span>
                                             </div>
-                                            <div style={{ fontSize: '11px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                     <User size={12} />
                                                     <span style={{ fontWeight: 600 }}>{log.username}</span>
@@ -439,8 +439,8 @@ const AllAuditTrail: React.FC<AllAuditTrailProps> = ({ show, onClose }) => {
             {/* Footer Stats */}
             <div style={{
                 padding: '16px 24px',
-                borderTop: '1px solid #E5E7EB',
-                background: '#F9FAFB',
+                borderTop: '1px solid var(--border-primary)',
+                background: 'var(--bg-primary)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
@@ -457,7 +457,7 @@ const AllAuditTrail: React.FC<AllAuditTrailProps> = ({ show, onClose }) => {
                         }}
                         style={{
                             padding: '6px 12px',
-                            background: '#718096',
+                            background: 'var(--theme-primary)',
                             color: 'white',
                             border: 'none',
                             borderRadius: '8px',

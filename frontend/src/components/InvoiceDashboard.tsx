@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Download, CheckCircle, XCircle, Mail, BarChart3, Eye, Pencil, Send } from 'lucide-react';
+import { Plus, Download, CheckCircle, XCircle, Mail, BarChart3, Eye, Pencil, Send, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import InvoiceForm from './InvoiceForm';
 import { useNotification } from '../context/NotificationContext';
+import Pagination from './Pagination';
 
 const InvoiceDashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -12,6 +13,9 @@ const InvoiceDashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [view, setView] = useState<'dashboard' | 'form'>('dashboard');
     const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
+    const [showFilters, setShowFilters] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
     const [statusFilter, setStatusFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
     const [dateRangeFilter, setDateRangeFilter] = useState('');
@@ -45,6 +49,11 @@ const InvoiceDashboard: React.FC = () => {
             setLoading(false);
         }
     };
+
+    const paginatedInvoices = invoices.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
 
     const handleDownload = async (id: number, no: string) => {
         try {
@@ -124,7 +133,7 @@ const InvoiceDashboard: React.FC = () => {
             case 'PENDING_APPROVAL': return { bg: 'rgba(237, 137, 54, 0.1)', color: '#ED8936' };
             case 'SENT': return { bg: 'rgba(159, 122, 234, 0.1)', color: '#9F7AEA' };
             case 'CANCELLED': return { bg: 'rgba(160, 174, 192, 0.1)', color: '#A0AEC0' };
-            default: return { bg: 'rgba(255, 107, 0, 0.1)', color: '#FF6B00' };
+            default: return { bg: 'rgba(187, 77, 0, 0.1)', color: 'var(--theme-primary)' };
         }
     };
 
@@ -133,8 +142,8 @@ const InvoiceDashboard: React.FC = () => {
             {/* Header Area */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '18px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                    <div style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                         Invoices
                     </h1>
                 </div>
@@ -161,6 +170,27 @@ const InvoiceDashboard: React.FC = () => {
                     <button onClick={() => handleReport('customer_billing')} className="ae-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}>
                         <BarChart3 size={16} /> Customer Billing
                     </button>
+                    <button
+                        className="ae-btn-secondary"
+                        onClick={() => setShowFilters(!showFilters)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 14px',
+                            fontSize: '0.8rem',
+                            height: '32px',
+                            borderRadius: '8px',
+                            background: showFilters ? 'var(--bg-secondary)' : 'white',
+                            color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
+                            borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                        }}
+                        title={showFilters ? "Hide Filters" : "Show Filters"}
+                    >
+                        <Filter size={16} /> Filters
+                    </button>
                     <button onClick={() => setView('form')} className="ae-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}>
                         <Plus size={16} /> Create Invoice
                     </button>
@@ -168,93 +198,95 @@ const InvoiceDashboard: React.FC = () => {
             </div>
 
             {/* Advanced Filters Section */}
-            <div className="glass-card" style={{ padding: '20px', marginBottom: '20px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                    <div className="ae-input-group">
-                        <label className="ae-label" style={{ fontSize: '0.75rem' }}>Invoice Number</label>
-                        <input
-                            type="text"
-                            className="ae-input"
-                            placeholder="Search by invoice #"
-                            value={invoiceNoSearch}
-                            onChange={(e) => setInvoiceNoSearch(e.target.value)}
-                            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                        />
-                    </div>
-                    <div className="ae-input-group">
-                        <label className="ae-label" style={{ fontSize: '0.75rem' }}>Customer Name</label>
-                        <input
-                            type="text"
-                            className="ae-input"
-                            placeholder="Search by customer"
-                            value={customerSearch}
-                            onChange={(e) => setCustomerSearch(e.target.value)}
-                            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                        />
-                    </div>
-                    <div className="ae-input-group">
-                        <label className="ae-label" style={{ fontSize: '0.75rem' }}>Deal ID</label>
-                        <input
-                            type="text"
-                            className="ae-input"
-                            placeholder="Filter by deal"
-                            value={dealSearch}
-                            onChange={(e) => setDealSearch(e.target.value)}
-                            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                        />
-                    </div>
-                    <div className="ae-input-group">
-                        <label className="ae-label" style={{ fontSize: '0.75rem' }}>Invoice Type</label>
-                        <select
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value)}
-                            className="ae-input"
-                            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                        >
-                            <option value="">All Types</option>
-                            <option value="DOMESTIC">Domestic</option>
-                            <option value="INTER_STATE">Inter-State</option>
-                            <option value="EXPORT">Export</option>
-                            <option value="USA">USA</option>
-                        </select>
-                    </div>
-                    <div className="ae-input-group">
-                        <label className="ae-label" style={{ fontSize: '0.75rem' }}>Date Range</label>
-                        <select
-                            value={dateRangeFilter}
-                            onChange={(e) => setDateRangeFilter(e.target.value)}
-                            className="ae-input"
-                            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                        >
-                            <option value="">All Dates</option>
-                            <option value="last_month">Last Month</option>
-                            <option value="last_3_months">Last 3 Months</option>
-                            <option value="last_6_months">Last 6 Months</option>
-                            <option value="last_year">Last Year</option>
-                        </select>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
-                        <button
-                            onClick={() => {
-                                setStatusFilter('');
-                                setTypeFilter('');
-                                setDateRangeFilter('');
-                                setInvoiceNoSearch('');
-                                setCustomerSearch('');
-                                setDealSearch('');
-                            }}
-                            className="ae-btn-secondary"
-                            style={{ padding: '6px 12px', fontSize: '0.8rem', width: '100%' }}
-                        >
-                            Clear Filters
-                        </button>
+            {showFilters && (
+                <div className="glass-card" style={{ padding: '20px', marginBottom: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                        <div className="ae-input-group">
+                            <label className="ae-label" style={{ fontSize: '0.75rem' }}>Invoice Number</label>
+                            <input
+                                type="text"
+                                className="ae-input"
+                                placeholder="Search by invoice #"
+                                value={invoiceNoSearch}
+                                onChange={(e) => setInvoiceNoSearch(e.target.value)}
+                                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                            />
+                        </div>
+                        <div className="ae-input-group">
+                            <label className="ae-label" style={{ fontSize: '0.75rem' }}>Customer Name</label>
+                            <input
+                                type="text"
+                                className="ae-input"
+                                placeholder="Search by customer"
+                                value={customerSearch}
+                                onChange={(e) => setCustomerSearch(e.target.value)}
+                                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                            />
+                        </div>
+                        <div className="ae-input-group">
+                            <label className="ae-label" style={{ fontSize: '0.75rem' }}>Deal ID</label>
+                            <input
+                                type="text"
+                                className="ae-input"
+                                placeholder="Filter by deal"
+                                value={dealSearch}
+                                onChange={(e) => setDealSearch(e.target.value)}
+                                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                            />
+                        </div>
+                        <div className="ae-input-group">
+                            <label className="ae-label" style={{ fontSize: '0.75rem' }}>Invoice Type</label>
+                            <select
+                                value={typeFilter}
+                                onChange={(e) => setTypeFilter(e.target.value)}
+                                className="ae-input"
+                                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                            >
+                                <option value="">All Types</option>
+                                <option value="DOMESTIC">Domestic</option>
+                                <option value="INTER_STATE">Inter-State</option>
+                                <option value="EXPORT">Export</option>
+                                <option value="USA">USA</option>
+                            </select>
+                        </div>
+                        <div className="ae-input-group">
+                            <label className="ae-label" style={{ fontSize: '0.75rem' }}>Date Range</label>
+                            <select
+                                value={dateRangeFilter}
+                                onChange={(e) => setDateRangeFilter(e.target.value)}
+                                className="ae-input"
+                                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                            >
+                                <option value="">All Dates</option>
+                                <option value="last_month">Last Month</option>
+                                <option value="last_3_months">Last 3 Months</option>
+                                <option value="last_6_months">Last 6 Months</option>
+                                <option value="last_year">Last Year</option>
+                            </select>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
+                            <button
+                                onClick={() => {
+                                    setStatusFilter('');
+                                    setTypeFilter('');
+                                    setDateRangeFilter('');
+                                    setInvoiceNoSearch('');
+                                    setCustomerSearch('');
+                                    setDealSearch('');
+                                }}
+                                className="ae-btn-secondary"
+                                style={{ padding: '6px 12px', fontSize: '0.8rem', width: '100%' }}
+                            >
+                                Clear Filters
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Invoice List */}
             <div className="glass-card" style={{ padding: '24px' }}>
-                <div className="ae-table-container">
+                <div className="ae-table-container" style={{ maxHeight: 'none', overflowY: 'visible' }}>
                     <table className="ae-table">
                         <thead>
                             <tr>
@@ -271,14 +303,14 @@ const InvoiceDashboard: React.FC = () => {
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>Loading...</td></tr>
-                            ) : invoices.length === 0 ? (
-                                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>No invoices found</td></tr>
+                            ) : paginatedInvoices.length === 0 ? (
+                                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>No invoices found</td></tr>
                             ) : (
-                                invoices.map(inv => (
+                                paginatedInvoices.map(inv => (
                                     <tr key={inv.id}>
-                                        <td style={{ fontWeight: 700, color: '#FF6B00' }}>{inv.invoice_no}</td>
+                                        <td style={{ fontWeight: 700, color: 'var(--theme-primary)' }}>{inv.invoice_no}</td>
                                         <td
-                                            style={{ fontWeight: 700, color: '#0066CC', cursor: 'pointer' }}
+                                            style={{ fontWeight: 700, color: 'var(--ae-blue)', cursor: 'pointer' }}
                                             onClick={() => navigate(`/deal?id=${inv.deal}`)}
                                         >
                                             {inv.deal_no || '---'}
@@ -287,7 +319,7 @@ const InvoiceDashboard: React.FC = () => {
                                         <td>{new Date(inv.invoice_date).toLocaleDateString()}</td>
                                         <td style={{ fontWeight: 600 }}>{inv.currency} {inv.total_amount.toLocaleString()}</td>
                                         <td>
-                                            <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: '#f1f5f9', color: '#64748b' }}>
+                                            <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
                                                 {inv.invoice_type}
                                             </span>
                                         </td>
@@ -307,7 +339,7 @@ const InvoiceDashboard: React.FC = () => {
                                         <td>
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                 {/* Always show Download and View/Edit */}
-                                                <button onClick={() => handleDownload(inv.id, inv.invoice_no)} title="Download PDF" style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#718096' }}>
+                                                <button onClick={() => handleDownload(inv.id, inv.invoice_no)} title="Download PDF" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
                                                     <Download size={16} />
                                                 </button>
 
@@ -318,20 +350,20 @@ const InvoiceDashboard: React.FC = () => {
                                                         setView('form');
                                                     }}
                                                     title={inv.status === 'DRAFT' ? "Edit Invoice" : "View Invoice"}
-                                                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#4A5568' }}
+                                                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
                                                 >
                                                     {inv.status === 'DRAFT' ? <Pencil size={16} /> : <Eye size={16} />}
                                                 </button>
 
                                                 {inv.status === 'DRAFT' && (
-                                                    <button onClick={() => handleAction(inv.id, 'submit_for_approval')} title="Submit for Approval" style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#3182CE' }}>
+                                                    <button onClick={() => handleAction(inv.id, 'submit_for_approval')} title="Submit for Approval" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--ae-blue)' }}>
                                                         <Send size={16} />
                                                     </button>
                                                 )}
 
                                                 {inv.status === 'PENDING_APPROVAL' && (
                                                     <>
-                                                        <button onClick={() => handleAction(inv.id, 'approve')} title="Approve" style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#00C853' }}>
+                                                        <button onClick={() => handleAction(inv.id, 'approve')} title="Approve" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--ae-green)' }}>
                                                             <CheckCircle size={16} />
                                                         </button>
                                                         <button onClick={() => handleAction(inv.id, 'reject')} title="Reject" style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#E53E3E' }}>
@@ -341,7 +373,7 @@ const InvoiceDashboard: React.FC = () => {
                                                 )}
 
                                                 {(inv.status === 'APPROVED' || inv.status === 'SENT' || inv.status === 'PAID' || inv.status === 'PARTIAL') && (
-                                                    <button onClick={() => handleSendEmail(inv.id)} title="Send Email" style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#9F7AEA' }}>
+                                                    <button onClick={() => handleSendEmail(inv.id)} title="Send Email" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--ae-navy-light)' }}>
                                                         <Mail size={16} />
                                                     </button>
                                                 )}
@@ -353,6 +385,13 @@ const InvoiceDashboard: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={invoices.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                />
             </div>
         </div>
     );

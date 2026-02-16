@@ -1,19 +1,39 @@
 /* Global Font Standardization - Enforcing strict system fonts (Arial/Times New Roman) */
 
 :root {
+  /* --- Primary Theme (Orange & Blue) --- */
+  --theme-primary: #FF6B00; /* Primary Orange */
+  --theme-secondary: #F7FAFC; /* Light Gray Background */
+  --theme-accent: #0066CC; /* Azure Blue */
+
   /* Brand Colors */
   --ae-blue: #0066CC;
-  --ae-navy: #1a1f36;
-  --ae-navy-light: #2d3748;
+  --ae-navy: #1A1F36;
+  --ae-navy-light: #2D3748;
   --ae-orange: #FF6B00;
-  --ae-orange-dark: #e65a00;
+  --ae-orange-dark: #E65100;
   --ae-green: #00C853;
-  --ae-gray-50: #F5F7FA;
-  --ae-gray-100: #E0E6ED;
+  --ae-gray-50: #F8FAFC;
+  --ae-gray-100: #EDF2F7;
   --ae-gray-800: #2D3748;
-  --ae-gray-900: #1a1f36;
-  --text-primary: #1a1f36;
-  --text-secondary: #718096;
+  --ae-gray-900: #1A202C;
+
+  /* Semantic Color Variables */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F7FAFC;
+  --bg-accent: #E2E8F0;
+  --bg-hover: #F1F5F9;
+
+  --text-primary: #1A202C;
+  --text-secondary: #4A5568;
+  --text-tertiary: #718096;
+
+  --border-primary: #E2E8F0;
+  --border-secondary: #CBD5E0;
+  --border-accent: #FF6B00;
+
+  --accent-primary: #FF6B00;
+  --accent-hover: #E65100;
 
   /* Dimensions */
   --nav-height: 72px;
@@ -22,9 +42,48 @@
   --sidebar-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Shadows */
-
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
   --shadow-card: 0 4px 6px rgba(0, 0, 0, 0.05);
   --shadow-hover: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.theme-autumn {
+  /* --- Autumn Theme (Secondary Light) --- */
+  --theme-primary: #BB4D00; /* Autumn Ember */
+  --theme-secondary: #FFF9F2; /* Warm Cream */
+  --theme-accent: #FBBA72; /* Sunlit Clay */
+
+  /* Brand Colors */
+  --ae-blue: #CA5310; /* Bronze Spice */
+  --ae-navy: #691E06; /* Molten Lava */
+  --ae-navy-light: #8F250C; /* Brandy */
+  --ae-orange: #BB4D00; /* Autumn Ember */
+  --ae-orange-dark: #8F250C; /* Brandy */
+  --ae-green: #00C853;
+  --ae-gray-50: #FFF9F2; /* Warm Cream */
+  --ae-gray-100: #F3E5D8; /* Warm Sand */
+  --ae-gray-800: #4B1504; /* Dark Brandy Text */
+  --ae-gray-900: #260B02; /* Darkest Lava Text */
+
+  /* Semantic Color Variables */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #FFF9F2;
+  --bg-accent: #FBBA72; /* Sunlit Clay */
+  --bg-hover: #FBBA72; /* Sunlit Clay Hover */
+
+  --text-primary: #691E06; /* Molten Lava */
+  --text-secondary: #8F250C; /* Brandy */
+  --text-tertiary: #CA5310; /* Bronze Spice */
+
+  --border-primary: #F3E5D8;
+  --border-secondary: #E9D7C5;
+  --border-accent: #BB4D00; /* Autumn Ember Border */
+
+  --accent-primary: #BB4D00; /* Autumn Ember */
+  --accent-hover: #CA5310; /* Bronze Spice Hover */
+
+  --shadow-md: 0 2px 8px rgba(187, 77, 0, 0.3);
 }
 
 * {

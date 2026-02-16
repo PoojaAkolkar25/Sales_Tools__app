@@ -1,16 +1,17 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Plus,
     Search,
     Receipt,
     Download,
     Columns,
     ChevronDown,
-    FileSpreadsheet
+    FileSpreadsheet,
+    Filter
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import Pagination from './Pagination';
 
 const ALL_COLUMNS = [
     { key: 'milestone_no', label: 'Milestone No' },
@@ -32,6 +33,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
     const [milestones, setMilestones] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const { showNotification } = useNotification();
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
 
     // Filter States
     const [filters, setFilters] = useState({
@@ -43,6 +46,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
         startDate: '',
         endDate: ''
     });
+    const [showFilters, setShowFilters] = useState(false);
 
     const [isDownloading, setIsDownloading] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
@@ -212,6 +216,13 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
         }).sort((a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime());
     }, [milestones, filters]);
 
+    const paginatedMilestones = useMemo(() => {
+        return filteredMilestones.slice(
+            (currentPage - 1) * ITEMS_PER_PAGE,
+            currentPage * ITEMS_PER_PAGE
+        );
+    }, [filteredMilestones, currentPage]);
+
     const counts = useMemo(() => ({
         all: milestones.length,
         pending: milestones.filter(m => m.status === 'PENDING').length,
@@ -219,9 +230,9 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
     }), [milestones]);
 
     const statusFlow = [
-        { label: `Pending (${counts.pending})`, value: 'PENDING', color: '#FF6B00' },
-        { label: `Invoiced (${counts.invoiced})`, value: 'INVOICED', color: '#00C853' },
-        { label: `All (${counts.all})`, value: '', color: '#718096' }
+        { label: `Pending(${counts.pending})`, value: 'PENDING', color: 'var(--theme-primary)' },
+        { label: `Invoiced(${counts.invoiced})`, value: 'INVOICED', color: '#00C853' },
+        { label: `All(${counts.all})`, value: '', color: 'var(--text-secondary)' }
     ];
 
     return (
@@ -232,7 +243,9 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                maxHeight: 'none',
+                overflowY: 'visible'
             }}>
                 {/* Controls Status Tabs and Actions - Padded Header Area */}
                 <div style={{
@@ -242,7 +255,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                     flexWrap: 'wrap',
                     gap: '16px',
                     padding: '20px',
-                    borderBottom: '1px solid #F1F5F9'
+                    borderBottom: '1px solid var(--border-primary)'
                 }}>
                     {/* Status Tabs */}
                     <div style={{
@@ -251,7 +264,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                         background: 'white',
                         padding: '6px',
                         borderRadius: '12px',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid var(--border-primary)',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                     }}>
                         {statusFlow.map((flow) => (
@@ -266,9 +279,9 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                     border: 'none',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s',
-                                    background: filters.status === flow.value ? '#FF6B00' : 'transparent',
-                                    color: filters.status === flow.value ? 'white' : '#64748B',
-                                    boxShadow: filters.status === flow.value ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                                    background: filters.status === flow.value ? 'var(--theme-primary)' : 'transparent',
+                                    color: filters.status === flow.value ? 'white' : 'var(--text-secondary)',
+                                    boxShadow: filters.status === flow.value ? '0 2px 8px rgba(187, 77, 0, 0.2)' : 'none'
                                 }}
                             >
                                 {flow.label}
@@ -279,7 +292,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                     {/* Right Side Actions */}
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748B' }}>Period:</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Period:</span>
                             <select
                                 className="ae-input"
                                 value={filters.period}
@@ -315,7 +328,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                     height: '32px',
                                     borderRadius: '8px',
                                     background: 'white',
-                                    color: '#4A5568',
+                                    color: 'var(--text-secondary)',
                                     fontWeight: 700,
                                     cursor: 'pointer'
                                 }}
@@ -326,22 +339,46 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid #E2E8F0', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                     <button
                                         onClick={() => { exportToCSV(); setShowExportMenu(false); }}
-                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
+                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                     >
                                         <FileSpreadsheet size={16} style={{ color: '#059669' }} /> CSV Report
                                     </button>
                                     <button
                                         onClick={() => { exportToExcel(); setShowExportMenu(false); }}
-                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
+                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                     >
                                         <FileSpreadsheet size={16} style={{ color: '#2563EB' }} /> Excel Report
                                     </button>
                                 </div>
                             )}
+                        </div>
+
+                        <div style={{ position: 'relative' }}>
+                            <button
+                                className="ae-btn-secondary"
+                                onClick={() => setShowFilters(!showFilters)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 14px',
+                                    fontSize: '0.8rem',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    background: showFilters ? 'var(--bg-secondary)' : 'white',
+                                    color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
+                                    borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                }}
+                                title={showFilters ? "Hide Filters" : "Show Filters"}
+                            >
+                                <Filter size={16} /> Filters
+                            </button>
                         </div>
 
                         <div style={{ position: 'relative' }} ref={columnMenuRef}>
@@ -357,7 +394,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                     height: '32px',
                                     borderRadius: '8px',
                                     background: 'white',
-                                    color: '#4A5568',
+                                    color: 'var(--text-secondary)',
                                     fontWeight: 700,
                                     cursor: 'pointer'
                                 }}
@@ -372,23 +409,54 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                     marginTop: '8px',
                                     background: 'white',
                                     borderRadius: '8px',
-                                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
                                     border: '1px solid #E2E8F0',
                                     zIndex: 100,
-                                    minWidth: '200px',
-                                    maxHeight: '400px',
+                                    minWidth: '220px',
+                                    maxHeight: '450px',
                                     overflowY: 'auto'
                                 }}>
-                                    <div style={{ padding: '8px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between' }}>
+                                    <div style={{
+                                        padding: '12px 16px',
+                                        borderBottom: '1px solid var(--border-primary)',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        background: 'var(--bg-secondary)'
+                                    }}>
                                         <button
                                             onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))}
-                                            style={{ background: 'none', border: 'none', color: '#0066CC', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--ae-blue)',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                transition: 'background 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                         >
                                             Select All
                                         </button>
                                         <button
                                             onClick={() => setVisibleColumns([])}
-                                            style={{ background: 'none', border: 'none', color: '#718096', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--text-tertiary)',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                transition: 'background 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                         >
                                             Clear All
                                         </button>
@@ -397,13 +465,18 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                         <label key={col.key} style={{
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '10px',
-                                            padding: '8px 16px',
-                                            fontSize: '0.8rem',
-                                            color: '#4A5568',
+                                            gap: '12px',
+                                            padding: '10px 16px',
+                                            fontSize: '0.85rem',
+                                            color: 'var(--text-primary)',
                                             cursor: 'pointer',
-                                            userSelect: 'none'
-                                        }} onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>
+                                            userSelect: 'none',
+                                            transition: 'background 0.2s',
+                                            borderBottom: '1px solid var(--border-primary)'
+                                        }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                        >
                                             <input
                                                 type="checkbox"
                                                 checked={visibleColumns.includes(col.key)}
@@ -414,8 +487,14 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                                         setVisibleColumns([...visibleColumns, col.key]);
                                                     }
                                                 }}
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    width: '16px',
+                                                    height: '16px',
+                                                    accentColor: 'var(--theme-primary)'
+                                                }}
                                             />
-                                            {col.label}
+                                            <span style={{ fontWeight: 600 }}>{col.label}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -429,78 +508,103 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                     <table className="ae-table">
                         <thead>
                             <tr>
-                                {visibleColumns.includes('milestone_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Milestone No</th>}
-                                {visibleColumns.includes('deal') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Deal</th>}
-                                {visibleColumns.includes('sales_order') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Sales Order</th>}
-                                {visibleColumns.includes('customer') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Customer</th>}
-                                {visibleColumns.includes('description') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Description</th>}
-                                {visibleColumns.includes('due_date') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Due Date</th>}
-                                {visibleColumns.includes('amount') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Amount</th>}
-                                {visibleColumns.includes('status') && <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Status</th>}
-                                {visibleColumns.includes('invoice_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Invoice No</th>}
-                                <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, width: '130px', backgroundColor: '#FAFBFC' }}>Actions</th>
+                                {visibleColumns.includes('milestone_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Milestone No</th>}
+                                {visibleColumns.includes('deal') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Deal</th>}
+                                {visibleColumns.includes('sales_order') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Sales Order</th>}
+                                {visibleColumns.includes('customer') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Customer</th>}
+                                {visibleColumns.includes('description') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Description</th>}
+                                {visibleColumns.includes('due_date') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Due Date</th>}
+                                {visibleColumns.includes('amount') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Amount</th>}
+                                {visibleColumns.includes('status') && <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Status</th>}
+                                {visibleColumns.includes('invoice_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Invoice No</th>}
+                                <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, width: '130px', backgroundColor: 'var(--bg-secondary)' }}>Actions</th>
                             </tr>
-                            {/* Filter Row */}
-                            <tr style={{ background: '#F7FAFC' }}>
-                                {visibleColumns.includes('milestone_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                    <div className="ae-input-group">
-                                        <Search className="ae-search-icon" size={12} />
-                                        <input className="ae-input" placeholder="Filter..." value={filters.milestoneNo} onChange={e => setFilters({ ...filters, milestoneNo: e.target.value })} style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }} />
-                                    </div>
-                                </th>}
-                                {visibleColumns.includes('sales_order') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                    <div className="ae-input-group">
-                                        <Search className="ae-search-icon" size={12} />
-                                        <input className="ae-input" placeholder="Filter..." value={filters.soNumber} onChange={e => setFilters({ ...filters, soNumber: e.target.value })} style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }} />
-                                    </div>
-                                </th>}
-                                {visibleColumns.includes('deal') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                {visibleColumns.includes('customer') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                    <div className="ae-input-group">
-                                        <Search className="ae-search-icon" size={12} />
-                                        <input className="ae-input" placeholder="Filter..." value={filters.customerName} onChange={e => setFilters({ ...filters, customerName: e.target.value })} style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }} />
-                                    </div>
-                                </th>}
-                                {visibleColumns.includes('description') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                {visibleColumns.includes('due_date') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                {visibleColumns.includes('amount') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                {visibleColumns.includes('status') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                {visibleColumns.includes('invoice_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                <th style={{ textAlign: 'center', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                    <button
-                                        onClick={() => setFilters({ milestoneNo: '', soNumber: '', customerName: '', status: '', period: '', startDate: '', endDate: '' })}
-                                        style={{ height: '24px', width: '100%', fontSize: '10px', color: '#FF6B00', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
-                                    >
-                                        Clear
-                                    </button>
-                                </th>
-                            </tr>
+                            {showFilters && (
+                                <tr style={{ background: 'var(--bg-secondary)' }}>
+                                    {visibleColumns.includes('milestone_no') && (
+                                        <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                            <div className="ae-input-group">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={filters.milestoneNo}
+                                                    onChange={e => setFilters({ ...filters, milestoneNo: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                    )}
+                                    {visibleColumns.includes('sales_order') && (
+                                        <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                            <div className="ae-input-group">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={filters.soNumber}
+                                                    onChange={e => setFilters({ ...filters, soNumber: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                    )}
+                                    {visibleColumns.includes('deal') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}></th>}
+                                    {visibleColumns.includes('customer') && (
+                                        <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                            <div className="ae-input-group">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={filters.customerName}
+                                                    onChange={e => setFilters({ ...filters, customerName: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                    )}
+                                    {visibleColumns.includes('description') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}></th>}
+                                    {visibleColumns.includes('due_date') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}></th>}
+                                    {visibleColumns.includes('amount') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}></th>}
+                                    {visibleColumns.includes('status') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}></th>}
+                                    {visibleColumns.includes('invoice_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}></th>}
+                                    <th style={{ textAlign: 'center', top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                        <button
+                                            onClick={() => setFilters({ milestoneNo: '', soNumber: '', customerName: '', status: '', period: '', startDate: '', endDate: '' })}
+                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                        >
+                                            Clear
+                                        </button>
+                                    </th>
+                                </tr>
+                            )}
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}>Loading...</td></tr>
-                            ) : filteredMilestones.length === 0 ? (
-                                <tr><td colSpan={visibleColumns.length + 1} style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>No milestones found.</td></tr>
+                            ) : paginatedMilestones.length === 0 ? (
+                                <tr><td colSpan={visibleColumns.length + 1} style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>No milestones found.</td></tr>
                             ) : (
-                                filteredMilestones.map((m) => (
+                                paginatedMilestones.map((m) => (
                                     <tr key={m.id}>
-                                        {visibleColumns.includes('milestone_no') && <td style={{ fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace' }}>{m.milestone_no}</td>}
+                                        {visibleColumns.includes('milestone_no') && <td style={{ fontWeight: 700, color: 'var(--theme-primary)', fontFamily: 'monospace' }}>{m.milestone_no}</td>}
                                         {visibleColumns.includes('deal') && (
                                             <td>
                                                 {m.sales_order_details?.deal ? (
                                                     <span
                                                         onClick={() => navigate(`/deal?id=${m.sales_order_details.deal}`)}
-                                                        style={{ fontWeight: 600, color: '#0066CC', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                                        style={{ fontWeight: 600, color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
                                                     >
                                                         {m.sales_order_details.deal_id}
                                                     </span>
                                                 ) : '—'}
                                             </td>
                                         )}
-                                        {visibleColumns.includes('sales_order') && <td style={{ fontWeight: 700, color: '#0066CC', fontSize: '0.8rem' }}>{m.sales_order_details?.so_number}</td>}
-                                        {visibleColumns.includes('customer') && <td style={{ color: '#4A5568', fontWeight: 500 }}>{m.sales_order_details?.customer_name}</td>}
-                                        {visibleColumns.includes('description') && <td style={{ color: '#2D3748', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={m.description || '—'}>{m.description}</td>}
-                                        {visibleColumns.includes('due_date') && <td style={{ color: '#4A5568', fontWeight: 600 }}>{new Date(m.due_date).toLocaleDateString()}</td>}
+                                        {visibleColumns.includes('sales_order') && <td style={{ fontWeight: 700, color: 'var(--ae-blue)', fontSize: '0.8rem' }}>{m.sales_order_details?.so_number}</td>}
+                                        {visibleColumns.includes('customer') && <td style={{ fontWeight: 500 }}>{m.sales_order_details?.customer_name}</td>}
+                                        {visibleColumns.includes('description') && <td style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={m.description || '—'}>{m.description}</td>}
+                                        {visibleColumns.includes('due_date') && <td style={{ fontWeight: 600 }}>{new Date(m.due_date).toLocaleDateString()}</td>}
                                         {visibleColumns.includes('amount') && <td style={{ textAlign: 'right', fontWeight: 700, color: '#1a1f36' }}>${parseFloat(m.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>}
                                         {visibleColumns.includes('status') && <td style={{ textAlign: 'center' }}>
                                             <span style={{
@@ -509,8 +613,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                                 fontSize: '10px',
                                                 fontWeight: 700,
                                                 textTransform: 'uppercase',
-                                                background: m.status === 'INVOICED' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 107, 0, 0.1)',
-                                                color: m.status === 'INVOICED' ? '#00C853' : '#FF6B00'
+                                                background: m.status === 'INVOICED' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(187, 77, 0, 0.1)',
+                                                color: m.status === 'INVOICED' ? '#00C853' : 'var(--theme-primary)'
                                             }}>
                                                 {m.status}
                                             </span>
@@ -525,7 +629,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                                         alignItems: 'center',
                                                         gap: '6px',
                                                         padding: '6px 12px',
-                                                        background: '#0066CC',
+                                                        background: 'var(--ae-blue)',
                                                         color: 'white',
                                                         border: 'none',
                                                         borderRadius: '6px',
@@ -534,8 +638,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                                         cursor: 'pointer',
                                                         transition: 'all 0.2s'
                                                     }}
-                                                    onMouseOver={(e) => e.currentTarget.style.background = '#0052A3'}
-                                                    onMouseOut={(e) => e.currentTarget.style.background = '#0066CC'}
+                                                    onMouseOver={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
+                                                    onMouseOut={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
                                                 >
                                                     <Receipt size={14} /> Invoice
                                                 </button>
@@ -549,6 +653,13 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={filteredMilestones.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                />
             </div>
         </div>
     );

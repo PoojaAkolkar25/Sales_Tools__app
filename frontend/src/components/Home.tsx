@@ -25,8 +25,8 @@ const Home: React.FC<HomeProps> = ({ user }) => {
 
             {/* Hero Section */}
             <div className="ae-hero" style={{ padding: '16px 24px', margin: '0 auto', width: '95%', flexShrink: 0 }}>
-                <div className="ae-hero-bg-glow" style={{ top: '-50%', left: '-10%', background: '#FF6B00' }}></div>
-                <div className="ae-hero-bg-glow" style={{ bottom: '-50%', right: '-10%', background: '#0066CC' }}></div>
+                <div className="ae-hero-bg-glow" style={{ top: '-50%', left: '-10%', background: 'var(--theme-primary)' }}></div>
+                <div className="ae-hero-bg-glow" style={{ bottom: '-50%', right: '-10%', background: 'var(--ae-blue)' }}></div>
 
                 <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
@@ -41,15 +41,15 @@ const Home: React.FC<HomeProps> = ({ user }) => {
 
                     <div style={{ display: 'flex', gap: '12px' }}>
                         <div className="ae-status-pill" style={{ padding: '4px 8px', fontSize: '0.7rem' }}>
-                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00C853' }}></div>
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--ae-green)' }}></div>
                             <span>Pipeline Active</span>
                         </div>
                         <div className="ae-status-pill" style={{ padding: '4px 8px', fontSize: '0.7rem' }}>
-                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FF6B00' }}></div>
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--theme-primary)' }}></div>
                             <span>Tracking Enabled</span>
                         </div>
                         <div className="ae-status-pill" style={{ padding: '4px 8px', fontSize: '0.7rem' }}>
-                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0066CC' }}></div>
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--ae-blue)' }}></div>
                             <span>Syncing Data</span>
                         </div>
                     </div>
@@ -59,7 +59,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
             {/* Main Content Area */}
             <div style={{
                 background: 'white',
-                border: '1px solid #E0E6ED',
+                border: '1px solid var(--border-primary)',
                 borderRadius: '12px',
                 padding: '20px',
                 width: '95%',
@@ -72,28 +72,28 @@ const Home: React.FC<HomeProps> = ({ user }) => {
             }}>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexShrink: 0 }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1a1f36', margin: 0 }}>Performance Overview</h3>
-                    <p style={{ color: '#718096', fontSize: '0.8rem', margin: 0 }}>Real-time metrics for <span className="text-blue" style={{ fontWeight: 600 }}>{user?.username}</span></p>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Performance Overview</h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0 }}>Real-time metrics for <span style={{ color: 'var(--ae-blue)', fontWeight: 600 }}>{user?.username}</span></p>
                 </div>
 
                 {/* KPI Cards Grid */}
                 <div className="ae-grid-4" style={{ marginBottom: '20px' }}>
                     {[
-                        { label: 'Total Revenue', value: '$124,500', icon: TrendingUp, color: 'text-green', bg: 'bg-green-soft', trend: '+12.5%' },
-                        { label: 'Active Leads', value: '42', icon: Users, color: 'text-blue', bg: 'bg-blue-soft', trend: '+5 new' },
-                        { label: 'Open Deals', value: '18', icon: Briefcase, color: 'text-orange', bg: 'bg-orange-soft', trend: '3 closing' },
-                        { label: 'Monthly Growth', value: '32%', icon: Target, color: 'text-purple', bg: 'bg-purple-soft', trend: '+2.4%' },
+                        { label: 'Total Revenue', value: '$124,500', icon: TrendingUp, color: 'var(--ae-green)', bg: 'rgba(0, 200, 83, 0.05)', trend: '+12.5%' },
+                        { label: 'Active Leads', value: '42', icon: Users, color: 'var(--ae-blue)', bg: 'rgba(0, 102, 204, 0.05)', trend: '+5 new' },
+                        { label: 'Open Deals', value: '18', icon: Briefcase, color: 'var(--ae-orange)', bg: 'rgba(187, 77, 0, 0.05)', trend: '3 closing' },
+                        { label: 'Monthly Growth', value: '32%', icon: Target, color: 'var(--ae-navy)', bg: 'rgba(105, 30, 6, 0.05)', trend: '+2.4%' },
                     ].map((stat, idx) => (
                         <div key={idx} className="ae-card ae-card-sm">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
                                     <div className="ae-card-label">{stat.label}</div>
                                     <div className="ae-card-value">{stat.value}</div>
-                                    <span style={{ fontSize: '0.65rem', color: '#718096', display: 'block', marginTop: '2px' }}>
+                                    <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
                                         {stat.trend}
                                     </span>
                                 </div>
-                                <div className={`ae-icon-box ${stat.bg} ${stat.color}`}>
+                                <div className="ae-icon-box" style={{ backgroundColor: stat.bg, color: stat.color }}>
                                     <stat.icon size={16} />
                                 </div>
                             </div>
@@ -108,7 +108,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                     {/* Activity Feed */}
                     <div className="ae-panel" style={{ padding: '16px', overflowY: 'auto' }}>
                         <div className="ae-panel-title" style={{ fontSize: '0.95rem', marginBottom: '12px' }}>
-                            <Activity size={16} className="text-blue" />
+                            <Activity size={16} style={{ color: 'var(--ae-blue)' }} />
                             Recent Activity
                         </div>
 
@@ -133,7 +133,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                     </div>
 
                     {/* Quick Actions Panel */}
-                    <div className="ae-panel" style={{ background: '#F9FAFB', padding: '16px', display: 'flex', flexDirection: 'column' }}>
+                    <div className="ae-panel" style={{ background: 'var(--bg-secondary)', padding: '16px', display: 'flex', flexDirection: 'column' }}>
                         <div className="ae-panel-title" style={{ fontSize: '0.95rem', marginBottom: '12px' }}>Quick Actions</div>
                         <div style={{ flex: 1 }}>
                             {[
@@ -142,22 +142,22 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                                 { label: 'Add Task', icon: PlusCircle, action: () => navigate('/milestone') },
                             ].map((action, idx) => (
                                 <button key={idx} className="ae-action-btn" onClick={action.action} style={{ padding: '10px', marginBottom: '8px' }}>
-                                    <div style={{ color: '#A0AEC0' }}>
+                                    <div style={{ color: 'var(--text-secondary)' }}>
                                         <action.icon size={16} />
                                     </div>
                                     <span className="ae-action-label" style={{ fontSize: '0.8rem' }}>{action.label}</span>
-                                    <ArrowRight size={12} style={{ color: '#CBD5E0' }} />
+                                    <ArrowRight size={12} style={{ color: 'var(--text-secondary)' }} />
                                 </button>
                             ))}
                         </div>
 
                         <div className="mt-4 p-3 rounded-xl border border-dashed border-orange-200" style={{ background: 'rgba(255,107,0,0.05)', marginTop: 'auto' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                <span className="text-orange" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>Monthly Goal</span>
-                                <span className="text-orange" style={{ fontSize: '0.7rem', fontWeight: 700 }}>75%</span>
+                                <span style={{ color: 'var(--theme-primary)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>Monthly Goal</span>
+                                <span style={{ color: 'var(--theme-primary)', fontSize: '0.7rem', fontWeight: 700 }}>75%</span>
                             </div>
                             <div style={{ width: '100%', background: '#E2E8F0', height: '4px', borderRadius: '99px' }}>
-                                <div style={{ width: '75%', background: '#FF6B00', height: '100%', borderRadius: '99px' }}></div>
+                                <div style={{ width: '75%', background: 'var(--theme-primary)', height: '100%', borderRadius: '99px' }}></div>
                             </div>
                         </div>
                     </div>

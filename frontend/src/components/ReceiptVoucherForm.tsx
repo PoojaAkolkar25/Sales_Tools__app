@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Save, Calendar, DollarSign, Upload } from 'lucide-react';
+import { Save, Calendar, DollarSign, Paperclip, File as FileIcon, Download, Trash2 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 
@@ -15,6 +15,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
     const [bankConnections, setBankConnections] = useState<any[]>([]);
     const [invoices, setInvoices] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         customer_name: '', // Changed from lead to customer_name
@@ -240,9 +242,9 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Dashboard Style Heading */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                         Receipt Vouchers
                     </h2>
                 </div>
@@ -332,9 +334,9 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 border: 'none',
                                 cursor: 'default',
                                 transition: 'all 0.2s',
-                                background: '#FF6B00',
+                                background: 'var(--theme-primary)',
                                 color: 'white',
-                                boxShadow: '0 2px 8px rgba(255, 107, 0, 0.3)'
+                                boxShadow: 'var(--shadow-md)'
                             }}
                         >
                             {id ? 'View Receipt' : 'Create Receipt'}
@@ -346,18 +348,18 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                 <div style={{ padding: '24px', overflowY: 'auto' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
                         <span style={{
-                            width: '3px',
-                            height: '14px',
-                            background: '#0066CC',
+                            width: '4px',
+                            height: '18px',
+                            background: 'var(--ae-blue)',
                             borderRadius: '2px'
                         }}></span>
-                        <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', margin: 0 }}>
+                        <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', margin: 0 }}>
                             {id ? 'Edit Receipt Voucher' : 'Create Receipt Voucher'}
                         </h2>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-                        <div className="ae-input-group">
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Name</label>
                             <select
                                 style={{ width: '100%', padding: '6px 12px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
@@ -370,7 +372,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 ))}
                             </select>
                         </div>
-                        <div className="ae-input-group">
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Payment Date</label>
                             <div style={{ position: 'relative' }}>
                                 <Calendar size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
@@ -382,7 +384,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 />
                             </div>
                         </div>
-                        <div className="ae-input-group">
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Number</label>
                             <input
                                 style={{ width: '100%', padding: '6px 12px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
@@ -391,7 +393,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 onChange={e => setFormData({ ...formData, reference_number: e.target.value })}
                             />
                         </div>
-                        <div className="ae-input-group">
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Payment Method</label>
                             <select
                                 style={{ width: '100%', padding: '6px 12px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
@@ -404,7 +406,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 <option>Credit Card</option>
                             </select>
                         </div>
-                        <div className="ae-input-group">
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deposit To (Bank)</label>
                             <select
                                 style={{ width: '100%', padding: '6px 12px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
@@ -415,7 +417,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 {bankConnections.map(b => <option key={b.id} value={b.id}>{b.bank_name} - {b.account_number}</option>)}
                             </select>
                         </div>
-                        <div className="ae-input-group">
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Amount Received</label>
                             <div style={{ position: 'relative' }}>
                                 <DollarSign size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
@@ -427,7 +429,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 />
                             </div>
                         </div>
-                        <div className="ae-input-group">
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Bank Charges</label>
                             <div style={{ position: 'relative' }}>
                                 <DollarSign size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
@@ -439,7 +441,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 />
                             </div>
                         </div>
-                        <div className="ae-input-group">
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>TDS Receivable</label>
                             <div style={{ position: 'relative' }}>
                                 <DollarSign size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
@@ -451,7 +453,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 />
                             </div>
                         </div>
-                        <div className="ae-input-group">
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>TDS (%)</label>
                             <input
                                 type="number"
@@ -460,7 +462,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 onChange={e => setFormData({ ...formData, tds_percentage: e.target.value })}
                             />
                         </div>
-                        <div className="ae-input-group">
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Exchange Rate</label>
                             <input
                                 type="number"
@@ -476,7 +478,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#2D3748', marginBottom: '16px' }}>Outstanding Transactions</h3>
 
                         <div className="ae-table-container" style={{ maxHeight: '40vh', borderRadius: '12px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-                            <table className="ae-table" style={{ background: 'white' }}>
+                            <table className="ae-table">
                                 <thead>
                                     <tr>
                                         <th style={{ width: '32px', textAlign: 'center' }}>#</th>
@@ -573,29 +575,158 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         </div>
                     </div>
 
-                    <div className="ae-input-group" style={{ marginBottom: '24px' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Attachments</label>
-                        <div style={{ padding: '24px', border: '2px dashed #E2E8F0', borderRadius: '12px', textAlign: 'center', background: '#F8FAFC' }}>
+                    {/* Attachments Section */}
+                    <div style={{ marginBottom: '24px' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>
+                            Attachments
+                        </label>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px',
+                            padding: '4px 12px',
+                            background: '#F8FAFC',
+                            borderRadius: '12px',
+                            border: '1px solid #E0E6ED',
+                            width: 'fit-content',
+                            minWidth: 'fit-content',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                        }}>
                             <input
                                 type="file"
+                                id="file-upload"
                                 multiple
                                 style={{ display: 'none' }}
-                                id="file-upload"
-                                onChange={e => {
+                                onChange={(e) => {
                                     if (e.target.files) {
-                                        setFormData({ ...formData, attachments: Array.from(e.target.files) });
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            attachments: [...prev.attachments, ...Array.from(e.target.files || [])]
+                                        }));
                                     }
                                 }}
                             />
-                            <label htmlFor="file-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                <Upload size={24} color="#A0AEC0" />
-                                <span style={{ color: '#4A5568', fontWeight: 700, fontSize: '0.9rem' }}>Click to upload files</span>
-                                <span style={{ fontSize: '0.75rem', color: '#718096' }}>
-                                    {formData.attachments.length > 0
-                                        ? `${formData.attachments.length} file(s) selected`
-                                        : 'Supports documents, images and PDFs'}
-                                </span>
-                            </label>
+                            <button
+                                onClick={() => document.getElementById('file-upload')?.click()}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    background: 'white',
+                                    color: '#1a1f36',
+                                    border: '1px solid #E0E6ED',
+                                    height: '34px',
+                                    padding: '0 16px',
+                                    borderRadius: '8px',
+                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#FF6B00';
+                                    e.currentTarget.style.color = 'white';
+                                    e.currentTarget.style.borderColor = '#FF6B00';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'white';
+                                    e.currentTarget.style.color = '#1a1f36';
+                                    e.currentTarget.style.borderColor = '#E0E6ED';
+                                }}
+                            >
+                                <Paperclip size={14} /> Attachments
+                            </button>
+
+                            {/* File List pills */}
+                            <div style={{
+                                flex: 1,
+                                display: 'flex',
+                                gap: '8px',
+                                overflowX: 'auto',
+                                padding: '4px 0',
+                                alignItems: 'center'
+                            }}>
+                                {formData.attachments.length > 0 ? (
+                                    formData.attachments.map((file, index) => (
+                                        <div key={index} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '4px 10px',
+                                            background: 'white',
+                                            borderRadius: '8px',
+                                            border: '1px solid #E0E6ED',
+                                            minWidth: 'fit-content'
+                                        }}>
+                                            <FileIcon size={12} style={{ color: '#FF6B00' }} />
+                                            <span style={{
+                                                fontSize: '0.8rem',
+                                                fontWeight: 600,
+                                                color: '#1a1f36',
+                                                maxWidth: '120px',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
+                                            }}>
+                                                {file.name}
+                                            </span>
+                                            <div style={{ display: 'flex', gap: '4px' }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const url = URL.createObjectURL(file);
+                                                        window.open(url, '_blank');
+                                                        // Note: we should revoke object URL eventually, but for this quick view it's okay, or we can handle it better. 
+                                                        // For simplicity in this context, we just open it.
+                                                    }}
+                                                    style={{
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        borderRadius: '50%',
+                                                        border: 'none',
+                                                        background: '#f1f5f9',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        color: '#475569'
+                                                    }}
+                                                    title="View/Download"
+                                                >
+                                                    <Download size={10} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            attachments: prev.attachments.filter((_, i) => i !== index)
+                                                        }));
+                                                    }}
+                                                    style={{
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        borderRadius: '50%',
+                                                        border: 'none',
+                                                        background: '#fee2e2',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        color: '#ef4444'
+                                                    }}
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 size={10} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <span style={{ fontSize: '0.9rem', color: '#A0AEC0', fontStyle: 'italic', marginLeft: '10px' }}>No attachments yet</span>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -642,7 +773,6 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                 </div>
             </div>
 
-            {/* Footer Actions */}
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -652,7 +782,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                 borderRadius: '12px',
                 border: '1px solid #E0E6ED',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                width: 'fit-content'
+                width: 'fit-content',
+                marginLeft: 'auto'
             }}>
                 <button
                     onClick={handleSubmit}
@@ -662,51 +793,141 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         alignItems: 'center',
                         gap: '8px',
                         padding: '8px 24px',
-                        background: '#FF6B00',
-                        color: 'white',
+                        background: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
+                        color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
                         border: 'none',
                         borderRadius: '8px',
                         fontSize: '0.9rem',
                         fontWeight: 800,
                         cursor: loading ? 'not-allowed' : 'pointer',
                         transition: 'all 0.2s',
-                        boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
+                        boxShadow: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                     }}
-                    onMouseEnter={(e) => {
-                        if (!loading) {
-                            e.currentTarget.style.background = '#e66000';
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        if (!loading) {
-                            e.currentTarget.style.background = '#FF6B00';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                        }
-                    }}
+                    onMouseEnter={() => setHoveredBtn('save')}
+                    onMouseLeave={() => setHoveredBtn(null)}
                 >
                     {loading ? <Save className="animate-spin" size={18} /> : <Save size={18} />}
                     {id ? 'Update Receipt' : 'Save Receipt'}
                 </button>
                 <button
-                    onClick={onBack}
+                    onClick={() => setShowCancelModal(true)}
                     style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
                         padding: '8px 20px',
-                        background: 'transparent',
-                        color: '#718096',
+                        background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
                         border: 'none',
                         borderRadius: '8px',
                         fontSize: '0.9rem',
                         fontWeight: 700,
                         cursor: 'pointer',
-                        transition: 'all 0.2s'
+                        transition: 'all 0.2s',
+                        boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    onMouseEnter={() => setHoveredBtn('cancel')}
+                    onMouseLeave={() => setHoveredBtn(null)}
                 >
-                    Cancel
+                    <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
+                    <span>Cancel</span>
                 </button>
             </div>
+
+            {/* Cancel Confirmation Modal */}
+            {showCancelModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(255, 255, 255, 0.4)',
+                    backdropFilter: 'blur(1px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    <div style={{
+                        background: 'white',
+                        width: '100%',
+                        maxWidth: '500px',
+                        borderRadius: '12px',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        border: '1px solid #E2E8F0',
+                        overflow: 'hidden',
+                        animation: 'modalScale 0.2s ease-out'
+                    }}>
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '10px',
+                                    background: '#FFF5F5',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
+                                        Leave this page?
+                                    </h3>
+                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                        If you leave, your unsaved changes will be discarded.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
+                                <button
+                                    onClick={() => setShowCancelModal(false)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        background: '#3B82F6',
+                                        color: 'white',
+                                        border: 'none',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        height: '40px'
+                                    }}
+                                >
+                                    Stay Here
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowCancelModal(false);
+                                        onBack();
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        background: 'white',
+                                        color: '#1a1f36',
+                                        border: '1px solid #E2E8F0',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        height: '40px'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                >
+                                    Leave & Discard Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

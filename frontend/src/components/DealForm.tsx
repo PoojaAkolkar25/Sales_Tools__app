@@ -5,27 +5,24 @@ import {
     Paperclip,
     Download,
     Loader2,
-    RefreshCcw,
     File,
-    History as HistoryIcon,
     Save,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import AuditTrail from './AuditTrail';
 
 interface DealFormProps {
     id: number | null;
     onBack: () => void;
     onSave: () => void;
+    refreshTrigger?: number;
 }
 
-const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
+const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger }) => {
     const navigate = useNavigate();
     const { showNotification } = useNotification();
     const [loading, setLoading] = useState(false);
-    const [syncing, setSyncing] = useState(false);
     const [leads, setLeads] = useState<any[]>([]);
     const [partners, setPartners] = useState<any[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
@@ -52,8 +49,10 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploadFeedback, setUploadFeedback] = useState<{ type: 'success' | 'error' | ''; message: string }>({ type: '', message: '' });
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
 
-    const [showHistory, setShowHistory] = useState(false);
+
 
     const [formData, setFormData] = useState<any>({
         company: 'AE IND',
@@ -89,7 +88,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
         if (id) {
             fetchDealDetails();
         }
-    }, [id]);
+    }, [id, refreshTrigger]);
 
     const fetchInitialData = async () => {
         try {
@@ -224,22 +223,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
         }));
     };
 
-    const handleHubSpotSync = async () => {
-        if (!id) {
-            showNotification('Save the project first before syncing with HubSpot', 'warning');
-            return;
-        }
-        setSyncing(true);
-        try {
-            const response = await api.post(`/deals/${id}/sync_hubspot/`);
-            showNotification(response.data.message, 'success');
-            fetchDealDetails();
-        } catch (error: any) {
-            showNotification(error.response?.data?.message || 'HubSpot sync failed', 'error');
-        } finally {
-            setSyncing(false);
-        }
-    };
+
 
     const handleAddNew = async () => {
         // For Company Profile, validate required fields
@@ -460,8 +444,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
     const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: '4px', height: '18px', background: '#0066CC', borderRadius: '2px' }}></span>
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#FF6B00' }}>{title}</h3>
+                <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)' }}>{title}</h3>
             </div>
             {extra}
         </div>
@@ -469,35 +453,6 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
 
     return (
         <div className="space-y-6" style={{ padding: '4px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-
-                <div style={{ display: 'flex', gap: '12px' }}>
-                    {id && (
-                        <>
-                            <button
-                                type="button"
-                                onClick={() => setShowHistory(true)}
-                                className="ae-btn-secondary"
-                                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                            >
-                                <HistoryIcon size={18} />
-                                History
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleHubSpotSync}
-                                disabled={syncing}
-                                className="ae-btn-secondary"
-                                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                            >
-                                <RefreshCcw size={18} className={syncing ? 'animate-spin' : ''} />
-                                {syncing ? 'Syncing...' : 'Sync HubSpot'}
-                            </button>
-                        </>
-                    )}
-                </div>
-            </div>
-
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div style={{
                     background: 'white',
@@ -513,15 +468,15 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                     <div>
                         <SectionHeader title="Deal Information" />
                         <div className="ae-grid-4">
-                            <div className="ae-input-group">
-                                <label className="ae-label">Company Name *</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Company Name *</label>
                                 <select name="company" value={formData.company} onChange={handleInputChange} className="ae-input" required>
                                     <option value="AE IND">AE IND</option>
                                     <option value="AE USA">AE USA</option>
                                 </select>
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Lead Date</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead Date</label>
                                 <input
                                     type="date"
                                     value={formData.lead ? leads.find(l => l.id === parseInt(formData.lead))?.lead_date || '' : ''}
@@ -530,8 +485,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                     style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
                                 />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Lead Number</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead Number</label>
                                 <input
                                     type="text"
                                     value={formData.lead ? leads.find(l => l.id === parseInt(formData.lead))?.lead_no || 'No Lead Linked' : 'No Lead Linked'}
@@ -540,62 +495,62 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                     style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
                                 />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Deal Date *</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Date *</label>
                                 <input
                                     type="date"
                                     name="deal_date"
                                     value={formData.deal_date}
                                     className="ae-input"
                                     disabled
-                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
+                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
                                     required
                                 />
                             </div>
                         </div>
 
                         <div className="ae-grid-4 mt-6">
-                            <div className="ae-input-group">
-                                <label className="ae-label">Deal Number</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Number</label>
                                 <input
                                     type="text"
                                     value={id ? formData.deal_id : 'System Generated'}
                                     className="ae-input"
                                     disabled
-                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
+                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
                                 />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Customer/Partner Name</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer/Partner Name</label>
                                 <select name="customer" value={formData.customer} onChange={handleInputChange} className="ae-input">
                                     <option value="">Select Customer</option>
                                     {companies.map(c => {
                                         const customerId = customers.find(cust => cust.name === c.name)?.id || '';
                                         return <option key={c.id} value={customerId}>{c.name}</option>;
                                     })}
-                                    <option value="ADD_NEW" style={{ fontWeight: 700, color: '#FF6B00' }}>+ Add New Customer</option>
+                                    <option value="ADD_NEW" style={{ fontWeight: 700, color: 'var(--theme-primary)' }}>+ Add New Customer</option>
                                 </select>
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">End Customer</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>End Customer</label>
                                 <input
                                     type="text"
                                     name="end_customer"
                                     value={formData.end_customer}
                                     onChange={handleInputChange}
                                     className="ae-input"
-                                    placeholder="Enter end customer name"
+                                    placeholder="End Customer"
                                 />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Project Name *</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Name *</label>
                                 <input
                                     type="text"
                                     name="deal_name"
                                     value={formData.deal_name}
                                     onChange={handleInputChange}
                                     className="ae-input"
-                                    placeholder="AutomationEdge Project ABC"
+                                    placeholder="Project Name"
                                     required
                                 />
                             </div>
@@ -614,10 +569,10 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                         <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '50px' }}>Sr.No.</th>
                                         <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '200px' }}>Type *</th>
                                         <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>Description</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '100px' }}>Currency</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '80px' }}>Qty</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '130px' }}>Rate</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '140px' }}>Amount</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '100px' }}>Currency</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '80px' }}>Qty</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '130px' }}>Rate</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '140px' }}>Amount</th>
                                         <th style={{ padding: '12px 8px', textAlign: 'center', width: '40px' }}></th>
                                     </tr>
                                 </thead>
@@ -669,7 +624,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                                         value={item.description}
                                                         onChange={(e) => handleDealTypeChange(index, 'description', e.target.value)}
                                                         className="ae-input"
-                                                        placeholder="Enter description"
+                                                        placeholder="Description"
                                                         style={{ height: '36px', padding: '4px 8px' }}
                                                     />
                                                 </td>
@@ -680,7 +635,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                                         onChange={handleInputChange}
                                                         className="ae-input"
                                                         required
-                                                        style={{ height: '36px', padding: '4px 8px', textAlign: 'center' }}
+                                                        style={{ height: '36px', padding: '4px 8px', textAlign: 'left' }}
                                                     >
                                                         <option value="USD">USD</option>
                                                         <option value="INR">INR</option>
@@ -695,7 +650,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                                         className="ae-input"
                                                         min="1"
                                                         placeholder="0"
-                                                        style={{ height: '36px', padding: '4px 8px', textAlign: 'center' }}
+                                                        style={{ height: '36px', padding: '4px 8px', textAlign: 'left' }}
                                                     />
                                                 </td>
                                                 <td style={{ padding: '8px' }}>
@@ -709,7 +664,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                                             onChange={(e) => handleDealTypeChange(index, 'amount', e.target.value)}
                                                             className="ae-input"
                                                             placeholder="0"
-                                                            style={{ height: '36px', padding: '4px 8px 4px 24px', textAlign: 'right' }}
+                                                            style={{ height: '36px', padding: '4px 8px 4px 24px', textAlign: 'left' }}
                                                             onKeyDown={(e) => {
                                                                 if (e.key === 'Tab' && !e.shiftKey && index === (formData.deal_types || []).length - 1) {
                                                                     e.preventDefault();
@@ -720,7 +675,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                                         />
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '8px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>
+                                                <td style={{ padding: '8px', textAlign: 'left', fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>
                                                     {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
                                                     {amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </td>
@@ -743,7 +698,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                 <tfoot>
                                     <tr style={{ background: '#F8FAFC' }}>
                                         <td colSpan={7} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#4A5568' }}>Total Deal Value:</td>
-                                        <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '1.1rem', fontWeight: 800, color: '#FF6B00' }}>
+                                        <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.95rem', fontWeight: 800, color: '#FF6B00' }}>
                                             {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
                                             {parseFloat(formData.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
@@ -754,8 +709,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                         </div>
 
                         <div className="ae-grid-4 mt-6" style={{ borderTop: '1px solid #E2E8F0', paddingTop: '20px' }}>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Deal Stage *</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Stage *</label>
                                 <select name="stage" value={formData.stage} onChange={handleInputChange} className="ae-input" required>
                                     <option value="DEAL_CREATED">Deal created</option>
                                     <option value="COST_SHEET">Cost Sheet</option>
@@ -765,16 +720,16 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                     <option value="PAYMENT">Payment</option>
                                 </select>
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Client Type</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Client Type</label>
                                 <select name="client_type" value={formData.client_type} onChange={handleInputChange} className="ae-input">
                                     <option value="">Select Type</option>
                                     <option value="NEW">New</option>
                                     <option value="EXISTING">Existing</option>
                                 </select>
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Expected Close Date</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Expected Close Date</label>
                                 <input type="date" name="expected_close_date" value={formData.expected_close_date} onChange={handleInputChange} className="ae-input" />
                             </div>
                         </div>
@@ -784,32 +739,34 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                         <SectionHeader title="Deal Team" />
                         <div className="ae-grid-4">
-                            <div className="ae-input-group">
-                                <label className="ae-label">Inside Salesperson Name</label>
-                                <input type="text" name="inside_salesperson" value={formData.inside_salesperson} onChange={handleInputChange} className="ae-input" />
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Inside Salesperson Name</label>
+                                <input type="text" name="inside_salesperson" placeholder="Inside Salesperson Name" value={formData.inside_salesperson} onChange={handleInputChange} className="ae-input" />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Inside Sales Head</label>
-                                <input type="text" name="inside_sales_head" value={formData.inside_sales_head} onChange={handleInputChange} className="ae-input" />
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Inside Sales Head</label>
+                                <input type="text" name="inside_sales_head"
+                                    placeholder="Inside Sales Head" value={formData.inside_sales_head} onChange={handleInputChange} className="ae-input" />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Salesperson Name</label>
-                                <input type="text" name="salesperson_name" value={formData.salesperson_name} onChange={handleInputChange} className="ae-input" />
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Salesperson Name</label>
+                                <input type="text" name="salesperson_name"
+                                    placeholder="Salesperson Name" value={formData.salesperson_name} onChange={handleInputChange} className="ae-input" />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Sales Head</label>
-                                <input type="text" name="sales_head" value={formData.sales_head} onChange={handleInputChange} className="ae-input" />
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Head</label>
+                                <input type="text" name="sales_head" placeholder="Sales Head" value={formData.sales_head} onChange={handleInputChange} className="ae-input" />
                             </div>
                         </div>
 
                         <div className="ae-grid-4 mt-6">
-                            <div className="ae-input-group">
-                                <label className="ae-label">Project Manager</label>
-                                <input type="text" name="project_manager" value={formData.project_manager} onChange={handleInputChange} className="ae-input" />
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Manager</label>
+                                <input type="text" name="project_manager" placeholder="Project Manager" value={formData.project_manager} onChange={handleInputChange} className="ae-input" />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Project Manager Head</label>
-                                <input type="text" name="project_manager_head" value={formData.project_manager_head} onChange={handleInputChange} className="ae-input" />
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Manager Head</label>
+                                <input type="text" name="project_manager_head" placeholder="Project Manager Head" value={formData.project_manager_head} onChange={handleInputChange} className="ae-input" />
                             </div>
                         </div>
                     </div>
@@ -819,121 +776,183 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                         <SectionHeader title="Description/Remark" />
 
-                        <div className="ae-input-group">
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <textarea
                                 name="remark"
                                 value={formData.remark}
                                 onChange={handleInputChange}
-                                className="ae-input"
-                                style={{ minHeight: '120px', padding: '16px', borderRadius: '12px' }}
-                                placeholder="Click to add description/remark for this project..."
+                                style={{
+                                    width: '100%',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '6px',
+                                    padding: '12px',
+                                    minHeight: '80px',
+                                    outline: 'none',
+                                    background: 'white',
+                                    fontSize: '0.85rem'
+                                }}
+                                placeholder="Description/Remark"
                             ></textarea>
                         </div>
 
-                        {/* Document Attachments Row */}
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '16px',
-                            marginTop: '24px',
-                            padding: '16px 20px',
-                            background: '#FAFBFC',
-                            borderRadius: '16px',
-                            border: '1px solid #E0E6ED'
-                        }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                    <label style={{
+                        {/* Attachments Section */}
+                        <div style={{ marginTop: '24px' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>
+                                Attachments
+                            </label>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '16px',
+                                padding: '4px 12px',
+                                background: '#F8FAFC',
+                                borderRadius: '12px',
+                                border: '1px solid #E0E6ED',
+                                width: 'fit-content',
+                                minWidth: 'fit-content',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                            }}>
+                                <input
+                                    id="file-upload-input"
+                                    type="file"
+                                    onChange={handleFileUpload}
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                    disabled={uploading}
+                                    style={{ display: 'none' }}
+                                />
+                                <button
+                                    onClick={() => document.getElementById('file-upload-input')?.click()}
+                                    style={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '10px',
-                                        padding: '8px 20px',
+                                        gap: '8px',
                                         background: 'white',
-                                        color: '#2D3748',
-                                        borderRadius: '10px',
-                                        fontSize: '0.85rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
+                                        color: '#1a1f36',
                                         border: '1px solid #E0E6ED',
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                                    }}>
-                                        <Paperclip size={16} className="text-[#0066CC]" />
-                                        Attachments
-                                        <input type="file" onChange={handleFileUpload} style={{ display: 'none' }} id="file-upload-input" />
-                                    </label>
-                                    {uploading && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0066CC', fontSize: '0.8rem', fontWeight: 600 }}>
-                                            <Loader2 size={14} className="animate-spin" /> Uploading...
-                                        </div>
+                                        height: '34px',
+                                        padding: '0 16px',
+                                        borderRadius: '8px',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#FF6B00';
+                                        e.currentTarget.style.color = 'white';
+                                        e.currentTarget.style.borderColor = '#FF6B00';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'white';
+                                        e.currentTarget.style.color = '#1a1f36';
+                                        e.currentTarget.style.borderColor = '#E0E6ED';
+                                    }}
+                                >
+                                    <Paperclip size={14} /> Attachments
+                                </button>
+
+                                {/* Middle: File List pills */}
+                                <div style={{
+                                    flex: 1,
+                                    display: 'flex',
+                                    gap: '8px',
+                                    overflowX: 'auto',
+                                    padding: '4px 0',
+                                    alignItems: 'center'
+                                }}>
+                                    {attachments.length > 0 ? (
+                                        attachments.map((att) => (
+                                            <div
+                                                key={att.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    padding: '4px 10px',
+                                                    background: 'white',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #E0E6ED',
+                                                    minWidth: 'fit-content'
+                                                }}
+                                            >
+                                                <File size={12} style={{ color: 'var(--theme-primary)' }} />
+                                                <span style={{
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 600,
+                                                    color: '#1a1f36',
+                                                    maxWidth: '120px',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap'
+                                                }}>
+                                                    {att.filename}
+                                                </span>
+                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleDownload(att); }}
+                                                        style={{
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            borderRadius: '50%',
+                                                            border: 'none',
+                                                            background: '#f1f5f9',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            color: '#475569'
+                                                        }}
+                                                        title="Download"
+                                                    >
+                                                        <Download size={10} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(att.id); }}
+                                                        style={{
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            borderRadius: '50%',
+                                                            border: 'none',
+                                                            background: '#fee2e2',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            color: '#ef4444'
+                                                        }}
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 size={10} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <span style={{ fontSize: '0.9rem', color: '#A0AEC0', fontStyle: 'italic', marginLeft: '10px' }}>
+                                            {uploading ? 'Uploading...' : 'No attachments yet'}
+                                        </span>
                                     )}
+
+                                    {/* Upload Feedback Message */}
                                     {uploadFeedback.message && (
                                         <div style={{
+                                            padding: '4px 12px',
+                                            borderRadius: '6px',
                                             fontSize: '0.8rem',
                                             fontWeight: 600,
-                                            color: uploadFeedback.type === 'success' ? '#059669' : '#DC2626',
-                                            padding: '4px 12px',
-                                            borderRadius: '20px',
-                                            background: uploadFeedback.type === 'success' ? '#ECFDF5' : '#FEF2F2'
+                                            background: uploadFeedback.type === 'error' ? '#FFF5F5' : '#F0FFF4',
+                                            color: uploadFeedback.type === 'error' ? '#C53030' : '#2F855A',
+                                            border: `1px solid ${uploadFeedback.type === 'error' ? '#FEB2B2' : '#9AE6B4'}`,
+                                            marginLeft: '10px',
+                                            whiteSpace: 'nowrap',
+                                            animation: 'fadeIn 0.3s ease'
                                         }}>
                                             {uploadFeedback.message}
                                         </div>
                                     )}
                                 </div>
-                                {attachments.length === 0 && !uploading && !uploadFeedback.message && (
-                                    <span style={{ color: '#718096', fontSize: '0.85rem', fontWeight: 500, fontStyle: 'italic' }}>No attachments yet</span>
-                                )}
                             </div>
-
-                            {attachments.length > 0 && (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '8px', marginTop: '4px' }}>
-                                    {attachments.map((att) => (
-                                        <div key={att.id} style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '8px 12px',
-                                            background: 'white',
-                                            border: '1px solid #E2E8F0',
-                                            borderRadius: '8px',
-                                            transition: 'all 0.2s'
-                                        }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                                <File size={14} className="text-[#0066CC]" />
-                                                <p style={{
-                                                    margin: 0,
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 600,
-                                                    color: '#4A5568',
-                                                    whiteSpace: 'nowrap',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis'
-                                                }} title={att.filename}>
-                                                    {att.filename}
-                                                </p>
-                                            </div>
-                                            <div style={{ display: 'flex', gap: '2px' }}>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDownload(att)}
-                                                    style={{ padding: '4px', color: '#0066CC', background: 'none', border: 'none', cursor: 'pointer' }}
-                                                    title="Download"
-                                                >
-                                                    <Download size={14} />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteAttachment(att.id)}
-                                                    style={{ padding: '4px', color: '#E53E3E', background: 'none', border: 'none', cursor: 'pointer' }}
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -951,8 +970,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                         boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
                     }}>
                         <button
-                            type="button"
-                            onClick={onBack}
+                            type="submit"
+                            disabled={loading}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -960,19 +979,23 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                 padding: '6px 16px',
                                 borderRadius: '8px',
                                 fontSize: '0.85rem',
-                                fontWeight: 600,
+                                fontWeight: 800,
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                background: 'transparent',
-                                color: '#718096'
+                                background: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
+                                color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
+                                boxShadow: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                             }}
+                            onMouseEnter={() => setHoveredBtn('save')}
+                            onMouseLeave={() => setHoveredBtn(null)}
                         >
-                            Cancel
+                            {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                            {loading ? 'Saving...' : id ? 'Update Deal' : 'Save Deal'}
                         </button>
                         <button
-                            type="submit"
-                            disabled={loading}
+                            type="button"
+                            onClick={() => setShowCancelModal(true)}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -984,13 +1007,15 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                background: '#FF6B00',
-                                color: 'white',
-                                boxShadow: '0 2px 8px rgba(255, 107, 0, 0.3)'
+                                background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                                color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
+                                boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                             }}
+                            onMouseEnter={() => setHoveredBtn('cancel')}
+                            onMouseLeave={() => setHoveredBtn(null)}
                         >
-                            {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                            {loading ? 'Saving...' : id ? 'Update Project' : 'Save Project'}
+                            <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
+                            <span>Cancel</span>
                         </button>
                     </div>
                 </div>
@@ -1006,8 +1031,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
 
                         {showAddModal.type === 'customer' ? (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-                                <div className="ae-input-group">
-                                    <label className="ae-label">Company Name *</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Company Name *</label>
                                     <input
                                         type="text"
                                         className="ae-input"
@@ -1017,8 +1042,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                         required
                                     />
                                 </div>
-                                <div className="ae-input-group">
-                                    <label className="ae-label">Email *</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Email *</label>
                                     <input
                                         type="email"
                                         className="ae-input"
@@ -1027,8 +1052,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                         required
                                     />
                                 </div>
-                                <div className="ae-input-group">
-                                    <label className="ae-label">State</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>State</label>
                                     <select
                                         className="ae-input"
                                         value={newCompanyData.state}
@@ -1038,8 +1063,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                         {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </select>
                                 </div>
-                                <div className="ae-input-group">
-                                    <label className="ae-label">City</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>City</label>
                                     <input
                                         type="text"
                                         className="ae-input"
@@ -1047,8 +1072,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                         onChange={(e) => setNewCompanyData({ ...newCompanyData, city: e.target.value })}
                                     />
                                 </div>
-                                <div className="ae-input-group">
-                                    <label className="ae-label">GSTIN</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>GSTIN</label>
                                     <input
                                         type="text"
                                         className="ae-input"
@@ -1057,8 +1082,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                         maxLength={15}
                                     />
                                 </div>
-                                <div className="ae-input-group">
-                                    <label className="ae-label">PAN</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PAN</label>
                                     <input
                                         type="text"
                                         className="ae-input"
@@ -1067,8 +1092,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                         maxLength={10}
                                     />
                                 </div>
-                                <div className="ae-input-group">
-                                    <label className="ae-label">Phone Number</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Phone Number</label>
                                     <input
                                         type="tel"
                                         className="ae-input"
@@ -1076,8 +1101,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                                         onChange={(e) => setNewCompanyData({ ...newCompanyData, phone_number: e.target.value })}
                                     />
                                 </div>
-                                <div className="ae-input-group">
-                                    <label className="ae-label">Mobile Number</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Mobile Number</label>
                                     <input
                                         type="tel"
                                         className="ae-input"
@@ -1088,13 +1113,13 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <div className="ae-input-group">
-                                    <label className="ae-label">Name</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Name</label>
                                     <input type="text" className="ae-input" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} autoFocus />
                                 </div>
                                 {showAddModal.type === 'implementation_partner' && (
-                                    <div className="ae-input-group">
-                                        <label className="ae-label">Email (Optional)</label>
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Email (Optional)</label>
                                         <input type="email" className="ae-input" value={newItemExtra.email} onChange={(e) => setNewItemExtra({ ...newItemExtra, email: e.target.value })} />
                                     </div>
                                 )}
@@ -1137,13 +1162,100 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave }) => {
                 </div>
             )}
 
-            {/* Audit Trail Sidebar */}
-            <AuditTrail
-                model="deal"
-                modelId={id}
-                show={showHistory}
-                onClose={() => setShowHistory(false)}
-            />
+            {/* Cancel Confirmation Modal */}
+            {showCancelModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(255, 255, 255, 0.4)',
+                    backdropFilter: 'blur(1px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    <div style={{
+                        background: 'white',
+                        width: '100%',
+                        maxWidth: '500px',
+                        borderRadius: '12px',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        border: '1px solid #E2E8F0',
+                        overflow: 'hidden',
+                        animation: 'modalScale 0.2s ease-out'
+                    }}>
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '10px',
+                                    background: '#FFF5F5',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
+                                        Leave this page?
+                                    </h3>
+                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                        If you leave, your unsaved changes will be discarded.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
+                                <button
+                                    onClick={() => setShowCancelModal(false)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        background: '#3B82F6',
+                                        color: 'white',
+                                        border: 'none',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        height: '40px'
+                                    }}
+                                >
+                                    Stay Here
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowCancelModal(false);
+                                        onBack();
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        background: 'white',
+                                        color: '#1a1f36',
+                                        border: '1px solid #E2E8F0',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        height: '40px'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                >
+                                    Leave & Discard Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -24,6 +24,13 @@ const CustomerDashboard: React.FC = () => {
     const [customers, setCustomers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        name: '',
+        email: '',
+        customer_type: '',
+        status: ''
+    });
 
     useEffect(() => {
         fetchCustomerData();
@@ -53,15 +60,22 @@ const CustomerDashboard: React.FC = () => {
         }
     };
 
-    const filteredCustomers = customers.filter(c =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredCustomers = customers.filter(c => {
+        const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        const matchesName = (c.name || '').toLowerCase().includes(filters.name.toLowerCase());
+        const matchesEmail = (c.email || '').toLowerCase().includes(filters.email.toLowerCase());
+        const matchesType = filters.customer_type === '' || c.customer_type === filters.customer_type;
+        const matchesStatus = filters.status === '' || (filters.status === 'active' ? c.is_active : !c.is_active);
+
+        return matchesSearch && matchesName && matchesEmail && matchesType && matchesStatus;
+    });
 
     if (loading) {
         return (
             <div className="flex items-center justify-center p-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00]"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--ae-blue)]"></div>
             </div>
         );
     }
@@ -71,12 +85,12 @@ const CustomerDashboard: React.FC = () => {
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Total Customers', value: stats.totalCustomers, icon: Users, color: '#3B82F6', bg: 'bg-blue-50' },
-                    { label: 'Active Status', value: stats.activeCustomers, icon: CheckCircle2, color: '#10B981', bg: 'bg-emerald-50' },
-                    { label: 'Total Opportunities', value: stats.totalDeals, icon: Briefcase, color: '#F59E0B', bg: 'bg-amber-50' },
-                    { label: 'Deals/Customer', value: stats.conversionRate, icon: TrendingUp, color: '#8B5CF6', bg: 'bg-purple-50' }
+                    { label: 'Total Customers', value: stats.totalCustomers, icon: Users, color: 'var(--ae-blue)', bg: 'rgba(0, 102, 204, 0.05)' },
+                    { label: 'Active Status', value: stats.activeCustomers, icon: CheckCircle2, color: 'var(--ae-green)', bg: 'rgba(0, 200, 83, 0.05)' },
+                    { label: 'Total Opportunities', value: stats.totalDeals, icon: Briefcase, color: 'var(--theme-primary)', bg: 'rgba(187, 77, 0, 0.05)' },
+                    { label: 'Deals/Customer', value: stats.conversionRate, icon: TrendingUp, color: 'var(--ae-navy)', bg: 'rgba(26, 31, 54, 0.05)' }
                 ].map((stat, i) => (
-                    <div key={i} className="bg-white p-6 rounded-2xl border border-[#E0E6ED] shadow-sm hover:shadow-md transition-shadow">
+                    <div key={i} className="bg-white p-6 rounded-2xl border border-[var(--border-primary)] shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between mb-4">
                             <div className={`${stat.bg} p-3 rounded-xl`}>
                                 <stat.icon size={24} color={stat.color} />
@@ -85,8 +99,8 @@ const CustomerDashboard: React.FC = () => {
                                 <ArrowUpRight size={12} className="mr-1" /> +12%
                             </div>
                         </div>
-                        <div className="text-2xl font-extrabold text-[#1a1f36]">{stat.value}</div>
-                        <div className="text-sm font-semibold text-[#718096] mt-1">{stat.label}</div>
+                        <div className="text-2xl font-extrabold text-[var(--text-primary)]">{stat.value}</div>
+                        <div className="text-sm font-semibold text-[var(--text-secondary)] mt-1">{stat.label}</div>
                     </div>
                 ))}
             </div>
@@ -94,24 +108,27 @@ const CustomerDashboard: React.FC = () => {
             {/* Main Content Area */}
             <div className="grid grid-cols-3 gap-6">
                 {/* Customer List Card */}
-                <div className="col-span-3 bg-white rounded-2xl border border-[#E0E6ED] shadow-sm overflow-hidden">
-                    <div className="p-6 border-b border-[#E0E6ED] flex items-center justify-between">
+                <div className="col-span-3 bg-white rounded-2xl border border-[var(--border-primary)] shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-[var(--border-primary)] flex items-center justify-between">
                         <div>
-                            <h2 className="text-lg font-bold text-[#1a1f36]">Customer Portfolio</h2>
-                            <p className="text-sm text-[#718096]">Manage and monitor your customer relationships</p>
+                            <h2 className="text-lg font-bold text-[var(--text-primary)]">Customer Portfolio</h2>
+                            <p className="text-sm text-[var(--text-secondary)]">Manage and monitor your customer relationships</p>
                         </div>
                         <div className="flex gap-3">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#718096]" size={16} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" size={16} />
                                 <input
                                     type="text"
                                     placeholder="Search customers..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10 pr-4 py-2 bg-[#F7F9FC] border border-[#E0E6ED] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6B00]/20 transition-all w-64"
+                                    className="pl-10 pr-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/20 transition-all w-64"
                                 />
                             </div>
-                            <button className="flex items-center gap-2 px-4 py-2 border border-[#E0E6ED] rounded-xl text-sm font-semibold text-[#4A5568] hover:bg-gray-50 transition-colors">
+                            <button
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-semibold transition-colors ${showFilters ? 'bg-[var(--bg-secondary)] border-[var(--theme-primary)] text-[var(--theme-primary)]' : 'border-[var(--border-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
+                            >
                                 <Filter size={16} /> Filter
                             </button>
                         </div>
@@ -120,25 +137,85 @@ const CustomerDashboard: React.FC = () => {
                     <div className="overflow-x-auto">
                         <table className="w-100 border-collapse">
                             <thead>
-                                <tr className="bg-[#FAFBFC]">
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-[#718096] uppercase tracking-wider">Customer</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-[#718096] uppercase tracking-wider">Contact Details</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-[#718096] uppercase tracking-wider">Type</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-[#718096] uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-[#718096] uppercase tracking-wider">Actions</th>
+                                <tr className="bg-[var(--bg-secondary)]">
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Customer</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Contact Details</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Type</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-4 text-right text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Actions</th>
                                 </tr>
+                                {showFilters && (
+                                    <tr style={{ background: 'var(--bg-secondary)' }}>
+                                        <th className="px-6 py-4">
+                                            <div className="ae-input-group !mb-0">
+                                                <input
+                                                    type="text"
+                                                    className="ae-input"
+                                                    placeholder="Filter name..."
+                                                    value={filters.name}
+                                                    onChange={e => setFilters({ ...filters, name: e.target.value })}
+                                                    style={{ height: '28px', fontSize: '11px', padding: '0 8px' }}
+                                                />
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-4">
+                                            <div className="ae-input-group !mb-0">
+                                                <input
+                                                    type="text"
+                                                    className="ae-input"
+                                                    placeholder="Filter email..."
+                                                    value={filters.email}
+                                                    onChange={e => setFilters({ ...filters, email: e.target.value })}
+                                                    style={{ height: '28px', fontSize: '11px', padding: '0 8px' }}
+                                                />
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-4">
+                                            <select
+                                                className="ae-input"
+                                                value={filters.customer_type}
+                                                onChange={e => setFilters({ ...filters, customer_type: e.target.value })}
+                                                style={{ height: '28px', fontSize: '11px', padding: '0 4px' }}
+                                            >
+                                                <option value="">All Types</option>
+                                                <option value="END_CUSTOMER">End Customer</option>
+                                                <option value="PARTNER">Partner</option>
+                                            </select>
+                                        </th>
+                                        <th className="px-6 py-4">
+                                            <select
+                                                className="ae-input"
+                                                value={filters.status}
+                                                onChange={e => setFilters({ ...filters, status: e.target.value })}
+                                                style={{ height: '28px', fontSize: '11px', padding: '0 4px' }}
+                                            >
+                                                <option value="">All Statuses</option>
+                                                <option value="active">Active</option>
+                                                <option value="inactive">Inactive</option>
+                                            </select>
+                                        </th>
+                                        <th className="px-6 py-4 text-right">
+                                            <button
+                                                onClick={() => setFilters({ name: '', email: '', customer_type: '', status: '' })}
+                                                className="text-[var(--theme-primary)] font-bold text-[10px] uppercase hover:underline"
+                                            >
+                                                Clear
+                                            </button>
+                                        </th>
+                                    </tr>
+                                )}
                             </thead>
-                            <tbody className="divide-y divide-[#E0E6ED]">
+                            <tbody className="divide-y divide-[var(--border-primary)]">
                                 {filteredCustomers.map((customer) => (
                                     <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center">
-                                                <div className="h-10 w-10 bg-[#FF6B00]/10 rounded-xl flex items-center justify-center text-[#FF6B00] font-bold">
+                                                <div className="h-10 w-10 bg-[var(--bg-secondary)] rounded-xl flex items-center justify-center text-[var(--theme-primary)] font-bold">
                                                     {customer.name.substring(0, 1).toUpperCase()}
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div className="text-sm font-bold text-[#1a1f36]">{customer.name}</div>
-                                                    <div className="text-xs text-[#718096] flex items-center mt-0.5">
+                                                    <div className="text-sm font-bold text-[var(--text-primary)]">{customer.name}</div>
+                                                    <div className="text-xs text-[var(--text-secondary)] flex items-center mt-0.5">
                                                         <MapPin size={10} className="mr-1" /> {customer.address ? (customer.address.substring(0, 30) + '...') : 'No address'}
                                                     </div>
                                                 </div>
@@ -177,7 +254,7 @@ const CustomerDashboard: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button className="text-[#FF6B00] hover:text-[#E65200] font-bold text-xs">View Details</button>
+                                            <button className="text-[var(--theme-primary)] hover:text-[var(--ae-blue)] font-bold text-xs">View Details</button>
                                         </td>
                                     </tr>
                                 ))}

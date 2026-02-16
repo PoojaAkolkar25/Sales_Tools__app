@@ -57,7 +57,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                             right: '4px',
                             width: '8px',
                             height: '8px',
-                            background: '#FF6B00',
+                            background: 'var(--theme-primary)',
                             borderRadius: '50%',
                             border: '2px solid var(--ae-navy)'
                         }}></span>
@@ -75,11 +75,11 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                             borderRadius: '12px',
                             boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
                             padding: '16px',
-                            border: '1px solid #E0E6ED',
+                            border: '1px solid var(--border-primary)',
                             zIndex: 100
                         }}>
-                            <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 700, color: '#1a1f36' }}>Notifications</h4>
-                            <div style={{ fontSize: '12px', color: '#718096', padding: '12px', background: '#F7FAFC', borderRadius: '8px', textAlign: 'center' }}>
+                            <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Notifications</h4>
+                            <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px', textAlign: 'center' }}>
                                 No new notifications
                             </div>
                         </div>
@@ -170,12 +170,12 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                         borderRadius: '50%',
                         background: 'rgba(255,255,255,0.1)',
                         padding: '2px',
-                        border: '2px solid #FF6B00',
+                        border: '2px solid var(--theme-primary)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}>
-                        <User size={18} color="#FF6B00" />
+                        <User size={18} color="var(--theme-primary)" />
                     </div>
 
                     <ChevronDown size={14} color="rgba(255,255,255,0.4)" style={{ transform: isProfileOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
@@ -220,14 +220,14 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                                     padding: '12px 16px',
                                     background: 'transparent',
                                     border: 'none',
-                                    color: '#FF6B00',
+                                    color: 'var(--theme-primary)',
                                     fontWeight: 600,
                                     fontSize: '13px',
                                     cursor: 'pointer',
                                     borderRadius: '8px',
                                     transition: 'background 0.2s'
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)'}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
                                 <span>Logout</span>

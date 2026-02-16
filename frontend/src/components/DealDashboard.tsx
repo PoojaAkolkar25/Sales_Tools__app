@@ -5,11 +5,13 @@ import {
     FileText,
     ChevronDown,
     Download,
-    Columns
+    Columns,
+    Filter
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
+import Pagination from './Pagination';
 
 const ALL_COLUMNS = [
     { key: 'deal_id', label: 'ID' },
@@ -75,8 +77,11 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
     const { showNotification } = useNotification();
     const [deals, setDeals] = useState<Deal[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
     const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
         const saved = localStorage.getItem('dealDashboard_visibleColumns');
         return saved ? JSON.parse(saved) : ALL_COLUMNS.map(col => col.key);
@@ -135,6 +140,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
 
     useEffect(() => {
         localStorage.setItem('dealDashboard_filters', JSON.stringify(filters));
+        setCurrentPage(1);
     }, [filters]);
 
     useEffect(() => {
@@ -231,6 +237,11 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
         });
     }, [deals, filters]);
 
+    const paginatedDeals = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredDeals.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    }, [filteredDeals, currentPage, ITEMS_PER_PAGE]);
+
     const counts = useMemo(() => ({
         all: deals.length,
         dealCreated: deals.filter(d => d.stage === 'DEAL_CREATED').length,
@@ -322,29 +333,23 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
     };
 
 
-    const getStageColor = (stage: string) => {
-        switch (stage) {
-            case 'PAYMENT': return { bg: '#E6FFFA', text: '#00A3C4' };
-            case 'DEAL_CREATED': return { bg: '#EBF8FF', text: '#3182CE' };
-            case 'COST_SHEET': return { bg: '#FEFCBF', text: '#B7791F' };
-            case 'ESTIMATES': return { bg: '#E9D8FD', text: '#805AD5' };
-            default: return { bg: '#F7FAFC', text: '#4A5568' };
-        }
+    const getStageColor = (_stage: string) => {
+        return { bg: 'var(--bg-secondary)', text: 'var(--theme-primary)' };
     };
 
     return (
-        <div className="ae-table-container" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="ae-table-container" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: 'none', overflowY: 'visible' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '18px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                    <div style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                         Projects Dashboard
                     </h1>
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>Report Period:</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Report Period:</span>
                         <select
                             className="ae-input"
                             value={filters.period}
@@ -376,7 +381,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                             <Download size={16} /> Export <ChevronDown size={14} />
                         </button>
                         {showExportMenu && (
-                            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid #E2E8F0', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                 <button
                                     onClick={() => { exportToExcel(); setShowExportMenu(false); }}
                                     style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
@@ -395,6 +400,26 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                         )}
                     </div>
 
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            className="ae-btn-secondary"
+                            onClick={() => setShowFilters(!showFilters)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 14px',
+                                fontSize: '0.8rem',
+                                background: showFilters ? 'var(--bg-secondary)' : 'white',
+                                color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
+                                borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)'
+                            }}
+                            title={showFilters ? "Hide Filters" : "Show Filters"}
+                        >
+                            <Filter size={16} /> Filters
+                        </button>
+                    </div>
+
                     <div style={{ position: 'relative' }} ref={columnMenuRef}>
                         <button
                             className="ae-btn-secondary"
@@ -411,23 +436,54 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                 marginTop: '8px',
                                 background: 'white',
                                 borderRadius: '8px',
-                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
                                 border: '1px solid #E2E8F0',
                                 zIndex: 100,
-                                minWidth: '200px',
-                                maxHeight: '400px',
+                                minWidth: '220px',
+                                maxHeight: '450px',
                                 overflowY: 'auto'
                             }}>
-                                <div style={{ padding: '8px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between' }}>
+                                <div style={{
+                                    padding: '12px 16px',
+                                    borderBottom: '1px solid var(--border-primary)',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    background: 'var(--bg-secondary)'
+                                }}>
                                     <button
                                         onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))}
-                                        style={{ background: 'none', border: 'none', color: '#0066CC', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: '#0066CC',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            transition: 'background 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#EBF5FF'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                     >
                                         Select All
                                     </button>
                                     <button
                                         onClick={() => setVisibleColumns([])}
-                                        style={{ background: 'none', border: 'none', color: '#718096', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: '#718096',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            transition: 'background 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                     >
                                         Clear All
                                     </button>
@@ -436,13 +492,18 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                     <label key={col.key} style={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '10px',
-                                        padding: '8px 16px',
-                                        fontSize: '0.8rem',
-                                        color: '#4A5568',
+                                        gap: '12px',
+                                        padding: '10px 16px',
+                                        fontSize: '0.85rem',
+                                        color: '#2D3748',
                                         cursor: 'pointer',
-                                        userSelect: 'none'
-                                    }} className="hover:bg-gray-50">
+                                        userSelect: 'none',
+                                        transition: 'background 0.2s',
+                                        borderBottom: '1px solid var(--border-primary)'
+                                    }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#FFF5EB'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                    >
                                         <input
                                             type="checkbox"
                                             checked={visibleColumns.includes(col.key)}
@@ -453,9 +514,14 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                                     setVisibleColumns([...visibleColumns, col.key]);
                                                 }
                                             }}
-                                            style={{ cursor: 'pointer' }}
+                                            style={{
+                                                cursor: 'pointer',
+                                                width: '16px',
+                                                height: '16px',
+                                                accentColor: '#FF6B00'
+                                            }}
                                         />
-                                        {col.label}
+                                        <span style={{ fontWeight: 600 }}>{col.label}</span>
                                     </label>
                                 ))}
                             </div>
@@ -471,7 +537,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                 background: 'white',
                 padding: '4px',
                 borderRadius: '12px',
-                border: '1px solid #E0E6ED',
+                border: '1px solid var(--border-primary)',
                 width: 'fit-content'
             }}>
                 {statusFlow.map((flow) => (
@@ -486,8 +552,8 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                             border: 'none',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
-                            background: filters.stage === flow.value ? '#FF6B00' : 'transparent',
-                            color: filters.stage === flow.value ? 'white' : '#718096',
+                            background: filters.stage === flow.value ? 'var(--theme-primary)' : 'transparent',
+                            color: filters.stage === flow.value ? 'white' : 'var(--text-secondary)',
                         }}
                     >
                         {flow.label}
@@ -495,62 +561,64 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                 ))}
             </div>
 
-            <div style={{ overflowX: 'auto', background: 'white', borderRadius: '12px', border: '1px solid #E0E6ED' }}>
+            <div style={{ overflowX: 'auto', background: 'white', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
                 <table className="ae-table" style={{ minWidth: visibleColumns.length > 8 ? '2000px' : '100%' }}>
                     <thead>
                         <tr>
                             {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
-                                <th key={col.key} style={{ backgroundColor: '#FAFBFC', zIndex: 12 }}>{col.label}</th>
+                                <th key={col.key} style={{ backgroundColor: 'var(--bg-secondary)', zIndex: 12 }}>{col.label}</th>
                             ))}
-                            <th style={{ backgroundColor: '#FAFBFC', zIndex: 12, textAlign: 'center' }}>Actions</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', zIndex: 12, textAlign: 'center' }}>Actions</th>
                         </tr>
-                        <tr style={{ background: '#F7FAFC' }}>
-                            {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
-                                <th key={col.key} style={{ backgroundColor: '#F7FAFC' }}>
-                                    <div className="ae-input-group" style={{ margin: 0 }}>
-                                        <input
-                                            className="ae-input"
-                                            placeholder="Filter..."
-                                            value={(filters as any)[col.key]}
-                                            onChange={e => setFilters({ ...filters, [col.key]: e.target.value })}
-                                            style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                        />
-                                    </div>
+                        {showFilters && (
+                            <tr style={{ background: '#F7FAFC' }}>
+                                {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
+                                    <th key={col.key} style={{ backgroundColor: '#F7FAFC' }}>
+                                        <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={(filters as any)[col.key]}
+                                                onChange={e => setFilters({ ...filters, [col.key]: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>
+                                ))}
+                                <th style={{ textAlign: 'center', backgroundColor: 'var(--bg-secondary)' }}>
+                                    <button
+                                        onClick={() => setFilters({
+                                            deal_id: '', deal_name: '', company: '', lead_no: '', stage: '',
+                                            currency: '', deal_amount: '', deal_type: '',
+                                            customer_name: '', customer_email: '', end_customer: '',
+                                            client_type: '', inside_salesperson: '',
+                                            inside_sales_head: '', salesperson_name: '', sales_head: '',
+                                            project_manager: '', project_manager_head: '',
+                                            expected_close_date: '', deal_date: '',
+                                            hubspot_id: '', last_synced_at: '',
+                                            period: '', startDate: '', endDate: ''
+                                        })}
+                                        style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                    >
+                                        Clear
+                                    </button>
                                 </th>
-                            ))}
-                            <th style={{ textAlign: 'center', backgroundColor: '#F7FAFC' }}>
-                                <button
-                                    onClick={() => setFilters({
-                                        deal_id: '', deal_name: '', company: '', lead_no: '', stage: '',
-                                        currency: '', deal_amount: '', deal_type: '',
-                                        customer_name: '', customer_email: '', end_customer: '',
-                                        client_type: '', inside_salesperson: '',
-                                        inside_sales_head: '', salesperson_name: '', sales_head: '',
-                                        project_manager: '', project_manager_head: '',
-                                        expected_close_date: '', deal_date: '',
-                                        hubspot_id: '', last_synced_at: '',
-                                        period: '', startDate: '', endDate: ''
-                                    })}
-                                    style={{ height: '24px', width: '100%', fontSize: '10px', color: '#FF6B00', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
-                                >
-                                    Clear
-                                </button>
-                            </th>
-                        </tr>
+                            </tr>
+                        )}
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
-                        ) : filteredDeals.length === 0 ? (
+                        ) : paginatedDeals.length === 0 ? (
                             <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No projects found.</td></tr>
                         ) : (
-                            filteredDeals.map((deal: Deal) => {
+                            paginatedDeals.map((deal: Deal) => {
                                 const stageStyle = getStageColor(deal.stage);
                                 return (
                                     <tr key={deal.id}>
                                         {visibleColumns.includes('deal_id') && (
                                             <td
-                                                style={{ fontWeight: 600, color: '#0066CC', cursor: 'pointer', textDecoration: 'underline' }}
+                                                style={{ fontWeight: 600, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
                                                 onClick={() => onView(deal.id)}
                                             >
                                                 {deal.deal_id}
@@ -601,8 +669,13 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                 </table>
             </div>
 
-
-        </div >
+            <Pagination
+                currentPage={currentPage}
+                totalItems={filteredDeals.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+            />
+        </div>
     );
 };
 

@@ -142,10 +142,12 @@
         }
 
         .total-row td {
-            border-top: 1px dotted #0056b3;
-            border-bottom: 1px dotted #0056b3;
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
             font-weight: bold;
-            padding: 8px 4px;
+            padding: 15px 4px;
+            font-size: 10pt;
+            vertical-align: middle;
         }
 
         .amount-words {
@@ -285,7 +287,7 @@
                 <th style="width: 15%;" class="text-center">{{ estimate.column_labels.hsn_sac|default:"HSN/SAC" }}</th>
                 <th style="width: 10%;" class="text-center">{{ estimate.column_labels.qty|default:"QTY" }}</th>
                 <th style="width: 15%;" class="text-right">{{ estimate.column_labels.rate|default:"RATE" }}</th>
-                <th style="width: 15%;" class="text-right">{{ estimate.column_labels.amount|default:"AMO UNT" }}</th>
+                <th style="width: 15%;" class="text-right">{{ estimate.column_labels.amount|default:"AMOUNT" }}</th>
             </tr>
         </thead>
         <tbody>
@@ -303,11 +305,11 @@
             </tr>
             {% endfor %}
             <tr class="total-row">
-                <td colspan="2" class="blue">TOTAL</td>
+                <td colspan="2" style="text-align: right; padding-right: 15px;">TOTAL</td>
                 <td class="text-center">{{ estimate.total_qty }}</td>
-                <td></td>
-                <td class="text-right blue">{{ estimate.deal.currency_symbol|default:"$" }}{{ estimate.total_price }}
-                </td>
+                <td class="text-right"></td>
+                <td class="text-right bold" style="padding-right: 4px; white-space: nowrap;">{{
+                    estimate.deal.currency_symbol|default:"$" }}{{ estimate.total_price }}</td>
             </tr>
         </tbody>
     </table>

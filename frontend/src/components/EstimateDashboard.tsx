@@ -12,12 +12,14 @@ import {
     Columns,
     FileSpreadsheet,
     Loader2,
-    RefreshCcw
+    RefreshCcw,
+    Filter
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
+import Pagination from './Pagination';
 
 const ALL_COLUMNS = [
     { key: 'deal_id', label: 'Deal ID' },
@@ -89,9 +91,12 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
     const { showNotification } = useNotification();
     const [estimates, setEstimates] = useState<Estimate[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
 
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
     const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
         const saved = localStorage.getItem('estimateDashboard_visibleColumns_v2');
         return saved ? JSON.parse(saved) : ALL_COLUMNS.map(col => col.key);
@@ -236,6 +241,13 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
         });
     }, [estimates, filters]);
 
+    const paginatedEstimates = useMemo(() => {
+        return filteredEstimates.slice(
+            (currentPage - 1) * ITEMS_PER_PAGE,
+            currentPage * ITEMS_PER_PAGE
+        );
+    }, [filteredEstimates, currentPage]);
+
     const exportToExcel = async () => {
         try {
             const response = await api.get('/estimates/export_excel/', { responseType: 'blob' });
@@ -268,24 +280,6 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
         }
     };
 
-    const openEmailModal = (est: any) => {
-        const clientName = est.customer_name || '[Client Name]';
-        const projectName = est.project_name || '[Project Name]';
-        const companyName = "SalesEdge Application";
-        const yourName = "Sales Team";
-        const expirationDate = "[Expiration Date]";
-
-        setEmailModal({
-            open: true,
-            estimateId: est.id,
-            to: est.customer_email || '',
-            cc: '',
-            bcc: '',
-            subject: EMAIL_TEMPLATES.standard.subject(projectName, companyName),
-            body: EMAIL_TEMPLATES.standard.body(clientName, projectName, companyName, expirationDate, yourName),
-            templateType: 'standard'
-        });
-    };
 
     const handleTemplateChange = (type: keyof typeof EMAIL_TEMPLATES) => {
         const est = estimates.find(e => e.id === emailModal.estimateId);
@@ -374,19 +368,19 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
 
 
     const getStatusStyle = (status: string, approvalStatus: string) => {
-        if (status === 'PENDING_APPROVAL' || approvalStatus === 'PENDING') return { bg: '#FFFAF0', text: '#DD6B20', label: 'Pending Approval' };
-        if (approvalStatus === 'REJECTED') return { bg: '#FFF5F5', text: '#E53E3E', label: 'Rejected' };
+        if (status === 'PENDING_APPROVAL' || approvalStatus === 'PENDING') return { bg: 'var(--bg-secondary)', text: 'var(--theme-primary)', label: 'Pending Approval' };
+        if (approvalStatus === 'REJECTED') return { bg: 'rgba(229, 62, 62, 0.1)', text: '#E53E3E', label: 'Rejected' };
 
         switch (status) {
             case 'DRAFT':
                 return approvalStatus === 'APPROVED'
-                    ? { bg: '#E6FFFA', text: '#38A169', label: 'Approved' }
-                    : { bg: '#F7FAFC', text: '#4A5568', label: 'Draft' };
-            case 'SUBMITTED': return { bg: '#EBF8FF', text: '#3182CE', label: 'Submitted to Customer' };
-            case 'NEGOTIATION': return { bg: '#FFF9F5', text: '#FF6B00', label: 'Negotiation' };
-            case 'APPROVED': return { bg: '#E6FFFA', text: '#38A169', label: 'Approved' };
-            case 'REJECTED': return { bg: '#FFF5F5', text: '#E53E3E', label: 'Rejected' };
-            default: return { bg: '#F7FAFC', text: '#4A5568', label: status };
+                    ? { bg: 'rgba(56, 161, 105, 0.1)', text: '#38A169', label: 'Approved' }
+                    : { bg: 'var(--bg-secondary)', text: 'var(--text-secondary)', label: 'Draft' };
+            case 'SUBMITTED': return { bg: 'rgba(49, 130, 206, 0.1)', text: '#3182CE', label: 'Submitted to Customer' };
+            case 'NEGOTIATION': return { bg: 'rgba(187, 77, 0, 0.1)', text: 'var(--theme-primary)', label: 'Negotiation' };
+            case 'APPROVED': return { bg: 'rgba(56, 161, 105, 0.1)', text: '#38A169', label: 'Approved' };
+            case 'REJECTED': return { bg: 'rgba(229, 62, 62, 0.1)', text: '#E53E3E', label: 'Rejected' };
+            default: return { bg: 'var(--bg-secondary)', text: 'var(--text-secondary)', label: status };
         }
     };
 
@@ -404,12 +398,12 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
     }, [estimates]);
 
     const statusFlow = [
-        { label: `Draft (${counts.draft})`, value: 'DRAFT', color: '#718096' },
-        { label: `Submitted (${counts.submitted})`, value: 'SUBMITTED', color: '#3182CE' },
-        { label: `Pending Approval (${counts.pending})`, value: 'PENDING_APPROVAL', color: '#805AD5' },
-        { label: `Approved (${counts.approved})`, value: 'APPROVED', color: '#38A169' },
+        { label: `Draft (${counts.draft})`, value: 'DRAFT', color: 'var(--text-secondary)' },
+        { label: `Submitted (${counts.submitted})`, value: 'SUBMITTED', color: 'var(--ae-blue)' },
+        { label: `Pending Approval (${counts.pending})`, value: 'PENDING_APPROVAL', color: 'var(--ae-navy)' },
+        { label: `Approved (${counts.approved})`, value: 'APPROVED', color: 'var(--ae-green)' },
         { label: `Rejected (${counts.rejected})`, value: 'REJECTED', color: '#E53E3E' },
-        { label: `All (${counts.all})`, value: '', color: '#718096' }
+        { label: `All (${counts.all})`, value: '', color: 'var(--text-secondary)' }
     ];
 
     return (
@@ -420,7 +414,9 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                maxHeight: 'none',
+                overflowY: 'visible'
             }}>
                 {/* Controls Status Tabs and Actions - Padded Header Area */}
                 <div style={{
@@ -430,7 +426,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                     flexWrap: 'wrap',
                     gap: '16px',
                     padding: '20px',
-                    borderBottom: '1px solid #F1F5F9'
+                    borderBottom: '1px solid var(--border-primary)'
                 }}>
                     {/* Status Tabs */}
                     <div style={{
@@ -439,7 +435,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                         background: 'white',
                         padding: '6px',
                         borderRadius: '12px',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid var(--border-primary)',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                     }}>
                         {statusFlow.map((flow) => (
@@ -454,9 +450,9 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                     border: 'none',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s',
-                                    background: filters.status === flow.value ? '#FF6B00' : 'transparent',
-                                    color: filters.status === flow.value ? 'white' : '#64748B',
-                                    boxShadow: filters.status === flow.value ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                                    background: filters.status === flow.value ? 'var(--theme-primary)' : 'transparent',
+                                    color: filters.status === flow.value ? 'white' : 'var(--text-secondary)',
+                                    boxShadow: filters.status === flow.value ? 'var(--shadow-md)' : 'none'
                                 }}
                             >
                                 {flow.label}
@@ -467,7 +463,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                     {/* Right Side Actions */}
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748B' }}>Period:</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Period:</span>
                             <select
                                 className="ae-input"
                                 value={filters.period}
@@ -502,7 +498,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                     height: '32px',
                                     borderRadius: '8px',
                                     background: 'white',
-                                    color: '#4A5568',
+                                    color: 'var(--text-secondary)',
                                     fontWeight: 700,
                                     cursor: 'pointer'
                                 }}
@@ -510,23 +506,47 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                 <Download size={16} /> Export <ChevronDown size={14} />
                             </button>
                             {showExportMenu && (
-                                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid #E2E8F0', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
+                                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                     <button
                                         onClick={() => { exportToExcel(); setShowExportMenu(false); }}
-                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                         className="hover:bg-gray-50"
                                     >
                                         <FileSpreadsheet size={16} className="text-green-600" /> Excel Report
                                     </button>
                                     <button
                                         onClick={() => { exportToPDF(); setShowExportMenu(false); }}
-                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                         className="hover:bg-gray-50"
                                     >
                                         <FileText size={16} className="text-red-600" /> PDF Report
                                     </button>
                                 </div>
                             )}
+                        </div>
+
+                        <div style={{ position: 'relative' }}>
+                            <button
+                                className="ae-btn-secondary"
+                                onClick={() => setShowFilters(!showFilters)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 14px',
+                                    fontSize: '0.8rem',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    background: showFilters ? 'var(--bg-secondary)' : 'white',
+                                    color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
+                                    borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                }}
+                                title={showFilters ? "Hide Filters" : "Show Filters"}
+                            >
+                                <Filter size={16} /> Filters
+                            </button>
                         </div>
 
                         <div style={{ position: 'relative' }} ref={columnMenuRef}>
@@ -542,7 +562,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                     height: '32px',
                                     borderRadius: '8px',
                                     background: 'white',
-                                    color: '#4A5568',
+                                    color: 'var(--text-secondary)',
                                     fontWeight: 700,
                                     cursor: 'pointer'
                                 }}
@@ -557,23 +577,54 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                     marginTop: '8px',
                                     background: 'white',
                                     borderRadius: '8px',
-                                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                                    border: '1px solid #E2E8F0',
+                                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
+                                    border: '1px solid var(--border-primary)',
                                     zIndex: 100,
-                                    minWidth: '200px',
-                                    maxHeight: '400px',
+                                    minWidth: '220px',
+                                    maxHeight: '450px',
                                     overflowY: 'auto'
                                 }}>
-                                    <div style={{ padding: '8px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between' }}>
+                                    <div style={{
+                                        padding: '12px 16px',
+                                        borderBottom: '1px solid var(--border-primary)',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        background: 'var(--bg-secondary)'
+                                    }}>
                                         <button
                                             onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))}
-                                            style={{ background: 'none', border: 'none', color: '#0066CC', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--theme-primary)',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                transition: 'background 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = '#EBF5FF'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                         >
                                             Select All
                                         </button>
                                         <button
                                             onClick={() => setVisibleColumns([])}
-                                            style={{ background: 'none', border: 'none', color: '#718096', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--text-secondary)',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                transition: 'background 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                         >
                                             Clear All
                                         </button>
@@ -582,13 +633,18 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                         <label key={col.key} style={{
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '10px',
-                                            padding: '8px 16px',
-                                            fontSize: '0.8rem',
-                                            color: '#4A5568',
+                                            gap: '12px',
+                                            padding: '10px 16px',
+                                            fontSize: '0.85rem',
+                                            color: '#2D3748',
                                             cursor: 'pointer',
-                                            userSelect: 'none'
-                                        }} className="hover:bg-gray-50">
+                                            userSelect: 'none',
+                                            transition: 'background 0.2s',
+                                            borderBottom: '1px solid var(--border-primary)'
+                                        }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                        >
                                             <input
                                                 type="checkbox"
                                                 checked={visibleColumns.includes(col.key)}
@@ -599,9 +655,14 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                         setVisibleColumns([...visibleColumns, col.key]);
                                                     }
                                                 }}
-                                                style={{ cursor: 'pointer' }}
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    width: '16px',
+                                                    height: '16px',
+                                                    accentColor: 'var(--theme-primary)'
+                                                }}
                                             />
-                                            {col.label}
+                                            <span style={{ fontWeight: 600 }}>{col.label}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -616,79 +677,102 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                         <thead>
                             <tr>
                                 {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
-                                    <th key={col.key} style={{ backgroundColor: '#FAFBFC', zIndex: 12, height: '40px', whiteSpace: 'nowrap', top: 0 }}>{col.label}</th>
+                                    <th key={col.key} style={{ backgroundColor: 'var(--bg-secondary)', zIndex: 12, height: '40px', whiteSpace: 'nowrap', top: 0, color: 'var(--text-secondary)' }}>{col.label}</th>
                                 ))}
-                                <th style={{ backgroundColor: '#FAFBFC', zIndex: 12, textAlign: 'center', height: '40px', whiteSpace: 'nowrap', top: 0 }}>Actions</th>
+                                <th style={{
+                                    backgroundColor: 'var(--bg-secondary)',
+                                    zIndex: 12,
+                                    textAlign: 'center',
+                                    height: '40px',
+                                    whiteSpace: 'nowrap',
+                                    top: 0,
+                                    width: '120px',
+                                    minWidth: '120px',
+                                    color: 'var(--text-secondary)'
+                                }}>Actions</th>
                             </tr>
-                            <tr style={{ background: '#F7FAFC' }}>
-                                {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
-                                    <th key={col.key} style={{ backgroundColor: '#F7FAFC' }}>
-                                        <div className="ae-input-group" style={{ margin: 0 }}>
-                                            <Search className="ae-search-icon" size={12} />
-                                            <input
-                                                className="ae-input"
-                                                placeholder="Filter..."
-                                                value={(filters as any)[col.key]}
-                                                onChange={e => setFilters({ ...filters, [col.key]: e.target.value })}
-                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                            />
-                                        </div>
+                            {showFilters && (
+                                <tr style={{ background: 'var(--bg-secondary)' }}>
+                                    {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
+                                        <th key={col.key} style={{ backgroundColor: 'var(--bg-secondary)', top: '40px', zIndex: 11, height: '50px', padding: '8px', overflow: 'visible', verticalAlign: 'middle' }}>
+                                            <div className="ae-input-group" style={{ margin: 0, display: 'block' }}>
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={(filters as any)[col.key]}
+                                                    onChange={e => setFilters({ ...filters, [col.key]: e.target.value })}
+                                                    style={{ height: '28px', fontSize: '11px', lineHeight: '28px', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                        </th>
+                                    ))}
+                                    <th style={{
+                                        textAlign: 'center',
+                                        backgroundColor: 'var(--bg-secondary)',
+                                        top: '40px',
+                                        zIndex: 11,
+                                        height: '50px',
+                                        padding: '8px',
+                                        overflow: 'visible',
+                                        verticalAlign: 'middle',
+                                        width: '120px',
+                                        minWidth: '120px'
+                                    }}>
+                                        <button
+                                            onClick={() => setFilters({
+                                                estimate_id: '', version: '', deal_id: '', cost_sheet_no: '', customer_name: '', project_name: '',
+                                                total_price: '', status: '', created_at: '', period: '',
+                                                startDate: '', endDate: '', subscription_from: '', subscription_to: ''
+                                            })}
+                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                        >
+                                            Clear
+                                        </button>
                                     </th>
-                                ))}
-                                <th style={{ textAlign: 'center', backgroundColor: '#F7FAFC' }}>
-                                    <button
-                                        onClick={() => setFilters({
-                                            estimate_id: '', version: '', deal_id: '', cost_sheet_no: '', customer_name: '', project_name: '',
-                                            total_price: '', status: '', created_at: '', period: '',
-                                            startDate: '', endDate: '', showOnlyLatest: filters.showOnlyLatest
-                                        })}
-                                        style={{ height: '24px', width: '100%', fontSize: '10px', color: '#FF6B00', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
-                                    >
-                                        Clear
-                                    </button>
-                                </th>
-                            </tr>
+                                </tr>
+                            )}
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
-                            ) : filteredEstimates.length === 0 ? (
+                            ) : paginatedEstimates.length === 0 ? (
                                 <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No estimates found.</td></tr>
                             ) : (
-                                filteredEstimates.map(est => {
+                                paginatedEstimates.map(est => {
                                     const style = getStatusStyle(est.status, est.approval_status);
                                     const hasProposal = (est as any).proposals?.length > 0;
                                     return (
                                         <tr key={est.id}>
                                             {visibleColumns.includes('deal_id') && (
                                                 <td
-                                                    style={{ fontWeight: 700, color: '#0066CC', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    style={{ fontWeight: 700, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
                                                     onClick={() => navigate(`/deal?id=${est.deal}`)}
                                                 >
                                                     {est.deal_id}
                                                 </td>
                                             )}
                                             {visibleColumns.includes('deal_amount') && (
-                                                <td style={{ fontWeight: 600, color: '#38A169' }}>
+                                                <td style={{ fontWeight: 600 }}>
                                                     ₹{parseFloat(est.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </td>
                                             )}
                                             {visibleColumns.includes('cost_sheet_no') && (
                                                 <td
-                                                    style={{ fontWeight: 700, color: '#0066CC', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    style={{ fontWeight: 700, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
                                                     onClick={() => navigate(`/cost-sheet?id=${est.cost_sheet}`)}
                                                 >
                                                     {est.cost_sheet_no}
                                                 </td>
                                             )}
                                             {visibleColumns.includes('cost_sheet_price') && (
-                                                <td style={{ fontWeight: 600, color: '#2b6cb0' }}>
+                                                <td style={{ fontWeight: 600 }}>
                                                     ₹{parseFloat(est.cost_sheet_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </td>
                                             )}
                                             {visibleColumns.includes('estimate_id') && (
                                                 <td
-                                                    style={{ fontWeight: 700, color: '#0066CC', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    style={{ fontWeight: 700, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
                                                     onClick={() => onView(est.id)}
                                                 >
                                                     {est.estimate_id}
@@ -696,64 +780,71 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                             )}
 
                                             {visibleColumns.includes('customer_name') && <td style={{ fontWeight: 500 }}>{est.customer_name}</td>}
-                                            {visibleColumns.includes('project_name') && <td style={{ color: '#4A5568' }}>{est.project_name}</td>}
+                                            {visibleColumns.includes('project_name') && <td style={{ fontWeight: 500 }}>{est.project_name}</td>}
                                             {visibleColumns.includes('total_price') && <td style={{ fontWeight: 700 }}>₹{parseFloat(est.total_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>}
                                             {visibleColumns.includes('status') && (
                                                 <td>
                                                     <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: style.bg, color: style.text, whiteSpace: 'nowrap' }}>{style.label}</span>
                                                 </td>
                                             )}
-                                            {visibleColumns.includes('subscription_from') && <td style={{ color: '#4A5568', fontSize: '0.75rem' }}>{est.subscription_from ? formatToAppDate(est.subscription_from) : '-'}</td>}
-                                            {visibleColumns.includes('subscription_to') && <td style={{ color: '#4A5568', fontSize: '0.75rem' }}>{est.subscription_to ? formatToAppDate(est.subscription_to) : '-'}</td>}
+                                            {visibleColumns.includes('subscription_from') && <td style={{ fontSize: '0.75rem' }}>{est.subscription_from ? formatToAppDate(est.subscription_from) : '-'}</td>}
+                                            {visibleColumns.includes('subscription_to') && <td style={{ fontSize: '0.75rem' }}>{est.subscription_to ? formatToAppDate(est.subscription_to) : '-'}</td>}
                                             {visibleColumns.includes('proposal') && (
                                                 <td>
                                                     {hasProposal ? (
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#38A169', fontSize: '0.75rem', fontWeight: 600 }}><CheckCircle2 size={14} /> Attached</div>
                                                     ) : (
-                                                        <button onClick={() => onView(est.id)} style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 700, background: '#FFF5F5', color: '#E53E3E', border: '1px solid #E53E3E', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <button
+                                                            onClick={() => onView(est.id)}
+                                                            style={{
+                                                                padding: '6px 12px',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: 700,
+                                                                background: 'var(--bg-secondary)',
+                                                                color: 'var(--theme-primary)',
+                                                                border: '1px solid var(--theme-primary)',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                e.currentTarget.style.color = 'white';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = 'var(--bg-secondary)';
+                                                                e.currentTarget.style.color = 'var(--theme-primary)';
+                                                            }}
+                                                        >
                                                             <Upload size={14} /> Attach Proposal
                                                         </button>
                                                     )}
                                                 </td>
                                             )}
-                                            {visibleColumns.includes('created_at') && <td style={{ color: '#4A5568', fontSize: '0.75rem' }}>{formatToAppDate(est.estimate_date || est.created_at)}</td>}
+                                            {visibleColumns.includes('created_at') && <td style={{ fontSize: '0.75rem' }}>{formatToAppDate(est.estimate_date || est.created_at)}</td>}
 
-                                            <td style={{ textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                                                <button
-                                                    onClick={() => onView(est.id)}
-                                                    style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '6px',
-                                                        padding: '6px 12px',
-                                                        background: '#0066CC',
-                                                        color: 'white',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 600,
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onMouseOver={(e) => e.currentTarget.style.background = '#0052A3'}
-                                                    onMouseOut={(e) => e.currentTarget.style.background = '#0066CC'}
-                                                    title="View Details"
-                                                >
-                                                    <Eye size={14} />
-                                                </button>
-
-                                                {est.approval_status === 'APPROVED' && (
+                                            <td style={{
+                                                width: '120px',
+                                                minWidth: '120px',
+                                                padding: '8px'
+                                            }}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    gap: '4px',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center'
+                                                }}>
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDownloadPDF(est.id, est.estimate_id);
-                                                        }}
+                                                        onClick={() => onView(est.id)}
                                                         style={{
                                                             display: 'inline-flex',
                                                             alignItems: 'center',
                                                             gap: '6px',
                                                             padding: '6px 12px',
-                                                            background: '#FF6B00',
+                                                            background: 'var(--ae-blue)',
                                                             color: 'white',
                                                             border: 'none',
                                                             borderRadius: '6px',
@@ -762,13 +853,41 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                             cursor: 'pointer',
                                                             transition: 'all 0.2s'
                                                         }}
-                                                        onMouseOver={(e) => e.currentTarget.style.background = '#E56000'}
-                                                        onMouseOut={(e) => e.currentTarget.style.background = '#FF6B00'}
-                                                        title="Download Report"
+                                                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
+                                                        onMouseOut={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
+                                                        title="View Details"
                                                     >
-                                                        <FileText size={14} />
+                                                        <Eye size={14} />
                                                     </button>
-                                                )}
+
+                                                    {est.approval_status === 'APPROVED' && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDownloadPDF(est.id, est.estimate_id);
+                                                            }}
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px',
+                                                                padding: '6px 12px',
+                                                                background: 'var(--theme-primary)',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: 600,
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseOver={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
+                                                            onMouseOut={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
+                                                            title="Download Report"
+                                                        >
+                                                            <FileText size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -777,6 +896,13 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={filteredEstimates.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                />
 
                 {/* Email Modal */}
                 {emailModal.open && (

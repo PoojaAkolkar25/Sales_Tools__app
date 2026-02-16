@@ -13,11 +13,15 @@ import {
   Users,
   LayoutDashboard,
   PlusCircle,
-  Search,
   Loader2,
   ChevronLeft,
   ChevronRight,
   Upload,
+  RefreshCcw,
+  Eye,
+  Settings as SettingsIcon,
+  Palette,
+  ChevronDown
 } from 'lucide-react';
 
 
@@ -45,13 +49,22 @@ import LeadForm from './components/LeadForm';
 import CustomerDashboard from './components/CustomerDashboard';
 import ResourceDashboard from './components/ResourceDashboard';
 import ResourceRequestForm from './components/ResourceRequestForm';
+import Settings from './components/Settings';
 
 
 
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 
-const getNavItems = (user: any) => {
-  const items = [
+interface NavItem {
+  id: string;
+  label: string;
+  icon: any;
+  path: string;
+  children?: NavItem[];
+}
+
+const getNavItems = (user: any): NavItem[] => {
+  const items: NavItem[] = [
     { id: 'home', label: 'Home', icon: LayoutDashboard, path: '/home' },
     { id: 'lead', label: 'Lead', icon: Users, path: '/lead' },
     { id: 'deal', label: 'Deal', icon: Handshake, path: '/deal' },
@@ -67,9 +80,16 @@ const getNavItems = (user: any) => {
   ];
 
   if (user?.role === 'app_admin') {
-    items.push(
-      { id: 'create', label: 'Create', path: '/user-management', icon: PlusCircle }
-    );
+    items.push({
+      id: 'settings',
+      label: 'Settings',
+      icon: SettingsIcon,
+      path: '#', // Placeholder, parent item doesn't navigate directly if it has children
+      children: [
+        { id: 'create', label: 'Create', path: '/user-management', icon: PlusCircle },
+        { id: 'themes', label: 'Themes', path: '/settings', icon: Palette }
+      ]
+    });
   }
 
   return items;
@@ -84,6 +104,7 @@ interface ModuleWrapperProps {
   navigate: (path: string) => void;
   location: any;
   onCreateUser?: () => void;
+  theme: string;
 }
 
 const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
@@ -94,62 +115,136 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
   onLogout,
   navigate,
   location,
-}) => (
-  <div className="app-container">
-    {/* Left Sidebar */}
-    <aside className={`sidebar flex flex-col ${isSidebarExpanded ? 'expanded' : '!w-20'} overflow-hidden`}>
-      <div className={`sidebar-logo !px-0 flex items-center ${isSidebarExpanded ? 'justify-start px-6' : 'justify-center'}`}>
-        <img
-          src="/Salesedge1_logo.png"
-          alt="SalesEdge Logo"
-          className="sidebar-logo-img"
+  theme,
+}) => {
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
+
+  const toggleMenu = (menuId: string) => {
+    if (!isSidebarExpanded) {
+      setIsSidebarExpanded(true);
+      setExpandedMenus(prev => ({ ...prev, [menuId]: true }));
+    } else {
+      setExpandedMenus(prev => ({ ...prev, [menuId]: !prev[menuId] }));
+    }
+  };
+
+  const navItems = getNavItems(user);
+
+  return (
+    <div className={`app-container ${theme === 'autumn' ? 'theme-autumn' : ''}`}>
+      {/* Left Sidebar */}
+      <aside className={`sidebar flex flex-col ${isSidebarExpanded ? 'expanded' : '!w-20'} overflow-hidden transition-all duration-300`}>
+        <div className={`sidebar-logo !px-0 flex items-center ${isSidebarExpanded ? 'justify-start px-6' : 'justify-center'}`}>
+          <img
+            src="/Salesedge1_logo.png"
+            alt="SalesEdge Logo"
+            className="sidebar-logo-img"
+          />
+          {isSidebarExpanded && <h1 className="ml-3 text-white font-extrabold text-xl tracking-tight">SalesEdge</h1>}
+        </div>
+
+        <nav className="sidebar-nav flex-1">
+          {navItems.map((item: any) => {
+            const hasChildren = item.children && item.children.length > 0;
+            const isExpanded = expandedMenus[item.id];
+            const isActive = location.pathname === item.path || (hasChildren && item.children.some((child: any) => location.pathname === child.path));
+
+            return (
+              <React.Fragment key={item.id}>
+                <button
+                  onClick={() => hasChildren ? toggleMenu(item.id) : navigate(item.path)}
+                  className={`sidebar-item !px-0 ${isSidebarExpanded ? 'expanded' : 'flex justify-center'} ${isActive ? 'active' : ''} w-full`}
+                  title={!isSidebarExpanded ? item.label : ''}
+                >
+                  <div className={`flex items-center ${isSidebarExpanded ? 'w-full' : 'justify-center'} px-4`}>
+                    <item.icon size={24} className="flex-shrink-0" />
+                    {isSidebarExpanded && (
+                      <>
+                        <span className="font-semibold text-sm ml-3 flex-1 text-left">{item.label}</span>
+                        {hasChildren && (
+                          <ChevronDown
+                            size={16}
+                            className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                          />
+                        )}
+                      </>
+                    )}
+                  </div>
+                </button>
+
+                {/* Sub-items */}
+                {isSidebarExpanded && hasChildren && isExpanded && (
+                  <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)', paddingBottom: '4px' }}>
+                    {item.children.map((child: any) => {
+                      const isChildActive = location.pathname === child.path;
+                      return (
+                        <button
+                          key={child.id}
+                          onClick={() => navigate(child.path)}
+                          className={`sidebar-item !px-0 expanded w-full`}
+                          style={{
+                            background: isChildActive ? 'var(--bg-accent)' : 'transparent',
+                            color: isChildActive ? 'var(--accent-primary)' : 'var(--text-tertiary)',
+                            borderLeft: isChildActive ? '3px solid var(--border-accent)' : '3px solid transparent',
+                            marginBottom: '2px',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isChildActive) {
+                              e.currentTarget.style.background = 'var(--bg-hover)';
+                              e.currentTarget.style.color = 'var(--accent-primary)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isChildActive) {
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.color = 'var(--text-tertiary)';
+                            }
+                          }}
+                        >
+                          <div className="flex items-center justify-center w-full px-4">
+                            <child.icon size={18} className="flex-shrink-0" />
+                            <span className="font-medium text-sm ml-3 text-left">{child.label}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
+
+          {/* Toggle Button Relocated Below Items */}
+          <div className="sidebar-toggle-container">
+            <button
+              onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+              className="sidebar-toggle-btn"
+              title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+            >
+              {isSidebarExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+            </button>
+          </div>
+        </nav>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className={`main-content ${isSidebarExpanded ? 'sidebar-expanded' : ''}`}>
+        <Navbar
+          user={user}
+          onLogout={onLogout}
+          isSidebarExpanded={isSidebarExpanded}
         />
-        {isSidebarExpanded && <h1 className="ml-3 text-white font-extrabold text-xl tracking-tight">SalesEdge</h1>}
-      </div>
 
-      <nav className="sidebar-nav flex-1">
-        {getNavItems(user).map((item) => (
-          <button
-            key={item.id}
-            onClick={() => navigate(item.path)}
-            className={`sidebar-item !px-0 ${isSidebarExpanded ? 'expanded' : 'flex justify-center'} ${location.pathname === item.path ? 'active' : ''}`}
-            title={!isSidebarExpanded ? item.label : ''}
-          >
-            <item.icon size={24} className="flex-shrink-0" />
-            {isSidebarExpanded && <span className="font-semibold text-sm">{item.label}</span>}
-            {!isSidebarExpanded && <span className="sr-only">{item.label}</span>}
-          </button>
-        ))}
-
-        {/* Toggle Button Relocated Below Items */}
-        <div className="sidebar-toggle-container">
-          <button
-            onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
-            className="sidebar-toggle-btn"
-            title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
-          >
-            {isSidebarExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-          </button>
+        <div className="main-scroll-area">
+          <div className="content-inner animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {children}
+          </div>
         </div>
-      </nav>
-    </aside>
-
-    {/* Main Content Area */}
-    <main className={`main-content ${isSidebarExpanded ? 'sidebar-expanded' : ''}`}>
-      <Navbar
-        user={user}
-        onLogout={onLogout}
-        isSidebarExpanded={isSidebarExpanded}
-      />
-
-      <div className="main-scroll-area">
-        <div className="content-inner animate-in fade-in slide-in-from-bottom-4 duration-500">
-          {children}
-        </div>
-      </div>
-    </main>
-  </div>
-);
+      </main>
+    </div>
+  );
+};
 
 const AppContent: React.FC = () => {
 
@@ -163,17 +258,18 @@ const AppContent: React.FC = () => {
   const [editingSalesOrderId, setEditingSalesOrderId] = useState<number | null>(null);
   const [editingLeadId, setEditingLeadId] = useState<number | null>(null);
   const [leadView, setLeadView] = useState<'form' | 'dashboard'>('dashboard');
-  const [leadSearchQuery, setLeadSearchQuery] = useState('');
-  const [costSheetSearchQuery, setCostSheetSearchQuery] = useState('');
-  const [dealSearchQuery, setDealSearchQuery] = useState('');
+
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [isExtractingSO, setIsExtractingSO] = useState(false);
   const [soRefreshTrigger, setSoRefreshTrigger] = useState(0);
   const [inventoryView, setInventoryView] = useState<'form' | 'dashboard'>('dashboard');
   const [editingInventoryId, setEditingInventoryId] = useState<number | null>(null);
-  const [salesOrderSearchQuery, setSalesOrderSearchQuery] = useState('');
+
   const [milestoneView, setMilestoneView] = useState<'form' | 'dashboard'>('dashboard');
-  const [milestoneSearchQuery, setMilestoneSearchQuery] = useState('');
+
+  const [syncingDeal, setSyncingDeal] = useState(false);
+  const [refreshDealTrigger, setRefreshDealTrigger] = useState(0);
+  const [theme, setTheme] = useState<string>(localStorage.getItem('app-theme') || 'default');
   const { showNotification } = useNotification();
 
 
@@ -318,13 +414,27 @@ const AppContent: React.FC = () => {
     setLeadView('form');
   };
 
+  const handleHubSpotSync = async () => {
+    if (!editingDealId) return;
+    setSyncingDeal(true);
+    try {
+      const response = await api.post(`/deals/${editingDealId}/sync_hubspot/`);
+      showNotification(response.data.message, 'success');
+      setRefreshDealTrigger(prev => prev + 1);
+    } catch (error: any) {
+      showNotification(error.response?.data?.message || 'HubSpot sync failed', 'error');
+    } finally {
+      setSyncingDeal(false);
+    }
+  };
+
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F7F9FC]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)]">
         <div className="text-center">
-          <Loader2 className="animate-spin text-[#0066CC] mx-auto mb-4" size={48} />
-          <p className="text-[#2D3748] font-semibold">Loading SalesEdge...</p>
+          <Loader2 className="animate-spin text-[var(--ae-blue)] mx-auto mb-4" size={48} />
+          <p className="text-[var(--text-primary)] font-semibold">Loading SalesEdge...</p>
         </div>
       </div>
     );
@@ -337,6 +447,8 @@ const AppContent: React.FC = () => {
     onLogout: handleLogout,
     navigate,
     location,
+    theme,
+    setTheme
   };
 
   return (
@@ -363,8 +475,8 @@ const AppContent: React.FC = () => {
                   marginBottom: '24px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Cost Sheet Management</h1>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Cost Sheet Management</h1>
                   </div>
                 </div>
 
@@ -399,9 +511,9 @@ const AppContent: React.FC = () => {
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: costSheetView === 'dashboard' ? '#FF6B00' : 'transparent',
-                        color: costSheetView === 'dashboard' ? 'white' : '#718096',
-                        boxShadow: costSheetView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                        background: costSheetView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                        color: costSheetView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: costSheetView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
                     >
                       <LayoutDashboard size={18} /> Dashboard
@@ -420,9 +532,9 @@ const AppContent: React.FC = () => {
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: (costSheetView === 'form' && !editingId) ? '#FF6B00' : 'transparent',
-                        color: (costSheetView === 'form' && !editingId) ? 'white' : '#718096',
-                        boxShadow: (costSheetView === 'form' && !editingId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                        background: (costSheetView === 'form' && !editingId) ? 'var(--theme-primary)' : 'transparent',
+                        color: (costSheetView === 'form' && !editingId) ? 'white' : 'var(--text-secondary)',
+                        boxShadow: (costSheetView === 'form' && !editingId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
                     >
                       <PlusCircle size={18} /> Create New
@@ -453,9 +565,16 @@ const AppContent: React.FC = () => {
       <Route path="/user-management" element={
         user && user.role === 'app_admin' ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+            <div style={{ background: 'var(--bg-primary)', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
               <UserManagement />
             </div>
+          </ModuleWrapper>
+        ) : <Navigate to="/login" />
+      } />
+      <Route path="/settings" element={
+        user && user.role === 'app_admin' ? (
+          <ModuleWrapper {...commonWrapperProps}>
+            <Settings theme={theme} setTheme={setTheme} />
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
@@ -472,8 +591,8 @@ const AppContent: React.FC = () => {
                   marginBottom: '24px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Lead Management</h1>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Lead Management</h1>
                   </div>
                 </div>
 
@@ -508,9 +627,9 @@ const AppContent: React.FC = () => {
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: leadView === 'dashboard' ? '#FF6B00' : 'transparent',
-                        color: leadView === 'dashboard' ? 'white' : '#718096',
-                        boxShadow: leadView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                        background: leadView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                        color: leadView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: leadView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
                     >
                       <LayoutDashboard size={18} /> Dashboard
@@ -529,9 +648,9 @@ const AppContent: React.FC = () => {
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: (leadView === 'form' && !editingLeadId) ? '#FF6B00' : 'transparent',
-                        color: (leadView === 'form' && !editingLeadId) ? 'white' : '#718096',
-                        boxShadow: (leadView === 'form' && !editingLeadId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                        background: (leadView === 'form' && !editingLeadId) ? 'var(--theme-primary)' : 'transparent',
+                        color: (leadView === 'form' && !editingLeadId) ? 'white' : 'var(--text-secondary)',
+                        boxShadow: (leadView === 'form' && !editingLeadId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
                     >
                       <PlusCircle size={18} /> Create New
@@ -572,8 +691,8 @@ const AppContent: React.FC = () => {
                   marginBottom: '24px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Deal Management</h1>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Deal Management</h1>
                   </div>
                 </div>
 
@@ -608,9 +727,9 @@ const AppContent: React.FC = () => {
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: dealView === 'dashboard' ? '#FF6B00' : 'transparent',
-                        color: dealView === 'dashboard' ? 'white' : '#718096',
-                        boxShadow: dealView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                        background: dealView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                        color: dealView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: dealView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
                     >
                       <LayoutDashboard size={18} /> Dashboard
@@ -629,15 +748,27 @@ const AppContent: React.FC = () => {
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: (dealView === 'form' && !editingDealId) ? '#FF6B00' : 'transparent',
-                        color: (dealView === 'form' && !editingDealId) ? 'white' : '#718096',
-                        boxShadow: (dealView === 'form' && !editingDealId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                        background: (dealView === 'form' && !editingDealId) ? 'var(--theme-primary)' : 'transparent',
+                        color: (dealView === 'form' && !editingDealId) ? 'white' : 'var(--text-secondary)',
+                        boxShadow: (dealView === 'form' && !editingDealId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
                     >
                       <PlusCircle size={18} /> Create New
                     </button>
                   </div>
 
+                  {dealView === 'form' && editingDealId && (
+                    <button
+                      type="button"
+                      onClick={handleHubSpotSync}
+                      disabled={syncingDeal}
+                      className="ae-btn-secondary"
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', fontSize: '0.85rem' }}
+                    >
+                      <RefreshCcw size={18} className={syncingDeal ? 'animate-spin' : ''} />
+                      {syncingDeal ? 'Syncing...' : 'Sync HubSpot'}
+                    </button>
+                  )}
                 </div>
 
                 {dealView === 'form' ? (
@@ -645,6 +776,7 @@ const AppContent: React.FC = () => {
                     id={editingDealId}
                     onBack={() => setDealView('dashboard')}
                     onSave={() => setDealView('dashboard')}
+                    refreshTrigger={refreshDealTrigger}
                   />
                 ) : (
                   <DealDashboard
@@ -669,8 +801,8 @@ const AppContent: React.FC = () => {
                   marginBottom: '24px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Estimate Management</h1>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Estimate Management</h1>
                   </div>
                 </div>
 
@@ -689,7 +821,7 @@ const AppContent: React.FC = () => {
                     background: 'white',
                     padding: '6px',
                     borderRadius: '12px',
-                    border: '1px solid #E0E6ED',
+                    border: '1px solid var(--border-primary)',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
                   }}>
                     <button
@@ -705,9 +837,9 @@ const AppContent: React.FC = () => {
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: estimateView === 'dashboard' ? '#FF6B00' : 'transparent',
-                        color: estimateView === 'dashboard' ? 'white' : '#718096',
-                        boxShadow: estimateView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                        background: estimateView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                        color: estimateView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: estimateView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
                     >
                       <LayoutDashboard size={18} /> Dashboard
@@ -729,14 +861,34 @@ const AppContent: React.FC = () => {
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: (estimateView === 'form' && !editingEstimateId) ? '#FF6B00' : 'transparent',
-                        color: (estimateView === 'form' && !editingEstimateId) ? 'white' : '#718096',
-                        boxShadow: (estimateView === 'form' && !editingEstimateId) ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                        background: (estimateView === 'form' && !editingEstimateId) ? 'var(--theme-primary)' : 'transparent',
+                        color: (estimateView === 'form' && !editingEstimateId) ? 'white' : 'var(--text-secondary)',
+                        boxShadow: (estimateView === 'form' && !editingEstimateId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
                     >
                       <PlusCircle size={18} /> Create New
                     </button>
                   </div>
+                  {estimateView === 'form' && editingEstimateId && (
+                    <button
+                      onClick={() => window.open(`${api.defaults.baseURL}/estimates/${editingEstimateId}/preview_pdf/`, '_blank')}
+                      className="ae-btn-secondary"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        fontSize: '0.85rem',
+                        height: '32px',
+                        borderRadius: '8px',
+                        color: '#718096',
+                        borderColor: '#E2E8F0',
+                        fontWeight: 700
+                      }}
+                    >
+                      <Eye size={16} /> Preview
+                    </button>
+                  )}
                 </div>
 
                 {estimateView === 'form' ? (
@@ -752,10 +904,10 @@ const AppContent: React.FC = () => {
                 )}
               </div>
             </div>
-          </ModuleWrapper>
+          </ModuleWrapper >
         ) : <Navigate to="/login" />
       } />
-      <Route path="/sales-order" element={
+      < Route path="/sales-order" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
             <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
@@ -768,8 +920,8 @@ const AppContent: React.FC = () => {
                   marginBottom: '24px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Sales Order Management</h1>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Sales Order Management</h1>
                   </div>
                 </div>
 
@@ -788,7 +940,7 @@ const AppContent: React.FC = () => {
                     background: 'white',
                     padding: '6px',
                     borderRadius: '12px',
-                    border: '1px solid #E0E6ED',
+                    border: '1px solid var(--border-primary)',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
                   }}>
                     <button
@@ -804,9 +956,9 @@ const AppContent: React.FC = () => {
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: salesOrderView === 'dashboard' ? '#FF6B00' : 'transparent',
-                        color: salesOrderView === 'dashboard' ? 'white' : '#718096',
-                        boxShadow: salesOrderView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                        background: salesOrderView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                        color: salesOrderView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: salesOrderView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
                     >
                       <LayoutDashboard size={18} /> Dashboard
@@ -861,17 +1013,17 @@ const AppContent: React.FC = () => {
                 )}
               </div>
             </div>
-          </ModuleWrapper>
+          </ModuleWrapper >
         ) : <Navigate to="/login" />
       } />
-      <Route path="/invoice" element={
+      < Route path="/invoice" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
             <InvoiceDashboard />
-          </ModuleWrapper>
+          </ModuleWrapper >
         ) : <Navigate to="/login" />
       } />
-      <Route path="/payment" element={
+      < Route path="/payment" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
             <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
@@ -884,17 +1036,17 @@ const AppContent: React.FC = () => {
                   marginBottom: '24px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Payment Module</h1>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Payment Module</h1>
                   </div>
                 </div>
                 <Payment />
               </div>
             </div>
-          </ModuleWrapper>
+          </ModuleWrapper >
         ) : <Navigate to="/login" />
       } />
-      <Route path="/milestone" element={
+      < Route path="/milestone" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
             <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
@@ -907,8 +1059,8 @@ const AppContent: React.FC = () => {
                   marginBottom: '24px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Milestone Management</h1>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Milestone Management</h1>
                   </div>
                 </div>
 
@@ -927,7 +1079,7 @@ const AppContent: React.FC = () => {
                     background: 'white',
                     padding: '6px',
                     borderRadius: '12px',
-                    border: '1px solid #E0E6ED',
+                    border: '1px solid var(--border-primary)',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
                   }}>
                     <button
@@ -943,9 +1095,9 @@ const AppContent: React.FC = () => {
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: milestoneView === 'dashboard' ? '#FF6B00' : 'transparent',
-                        color: milestoneView === 'dashboard' ? 'white' : '#718096',
-                        boxShadow: milestoneView === 'dashboard' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                        background: milestoneView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                        color: milestoneView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: milestoneView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
                     >
                       <LayoutDashboard size={18} /> Dashboard
@@ -988,18 +1140,18 @@ const AppContent: React.FC = () => {
                 )}
               </div>
             </div>
-          </ModuleWrapper>
+          </ModuleWrapper >
         ) : <Navigate to="/login" />
       } />
-      <Route path="/customer-dashboard" element={
+      < Route path="/customer-dashboard" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
             <CustomerDashboard />
-          </ModuleWrapper>
+          </ModuleWrapper >
         ) : <Navigate to="/login" />
       }
       />
-      <Route path="/inventory" element={
+      < Route path="/inventory" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
             <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
@@ -1038,32 +1190,34 @@ const AppContent: React.FC = () => {
                 )}
               </div>
             </div>
-          </ModuleWrapper>
+          </ModuleWrapper >
         ) : <Navigate to="/login" />
       } />
-      {getNavItems(user).filter(item => !['lead', 'cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order', 'milestone', 'user-management', 'customer-dashboard', 'inventory'].includes(item.id)).map(item => (
-        <Route key={item.id} path={item.path} element={
-          user ? (
-            <ModuleWrapper {...commonWrapperProps}>
-              <div className="glass-card !bg-white">
-                <h2 className="text-3xl font-extrabold text-[#1a1f36] mb-4">{item.label}</h2>
-                <div className="py-20 text-center border-2 border-dashed border-[#E0E6ED] rounded-xl bg-[#FAFBFC]">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-[#0066CC]/10 text-[#0066CC] rounded-full mb-4">
-                    <item.icon size={32} />
+      {
+        getNavItems(user).filter(item => !['lead', 'cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order', 'milestone', 'user-management', 'customer-dashboard', 'inventory'].includes(item.id)).map(item => (
+          <Route key={item.id} path={item.path} element={
+            user ? (
+              <ModuleWrapper {...commonWrapperProps}>
+                <div className="glass-card !bg-white">
+                  <h2 className="text-3xl font-extrabold text-[#1a1f36] mb-4">{item.label}</h2>
+                  <div className="py-20 text-center border-2 border-dashed border-[#E0E6ED] rounded-xl bg-[#FAFBFC]">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#0066CC]/10 text-[#0066CC] rounded-full mb-4">
+                      <item.icon size={32} />
+                    </div>
+                    <p className="text-[#2D3748] text-xl font-bold">Module Under Development</p>
+                    <p className="text-[#718096] mt-2 max-w-sm mx-auto">
+                      The {item.label} module is being prepared for the next release phase.
+                    </p>
                   </div>
-                  <p className="text-[#2D3748] text-xl font-bold">Module Under Development</p>
-                  <p className="text-[#718096] mt-2 max-w-sm mx-auto">
-                    The {item.label} module is being prepared for the next release phase.
-                  </p>
                 </div>
-              </div>
-            </ModuleWrapper>
-          ) : <Navigate to="/login" />
-        } />
-      ))}
+              </ModuleWrapper>
+            ) : <Navigate to="/login" />
+          } />
+        ))
+      }
       <Route path="/" element={<Navigate to={user ? "/home" : "/login"} />} />
       <Route path="*" element={<Navigate to={user ? "/home" : "/login"} />} />
-    </Routes>
+    </Routes >
   );
 };
 

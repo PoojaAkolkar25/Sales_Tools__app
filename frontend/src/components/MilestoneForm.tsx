@@ -16,6 +16,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
+    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
     const { showNotification } = useNotification();
 
     const getCurrencySymbol = (currency: string) => {
@@ -214,12 +215,12 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                 {/* Header with Title */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
                     <span style={{
-                        width: '3px',
-                        height: '14px',
-                        background: '#FF6B00',
+                        width: '4px',
+                        height: '18px',
+                        background: 'var(--ae-blue)',
                         borderRadius: '2px'
                     }}></span>
-                    <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', margin: 0 }}>
+                    <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', margin: 0 }}>
                         Create New Milestone Plan
                     </h2>
                 </div>
@@ -230,7 +231,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                         fontSize: '0.75rem',
                         fontWeight: 700,
                         margin: '0 0 16px 0',
-                        color: '#0066CC',
+                        color: 'var(--text-secondary)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
@@ -239,16 +240,16 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                         <span style={{
                             width: '2px',
                             height: '10px',
-                            background: '#0066CC',
+                            background: 'var(--ae-blue)',
                             borderRadius: '1px'
                         }}></span>
                         Selection & Summary
                     </h3>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '16px' }}>
-                        <div className="ae-input-group">
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                Select Customer <span style={{ color: '#FF6B00' }}>*</span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
+                                Select Customer <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
                             <select
                                 style={{
@@ -271,9 +272,9 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                             </select>
                         </div>
 
-                        <div className="ae-input-group">
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                Select Sales Order <span style={{ color: '#FF6B00' }}>*</span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
+                                Select Sales Order <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
                             <select
                                 style={{
@@ -304,16 +305,16 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
 
                     {selectedSO && (
                         <div style={{
-                            background: '#F8FAFC',
+                            background: 'var(--bg-secondary)',
                             padding: '12px 20px',
                             borderRadius: '8px',
-                            border: '1px solid #E2E8F0',
+                            border: '1px solid var(--border-primary)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '40px'
                         }}>
                             <div style={{ flexShrink: 0 }}>
-                                <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0066CC', textTransform: 'uppercase', margin: 0 }}>Order Details</h4>
+                                <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', margin: 0 }}>Order Details</h4>
                             </div>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -342,7 +343,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                         <h3 style={{
                             fontSize: '0.8rem',
                             fontWeight: 800,
-                            color: '#FF6B00',
+                            color: 'var(--theme-primary)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
@@ -352,7 +353,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                             <span style={{
                                 width: '4px',
                                 height: '14px',
-                                background: '#0066CC',
+                                background: 'var(--ae-blue)',
                                 borderRadius: '2px'
                             }}></span>
                             Milestone Breakdown
@@ -376,8 +377,8 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                     ) : (
                         <div className="overflow-x-auto">
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
-                                <thead>
-                                    <tr style={{ background: '#F8FAFC' }}>
+                                <thead style={{ background: 'var(--bg-secondary)' }}>
+                                    <tr>
                                         <th style={{ padding: '12px 8px', width: '40px', borderBottom: '1px solid #E0E6ED' }}></th>
                                         <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '80px' }}>Sr.No.</th>
                                         <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Description</th>
@@ -391,7 +392,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                                     {milestones.map((milestone, index) => {
                                         const isInvoiced = milestone.status === 'INVOICED';
                                         return (
-                                            <tr key={index} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                            <tr style={{ borderBottom: '1px solid var(--border-primary)' }}>
                                                 <td style={{ padding: '8px', textAlign: 'center' }}>
                                                     {index === milestones.length - 1 && (
                                                         <button
@@ -399,10 +400,10 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                                                             onClick={handleAddMilestone}
                                                             style={{
                                                                 padding: '4px',
-                                                                background: '#F0F9FF',
-                                                                border: '1px solid #BAE6FD',
+                                                                background: 'var(--bg-accent)',
+                                                                border: '1px solid var(--theme-primary)',
                                                                 borderRadius: '6px',
-                                                                color: '#0284C7',
+                                                                color: 'var(--theme-primary)',
                                                                 cursor: 'pointer',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
@@ -462,7 +463,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                                                         style={{
                                                             width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
                                                             borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700,
-                                                            textAlign: 'center', color: '#0066CC',
+                                                            textAlign: 'center', color: 'var(--text-secondary)',
                                                             opacity: isInvoiced ? 0.7 : 1
                                                         }}
                                                     />
@@ -513,10 +514,10 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                                     })}
                                 </tbody>
                                 <tfoot>
-                                    <tr style={{ background: '#F8FAFC' }}>
-                                        <td colSpan={5} style={{ padding: '16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: '#718096', textTransform: 'uppercase' }}>Total Planned</td>
-                                        <td style={{ padding: '16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: calculateTotal() > parseFloat(selectedSO.total_amount) ? '#C53030' : '#1a1f36' }}>
-                                            <span style={{ color: '#FF6B00', marginRight: '4px' }}>{getCurrencySymbol(selectedSO.currency)}</span>
+                                    <tr style={{ background: 'var(--bg-secondary)' }}>
+                                        <td colSpan={5} style={{ padding: '16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Planned</td>
+                                        <td style={{ padding: '16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: calculateTotal() > parseFloat(selectedSO.total_amount) ? '#C53030' : 'var(--text-primary)' }}>
+                                            <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{getCurrencySymbol(selectedSO.currency)}</span>
                                             {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                         <td></td>
@@ -559,23 +560,32 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                 border: '1px solid #E0E6ED',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
                 width: 'fit-content',
+                marginLeft: 'auto',
                 marginBottom: '20px'
             }}>
                 <button
                     onClick={handleSave}
                     disabled={saving || !selectedSO}
-                    className="ae-btn-primary"
                     style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
                         padding: '6px 16px',
                         borderRadius: '8px',
-                        fontSize: '0.85rem'
+                        fontSize: '0.85rem',
+                        background: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
+                        color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        fontWeight: 800,
+                        boxShadow: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                     }}
+                    onMouseEnter={() => setHoveredBtn('save')}
+                    onMouseLeave={() => setHoveredBtn(null)}
                 >
                     {saving ? <Clock className="animate-spin" size={16} /> : <Save size={16} />}
-                    <span style={{ fontWeight: 800 }}>Save Milestone Plan</span>
+                    <span>Save Milestone</span>
                 </button>
 
                 <button
@@ -587,12 +597,16 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                         padding: '6px 16px',
                         borderRadius: '8px',
                         fontSize: '0.85rem',
-                        background: 'transparent',
-                        color: '#718096',
+                        background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
                         border: 'none',
                         fontWeight: 700,
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                     }}
+                    onMouseEnter={() => setHoveredBtn('cancel')}
+                    onMouseLeave={() => setHoveredBtn(null)}
                 >
                     <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
                     <span>Cancel</span>
@@ -600,93 +614,103 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
             </div>
 
             {/* Cancel Confirmation Modal */}
-            {showCancelModal && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    backdropFilter: 'blur(2px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999
-                }}>
+            {
+                showCancelModal && (
                     <div style={{
-                        background: 'white',
-                        width: '100%',
-                        maxWidth: '450px',
-                        borderRadius: '12px',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                        overflow: 'hidden'
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(255, 255, 255, 0.4)',
+                        backdropFilter: 'blur(1px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 9999,
+                        animation: 'fadeIn 0.2s ease-out'
                     }}>
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '10px',
-                                    background: '#FFF5F5',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <AlertCircle size={24} color="#E53E3E" />
+                        <div style={{
+                            background: 'white',
+                            width: '100%',
+                            maxWidth: '500px',
+                            borderRadius: '12px',
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                            border: '1px solid #E2E8F0',
+                            overflow: 'hidden',
+                            animation: 'modalScale 0.2s ease-out'
+                        }}>
+                            <div style={{ padding: '24px' }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                    <div style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '10px',
+                                        background: '#FFF5F5',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
+                                            Leave this page?
+                                        </h3>
+                                        <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                            If you leave, your unsaved changes will be discarded.
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
-                                        Leave this page?
-                                    </h3>
-                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                                        If you leave, your unsaved changes will be discarded.
-                                    </p>
-                                </div>
-                            </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
-                                <button
-                                    onClick={() => setShowCancelModal(false)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: '#3B82F6',
-                                        color: 'white',
-                                        border: 'none',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                >
-                                    Stay Here
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowCancelModal(false);
-                                        onBack();
-                                    }}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: 'white',
-                                        color: '#1a1f36',
-                                        border: '1px solid #E2E8F0',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                >
-                                    Leave & Discard Changes
-                                </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
+                                    <button
+                                        onClick={() => setShowCancelModal(false)}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 16px',
+                                            borderRadius: '8px',
+                                            background: 'var(--theme-primary)',
+                                            color: 'white',
+                                            border: 'none',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            height: '40px',
+                                            boxShadow: '0 4px 12px rgba(187, 77, 0, 0.2)'
+                                        }}
+                                    >
+                                        Stay Here
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowCancelModal(false);
+                                            onBack();
+                                        }}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 16px',
+                                            borderRadius: '8px',
+                                            background: 'white',
+                                            color: '#1a1f36',
+                                            border: '1px solid #E2E8F0',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            height: '40px'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                    >
+                                        Leave & Discard Changes
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

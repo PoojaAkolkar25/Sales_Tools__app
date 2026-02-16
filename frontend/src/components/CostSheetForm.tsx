@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, MessageSquare, ArrowLeft } from 'lucide-react';
+import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, ArrowLeft } from 'lucide-react';
 import api from '../api';
 
 interface Lead {
@@ -36,29 +36,30 @@ interface CostSheetFormProps {
     onSave?: () => void;
 }
 
-const TableHeader = ({ columns, isReadOnly }: { columns: string[], isReadOnly: boolean }) => (
-    <thead>
-        <tr style={{ background: 'transparent' }}>
-            {!isReadOnly && <th style={{ padding: '6px 8px', width: '40px', borderBottom: '2px solid #E0E6ED' }}></th>}
-            {columns.map((col, i) => (
-                <th key={i} style={{
-                    padding: '6px 8px',
-                    textAlign: 'left',
-                    fontSize: '0.7rem',
-                    fontWeight: 700,
-                    color: 'black',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    borderBottom: '2px solid #E0E6ED',
-                    whiteSpace: 'nowrap'
-                }}>{col}</th>
-            ))}
-            {!isReadOnly && <th style={{ padding: '6px 8px', width: '40px', borderBottom: '2px solid #E0E6ED' }}></th>}
-        </tr>
-    </thead>
-);
+const TableHeader = ({ columns, isReadOnly }: { columns: string[], isReadOnly: boolean }) => {
+    return (
+        <thead>
+            <tr style={{ background: 'var(--bg-secondary)' }}>
+                {!isReadOnly && <th style={{ padding: '10px 8px', width: '40px' }}></th>}
+                {columns.map((col, i) => {
+                    return (
+                        <th key={i} style={{
+                            padding: '10px 8px',
+                            textAlign: 'left',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            color: 'var(--text-secondary)',
+                            whiteSpace: 'nowrap'
+                        }}>{col}</th>
+                    );
+                })}
+                {!isReadOnly && <th style={{ padding: '10px 8px', width: '40px' }}></th>}
+            </tr>
+        </thead>
+    );
+};
 
-const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly, onKeyDown, symbol = "", suffix = "" }: any) => {
+const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly, onKeyDown, symbol = "", suffix = "", placeholder }: any) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         if (type === 'number') {
@@ -103,15 +104,16 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly,
                         padding: '4px 0',
                         border: 'none',
                         outline: 'none',
-                        fontSize: '0.75rem',
+                        fontSize: '0.9rem',
                         fontWeight: 500,
                         color: '#2D3748',
-                        background: 'transparent'
+                        background: 'transparent',
+                        textAlign: 'left'
                     }}
                     className="placeholder-gray-400"
                     type={type}
                     value={displayValue}
-                    placeholder={type === 'number' ? "0" : ""}
+                    placeholder={placeholder || (type === 'number' ? "0" : "")}
                     readOnly={isReadOnly}
                     onChange={handleChange}
                     onKeyDown={onKeyDown}
@@ -122,13 +124,13 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly,
     );
 };
 
-const ReadOnlyCell = ({ value, bold = false, symbol = '' }: any) => (
+const ReadOnlyCell = ({ value, bold = false, symbol = '', color, fontSize, fontWeight }: any) => (
     <td style={{
         padding: '4px 8px',
-        fontSize: bold ? '0.8rem' : '0.75rem',
-        fontWeight: bold ? 700 : 600,
-        color: bold ? '#1a1f36' : '#718096',
-        background: 'rgba(0,0,0,0.02)',
+        fontSize: fontSize || (bold ? '0.9rem' : '0.9rem'),
+        fontWeight: fontWeight || (bold ? 700 : 600),
+        color: color || (bold ? 'var(--text-primary)' : 'var(--text-secondary)'),
+        background: 'transparent',
         textAlign: 'right'
     }}>
         {symbol && <span style={{ marginRight: '2px', opacity: 0.8 }}>{symbol}</span>}
@@ -138,8 +140,8 @@ const ReadOnlyCell = ({ value, bold = false, symbol = '' }: any) => (
 
 const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const [localId, setLocalId] = useState<number | null>(id || null);
-    const [leadNo, setLeadNo] = useState('');
     const [lead, setLead] = useState<Lead | null>(null);
+
     const [selectedCustomerName, setSelectedCustomerName] = useState('');
     const [leads, setLeads] = useState<Lead[]>([]);
     const [projectManager, setProjectManager] = useState('');
@@ -156,6 +158,8 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const [rejectComment, setRejectComment] = useState('');
     const [revertComment, setRevertComment] = useState('');
     const [showRejectModal, setShowRejectModal] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
 
     const getCurrencySymbol = (cur: string) => {
         switch (cur) {
@@ -223,7 +227,6 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                     if (data.lead_details) {
                         setLead(data.lead_details);
-                        setLeadNo(data.lead_details.lead_no);
                     }
                     setSelectedCustomerName(data.customer_name || '');
                     setProjectName(data.project_name || '');
@@ -270,7 +273,6 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         setSelectedCustomerName(customerName);
         if (!customerName) {
             setLead(null);
-            setLeadNo('');
             setDealId(null);
             setProjectManager('');
             setSalesPerson('');
@@ -281,14 +283,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         const customerLeads = leads.filter(l => l.customer_name === customerName);
         if (customerLeads.length === 1) {
             setLead(customerLeads[0]);
-            setLeadNo(customerLeads[0].lead_no);
             setProjectManager(customerLeads[0].project_manager || '');
             setSalesPerson(customerLeads[0].sales_person || '');
             setProjectName(customerLeads[0].project_name || '');
         } else {
             // Multiple leads, let user pick Lead No.
             setLead(null);
-            setLeadNo('');
             setDealId(null);
             setProjectName('');
         }
@@ -298,14 +298,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         const selected = leads.find(l => l.id.toString() === id);
         if (selected) {
             setLead(selected);
-            setLeadNo(selected.lead_no);
             setSelectedCustomerName(selected.customer_name);
             setProjectManager(selected.project_manager || '');
             setSalesPerson(selected.sales_person || '');
             setProjectName(selected.project_name || '');
         } else {
             setLead(null);
-            setLeadNo('');
+            // setLeadNo('');
             // Do NOT reset PM/SP here if they were manually entered or set by customer
         }
     };
@@ -322,7 +321,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 const leadFromDeal = leads.find(l => l.id === selectedDeal.lead);
                 if (leadFromDeal && leadFromDeal.customer_name === selectedCustomerName) {
                     setLead(leadFromDeal);
-                    setLeadNo(leadFromDeal.lead_no);
+                    // setLeadNo(leadFromDeal.lead_no);
                 }
             }
 
@@ -683,21 +682,14 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
 
 
-    const Separator = () => (
-        <div style={{ height: '1px', background: '#E2E8F0', margin: '16px 0 24px 0' }} />
-    );
 
-    const SectionHeader = ({ title }: { title: string }) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-            <span style={{
-                width: '3px',
-                height: '14px',
-                background: '#0066CC',
-                borderRadius: '2px'
-            }}></span>
-            <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', margin: 0 }}>
-                {title}
-            </h2>
+    const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)' }}>{title}</h3>
+            </div>
+            {extra}
         </div>
     );
 
@@ -725,9 +717,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: activeTab === 'form' ? '#FF6B00' : 'transparent',
-                        color: activeTab === 'form' ? 'white' : '#718096',
-                        boxShadow: activeTab === 'form' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                        background: activeTab === 'form' ? 'var(--theme-primary)' : 'transparent',
+                        color: activeTab === 'form' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: activeTab === 'form' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                     }}
                 >
                     Cost Sheet
@@ -742,9 +734,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: activeTab === 'summary' ? '#FF6B00' : 'transparent',
-                        color: activeTab === 'summary' ? 'white' : '#718096',
-                        boxShadow: activeTab === 'summary' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                        background: activeTab === 'summary' ? 'var(--theme-primary)' : 'transparent',
+                        color: activeTab === 'summary' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: activeTab === 'summary' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                     }}
                 >
                     Cost Sheet Summary
@@ -760,8 +752,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                     padding: '24px',
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: '32px'
+                    flexDirection: 'column'
                 }}>
                     {status === 'REJECTED' && approvalComments && (
                         <div className="section-panel remark-panel rejection-pulse" style={{
@@ -839,17 +830,14 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     <div className="metadata-section">
                         <SectionHeader title="Cost Sheet Information" />
                         {/* Row 1: Customer Name, Lead No, Project Name */}
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr 1fr 1fr',
-                            gap: '20px'
-                        }}>
+                        <div className="ae-grid-4">
+                            {/* Row 1 */}
                             {/* Customer Name */}
-                            <div style={{ padding: '4px' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Name</label>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Name</label>
                                 {!isReadOnly ? (
                                     <select
-                                        style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', cursor: 'pointer', outline: 'none' }}
+                                        className="ae-input"
                                         value={selectedCustomerName}
                                         onChange={e => handleCustomerChange(e.target.value)}
                                     >
@@ -859,16 +847,16 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         ))}
                                     </select>
                                 ) : (
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{selectedCustomerName || '—'}</div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', padding: '6px 0' }}>{selectedCustomerName || '—'}</div>
                                 )}
                             </div>
 
-                            {/* Lead No */}
-                            <div style={{ padding: '4px' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead No.</label>
+                            {/* Lead No. */}
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead No.</label>
                                 {!isReadOnly ? (
                                     <select
-                                        style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', cursor: 'pointer', outline: 'none' }}
+                                        className="ae-input"
                                         value={lead?.id || ''}
                                         onChange={e => handleLeadChange(e.target.value)}
                                     >
@@ -878,19 +866,20 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         ))}
                                     </select>
                                 ) : (
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{leadNo || '—'}</div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', padding: '6px 0' }}>
+                                        {lead?.lead_no ? `${lead.lead_no} (${lead.project_name || 'No Project Name'})` : '—'}
+                                    </div>
                                 )}
                             </div>
 
-                            {/* Deal No */}
-                            <div style={{ padding: '4px' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal No.</label>
+                            {/* Deal No. */}
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal No.</label>
                                 {!isReadOnly ? (
                                     <select
-                                        style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', cursor: 'pointer', outline: 'none' }}
+                                        className="ae-input"
                                         value={dealId || ''}
                                         onChange={e => handleDealChange(e.target.value)}
-                                        disabled={!selectedCustomerName}
                                     >
                                         <option value="">Select Deal No.</option>
                                         {(selectedCustomerName ? deals.filter(d => d.customer_name === selectedCustomerName) : deals).map(d => (
@@ -898,17 +887,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         ))}
                                     </select>
                                 ) : (
-                                    <div style={{
-                                        width: '100%',
-                                        padding: '10px 12px',
-                                        background: '#F7FAFC',
-                                        border: '1px solid #E0E6ED',
-                                        borderRadius: '8px',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 500,
-                                        color: dealId ? '#1a1f36' : '#718096',
-                                        minHeight: '42px'
-                                    }}>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', padding: '6px 0' }}>
                                         {dealId ? (() => {
                                             const d = deals.find(x => x.id === dealId);
                                             return d ? `${d.deal_id} (${d.deal_name})` : '—';
@@ -917,98 +896,79 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 )}
                             </div>
 
-                            {/* Project Name */}
-                            <div style={{ padding: '4px' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Name</label>
+                            {/* Cost Sheet No */}
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet No.</label>
                                 {!isReadOnly ? (
                                     <input
-                                        style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        value={projectName}
-                                        onChange={e => setProjectName(e.target.value)}
-                                        placeholder=""
+                                        type="text"
+                                        className="ae-input"
+                                        value={costSheetNo || 'Auto-generated'}
+                                        disabled
+                                        style={{ background: '#F7FAFC', color: '#718096', cursor: 'default' }}
                                     />
                                 ) : (
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{projectName || '—'}</div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Row 2: Cost Sheet No, Project Manager, Sales Person, Cost Sheet Date */}
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'minmax(150px, 1fr) 1.5fr 1.5fr 1fr',
-                            gap: '20px'
-                        }}>
-                            {/* Cost Sheet No */}
-                            <div style={{ padding: '4px' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet No.</label>
-                                {!isReadOnly ? (
-                                    <div style={{
-                                        width: '100%',
-                                        padding: '10px 12px',
-                                        background: '#F7FAFC',
-                                        border: '1px solid #E0E6ED',
-                                        borderRadius: '8px',
-                                        height: '42px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        cursor: 'default'
-                                    }}>
-                                        <span style={{
-                                            fontSize: '0.95rem',
-                                            fontWeight: 700,
-                                            color: '#FF6B00',
-                                        }}>
-                                            {costSheetNo || 'Auto-generated'}
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', padding: '10px 0' }}>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FF6B00', padding: '6px 0' }}>
                                         {costSheetNo || 'Auto-generated'}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Project Manager */}
-                            <div style={{ padding: '4px' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Manager</label>
+                            {/* Row 2 */}
+                            {/* Project Name */}
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Name</label>
                                 {!isReadOnly ? (
                                     <input
-                                        style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        value={projectManager}
-                                        onChange={e => setProjectManager(e.target.value)}
-                                        placeholder="Enter Project Manager"
+                                        className="ae-input"
+                                        value={projectName}
+                                        onChange={e => setProjectName(e.target.value)}
+                                        placeholder="Project Name"
                                     />
                                 ) : (
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{projectManager || '—'}</div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', padding: '6px 0' }}>{projectName || '—'}</div>
+                                )}
+                            </div>
+
+                            {/* Project Manager */}
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Manager</label>
+                                {!isReadOnly ? (
+                                    <input
+                                        className="ae-input"
+                                        value={projectManager}
+                                        onChange={e => setProjectManager(e.target.value)}
+                                        placeholder="Project Manager"
+                                    />
+                                ) : (
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', padding: '6px 0' }}>{projectManager || '—'}</div>
                                 )}
                             </div>
 
                             {/* Sales Person */}
-                            <div style={{ padding: '4px' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Person</label>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Person</label>
                                 {!isReadOnly ? (
                                     <input
-                                        style={{ width: '100%', padding: '10px 12px', background: 'white', border: '1px solid #E0E6ED', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                        className="ae-input"
                                         value={salesPerson}
                                         onChange={e => setSalesPerson(e.target.value)}
-                                        placeholder="Enter Sales Person"
+                                        placeholder="Sales Person"
                                     />
                                 ) : (
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{salesPerson || '—'}</div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', padding: '6px 0' }}>{salesPerson || '—'}</div>
                                 )}
                             </div>
 
                             {/* Cost Sheet Date */}
-                            <div style={{ padding: '4px' }}>
-                                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet Date</label>
-                                <div style={{ fontSize: '0.95rem', fontWeight: 500, color: '#2D3748', padding: '10px 0' }}>{formatDateDisplay(costSheetDate)}</div>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet Date</label>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', padding: '6px 0' }}>{formatDateDisplay(costSheetDate)}</div>
                             </div>
                         </div>
                     </div>
 
-                    <Separator />
-                    <section className="license-section">
+                    <section className="license-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                         <SectionHeader title="License" />
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
@@ -1020,7 +980,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
+                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === licenseItems.length - 1 && (
@@ -1045,7 +1005,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                         )}
                                                     </td>
                                                 )}
-                                                <InputCell isReadOnly={isReadOnly} value={item.name} onChange={(v: string) => updateItem(idx, 'name', v, licenseItems, setLicenseItems)} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.name} onChange={(v: string) => updateItem(idx, 'name', v, licenseItems, setLicenseItems)} placeholder="License Name" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.type} onChange={(v: string) => updateItem(idx, 'type', v, licenseItems, setLicenseItems)} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.rate} onChange={(v: number) => updateItem(idx, 'rate', v, licenseItems, setLicenseItems)} type="number" className="no-spinner" symbol={currencySymbol} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.qty} onChange={(v: number) => updateItem(idx, 'qty', v, licenseItems, setLicenseItems)} type="number" className="no-spinner" />
@@ -1058,6 +1018,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     isReadOnly={isReadOnly}
                                                     value={item.remark}
                                                     onChange={(v: string) => updateItem(idx, 'remark', v, licenseItems, setLicenseItems)}
+                                                    placeholder="Remark"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === licenseItems.length - 1) {
                                                             addItem('license');
@@ -1087,13 +1048,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for License */}
-                                    <tr style={{ background: 'rgba(255, 107, 0, 0.05)', fontWeight: 700 }}>
+                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
-                                        <td colSpan={5} style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.8rem', color: '#1a1f36' }}>Total License:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catCost} symbol={currencySymbol} bold />
+                                        <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total License:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catCost} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catMarginAmount} symbol={currencySymbol} bold />
-                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catPrice} symbol={currencySymbol} bold />
+                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catMarginAmount} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catPrice} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1102,8 +1063,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <Separator />
-                    <section className="implementation-section">
+                    <section className="implementation-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                         <SectionHeader title="Services - Implementation" />
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
@@ -1115,7 +1075,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
+                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === implementationItems.length - 1 && (
@@ -1140,7 +1100,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                         )}
                                                     </td>
                                                 )}
-                                                <InputCell isReadOnly={isReadOnly} value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, implementationItems, setImplementationItems)} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, implementationItems, setImplementationItems)} placeholder="Resource Category" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.num_resources} onChange={(v: number) => updateItem(idx, 'num_resources', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.num_days} onChange={(v: number) => updateItem(idx, 'num_days', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" />
                                                 <ReadOnlyCell value={totalDays} />
@@ -1153,6 +1113,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     isReadOnly={isReadOnly}
                                                     value={item.remark}
                                                     onChange={(v: string) => updateItem(idx, 'remark', v, implementationItems, setImplementationItems)}
+                                                    placeholder="Remark"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === implementationItems.length - 1) {
                                                             addItem('implementation');
@@ -1182,13 +1143,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for Implementation */}
-                                    <tr style={{ background: 'rgba(255, 107, 0, 0.05)', fontWeight: 700 }}>
+                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
-                                        <td colSpan={5} style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.8rem', color: '#1a1f36' }}>Total Implementation:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catCost} symbol={currencySymbol} bold />
+                                        <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total Implementation:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catCost} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catMarginAmount} symbol={currencySymbol} bold />
-                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catPrice} symbol={currencySymbol} bold />
+                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catMarginAmount} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catPrice} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1197,8 +1158,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <Separator />
-                    <section className="support-section">
+                    <section className="support-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                         <SectionHeader title="Services - Support" />
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
@@ -1210,7 +1170,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
+                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === supportItems.length - 1 && (
@@ -1235,7 +1195,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                         )}
                                                     </td>
                                                 )}
-                                                <InputCell isReadOnly={isReadOnly} value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, supportItems, setSupportItems)} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, supportItems, setSupportItems)} placeholder="Resource Category" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.num_resources} onChange={(v: number) => updateItem(idx, 'num_resources', v, supportItems, setSupportItems)} type="number" className="no-spinner" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.num_days} onChange={(v: number) => updateItem(idx, 'num_days', v, supportItems, setSupportItems)} type="number" className="no-spinner" />
                                                 <ReadOnlyCell value={totalDays} />
@@ -1248,6 +1208,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     isReadOnly={isReadOnly}
                                                     value={item.remark}
                                                     onChange={(v: string) => updateItem(idx, 'remark', v, supportItems, setSupportItems)}
+                                                    placeholder="Remark"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === supportItems.length - 1) {
                                                             addItem('support');
@@ -1277,13 +1238,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for Support */}
-                                    <tr style={{ background: 'rgba(255, 107, 0, 0.05)', fontWeight: 700 }}>
+                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
-                                        <td colSpan={5} style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.8rem', color: '#1a1f36' }}>Total Support:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catCost} symbol={currencySymbol} bold />
+                                        <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total Support:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catCost} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catMarginAmount} symbol={currencySymbol} bold />
-                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catPrice} symbol={currencySymbol} bold />
+                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catMarginAmount} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catPrice} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1292,8 +1253,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <Separator />
-                    <section className="infra-section">
+                    <section className="infra-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                         <SectionHeader title="Infrastructure Cost" />
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1000px' }}>
@@ -1304,7 +1264,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
+                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === infraItems.length - 1 && (
@@ -1329,7 +1289,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                         )}
                                                     </td>
                                                 )}
-                                                <InputCell isReadOnly={isReadOnly} value={item.name} onChange={(v: string) => updateItem(idx, 'name', v, infraItems, setInfraItems)} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.name} onChange={(v: string) => updateItem(idx, 'name', v, infraItems, setInfraItems)} placeholder="Infra Name" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.qty} onChange={(v: number) => updateItem(idx, 'qty', v, infraItems, setInfraItems)} type="number" className="no-spinner" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.months} onChange={(v: number) => updateItem(idx, 'months', v, infraItems, setInfraItems)} type="number" className="no-spinner" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.rate_per_month} onChange={(v: number) => updateItem(idx, 'rate_per_month', v, infraItems, setInfraItems)} type="number" className="no-spinner" symbol={currencySymbol} />
@@ -1341,6 +1301,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     isReadOnly={isReadOnly}
                                                     value={item.remark}
                                                     onChange={(v: string) => updateItem(idx, 'remark', v, infraItems, setInfraItems)}
+                                                    placeholder="Remark"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === infraItems.length - 1) {
                                                             addItem('infra');
@@ -1370,13 +1331,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for Infra */}
-                                    <tr style={{ background: 'rgba(255, 107, 0, 0.05)', fontWeight: 700 }}>
+                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
-                                        <td colSpan={4} style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.8rem', color: '#1a1f36' }}>Total Infra:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catCost} symbol={currencySymbol} bold />
+                                        <td colSpan={4} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total Infra:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catCost} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catMarginAmount} symbol={currencySymbol} bold />
-                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catPrice} symbol={currencySymbol} bold />
+                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catMarginAmount} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catPrice} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1385,8 +1346,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <Separator />
-                    <section className="other-section">
+                    <section className="other-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                         <SectionHeader title="Other Category" />
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '800px' }}>
@@ -1397,7 +1357,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: '#FAFBFC', borderRadius: '8px' }}>
+                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === otherItems.length - 1 && (
@@ -1422,7 +1382,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                         )}
                                                     </td>
                                                 )}
-                                                <InputCell isReadOnly={isReadOnly} value={item.description} onChange={(v: string) => updateItem(idx, 'description', v, otherItems, setOtherItems)} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.description} onChange={(v: string) => updateItem(idx, 'description', v, otherItems, setOtherItems)} placeholder="Description" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.estimated_cost} onChange={(v: number) => updateItem(idx, 'estimated_cost', v, otherItems, setOtherItems)} type="number" className="no-spinner" symbol={currencySymbol} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, otherItems, setOtherItems)} type="number" suffix="%" />
                                                 <ReadOnlyCell value={marginAmount} symbol={currencySymbol} />
@@ -1431,6 +1391,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     isReadOnly={isReadOnly}
                                                     value={item.remark}
                                                     onChange={(v: string) => updateItem(idx, 'remark', v, otherItems, setOtherItems)}
+                                                    placeholder="Remark"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === otherItems.length - 1) {
                                                             addItem('other');
@@ -1460,13 +1421,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for Other */}
-                                    <tr style={{ background: 'rgba(255, 107, 0, 0.05)', fontWeight: 700 }}>
+                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
-                                        <td style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.8rem', color: '#1a1f36' }}>Total Other:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catCost} symbol={currencySymbol} bold />
+                                        <td style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total Other:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catMarginAmount} symbol={currencySymbol} bold />
-                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catPrice} symbol={currencySymbol} bold />
+                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1475,69 +1436,38 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <Separator />
-                    <section className="remarks-section">
+                    <section className="remarks-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                         <SectionHeader title="Summary & Overall Remarks" />
-                        <div style={{ padding: '0 4px', marginTop: '12px' }}>
-                            <div style={{
-                                background: '#F8FAFC',
-                                border: '1.5px solid #E2E8F0',
-                                borderRadius: '12px',
-                                padding: '16px',
-                                transition: 'all 0.3s ease',
-                                position: 'relative'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                                    <MessageSquare size={16} color="#FF6B00" />
-                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1f36', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Observations & Notes</span>
-                                </div>
-                                <textarea
-                                    value={overallRemarks}
-                                    onChange={(e) => setOverallRemarks(e.target.value)}
-                                    readOnly={isReadOnly}
-                                    placeholder="Type your overall remarks here directly..."
-                                    style={{
-                                        width: '100%',
-                                        height: '70px',
-                                        background: isReadOnly ? 'transparent' : 'white',
-                                        border: isReadOnly ? 'none' : '1px solid #E2E8F0',
-                                        borderRadius: '8px',
-                                        padding: isReadOnly ? '0' : '10px 12px',
-                                        fontSize: '0.85rem',
-                                        color: '#1e293b',
-                                        outline: 'none',
-                                        resize: 'none',
-                                        fontWeight: 500,
-                                        transition: 'all 0.2s'
-                                    }}
-                                    onFocus={(e) => {
-                                        if (!isReadOnly) {
-                                            e.currentTarget.style.borderColor = '#FF6B00';
-                                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.05)';
-                                        }
-                                    }}
-                                    onBlur={(e) => {
-                                        if (!isReadOnly) {
-                                            e.currentTarget.style.borderColor = '#E2E8F0';
-                                            e.currentTarget.style.boxShadow = 'none';
-                                        }
-                                    }}
-                                />
-                            </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <textarea
+                                value={overallRemarks}
+                                onChange={(e) => setOverallRemarks(e.target.value)}
+                                readOnly={isReadOnly}
+                                placeholder="Observations & Notes"
+                                style={{
+                                    width: '100%',
+                                    border: isReadOnly ? 'none' : '1px solid #E2E8F0',
+                                    borderRadius: '6px',
+                                    padding: isReadOnly ? '0' : '12px',
+                                    minHeight: '80px',
+                                    outline: 'none',
+                                    background: isReadOnly ? 'transparent' : 'white',
+                                    fontSize: '0.85rem'
+                                }}
+                            />
                         </div>
                     </section>
 
-                    <Separator />
-                    {/* Document Attachments & Actions Layout - Standalone Row */}
-                    {/* Refined Action bar: [Attachment Panel] --- [Standalone Actions] */}
                     <div style={{
                         display: 'flex',
                         gap: '24px',
                         justifyContent: 'space-between',
                         alignItems: 'center',
+                        marginTop: '32px',
+                        paddingTop: '32px',
                         marginBottom: '20px',
                         width: '100%',
-                        padding: '0 4px'
+                        padding: '32px 4px 0 4px'
                     }}>
                         {/* Compact Attachment Panel */}
                         <div style={{
@@ -1581,14 +1511,14 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             whiteSpace: 'nowrap'
                                         }}
                                         onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#FF6B00';
+                                            e.currentTarget.style.background = 'var(--theme-primary)';
                                             e.currentTarget.style.color = 'white';
-                                            e.currentTarget.style.borderColor = '#FF6B00';
+                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
                                         }}
                                         onMouseLeave={(e) => {
                                             e.currentTarget.style.background = 'white';
-                                            e.currentTarget.style.color = '#1a1f36';
-                                            e.currentTarget.style.borderColor = '#E0E6ED';
+                                            e.currentTarget.style.color = 'var(--text-primary)';
+                                            e.currentTarget.style.borderColor = 'var(--border-primary)';
                                         }}
                                     >
                                         <Paperclip size={14} /> Attachments
@@ -1620,7 +1550,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                 minWidth: 'fit-content'
                                             }}
                                         >
-                                            <File size={12} style={{ color: '#FF6B00' }} />
+                                            <File size={12} style={{ color: 'var(--theme-primary)' }} />
                                             <span style={{
                                                 fontSize: '0.8rem',
                                                 fontWeight: 600,
@@ -1721,15 +1651,15 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.04)';
                             e.currentTarget.style.transform = 'translateY(0)';
                         }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                            <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Category Breakdown Summary</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+                            <div style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
+                            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Category Breakdown Summary</h3>
                         </div>
 
                         <div style={{ overflow: 'hidden', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
-                                    <tr style={{ background: 'linear-gradient(135deg, #FF6B00 0%, #FF8C00 100%)' }}>
+                                    <tr style={{ background: 'var(--theme-primary)' }}>
                                         <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left', width: '30%' }}>Category</th>
                                         <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Total Est. Cost</th>
                                         <th style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Total Est. Margin %</th>
@@ -1809,9 +1739,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 width: 'fit-content',
                 flexShrink: 0,
                 zIndex: 10,
-                marginTop: '10px'
+                marginTop: '10px',
+                marginLeft: 'auto'
             }}>
-                {(status === 'PENDING' || status === 'REVERTED') && (
+                {status === 'PENDING' || status === 'REVERTED' ? (
                     <>
                         <button
                             onClick={() => handleSave('PENDING')}
@@ -1819,24 +1750,19 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                padding: '8px 16px',
+                                padding: '8px 24px',
                                 borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                background: 'white',
-                                color: '#1a1f36',
-                                border: '1px solid #E0E6ED',
+                                fontSize: '0.9rem',
                                 fontWeight: 700,
+                                background: hoveredBtn === 'draft' && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
+                                color: showCancelModal ? '#CBD5E0' : (hoveredBtn === 'draft' ? 'white' : 'var(--text-secondary)'),
+                                border: 'none',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                boxShadow: hoveredBtn === 'draft' && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                             }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = '#f8fafc';
-                                e.currentTarget.style.borderColor = '#cbd5e1';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'white';
-                                e.currentTarget.style.borderColor = '#E0E6ED';
-                            }}
+                            onMouseEnter={() => setHoveredBtn('draft')}
+                            onMouseLeave={() => setHoveredBtn(null)}
                         >
                             <Save size={16} />
                             <span>Save as Draft</span>
@@ -1844,22 +1770,29 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                         <button
                             onClick={() => handleSave('SUBMITTED')}
-                            className="ae-btn-primary"
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                padding: '8px 20px',
+                                padding: '8px 24px',
                                 borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 800
+                                fontSize: '0.9rem',
+                                fontWeight: 800,
+                                background: (!hoveredBtn || hoveredBtn === 'submit') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
+                                color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'submit') ? 'white' : 'var(--text-secondary)'),
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: (!hoveredBtn || hoveredBtn === 'submit') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                             }}
+                            onMouseEnter={() => setHoveredBtn('submit')}
+                            onMouseLeave={() => setHoveredBtn(null)}
                         >
                             <PlusCircle size={18} />
                             <span>Submit for Approval</span>
                         </button>
                     </>
-                )}
+                ) : null}
 
                 {status === 'SUBMITTED' && (
                     <>
@@ -1874,17 +1807,21 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 borderRadius: '8px',
                                 fontSize: '0.85rem',
                                 fontWeight: 800,
-                                background: '#E8FBF0',
-                                color: '#00C853',
-                                border: '1px solid rgba(0, 200, 83, 0.2)'
+                                background: showCancelModal ? 'transparent' : '#E8FBF0',
+                                color: showCancelModal ? '#CBD5E0' : '#00C853',
+                                border: showCancelModal ? '1px solid transparent' : '1px solid rgba(0, 200, 83, 0.2)'
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.background = '#00C853';
-                                e.currentTarget.style.color = 'white';
+                                if (!showCancelModal) {
+                                    e.currentTarget.style.background = '#00C853';
+                                    e.currentTarget.style.color = 'white';
+                                }
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.background = '#E8FBF0';
-                                e.currentTarget.style.color = '#00C853';
+                                if (!showCancelModal) {
+                                    e.currentTarget.style.background = '#E8FBF0';
+                                    e.currentTarget.style.color = '#00C853';
+                                }
                             }}
                         >
                             <CheckCircle size={18} />
@@ -1900,20 +1837,24 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 padding: '8px 20px',
                                 borderRadius: '8px',
                                 fontSize: '0.85rem',
-                                background: '#FFFBEB',
-                                color: '#D89614',
-                                border: '1px solid rgba(216, 150, 20, 0.2)',
+                                background: showCancelModal ? 'transparent' : '#FFFBEB',
+                                color: showCancelModal ? '#CBD5E0' : '#D89614',
+                                border: showCancelModal ? '1px solid transparent' : '1px solid rgba(216, 150, 20, 0.2)',
                                 fontWeight: 700,
                                 cursor: 'pointer',
                                 transition: 'all 0.2s'
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.background = '#D89614';
-                                e.currentTarget.style.color = 'white';
+                                if (!showCancelModal) {
+                                    e.currentTarget.style.background = '#D89614';
+                                    e.currentTarget.style.color = 'white';
+                                }
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.background = '#FFFBEB';
-                                e.currentTarget.style.color = '#D89614';
+                                if (!showCancelModal) {
+                                    e.currentTarget.style.background = '#FFFBEB';
+                                    e.currentTarget.style.color = '#D89614';
+                                }
                             }}
                         >
                             <ArrowLeft size={18} />
@@ -1929,20 +1870,24 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 padding: '8px 20px',
                                 borderRadius: '8px',
                                 fontSize: '0.85rem',
-                                background: '#FFF5F5',
-                                color: '#EF4444',
-                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                background: showCancelModal ? 'transparent' : '#FFF5F5',
+                                color: showCancelModal ? '#CBD5E0' : '#EF4444',
+                                border: showCancelModal ? '1px solid transparent' : '1px solid rgba(239, 68, 68, 0.2)',
                                 fontWeight: 700,
                                 cursor: 'pointer',
                                 transition: 'all 0.2s'
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.background = '#EF4444';
-                                e.currentTarget.style.color = 'white';
+                                if (!showCancelModal) {
+                                    e.currentTarget.style.background = '#EF4444';
+                                    e.currentTarget.style.color = 'white';
+                                }
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.background = '#FFF5F5';
-                                e.currentTarget.style.color = '#EF4444';
+                                if (!showCancelModal) {
+                                    e.currentTarget.style.background = '#FFF5F5';
+                                    e.currentTarget.style.color = '#EF4444';
+                                }
                             }}
                         >
                             <XCircle size={18} />
@@ -1952,25 +1897,124 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 )}
 
                 <button
-                    onClick={() => onBack()}
+                    onClick={() => setShowCancelModal(true)}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        padding: '8px 16px',
+                        gap: '8px',
+                        padding: '8px 24px',
                         borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        background: 'transparent',
-                        color: '#718096',
-                        border: 'none',
+                        fontSize: '0.9rem',
                         fontWeight: 700,
-                        cursor: 'pointer'
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                     }}
+                    onMouseEnter={() => setHoveredBtn('cancel')}
+                    onMouseLeave={() => setHoveredBtn(null)}
                 >
-                    <X size={16} />
+                    <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
                     <span>Cancel</span>
                 </button>
             </div>
+
+            {/* Cancel Confirmation Modal */}
+            {showCancelModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(255, 255, 255, 0.4)',
+                    backdropFilter: 'blur(1px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    <div style={{
+                        background: 'white',
+                        width: '100%',
+                        maxWidth: '500px',
+                        borderRadius: '12px',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        border: '1px solid #E2E8F0',
+                        overflow: 'hidden',
+                        animation: 'modalScale 0.2s ease-out'
+                    }}>
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '10px',
+                                    background: '#FFF5F5',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
+                                        Leave this page?
+                                    </h3>
+                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                        If you leave, your unsaved changes will be discarded.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '32px' }}>
+                                <button
+                                    onClick={() => setShowCancelModal(false)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        background: '#3B82F6',
+                                        color: 'white',
+                                        border: 'none',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        height: '40px'
+                                    }}
+                                >
+                                    Stay Here
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowCancelModal(false);
+                                        onBack();
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        background: 'white',
+                                        color: '#1a1f36',
+                                        border: '1px solid #E2E8F0',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        height: '40px'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                >
+                                    Leave & Discard Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Custom Alert Modal */}
             {customAlert && createPortal(
@@ -2124,7 +2168,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     >
                         {/* Orange Header Section */}
                         <div style={{
-                            background: '#FF6B00',
+                            background: 'var(--theme-primary)',
                             padding: '28px 24px 24px',
                             position: 'relative',
                         }}>
@@ -2223,9 +2267,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         fontWeight: 500
                                     }}
                                     onFocus={(e) => {
-                                        e.currentTarget.style.borderColor = '#FF6B00';
+                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
                                         e.currentTarget.style.background = 'white';
-                                        e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 107, 0, 0.08)';
+                                        e.currentTarget.style.boxShadow = '0 0 0 4px rgba(187, 77, 0, 0.08)';
                                     }}
                                     onBlur={(e) => {
                                         e.currentTarget.style.borderColor = '#e2e8f0';
@@ -2263,22 +2307,22 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     style={{
                                         padding: '10px 24px',
                                         borderRadius: '12px',
-                                        background: '#FF6B00',
+                                        background: 'var(--theme-primary)',
                                         color: 'white',
                                         fontWeight: 700,
                                         fontSize: '0.85rem',
                                         border: 'none',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
-                                        boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
+                                        boxShadow: '0 4px 12px rgba(187, 77, 0, 0.2)'
                                     }}
                                     onMouseEnter={(e) => {
                                         e.currentTarget.style.transform = 'translateY(-1px)';
-                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 107, 0, 0.3)';
+                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(187, 77, 0, 0.3)';
                                     }}
                                     onMouseLeave={(e) => {
                                         e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(187, 77, 0, 0.2)';
                                     }}
                                 >
                                     {showRevertModal ? 'Revert' : 'Reject'}

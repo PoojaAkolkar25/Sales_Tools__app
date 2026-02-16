@@ -19,6 +19,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
+    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         company: 'AE IND',
         lead_date: new Date().toISOString().split('T')[0],
@@ -85,44 +86,40 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
     if (loading) {
         return (
             <div className="flex items-center justify-center p-20">
-                <Loader2 className="animate-spin text-[#0066CC]" size={48} />
+                <Loader2 className="animate-spin" style={{ color: 'var(--ae-blue)' }} size={48} />
             </div>
         );
     }
 
     return (
-        <>
-            <div style={{
-                background: 'white',
-                border: '1px solid #E0E6ED',
-                borderRadius: '12px',
-                width: '100%',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-                margin: '20px auto 20px auto',
-                maxHeight: '65vh',
-                display: 'flex',
-                flexDirection: 'column',
-                overflowY: 'auto',
-                padding: '20px'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-                    <span style={{
-                        width: '3px',
-                        height: '14px',
-                        background: '#0066CC',
-                        borderRadius: '2px'
-                    }}></span>
-                    <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', margin: 0 }}>
-                        {id ? 'Edit Lead Information' : 'Create New Lead'}
-                    </h2>
-                </div>
-
-                <form id="lead-form" onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '16px' }}>
+        <div className="space-y-6" style={{ padding: '4px' }}>
+            <form id="lead-form" onSubmit={handleSubmit} className="space-y-6">
+                <div style={{
+                    background: 'white',
+                    border: '1px solid #E0E6ED',
+                    borderRadius: '12px',
+                    width: '100%',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                    padding: '24px',
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+                        <span style={{
+                            width: '4px',
+                            height: '18px',
+                            background: 'var(--ae-blue)',
+                            borderRadius: '2px'
+                        }}></span>
+                        <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', margin: 0 }}>
+                            {id ? 'Edit Lead Information' : 'Create New Lead'}
+                        </h2>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
                         {/* Company Name */}
-                        <div className="ae-input-group">
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                Company Name <span style={{ color: '#FF6B00' }}>*</span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                Company Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
                             <select
                                 name="company"
@@ -132,7 +129,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                     width: '100%',
                                     padding: '6px 10px',
                                     background: 'white',
-                                    border: '1px solid #E2E8F0',
+                                    border: '1px solid var(--border-primary)',
                                     borderRadius: '6px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
@@ -149,12 +146,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                         </div>
 
                         {/* Lead Date */}
-                        <div className="ae-input-group">
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                Lead Date <span style={{ color: '#FF6B00' }}>*</span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                Lead Date <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
                             <div style={{ position: 'relative' }}>
-                                <Calendar size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
                                 <input
                                     type="date"
                                     name="lead_date"
@@ -164,7 +160,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                         width: '100%',
                                         padding: '6px 10px',
                                         background: 'white',
-                                        border: '1px solid #E2E8F0',
+                                        border: '1px solid var(--border-primary)',
                                         borderRadius: '6px',
                                         fontSize: '0.85rem',
                                         fontWeight: 500,
@@ -174,24 +170,37 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                     }}
                                     required
                                 />
+                                <Calendar
+                                    size={16}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '10px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        color: '#718096',
+                                        pointerEvents: 'none',
+                                        background: 'white'
+                                    }}
+                                />
                             </div>
                         </div>
 
                         {/* Customer Name */}
-                        <div className="ae-input-group">
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                Customer Name <span style={{ color: '#FF6B00' }}>*</span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                Customer Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
                             <input
+                                type="text"
                                 name="customer_name"
                                 value={formData.customer_name}
                                 onChange={handleInputChange}
-                                placeholder="Enter customer name"
+                                placeholder="Customer Name"
                                 style={{
                                     width: '100%',
                                     padding: '6px 10px',
                                     background: 'white',
-                                    border: '1px solid #E2E8F0',
+                                    border: '1px solid var(--border-primary)',
                                     borderRadius: '6px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
@@ -204,20 +213,21 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                         </div>
 
                         {/* Project Name */}
-                        <div className="ae-input-group">
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                Project Name <span style={{ color: '#FF6B00' }}>*</span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                Project Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
                             <input
+                                type="text"
                                 name="project_name"
                                 value={formData.project_name}
                                 onChange={handleInputChange}
-                                placeholder="Enter project name"
+                                placeholder="Project Name"
                                 style={{
                                     width: '100%',
                                     padding: '6px 10px',
                                     background: 'white',
-                                    border: '1px solid #E2E8F0',
+                                    border: '1px solid var(--border-primary)',
                                     borderRadius: '6px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
@@ -230,20 +240,21 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                         </div>
 
                         {/* Sales Person */}
-                        <div className="ae-input-group">
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                 Sales Person
                             </label>
                             <input
+                                type="text"
                                 name="sales_person"
                                 value={formData.sales_person}
                                 onChange={handleInputChange}
-                                placeholder="Name of salesperson"
+                                placeholder="Sales Person"
                                 style={{
                                     width: '100%',
                                     padding: '6px 10px',
                                     background: 'white',
-                                    border: '1px solid #E2E8F0',
+                                    border: '1px solid var(--border-primary)',
                                     borderRadius: '6px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
@@ -255,20 +266,21 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                         </div>
 
                         {/* Project Manager */}
-                        <div className="ae-input-group">
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                 Project Manager
                             </label>
                             <input
+                                type="text"
                                 name="project_manager"
                                 value={formData.project_manager}
                                 onChange={handleInputChange}
-                                placeholder="Name of project manager"
+                                placeholder="Project Manager"
                                 style={{
                                     width: '100%',
                                     padding: '6px 10px',
                                     background: 'white',
-                                    border: '1px solid #E2E8F0',
+                                    border: '1px solid var(--border-primary)',
                                     borderRadius: '6px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
@@ -280,8 +292,8 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                         </div>
 
                         {/* Email Address */}
-                        <div className="ae-input-group">
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                 Email Address
                             </label>
                             <input
@@ -289,12 +301,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleInputChange}
-                                placeholder="customer@example.com"
+                                placeholder="Email Address"
                                 style={{
                                     width: '100%',
                                     padding: '6px 10px',
                                     background: 'white',
-                                    border: '1px solid #E2E8F0',
+                                    border: '1px solid var(--border-primary)',
                                     borderRadius: '6px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
@@ -308,8 +320,8 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
 
                     {/* Lead ID Generation Banner */}
                     <div style={{
-                        background: '#F8FAFC',
-                        border: '1px solid #E2E8F0',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-primary)',
                         borderRadius: '8px',
                         padding: '12px 20px',
                         display: 'flex',
@@ -324,165 +336,178 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                             alignItems: 'center',
                             justifyContent: 'center'
                         }}>
-                            <Building2 size={18} color="#0066CC" />
+                            <Building2 size={18} style={{ color: 'var(--ae-blue)' }} />
                         </div>
                         <div>
-                            <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#2D3748', margin: '0 0 2px 0' }}>Lead ID Generation</h4>
-                            <p style={{ fontSize: '0.75rem', color: '#718096', margin: 0 }}>
-                                Automatic generation: <span style={{ fontWeight: 800, color: '#2D3748' }}>{formData.company === 'AE IND' ? 'AEINDLDXXXX' : 'AEUSALDXXXX'}</span>
+                            <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px 0' }}>Lead ID Generation</h4>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>
+                                Automatic generation: <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{formData.company === 'AE IND' ? 'AEINDLDXXXX' : 'AEUSALDXXXX'}</span>
                             </p>
                         </div>
                     </div>
-                </form>
-            </div>
+                </div>
 
-            {/* Footer Actions */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                background: 'white',
-                padding: '6px',
-                borderRadius: '12px',
-                border: '1px solid #E0E6ED',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
-                margin: '0 0 20px 0',
-                width: 'fit-content',
-                flexShrink: 0,
-                zIndex: 10
-            }}>
-                <button
-                    onClick={handleSubmit}
-                    disabled={saving}
-                    className="ae-btn-primary"
-                    style={{
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+                    <div style={{
                         display: 'flex',
+                        gap: '2px',
                         alignItems: 'center',
-                        gap: '6px',
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem'
-                    }}
-                >
-                    {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                    <span style={{ fontWeight: 800 }}>{id ? 'Update Lead' : 'Create Lead'}</span>
-                </button>
+                        background: 'white',
+                        padding: '6px',
+                        borderRadius: '12px',
+                        border: '1px solid var(--border-primary)',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                background: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
+                                color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                fontWeight: 800,
+                                boxShadow: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                            }}
+                            onMouseEnter={() => setHoveredBtn('save')}
+                            onMouseLeave={() => setHoveredBtn(null)}
+                        >
+                            {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                            <span>{id ? 'Update Lead' : 'Create Lead'}</span>
+                        </button>
 
-                <button
-                    onClick={() => setShowCancelModal(true)}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        background: 'transparent',
-                        color: '#718096',
-                        border: 'none',
-                        fontWeight: 700,
-                        cursor: 'pointer'
-                    }}
-                >
-                    <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
-                    <span>Cancel</span>
-                </button>
-            </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowCancelModal(true)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                                color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
+                                border: 'none',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                            }}
+                            onMouseEnter={() => setHoveredBtn('cancel')}
+                            onMouseLeave={() => setHoveredBtn(null)}
+                        >
+                            <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
+                            <span>Cancel</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
 
             {/* Cancel Confirmation Modal */}
-            {showCancelModal && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    backdropFilter: 'blur(2px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999,
-                    animation: 'fadeIn 0.2s ease-out'
-                }}>
+            {
+                showCancelModal && (
                     <div style={{
-                        background: 'white',
-                        width: '100%',
-                        maxWidth: '450px',
-                        borderRadius: '12px',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                        overflow: 'hidden',
-                        animation: 'modalScale 0.2s ease-out'
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(255, 255, 255, 0.4)',
+                        backdropFilter: 'blur(1px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 9999,
+                        animation: 'fadeIn 0.2s ease-out'
                     }}>
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '10px',
-                                    background: '#FFF5F5',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
+                        <div style={{
+                            background: 'white',
+                            width: '100%',
+                            maxWidth: '500px',
+                            borderRadius: '12px',
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                            border: '1px solid #E2E8F0',
+                            overflow: 'hidden',
+                            animation: 'modalScale 0.2s ease-out'
+                        }}>
+                            <div style={{ padding: '24px' }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                    <div style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '10px',
+                                        background: '#FFF5F5',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                            Leave this page?
+                                        </h3>
+                                        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                            If you leave, your unsaved changes will be discarded.
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
-                                        Leave this page?
-                                    </h3>
-                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                                        If you leave, your unsaved changes will be discarded.
-                                    </p>
-                                </div>
-                            </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
-                                <button
-                                    onClick={() => setShowCancelModal(false)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: '#3B82F6',
-                                        color: 'white',
-                                        border: 'none',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                >
-                                    Stay Here
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowCancelModal(false);
-                                        onBack();
-                                    }}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: 'white',
-                                        color: '#1a1f36',
-                                        border: '1px solid #E2E8F0',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                >
-                                    Leave & Discard Changes
-                                </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
+                                    <button
+                                        onClick={() => setShowCancelModal(false)}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 16px',
+                                            borderRadius: '8px',
+                                            background: 'var(--theme-primary)',
+                                            color: 'white',
+                                            border: 'none',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            height: '40px'
+                                        }}
+                                    >
+                                        Stay Here
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowCancelModal(false);
+                                            onBack();
+                                        }}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 16px',
+                                            borderRadius: '8px',
+                                            background: 'white',
+                                            color: 'var(--text-primary)',
+                                            border: '1px solid var(--border-primary)',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            height: '40px'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                    >
+                                        Leave & Discard Changes
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </>
+                )}
+        </div>
     );
 };
 

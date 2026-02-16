@@ -58,6 +58,9 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         grand_total: 0
     });
 
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+
     useEffect(() => {
         fetchInitialData();
         if (invoiceId) {
@@ -287,11 +290,50 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#718096', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                <button
+                    onClick={() => setShowCancelModal(true)}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 24px',
+                        borderRadius: '8px',
+                        fontSize: '0.9rem',
+                        fontWeight: 700,
+                        background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                    }}
+                    onMouseEnter={() => setHoveredBtn('cancel')}
+                    onMouseLeave={() => setHoveredBtn(null)}
+                >
                     <ArrowLeft size={18} /> Back to Dashboard
                 </button>
                 {!isReadOnly && (
-                    <button onClick={handleSubmit} disabled={loading} className="ae-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 24px',
+                            borderRadius: '8px',
+                            fontSize: '0.9rem',
+                            fontWeight: 800,
+                            background: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
+                            color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                        }}
+                        onMouseEnter={() => setHoveredBtn('save')}
+                        onMouseLeave={() => setHoveredBtn(null)}
+                    >
                         <Save size={18} /> {loading ? 'Saving...' : 'Save Invoice'}
                     </button>
                 )}
@@ -299,17 +341,17 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
 
             <div className="glass-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255, 107, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FileText size={20} color="#FF6B00" />
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--bg-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <FileText size={20} color="var(--theme-primary)" />
                     </div>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                         {invoiceId ? 'Edit Invoice' : 'Create Detailed Invoice'}
                     </h2>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>
-                    <div className="ae-input-group">
-                        <label className="ae-label">Reference Cost Sheet</label>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Cost Sheet</label>
                         <select className="ae-input" disabled={isReadOnly} value={formData.cost_sheet} onChange={e => handleCostSheetChange(e.target.value)}>
                             <option value="">Select Cost Sheet (Optional)</option>
                             {costSheets.map(cs => (
@@ -317,8 +359,8 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             ))}
                         </select>
                     </div>
-                    <div className="ae-input-group">
-                        <label className="ae-label">Reference Proposal</label>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Proposal</label>
                         <select className="ae-input" disabled={isReadOnly} value={formData.proposal} onChange={e => handleProposalChange(e.target.value)}>
                             <option value="">Select Proposal (Optional)</option>
                             {proposals.map(p => (
@@ -326,36 +368,36 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             ))}
                         </select>
                     </div>
-                    <div className="ae-input-group">
-                        <label className="ae-label">Customer</label>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer</label>
                         <select className="ae-input" required disabled={isReadOnly} value={formData.lead} onChange={e => setFormData({ ...formData, lead: e.target.value })}>
                             <option value="">Select Customer</option>
                             {leads.map(l => <option key={l.id} value={l.id}>{l.customer_name}</option>)}
                         </select>
                     </div>
-                    <div className="ae-input-group">
-                        <label className="ae-label">Invoice Date</label>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
                         <input type="date" className="ae-input" required disabled={isReadOnly} value={formData.invoice_date} onChange={e => setFormData({ ...formData, invoice_date: e.target.value })} />
                     </div>
-                    <div className="ae-input-group">
-                        <label className="ae-label">Place of Supply (State)</label>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Place of Supply (State)</label>
                         <select className="ae-input" required disabled={isReadOnly} value={formData.customer_state} onChange={e => setFormData({ ...formData, customer_state: e.target.value })}>
                             <option value="">Select State</option>
                             {states.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
                         </select>
                     </div>
-                    <div className="ae-input-group">
-                        <label className="ae-label">Customer GSTIN</label>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer GSTIN</label>
                         <input className="ae-input" placeholder="27XXXXX..." disabled={isReadOnly} value={formData.customer_gstin} onChange={e => setFormData({ ...formData, customer_gstin: e.target.value })} />
                     </div>
-                    <div className="ae-input-group" style={{ display: 'flex', gap: '20px', alignItems: 'center', paddingTop: '30px' }}>
+                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center', paddingTop: '30px' }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
                             <input type="checkbox" disabled={isReadOnly} checked={formData.is_gst_applicable} onChange={e => setFormData({ ...formData, is_gst_applicable: e.target.checked })} /> GST Applicable
                         </label>
                     </div>
                     {formData.invoice_type === 'USA' && (
-                        <div className="ae-input-group">
-                            <label className="ae-label">Sales Tax %</label>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Tax %</label>
                             <input type="number" className="ae-input" disabled={isReadOnly} value={formData.sales_tax_rate} onChange={e => setFormData({ ...formData, sales_tax_rate: parseFloat(e.target.value) || 0 })} />
                         </div>
                     )}
@@ -430,22 +472,22 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '40px', marginTop: '32px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <div className="ae-input-group">
-                            <label className="ae-label">Billing Address</label>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Billing Address</label>
                             <textarea className="ae-input" rows={3} disabled={isReadOnly} value={formData.billing_address} onChange={e => setFormData({ ...formData, billing_address: e.target.value })} />
                         </div>
 
-                        <div style={{ background: '#F8FAFC', padding: '24px', borderRadius: '12px', border: '1px solid #E0E6ED' }}>
-                            <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0066CC', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
+                            <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--theme-primary)', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 Compliance & Signatory
                             </h3>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                                <div className="ae-input-group">
-                                    <label className="ae-label">Authorized Signatory</label>
-                                    <input className="ae-input" placeholder="Name of signatory" disabled={isReadOnly} value={formData.authorized_signatory} onChange={e => setFormData({ ...formData, authorized_signatory: e.target.value })} />
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Authorized Signatory</label>
+                                    <input className="ae-input" placeholder="Authorized Signatory" disabled={isReadOnly} value={formData.authorized_signatory} onChange={e => setFormData({ ...formData, authorized_signatory: e.target.value })} />
                                 </div>
-                                <div className="ae-input-group">
-                                    <label className="ae-label">Signature & Seal</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Signature & Seal</label>
                                     <div style={{ display: 'flex', gap: '10px' }}>
                                         <label style={{ flex: 1, padding: '8px', border: '1px dashed #E0E6ED', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontSize: '0.7rem' }}>
                                             {signatureFile ? 'Signature selected' : 'Upload Signature'}
@@ -460,49 +502,143 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             </div>
 
                             {formData.invoice_type === 'EXPORT' ? (
-                                <div className="ae-input-group">
-                                    <label className="ae-label">LUT Declaration (Export)</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>LUT Declaration (Export)</label>
                                     <textarea className="ae-input" rows={3} disabled={isReadOnly} value={formData.lut_declaration} onChange={e => setFormData({ ...formData, lut_declaration: e.target.value })} />
                                 </div>
                             ) : (
-                                <div className="ae-input-group">
-                                    <label className="ae-label">GST Declaration (India)</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>GST Declaration (India)</label>
                                     <textarea className="ae-input" rows={3} disabled={isReadOnly} value={formData.gst_declaration} onChange={e => setFormData({ ...formData, gst_declaration: e.target.value })} />
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ color: '#64748b' }}>Subtotal</span>
+                            <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
                             <span style={{ fontWeight: 600 }}>{formData.currency} {totals.subtotal.toLocaleString()}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ color: '#64748b' }}>Discount</span>
-                            <span style={{ color: '#E53E3E' }}>-{totals.total_discount.toLocaleString()}</span>
+                            <span style={{ color: 'var(--text-secondary)' }}>Discount</span>
+                            <span style={{ color: '#EF4444' }}>-{totals.total_discount.toLocaleString()}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ color: '#64748b' }}>Taxable Amount</span>
+                            <span style={{ color: 'var(--text-secondary)' }}>Taxable Amount</span>
                             <span style={{ fontWeight: 600 }}>{totals.taxable_amount.toLocaleString()}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ color: '#64748b' }}>Total Tax</span>
+                            <span style={{ color: 'var(--text-secondary)' }}>Total Tax</span>
                             <span>{totals.total_tax.toLocaleString()}</span>
                         </div>
                         {formData.invoice_type === 'USA' && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #e2e8f0' }}>
-                                <span style={{ color: '#64748b' }}>Sales Tax ({formData.sales_tax_rate}%)</span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--border-primary)' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Sales Tax ({formData.sales_tax_rate}%)</span>
                                 <span>{formData.sales_tax_amount.toLocaleString()}</span>
                             </div>
                         )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px' }}>
                             <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>Grand Total</span>
-                            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FF6B00' }}>{formData.currency} {totals.grand_total.toLocaleString()}</span>
+                            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--theme-primary)' }}>{formData.currency} {totals.grand_total.toLocaleString()}</span>
                         </div>
                     </div>
                 </div>
             </div>
+            {/* Cancel Confirmation Modal */}
+            {showCancelModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(255, 255, 255, 0.4)',
+                    backdropFilter: 'blur(1px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    <div style={{
+                        background: 'white',
+                        width: '100%',
+                        maxWidth: '500px',
+                        borderRadius: '12px',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        border: '1px solid #E2E8F0',
+                        overflow: 'hidden',
+                        animation: 'modalScale 0.2s ease-out'
+                    }}>
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '10px',
+                                    background: '#FFF5F5',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
+                                        Leave this page?
+                                    </h3>
+                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                        If you leave, your unsaved changes will be discarded.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
+                                <button
+                                    onClick={() => setShowCancelModal(false)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        background: '#3B82F6',
+                                        color: 'white',
+                                        border: 'none',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        height: '40px'
+                                    }}
+                                >
+                                    Stay Here
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowCancelModal(false);
+                                        onBack();
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        background: 'white',
+                                        color: '#1a1f36',
+                                        border: '1px solid #E2E8F0',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        height: '40px'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                >
+                                    Leave & Discard Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil } from 'lucide-react';
+import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const UserManagement: React.FC = () => {
@@ -21,6 +21,7 @@ const UserManagement: React.FC = () => {
         role: 'user'
     });
     const [error, setError] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
 
     const [companyFormData, setCompanyFormData] = useState({
         name: '',
@@ -263,8 +264,8 @@ const UserManagement: React.FC = () => {
             {/* Header Area */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, paddingBottom: '16px', borderBottom: showForm ? '1px solid #E0E6ED' : 'none', marginBottom: showForm ? '24px' : '0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                         {showForm ? `Create New ${viewMode === 'user' ? 'User' : 'Customer'}` : 'User Management'}
                     </h1>
                 </div>
@@ -274,7 +275,7 @@ const UserManagement: React.FC = () => {
                         style={{
                             height: '36px',
                             fontSize: '0.85rem',
-                            background: '#FF6B00',
+                            background: 'var(--theme-primary)',
                             color: 'white',
                             border: 'none',
                             display: 'flex',
@@ -285,7 +286,7 @@ const UserManagement: React.FC = () => {
                             transition: 'all 0.2s',
                             cursor: 'pointer',
                             fontWeight: 700,
-                            boxShadow: '0 4px 6px -1px rgba(255, 107, 0, 0.2)'
+                            boxShadow: '0 4px 6px -1px rgba(187, 77, 0, 0.2)'
                         }}
                     >
                         <UserPlus size={14} /> Create New
@@ -303,8 +304,8 @@ const UserManagement: React.FC = () => {
                         background: 'white',
                         padding: '6px',
                         borderRadius: '12px',
-                        border: '1px solid #E0E6ED',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                        border: '1px solid var(--border-primary)',
+                        boxShadow: 'var(--shadow-sm)'
                     }}>
                         <button
                             onClick={() => setViewMode('user')}
@@ -316,8 +317,8 @@ const UserManagement: React.FC = () => {
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                background: viewMode === 'user' ? '#FF6B00' : 'transparent',
-                                color: viewMode === 'user' ? 'white' : '#718096',
+                                background: viewMode === 'user' ? 'var(--theme-primary)' : 'transparent',
+                                color: viewMode === 'user' ? 'white' : 'var(--text-secondary)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px'
@@ -335,8 +336,8 @@ const UserManagement: React.FC = () => {
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                background: viewMode === 'company' ? '#FF6B00' : 'transparent',
-                                color: viewMode === 'company' ? 'white' : '#718096',
+                                background: viewMode === 'company' ? 'var(--theme-primary)' : 'transparent',
+                                color: viewMode === 'company' ? 'white' : 'var(--text-secondary)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px'
@@ -351,13 +352,13 @@ const UserManagement: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         background: 'white',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid var(--border-primary)',
                         borderRadius: '10px',
                         padding: '0 12px',
                         width: '350px',
                         height: '40px'
                     }}>
-                        <div style={{ marginRight: '8px', color: '#718096' }}>
+                        <div style={{ marginRight: '8px', color: 'var(--text-tertiary)' }}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         </div>
                         <input
@@ -365,8 +366,33 @@ const UserManagement: React.FC = () => {
                             placeholder={`Search by ${viewMode === 'user' ? 'Username, Email or Role' : 'Customer Name, City or Email'}...`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{ border: 'none', outline: 'none', fontSize: '0.9rem', width: '100%', color: '#1a1f36', fontWeight: 600 }}
+                            style={{ border: 'none', outline: 'none', fontSize: '0.9rem', width: '100%', color: 'var(--text-primary)', fontWeight: 600 }}
                         />
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button
+                            className="ae-btn-secondary"
+                            onClick={() => setShowFilters(!showFilters)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 14px',
+                                fontSize: '0.8rem',
+                                height: '40px',
+                                borderRadius: '10px',
+                                background: showFilters ? 'var(--bg-accent)' : 'white',
+                                color: showFilters ? 'var(--theme-primary)' : 'var(--ae-gray-800)',
+                                borderColor: showFilters ? 'var(--theme-primary)' : 'var(--ae-gray-100)',
+                                border: '1px solid',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                            }}
+                            title={showFilters ? "Hide Filters" : "Show Filters"}
+                        >
+                            <Filter size={16} /> Filters
+                        </button>
                     </div>
                 </div>
             )}
@@ -375,23 +401,23 @@ const UserManagement: React.FC = () => {
                 {showForm ? (
                     <form onSubmit={viewMode === 'user' ? handleCreateUser : handleCreateCompany} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         <div style={{
-                            background: '#FAFBFC',
+                            background: 'var(--bg-secondary)',
                             borderRadius: '12px',
                             padding: '24px',
-                            border: '1px solid #E0E6ED'
+                            border: '1px solid var(--border-primary)'
                         }}>
                             {viewMode === 'user' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                            Username <span style={{ color: '#FF6B00' }}>*</span>
+                                            Username <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="text"
                                             placeholder="Enter username"
                                             value={formData.username}
                                             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -404,7 +430,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Enter first name"
                                             value={formData.first_name}
                                             onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -416,32 +442,32 @@ const UserManagement: React.FC = () => {
                                             placeholder="Enter last name"
                                             value={formData.last_name}
                                             onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                            Email Address <span style={{ color: '#FF6B00' }}>*</span>
+                                            Email Address <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="email"
                                             placeholder="Enter email address"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                         />
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                            Password <span style={{ color: '#FF6B00' }}>*</span>
+                                            Password <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="password"
                                             placeholder="Enter password"
                                             value={formData.password}
                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -452,7 +478,7 @@ const UserManagement: React.FC = () => {
                                         <select
                                             value={formData.role}
                                             onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         >
                                             <option value="user">User</option>
                                             <option value="app_admin">Admin</option>
@@ -463,20 +489,20 @@ const UserManagement: React.FC = () => {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                                     {/* 5.1 Company Basic Details */}
                                     <div className="section">
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: '#0066CC', borderRadius: '2px' }}></div>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Customer Basic Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                                    Customer Name <span style={{ color: '#FF6B00' }}>*</span>
+                                                    Customer Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="text"
                                                     value={companyFormData.name}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -487,7 +513,7 @@ const UserManagement: React.FC = () => {
                                                 <input
                                                     type="file"
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, logo: e.target.files?.[0] || null })}
-                                                    style={{ width: '100%', fontSize: '0.85rem', color: '#1a1f36' }}
+                                                    style={{ width: '100%', fontSize: '0.85rem', color: 'var(--text-primary)' }}
                                                 />
                                             </div>
                                         </div>
@@ -495,20 +521,20 @@ const UserManagement: React.FC = () => {
 
                                     {/* 5.2 Communication Details */}
                                     <div className="section" style={{ borderTop: '1px solid #E2E8F0', paddingTop: '24px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: '#0066CC', borderRadius: '2px' }}></div>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Communication Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                                    Email Address <span style={{ color: '#FF6B00' }}>*</span>
+                                                    Email Address <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="email"
                                                     value={companyFormData.email}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -520,7 +546,7 @@ const UserManagement: React.FC = () => {
                                                     type="text"
                                                     value={companyFormData.phone_number}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, phone_number: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -531,7 +557,7 @@ const UserManagement: React.FC = () => {
                                                     type="text"
                                                     value={companyFormData.mobile_number}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, mobile_number: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div style={{ gridColumn: 'span 2' }}>
@@ -543,7 +569,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="https://example.com"
                                                     value={companyFormData.website_url}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, website_url: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
@@ -551,20 +577,20 @@ const UserManagement: React.FC = () => {
 
                                     {/* 5.3 Mailing Address */}
                                     <div className="section" style={{ borderTop: '1px solid #E2E8F0', paddingTop: '24px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: '#0066CC', borderRadius: '2px' }}></div>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Mailing Address
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                                             <div style={{ gridColumn: 'span 2' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                                    Address Line 1 <span style={{ color: '#FF6B00' }}>*</span>
+                                                    Address Line 1 <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="text"
                                                     value={companyFormData.address_line_1}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, address_line_1: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -581,7 +607,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                                    Country <span style={{ color: '#FF6B00' }}>*</span>
+                                                    Country <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <select
                                                     value={companyFormData.country}
@@ -595,7 +621,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                                    State <span style={{ color: '#FF6B00' }}>*</span>
+                                                    State <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <select
                                                     value={companyFormData.state}
@@ -609,7 +635,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                                    City <span style={{ color: '#FF6B00' }}>*</span>
+                                                    City <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="text"
@@ -621,7 +647,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                                    Pincode <span style={{ color: '#FF6B00' }}>*</span>
+                                                    Pincode <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="text"
@@ -636,14 +662,14 @@ const UserManagement: React.FC = () => {
 
                                     {/* 5.4 Financial Details */}
                                     <div className="section" style={{ borderTop: '1px solid #E2E8F0', paddingTop: '24px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: '#0066CC', borderRadius: '2px' }}></div>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Financial Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                                    FY Begins From <span style={{ color: '#FF6B00' }}>*</span>
+                                                    FY Begins From <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="text"
@@ -695,14 +721,14 @@ const UserManagement: React.FC = () => {
 
                                     {/* 5.5 Statutory Details */}
                                     <div className="section" style={{ borderTop: '1px solid #E2E8F0', paddingTop: '24px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FF6B00', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: '#0066CC', borderRadius: '2px' }}></div>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Statutory Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
-                                                    PAN <span style={{ color: '#FF6B00' }}>*</span>
+                                                    PAN <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="text"
@@ -806,7 +832,7 @@ const UserManagement: React.FC = () => {
                                     padding: '6px 16px',
                                     borderRadius: '8px',
                                     fontSize: '0.85rem',
-                                    background: '#FF6B00',
+                                    background: 'var(--theme-primary)',
                                     color: 'white',
                                     border: 'none',
                                     fontWeight: 800,
@@ -842,19 +868,46 @@ const UserManagement: React.FC = () => {
                             <table className="ae-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                                 <thead style={{ position: 'sticky', top: 0, zIndex: 20 }}>
                                     <tr>
-                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '30%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase' }}>{viewMode === 'user' ? 'User' : 'Customer'}</th>
-                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '25%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase' }}>Email</th>
-                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase' }}>{viewMode === 'user' ? 'Role' : 'City / State'}</th>
-                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase' }}>Status</th>
-                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: '#FAFBFC', borderBottom: '1px solid #E0E6ED', width: '15%', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, color: '#718096', textTransform: 'uppercase' }}>Actions</th>
+                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)', width: '30%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{viewMode === 'user' ? 'User' : 'Customer'}</th>
+                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)', width: '25%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Email</th>
+                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{viewMode === 'user' ? 'Role' : 'City / State'}</th>
+                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Status</th>
+                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)', width: '15%', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Actions</th>
                                     </tr>
+                                    {showFilters && (
+                                        <tr style={{ background: '#F7FAFC' }}>
+                                            <th style={{ padding: '8px 16px', backgroundColor: '#F7FAFC' }}>
+                                                <div className="ae-input-group !mb-0">
+                                                    <Search className="ae-search-icon" size={12} />
+                                                    <input
+                                                        className="ae-input"
+                                                        placeholder="Filter..."
+                                                        value={searchTerm}
+                                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                                        style={{ height: '28px', fontSize: '11px' }}
+                                                    />
+                                                </div>
+                                            </th>
+                                            <th style={{ padding: '8px 16px', backgroundColor: '#F7FAFC' }}></th>
+                                            <th style={{ padding: '8px 16px', backgroundColor: '#F7FAFC' }}></th>
+                                            <th style={{ padding: '8px 16px', backgroundColor: '#F7FAFC' }}></th>
+                                            <th style={{ padding: '8px 16px', textAlign: 'right', backgroundColor: '#F7FAFC' }}>
+                                                <button
+                                                    onClick={() => setSearchTerm('')}
+                                                    style={{ height: '24px', width: '100px', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
+                                                >
+                                                    Clear
+                                                </button>
+                                            </th>
+                                        </tr>
+                                    )}
                                 </thead>
                                 <tbody>
                                     {viewMode === 'user' ? filteredUsers.map((user) => (
                                         <tr key={user.id} style={{ borderBottom: '1px solid #F0F4F8' }}>
                                             <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                                                 <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-[#0066CC]/10 text-[#0066CC] rounded-full flex items-center justify-center">
+                                                    <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
                                                         <UserIcon size={20} />
                                                     </div>
                                                     <div className="ml-4">
@@ -878,8 +931,8 @@ const UserManagement: React.FC = () => {
                                                     fontSize: '0.75rem',
                                                     fontWeight: 700,
                                                     textTransform: 'uppercase',
-                                                    background: user.role === 'app_admin' ? 'rgba(159, 122, 234, 0.1)' : 'rgba(0, 102, 204, 0.1)',
-                                                    color: user.role === 'app_admin' ? '#9F7AEA' : '#0066CC'
+                                                    background: user.role === 'app_admin' ? 'rgba(159, 122, 234, 0.1)' : 'var(--bg-accent)',
+                                                    color: user.role === 'app_admin' ? '#9F7AEA' : 'var(--ae-blue)'
                                                 }}>
                                                     <Shield size={12} />
                                                     {user.role === 'app_admin' ? 'Admin' : 'User'}
@@ -925,7 +978,7 @@ const UserManagement: React.FC = () => {
                                         <tr key={comp.id} style={{ borderBottom: '1px solid #F0F4F8' }}>
                                             <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                                                 <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-[#FF6B00]/10 text-[#FF6B00] rounded-full flex items-center justify-center">
+                                                    <div className="h-10 w-10 flex-shrink-0 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded-full flex items-center justify-center">
                                                         <Users size={20} />
                                                     </div>
                                                     <div className="ml-4">
@@ -956,7 +1009,7 @@ const UserManagement: React.FC = () => {
                                                             setViewMode('company');
                                                             setShowForm(true);
                                                         }}
-                                                        style={{ padding: '8px', color: '#0066CC', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
                                                         title="Edit Customer"
                                                     >
                                                         <Pencil size={16} />

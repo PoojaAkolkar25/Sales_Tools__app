@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Search, FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw } from 'lucide-react';
+import { Eye, Search, FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw, Filter } from 'lucide-react';
 import api from '../api';
+import Pagination from './Pagination';
 
 const ALL_COLUMNS = [
     { key: 'lead_no', label: 'Lead Number' },
@@ -56,7 +57,10 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
 
     const [isDownloading, setIsDownloading] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
     const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
     const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
         const saved = localStorage.getItem('costSheetDashboard_visibleColumns');
         return saved ? JSON.parse(saved) : ALL_COLUMNS.map(col => col.key);
@@ -181,6 +185,17 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
         }
     };
 
+    const getStatusBadge = (status: string) => {
+        const statusMap: { [key: string]: { bg: string; color: string; label: string } } = {
+            'PENDING': { bg: 'rgba(113, 128, 150, 0.1)', color: '#718096', label: 'Draft' },
+            'SUBMITTED': { bg: 'var(--bg-secondary)', color: 'var(--theme-primary)', label: 'Pending' },
+            'REVERTED': { bg: 'rgba(214, 158, 46, 0.1)', color: '#D69E2E', label: 'Reverted' },
+            'APPROVED': { bg: 'rgba(0, 200, 83, 0.1)', color: '#00C853', label: 'Approved' },
+            'REJECTED': { bg: 'rgba(229, 62, 62, 0.1)', color: '#E53E3E', label: 'Rejected' }
+        };
+        return statusMap[status] || { bg: '#F7FAFC', color: '#718096', label: status };
+    };
+
     const filteredCostSheets = useMemo(() => {
         return costSheets.filter(cs => {
             const matchesCs = (cs.cost_sheet_no || '').toLowerCase().includes(filters.csNumber.toLowerCase());
@@ -188,7 +203,10 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
             const matchesDeal = (cs.deal_no || '').toLowerCase().includes(filters.dealNo.toLowerCase());
             const matchesCustomer = (cs.customer_name || '').toLowerCase().includes(filters.customerName.toLowerCase());
             const matchesProject = (cs.project_name || '').toLowerCase().includes(filters.projectName.toLowerCase());
-            const matchesStatus = filters.status === '' || cs.status === filters.status;
+            const statusLabel = getStatusBadge(cs.status).label;
+            const matchesStatus = filters.status === '' ||
+                cs.status === filters.status ||
+                statusLabel.toLowerCase().includes(filters.status.toLowerCase());
 
             // Date Selection Logic
             let matchesDate = true;
@@ -254,6 +272,13 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
         });
     }, [costSheets, filters]);
 
+    const paginatedCostSheets = useMemo(() => {
+        return filteredCostSheets.slice(
+            (currentPage - 1) * ITEMS_PER_PAGE,
+            currentPage * ITEMS_PER_PAGE
+        );
+    }, [filteredCostSheets, currentPage]);
+
     const counts = useMemo(() => ({
         all: costSheets.length,
         draft: costSheets.filter(cs => cs.status === 'PENDING').length,
@@ -264,24 +289,14 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
     }), [costSheets]);
 
     const statusFlow = [
-        { label: `Draft (${counts.draft})`, value: 'PENDING', color: '#718096' },
-        { label: `Pending (${counts.pending})`, value: 'SUBMITTED', color: '#FF6B00' },
-        { label: `Reverted (${counts.reverted})`, value: 'REVERTED', color: '#D69E2E' },
-        { label: `Approved (${counts.approved})`, value: 'APPROVED', color: '#00C853' },
-        { label: `Rejected (${counts.rejected})`, value: 'REJECTED', color: '#E53E3E' },
+        { label: `Draft (${counts.draft})`, value: 'Draft', color: '#718096' },
+        { label: `Pending (${counts.pending})`, value: 'Pending', color: '#FF6B00' },
+        { label: `Reverted (${counts.reverted})`, value: 'Reverted', color: '#D69E2E' },
+        { label: `Approved (${counts.approved})`, value: 'Approved', color: '#00C853' },
+        { label: `Rejected (${counts.rejected})`, value: 'Rejected', color: '#E53E3E' },
         { label: `All (${counts.all})`, value: '', color: '#718096' }
     ];
 
-    const getStatusBadge = (status: string) => {
-        const statusMap: { [key: string]: { bg: string; color: string; label: string } } = {
-            'PENDING': { bg: 'rgba(113, 128, 150, 0.1)', color: '#718096', label: 'Draft' },
-            'SUBMITTED': { bg: 'rgba(255, 107, 0, 0.1)', color: '#FF6B00', label: 'Pending' },
-            'REVERTED': { bg: 'rgba(214, 158, 46, 0.1)', color: '#D69E2E', label: 'Reverted' },
-            'APPROVED': { bg: 'rgba(0, 200, 83, 0.1)', color: '#00C853', label: 'Approved' },
-            'REJECTED': { bg: 'rgba(229, 62, 62, 0.1)', color: '#E53E3E', label: 'Rejected' }
-        };
-        return statusMap[status] || { bg: '#F7FAFC', color: '#718096', label: status };
-    };
 
     return (
         <div className="space-y-6">
@@ -291,7 +306,9 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden' // Ensure flush table looks good
+                overflow: 'hidden',
+                maxHeight: 'none',
+                overflowY: 'visible'
             }}>
                 {/* Controls Status Tabs and Actions - Padded Header Area */}
                 <div style={{
@@ -301,7 +318,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                     flexWrap: 'wrap',
                     gap: '16px',
                     padding: '20px',
-                    borderBottom: '1px solid #F1F5F9'
+                    borderBottom: '1px solid var(--border-primary)'
                 }}>
 
                     {/* Status Tabs */}
@@ -311,7 +328,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                         background: 'white',
                         padding: '6px',
                         borderRadius: '12px',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid var(--border-primary)',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                     }}>
                         {statusFlow.map((flow) => (
@@ -326,9 +343,9 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                     border: 'none',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s',
-                                    background: filters.status === flow.value ? '#FF6B00' : 'transparent',
-                                    color: filters.status === flow.value ? 'white' : '#64748B',
-                                    boxShadow: filters.status === flow.value ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                                    background: filters.status === flow.value ? 'var(--theme-primary)' : 'transparent',
+                                    color: filters.status === flow.value ? 'white' : 'var(--text-secondary)',
+                                    boxShadow: filters.status === flow.value ? 'var(--shadow-md)' : 'none'
                                 }}
                             >
                                 {flow.label}
@@ -339,7 +356,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                     {/* Right Side Actions */}
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748B' }}>Period:</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Period:</span>
                             <select
                                 className="ae-input"
                                 value={filters.period}
@@ -375,7 +392,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                     height: '32px',
                                     borderRadius: '8px',
                                     background: 'white',
-                                    color: '#4A5568',
+                                    color: 'var(--text-secondary)',
                                     fontWeight: 700,
                                     cursor: 'pointer'
                                 }}
@@ -383,7 +400,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                 <Download size={16} /> Export <ChevronDown size={14} />
                             </button>
                             {showExportMenu && (
-                                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid #E2E8F0', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
+                                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                     <button
                                         disabled={isDownloading}
                                         onClick={() => { exportToCSV(); setShowExportMenu(false); }}
@@ -397,13 +414,37 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         disabled={isDownloading}
                                         onClick={() => { exportToExcel(); setShowExportMenu(false); }}
                                         style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                     >
                                         <FileSpreadsheet size={16} style={{ color: '#2563EB' }} /> Excel Report
                                     </button>
                                 </div>
                             )}
+                        </div>
+
+                        <div style={{ position: 'relative' }}>
+                            <button
+                                className="ae-btn-secondary"
+                                onClick={() => setShowFilters(!showFilters)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 14px',
+                                    fontSize: '0.8rem',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    background: showFilters ? 'var(--bg-secondary)' : 'white',
+                                    color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
+                                    borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                }}
+                                title={showFilters ? "Hide Filters" : "Show Filters"}
+                            >
+                                <Filter size={16} /> Filters
+                            </button>
                         </div>
 
                         <div style={{ position: 'relative' }} ref={columnMenuRef}>
@@ -419,7 +460,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                     height: '32px',
                                     borderRadius: '8px',
                                     background: 'white',
-                                    color: '#4A5568',
+                                    color: 'var(--text-secondary)',
                                     fontWeight: 700,
                                     cursor: 'pointer'
                                 }}
@@ -434,23 +475,54 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                     marginTop: '8px',
                                     background: 'white',
                                     borderRadius: '8px',
-                                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                                    border: '1px solid #E2E8F0',
+                                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
+                                    border: '1px solid var(--border-primary)',
                                     zIndex: 100,
-                                    minWidth: '200px',
-                                    maxHeight: '400px',
+                                    minWidth: '220px',
+                                    maxHeight: '450px',
                                     overflowY: 'auto'
                                 }}>
-                                    <div style={{ padding: '8px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between' }}>
+                                    <div style={{
+                                        padding: '12px 16px',
+                                        borderBottom: '1px solid var(--border-primary)',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        background: 'var(--bg-secondary)'
+                                    }}>
                                         <button
                                             onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))}
-                                            style={{ background: 'none', border: 'none', color: '#0066CC', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--ae-blue)',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                transition: 'background 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                         >
                                             Select All
                                         </button>
                                         <button
                                             onClick={() => setVisibleColumns([])}
-                                            style={{ background: 'none', border: 'none', color: '#718096', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--text-tertiary)',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                transition: 'background 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                         >
                                             Clear All
                                         </button>
@@ -459,13 +531,18 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         <label key={col.key} style={{
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '10px',
-                                            padding: '8px 16px',
-                                            fontSize: '0.8rem',
-                                            color: '#4A5568',
+                                            gap: '12px',
+                                            padding: '10px 16px',
+                                            fontSize: '0.85rem',
+                                            color: 'var(--text-primary)',
                                             cursor: 'pointer',
-                                            userSelect: 'none'
-                                        }} onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.background = 'none'}>
+                                            userSelect: 'none',
+                                            transition: 'background 0.2s',
+                                            borderBottom: '1px solid var(--border-primary)'
+                                        }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                        >
                                             <input
                                                 type="checkbox"
                                                 checked={visibleColumns.includes(col.key)}
@@ -476,8 +553,14 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                         setVisibleColumns([...visibleColumns, col.key]);
                                                     }
                                                 }}
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    width: '16px',
+                                                    height: '16px',
+                                                    accentColor: 'var(--theme-primary)'
+                                                }}
                                             />
-                                            {col.label}
+                                            <span style={{ fontWeight: 600 }}>{col.label}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -491,171 +574,120 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                     <table className="ae-table">
                         <thead>
                             <tr>
-                                {visibleColumns.includes('lead_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Lead Number</th>}
-                                {visibleColumns.includes('deal_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Deal No.</th>}
-                                {visibleColumns.includes('customer_name') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Customer Name</th>}
-                                {visibleColumns.includes('project_name') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Project Name</th>}
-                                {visibleColumns.includes('cost_sheet_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Cost Sheet No.</th>}
-                                {visibleColumns.includes('date') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Date</th>}
-                                {visibleColumns.includes('status') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Status</th>}
-                                {visibleColumns.includes('margin_percentage') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Margin %</th>}
-                                {visibleColumns.includes('est_margin') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: '#FAFBFC' }}>Est. Margin</th>}
-                                {visibleColumns.includes('total_price') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, minWidth: '120px', backgroundColor: '#FAFBFC' }}>Total Price</th>}
-                                <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, width: '130px', backgroundColor: '#FAFBFC' }}>Actions</th>
+                                {visibleColumns.includes('lead_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Lead Number</th>}
+                                {visibleColumns.includes('deal_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Deal No.</th>}
+                                {visibleColumns.includes('customer_name') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Customer Name</th>}
+                                {visibleColumns.includes('project_name') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Project Name</th>}
+                                {visibleColumns.includes('cost_sheet_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Cost Sheet No.</th>}
+                                {visibleColumns.includes('date') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)', minWidth: '160px' }}>Date</th>}
+                                {visibleColumns.includes('status') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)', minWidth: '120px' }}>Status</th>}
+                                {visibleColumns.includes('margin_percentage') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Margin %</th>}
+                                {visibleColumns.includes('est_margin') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Est. Margin</th>}
+                                {visibleColumns.includes('total_price') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, minWidth: '120px', backgroundColor: 'var(--bg-secondary)' }}>Total Price</th>}
+                                <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, width: '130px', backgroundColor: 'var(--bg-secondary)' }}>Actions</th>
                             </tr>
-                            {/* Filter Row */}
-                            <tr style={{ background: '#F7FAFC' }}>
-                                {visibleColumns.includes('lead_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                    <div className="ae-input-group">
-                                        <Search className="ae-search-icon" size={12} />
-                                        <input
-                                            className="ae-input"
-                                            placeholder="Filter..."
-                                            value={filters.leadNo}
-                                            onChange={e => setFilters({ ...filters, leadNo: e.target.value })}
-                                            style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
-                                        />
-                                    </div>
-                                </th>}
-                                {visibleColumns.includes('deal_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                    <div className="ae-input-group">
-                                        <Search className="ae-search-icon" size={12} />
-                                        <input
-                                            className="ae-input"
-                                            placeholder="Filter..."
-                                            value={filters.dealNo}
-                                            onChange={e => setFilters({ ...filters, dealNo: e.target.value })}
-                                            style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
-                                        />
-                                    </div>
-                                </th>}
-                                {visibleColumns.includes('customer_name') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                    <div className="ae-input-group">
-                                        <Search className="ae-search-icon" size={12} />
-                                        <input
-                                            className="ae-input"
-                                            placeholder="Filter..."
-                                            value={filters.customerName}
-                                            onChange={e => setFilters({ ...filters, customerName: e.target.value })}
-                                            style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                        />
-                                    </div>
-                                </th>}
-                                {visibleColumns.includes('project_name') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                    <div className="ae-input-group">
-                                        <Search className="ae-search-icon" size={12} />
-                                        <input
-                                            className="ae-input"
-                                            placeholder="Filter..."
-                                            value={filters.projectName}
-                                            onChange={e => setFilters({ ...filters, projectName: e.target.value })}
-                                            style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                        />
-                                    </div>
-                                </th>}
-                                {visibleColumns.includes('cost_sheet_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                    <div className="ae-input-group">
-                                        <Search className="ae-search-icon" size={12} />
-                                        <input
-                                            className="ae-input"
-                                            placeholder="Filter..."
-                                            value={filters.csNumber}
-                                            onChange={e => setFilters({ ...filters, csNumber: e.target.value })}
-                                            style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
-                                        />
-                                    </div>
-                                </th>}
-                                {visibleColumns.includes('date') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                    <div className="ae-input-group">
-                                        <Search className="ae-search-icon" size={12} style={{ left: '10px' }} />
-                                        <select
-                                            className="ae-input"
-                                            value={filters.period}
-                                            onChange={e => setFilters({ ...filters, period: e.target.value })}
-                                            style={{
-                                                height: '24px',
-                                                width: '100%',
-                                                borderRadius: '6px',
-                                                paddingLeft: '28px',
-                                                paddingRight: '8px',
-                                                paddingTop: 0,
-                                                paddingBottom: 0,
-                                                fontSize: '11px',
-                                                color: filters.period === '' ? '#A0AEC0' : 'black'
-                                            }}
-                                        >
-                                            <option value="" style={{ color: '#A0AEC0' }}>All Period</option>
-                                            <option value="last_month" style={{ color: 'black' }}>Last Month</option>
-                                            <option value="last_3_months" style={{ color: 'black' }}>Last 3 Months</option>
-                                            <option value="last_6_months" style={{ color: 'black' }}>Last 6 Months</option>
-                                            <option value="last_year" style={{ color: 'black' }}>Last Year</option>
-                                            <option value="last_financial_year" style={{ color: 'black' }}>Last FY</option>
-                                            <option value="custom" style={{ color: 'black' }}>Custom Range</option>
-                                        </select>
-                                    </div>
-                                    {filters.period === 'custom' && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', marginTop: '4px' }}>
+                            {showFilters && (
+                                <tr style={{ background: 'var(--bg-secondary)' }}>
+                                    {visibleColumns.includes('lead_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                        <div className="ae-input-group">
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.leadNo}
+                                                onChange={e => setFilters({ ...filters, leadNo: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('deal_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                        <div className="ae-input-group">
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.dealNo}
+                                                onChange={e => setFilters({ ...filters, dealNo: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('customer_name') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                        <div className="ae-input-group">
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.customerName}
+                                                onChange={e => setFilters({ ...filters, customerName: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('project_name') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                        <div className="ae-input-group">
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.projectName}
+                                                onChange={e => setFilters({ ...filters, projectName: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('cost_sheet_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                        <div className="ae-input-group">
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.csNumber}
+                                                onChange={e => setFilters({ ...filters, csNumber: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', width: '100px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('date') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC', minWidth: '160px' }}>
+                                        <div style={{ display: 'flex', gap: '4px' }}>
                                             <input
                                                 type="date"
                                                 className="ae-input"
                                                 value={filters.startDate}
                                                 onChange={e => setFilters({ ...filters, startDate: e.target.value })}
-                                                style={{ height: '24px', fontSize: '10px', borderRadius: '4px' }}
-                                                placeholder="Start"
+                                                style={{ height: '24px', fontSize: '10px', padding: '0 4px' }}
                                             />
                                             <input
                                                 type="date"
                                                 className="ae-input"
                                                 value={filters.endDate}
                                                 onChange={e => setFilters({ ...filters, endDate: e.target.value })}
-                                                style={{ height: '24px', fontSize: '10px', borderRadius: '4px' }}
-                                                placeholder="End"
+                                                style={{ height: '24px', fontSize: '10px', padding: '0 4px' }}
                                             />
                                         </div>
-                                    )}
-                                </th>}
-                                {visibleColumns.includes('status') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                {visibleColumns.includes('margin_percentage') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                {visibleColumns.includes('est_margin') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                {visibleColumns.includes('total_price') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                <th style={{ textAlign: 'center', top: '40px', position: 'sticky', right: 0, backgroundColor: '#F7FAFC', zIndex: 12 }}>
-                                    <button
-                                        onClick={() => setFilters({ csNumber: '', leadNo: '', dealNo: '', customerName: '', projectName: '', status: '', period: '', startDate: '', endDate: '' })}
-                                        style={{
-                                            height: '24px',
-                                            width: '100%',
-                                            fontSize: '10px',
-                                            color: '#FF6B00',
-                                            fontWeight: 700,
-                                            textTransform: 'uppercase',
-                                            cursor: 'pointer',
-                                            background: 'white',
-                                            border: '1px solid #E0E6ED',
-                                            padding: '0 8px',
-                                            borderRadius: '6px',
-                                            transition: 'all 0.2s',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                                            e.currentTarget.style.borderColor = '#FF6B00';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = 'white';
-                                            e.currentTarget.style.borderColor = '#E0E6ED';
-                                        }}
-                                    >
-                                        Clear
-                                    </button>
-                                </th>
-                            </tr>
+                                    </th>}
+                                    {visibleColumns.includes('status') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
+                                    {visibleColumns.includes('margin_percentage') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
+                                    {visibleColumns.includes('est_margin') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
+                                    {visibleColumns.includes('total_price') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
+                                    <th style={{ textAlign: 'center', top: '40px', position: 'sticky', right: 0, backgroundColor: '#F7FAFC', zIndex: 12 }}>
+                                        <button
+                                            onClick={() => setFilters({
+                                                csNumber: '', leadNo: '', dealNo: '', customerName: '', projectName: '',
+                                                status: 'PENDING', period: '', startDate: '', endDate: ''
+                                            })}
+                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                        >
+                                            Clear
+                                        </button>
+                                    </th>
+                                </tr>
+                            )}
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}><RefreshCw className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
-                            ) : filteredCostSheets.length === 0 ? (
+                            ) : paginatedCostSheets.length === 0 ? (
                                 <tr>
                                     <td colSpan={visibleColumns.length + 1} style={{ padding: '60px', textAlign: 'center', color: '#718096' }}>
                                         <FileSpreadsheet size={40} style={{ marginBottom: '12px', opacity: 0.3 }} />
@@ -665,7 +697,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredCostSheets.map((cs) => {
+                                paginatedCostSheets.map((cs) => {
                                     const statusInfo = getStatusBadge(cs.status);
                                     return (
                                         <tr key={cs.id}>
@@ -673,25 +705,25 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                 {cs.lead_no || '—'}
                                             </td>}
                                             {visibleColumns.includes('deal_no') && <td
-                                                style={{ fontWeight: 600, color: '#0066CC', fontSize: '0.8rem', cursor: cs.deal ? 'pointer' : 'default', textDecoration: cs.deal ? 'underline' : 'none' }}
+                                                style={{ fontWeight: 600, color: '#FF6B00', fontSize: '0.8rem', cursor: cs.deal ? 'pointer' : 'default', textDecoration: cs.deal ? 'underline' : 'none' }}
                                                 onClick={() => cs.deal && navigate(`/deal?id=${cs.deal}`)}
                                             >
                                                 {cs.deal_no || '—'}
                                             </td>}
-                                            {visibleColumns.includes('customer_name') && <td style={{ color: '#4A5568', fontWeight: 500 }}>
+                                            {visibleColumns.includes('customer_name') && <td style={{ fontWeight: 500 }}>
                                                 {cs.customer_name || '—'}
                                             </td>}
-                                            {visibleColumns.includes('project_name') && <td style={{ color: '#2D3748', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={cs.project_name || '—'}>
+                                            {visibleColumns.includes('project_name') && <td style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={cs.project_name || '—'}>
                                                 {cs.project_name || '—'}
                                             </td>}
                                             {visibleColumns.includes('cost_sheet_no') && <td
                                                 style={{ fontWeight: 700, color: '#FF6B00', fontFamily: 'monospace', cursor: 'pointer', textDecoration: 'underline' }}
-                                                onClick={() => onView(cs.id)}
+                                                onClick={() => onView?.(cs.id)}
                                                 title="Click to view/edit cost sheet"
                                             >
                                                 {cs.cost_sheet_no}
                                             </td>}
-                                            {visibleColumns.includes('date') && <td style={{ color: '#4A5568', fontWeight: 600 }}>
+                                            {visibleColumns.includes('date') && <td style={{ fontWeight: 600 }}>
                                                 {cs.cost_sheet_date ? new Date(cs.cost_sheet_date).toLocaleDateString() : new Date(cs.created_at).toLocaleDateString()}
                                             </td>}
                                             {visibleColumns.includes('status') && <td>
@@ -707,20 +739,20 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                     {statusInfo.label}
                                                 </span>
                                             </td>}
-                                            {visibleColumns.includes('margin_percentage') && <td style={{ textAlign: 'right', fontWeight: 600, color: '#4A5568', fontSize: '0.8rem' }}>
+                                            {visibleColumns.includes('margin_percentage') && <td style={{ textAlign: 'right', fontWeight: 600, fontSize: '0.8rem' }}>
                                                 {cs.total_margin_percentage || 0}%
                                             </td>}
-                                            {visibleColumns.includes('est_margin') && <td style={{ textAlign: 'right', fontWeight: 600, color: '#4A5568', fontSize: '0.8rem' }}>
+                                            {visibleColumns.includes('est_margin') && <td style={{ textAlign: 'right', fontWeight: 600, fontSize: '0.8rem' }}>
                                                 {cs.currency === 'INR' ? '₹' : cs.currency === 'USD' ? '$' : cs.currency === 'EURO' ? '€' : '$'}
                                                 {parseFloat(cs.total_estimated_margin).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>}
-                                            {visibleColumns.includes('total_price') && <td style={{ fontWeight: 700, color: '#1a1f36', textAlign: 'right' }}>
+                                            {visibleColumns.includes('total_price') && <td style={{ fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right' }}>
                                                 {cs.currency === 'INR' ? '₹' : cs.currency === 'USD' ? '$' : cs.currency === 'EURO' ? '€' : '$'}
                                                 {parseFloat(cs.total_estimated_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>}
                                             <td style={{ textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
                                                 <button
-                                                    onClick={() => onView(cs.id)}
+                                                    onClick={() => onView?.(cs.id)}
                                                     style={{
                                                         display: 'inline-flex',
                                                         alignItems: 'center',
@@ -774,8 +806,15 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                         </tbody>
                     </table>
                 </div>
-            </div >
-        </div >
+            </div>
+
+            <Pagination
+                currentPage={currentPage}
+                totalItems={filteredCostSheets.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+            />
+        </div>
     );
 };
 

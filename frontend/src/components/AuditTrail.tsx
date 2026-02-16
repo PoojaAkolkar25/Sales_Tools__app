@@ -77,18 +77,18 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ model, modelId, show, onClose }
         }}>
             <div style={{
                 padding: '20px',
-                borderBottom: '1px solid #E2E8F0',
+                borderBottom: '1px solid var(--border-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                background: '#FAFAFA'
+                background: 'var(--bg-secondary)'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <History size={20} className="text-[#FF6B00]" />
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#2D3748' }}>History</h3>
+                    <History size={20} style={{ color: 'var(--theme-primary)' }} />
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>History</h3>
                 </div>
                 <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
-                    <X size={20} color="#718096" />
+                    <X size={20} color="var(--text-tertiary)" />
                 </button>
             </div>
 
@@ -120,17 +120,17 @@ const AuditTrail: React.FC<AuditTrailProps> = ({ model, modelId, show, onClose }
                                 </div>
 
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: '0.8rem', color: '#718096', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                                        <span style={{ fontWeight: 600, color: '#4A5568' }}>{log.username || 'System'}</span>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{log.username || 'System'}</span>
                                         <span style={{ fontSize: '0.75rem' }}>{formatDate(log.timestamp)}</span>
                                     </div>
 
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2D3748', marginBottom: '6px' }}>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                                         {log.action_type === 'CREATE' ? 'Created' : `Updated ${getFieldLabel(log.field_name)}`}
                                     </div>
 
                                     {log.action_type === 'UPDATE' && (
-                                        <div style={{ background: '#F7FAFC', padding: '8px', borderRadius: '6px', fontSize: '0.85rem' }}>
+                                        <div style={{ background: 'var(--bg-secondary)', padding: '8px', borderRadius: '6px', fontSize: '0.85rem' }}>
                                             <div style={{ color: '#E53E3E', textDecoration: 'line-through', marginBottom: '2px', opacity: 0.7 }}>
                                                 {log.old_value || '(empty)'}
                                             </div>

@@ -5,11 +5,14 @@ import {
     CheckCircle2,
     Eye,
     BarChart3,
-    RefreshCw
+    RefreshCw,
+    Filter,
+    Search
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import Pagination from './Pagination';
 
 interface SalesOrderDashboardProps {
     onView: (id: number) => void;
@@ -20,6 +23,14 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
     const navigate = useNavigate();
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        so_number: '',
+        customer_name: '',
+        po_number: ''
+    });
+    const ITEMS_PER_PAGE = 20;
     const [stats, setStats] = useState({
         pending: 0,
         submitted: 0,
@@ -64,8 +75,17 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
         }
     };
 
-    const filteredSalesOrders = salesOrders.filter((so: any) =>
-        true
+    const filteredSalesOrders = salesOrders.filter((so: any) => {
+        const matchesSONumber = (so.so_number || '').toLowerCase().includes(filters.so_number.toLowerCase());
+        const matchesCustomer = (so.customer_name || '').toLowerCase().includes(filters.customer_name.toLowerCase());
+        const matchesPONumber = (so.po_number || '').toLowerCase().includes(filters.po_number.toLowerCase());
+
+        return matchesSONumber && matchesCustomer && matchesPONumber;
+    });
+
+    const paginatedSalesOrders = filteredSalesOrders.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
     );
 
     return (
@@ -77,7 +97,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                             <div className="ae-card-label">Draft SOs (Pending Review)</div>
                             <div className="ae-card-value">{stats.pending}</div>
                         </div>
-                        <div className="ae-icon-box bg-orange-soft text-orange"><Clock size={16} /></div>
+                        <div className="ae-icon-box" style={{ background: 'rgba(187, 77, 0, 0.05)', color: 'var(--ae-orange)' }}><Clock size={16} /></div>
                     </div>
                 </div>
                 <div className="ae-card ae-card-sm">
@@ -86,7 +106,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                             <div className="ae-card-label">Submitted Orders</div>
                             <div className="ae-card-value">{stats.submitted}</div>
                         </div>
-                        <div className="ae-icon-box bg-green-soft text-green"><CheckCircle2 size={16} /></div>
+                        <div className="ae-icon-box" style={{ background: 'rgba(0, 102, 204, 0.05)', color: 'var(--ae-blue)' }}><CheckCircle2 size={16} /></div>
                     </div>
                 </div>
                 <div className="ae-card ae-card-sm">
@@ -95,7 +115,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                             <div className="ae-card-label">Extraction Accuracy</div>
                             <div className="ae-card-value">{stats.extractionAccuracy}%</div>
                         </div>
-                        <div className="ae-icon-box bg-blue-soft text-blue"><BarChart3 size={16} /></div>
+                        <div className="ae-icon-box" style={{ background: 'rgba(0, 200, 83, 0.05)', color: 'var(--ae-green)' }}><BarChart3 size={16} /></div>
                     </div>
                 </div>
                 <div className="ae-card ae-card-sm">
@@ -104,7 +124,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                             <div className="ae-card-label">Total Orders</div>
                             <div className="ae-card-value">{salesOrders.length}</div>
                         </div>
-                        <div className="ae-icon-box bg-purple-soft text-purple"><ShoppingBag size={16} /></div>
+                        <div className="ae-icon-box" style={{ background: 'rgba(105, 30, 6, 0.05)', color: 'var(--ae-navy)' }}><ShoppingBag size={16} /></div>
                     </div>
                 </div>
             </div>
@@ -113,24 +133,44 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
 
             <div className="ae-table-container" style={{
                 marginBottom: '60px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.04)'
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                maxHeight: 'none',
+                overflowY: 'visible'
             }}>
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '16px 24px',
-                    borderBottom: '1px solid #E0E6ED',
-                    background: '#F8FAFC'
+                    padding: '16px 20px',
+                    borderBottom: '1px solid var(--border-primary)',
+                    background: 'white'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <ShoppingBag className="text-[#3182CE]" size={18} />
-                        <h2 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#2D3748', margin: 0, textTransform: 'uppercase' }}>
-                            Incoming POs & Order Drafts
-                        </h2>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <ShoppingBag size={18} style={{ color: 'var(--theme-primary)' }} />
+                        Sales Order List
+                    </h3>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <button
+                            className="ae-btn-secondary"
+                            onClick={() => setShowFilters(!showFilters)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 14px',
+                                fontSize: '0.8rem',
+                                height: '32px',
+                                borderRadius: '8px',
+                                background: showFilters ? 'var(--bg-secondary)' : 'white',
+                                color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
+                                borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                            }}
+                            title={showFilters ? "Hide Filters" : "Show Filters"}
+                        >
+                            <Filter size={16} /> Filters
+                        </button>
                         <button
                             onClick={fetchSalesOrders}
                             disabled={loading}
@@ -145,22 +185,22 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                 border: 'none',
                                 cursor: loading ? 'not-allowed' : 'pointer',
                                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                background: '#0066CC',
+                                background: 'var(--ae-blue)',
                                 color: 'white',
                                 boxShadow: '0 4px 12px rgba(0, 102, 204, 0.25)',
                                 opacity: loading ? 0.7 : 1
                             }}
                             onMouseEnter={(e) => {
                                 if (!loading) {
-                                    e.currentTarget.style.background = '#0052A3';
-                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 102, 204, 0.35)';
+                                    e.currentTarget.style.background = 'var(--theme-primary)';
+                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(187, 77, 0, 0.35)';
                                     e.currentTarget.style.transform = 'translateY(-1px)';
                                 }
                             }}
                             onMouseLeave={(e) => {
                                 if (!loading) {
-                                    e.currentTarget.style.background = '#0066CC';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 102, 204, 0.25)';
+                                    e.currentTarget.style.background = 'var(--ae-blue)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(187, 77, 0, 0.25)';
                                     e.currentTarget.style.transform = 'translateY(0)';
                                 }
                             }}
@@ -174,40 +214,96 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                 <table className="ae-table">
                     <thead>
                         <tr>
-                            <th style={{ backgroundColor: '#FAFBFC', textTransform: 'uppercase' }}>SO Number</th>
-                            <th style={{ backgroundColor: '#FAFBFC', textTransform: 'uppercase' }}>Deal ID</th>
-                            <th style={{ backgroundColor: '#FAFBFC', textTransform: 'uppercase' }}>Customer</th>
-                            <th style={{ backgroundColor: '#FAFBFC', textTransform: 'uppercase' }}>Cust Code</th>
-                            <th style={{ backgroundColor: '#FAFBFC', textTransform: 'uppercase' }}>PO Number</th>
-                            <th style={{ backgroundColor: '#FAFBFC', textTransform: 'uppercase' }}>Items (Summary)</th>
-                            <th style={{ backgroundColor: '#FAFBFC', textTransform: 'uppercase' }}>Status</th>
-                            <th style={{ backgroundColor: '#FAFBFC', textTransform: 'uppercase' }}>Amount</th>
-                            <th style={{ backgroundColor: '#FAFBFC', textTransform: 'uppercase' }}>Date</th>
-                            <th style={{ backgroundColor: '#FAFBFC', textAlign: 'center', textTransform: 'uppercase' }}>Actions</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>SO Number</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Deal ID</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Customer</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Cust Code</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>PO Number</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Items (Summary)</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Status</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Amount</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Date</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', textAlign: 'center', textTransform: 'uppercase' }}>Actions</th>
                         </tr>
+                        {showFilters && (
+                            <tr style={{ background: 'var(--bg-secondary)' }}>
+                                <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                    <div className="ae-input-group">
+                                        <Search className="ae-search-icon" size={12} />
+                                        <input
+                                            className="ae-input"
+                                            placeholder="Filter..."
+                                            value={filters.so_number}
+                                            onChange={e => setFilters({ ...filters, so_number: e.target.value })}
+                                            style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                        />
+                                    </div>
+                                </th>
+                                <th style={{ backgroundColor: 'var(--bg-secondary)' }}></th>
+                                <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                    <div className="ae-input-group">
+                                        <Search className="ae-search-icon" size={12} />
+                                        <input
+                                            className="ae-input"
+                                            placeholder="Filter..."
+                                            value={filters.customer_name}
+                                            onChange={e => setFilters({ ...filters, customer_name: e.target.value })}
+                                            style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                        />
+                                    </div>
+                                </th>
+                                <th style={{ backgroundColor: 'var(--bg-secondary)' }}></th>
+                                <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                    <div className="ae-input-group">
+                                        <Search className="ae-search-icon" size={12} />
+                                        <input
+                                            className="ae-input"
+                                            placeholder="Filter..."
+                                            value={filters.po_number}
+                                            onChange={e => setFilters({ ...filters, po_number: e.target.value })}
+                                            style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                        />
+                                    </div>
+                                </th>
+                                <th style={{ backgroundColor: 'var(--bg-secondary)' }}></th>
+                                <th style={{ backgroundColor: 'var(--bg-secondary)' }}></th>
+                                <th style={{ backgroundColor: 'var(--bg-secondary)' }}></th>
+                                <th style={{ backgroundColor: 'var(--bg-secondary)' }}></th>
+                                <th style={{ textAlign: 'center', backgroundColor: 'var(--bg-secondary)' }}>
+                                    <button
+                                        onClick={() => setFilters({
+                                            so_number: '', customer_name: '', po_number: ''
+                                        })}
+                                        style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                    >
+                                        Clear
+                                    </button>
+                                </th>
+                            </tr>
+                        )}
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={10} className="px-6 py-12 text-center text-[#718096] font-medium italic">
+                                <td colSpan={10} className="px-6 py-12 text-center text-slate-500 font-medium italic">
                                     Loading Sales Orders...
                                 </td>
                             </tr>
-                        ) : filteredSalesOrders.length === 0 ? (
+                        ) : paginatedSalesOrders.length === 0 ? (
                             <tr>
-                                <td colSpan={10} className="px-6 py-12 text-center text-[#718096] font-medium italic">
+                                <td colSpan={10} className="px-6 py-12 text-center text-slate-500 font-medium italic">
                                     No Sales Orders found.
                                 </td>
                             </tr>
-                        ) : filteredSalesOrders.map((so) => (
+                        ) : paginatedSalesOrders.map((so) => (
                             <tr key={so.id}>
                                 <td className="whitespace-nowrap">
-                                    <span style={{ fontWeight: 700, color: '#0066CC', fontSize: '0.8rem' }}>{so.so_number || '---'}</span>
+                                    <span style={{ fontSize: '0.8rem' }}>{so.so_number || '---'}</span>
                                     {so.status === 'DRAFT' && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800 uppercase tracking-tighter">Draft</span>}
                                 </td>
                                 <td className="whitespace-nowrap">
                                     <span
-                                        style={{ fontWeight: 700, color: '#0066CC', fontSize: '0.8rem', cursor: 'pointer' }}
+                                        style={{ color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer' }}
                                         onClick={() => navigate(`/deal?id=${so.deal}`)}
                                     >
                                         {so.deal_id || '---'}
@@ -215,20 +311,20 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                 </td>
                                 <td className="whitespace-nowrap">
                                     <div className="flex flex-col">
-                                        <span style={{ color: '#2D3748', fontWeight: 600, fontSize: '0.85rem' }}>{so.customer_name || 'N/A'}</span>
+                                        <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{so.customer_name || 'N/A'}</span>
                                     </div>
                                 </td>
                                 <td className="whitespace-nowrap">
-                                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#718096' }}>{so.customer_code || '---'}</span>
+                                    <span style={{ fontSize: '0.8rem' }}>{so.customer_code || '---'}</span>
                                 </td>
                                 <td className="whitespace-nowrap">
-                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>{so.po_number}</span>
+                                    <span style={{ fontSize: '0.8rem' }}>{so.po_number}</span>
                                 </td>
                                 <td className="whitespace-nowrap">
                                     <div className="flex flex-col text-xs">
                                         {so.items && so.items.length > 0 ? (
                                             <>
-                                                <span className="font-bold text-slate-700 truncate max-w-[150px]" title={so.items[0].description || so.items[0].product_name}>
+                                                <span className="text-slate-700 truncate max-w-[150px]" title={so.items[0].description || so.items[0].product_name}>
                                                     {so.items[0].description || (so.items[0].product ? `Product #${so.items[0].product}` : 'Unmapped Item')}
                                                 </span>
                                                 {so.items.length > 1 && (
@@ -247,19 +343,19 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         padding: '4px 10px',
                                         borderRadius: '6px',
                                         fontSize: '9px',
-                                        fontWeight: 800,
+                                        fontWeight: 600,
                                         textTransform: 'uppercase',
-                                        background: so.status === 'SUBMITTED' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 107, 0, 0.1)',
-                                        color: so.status === 'SUBMITTED' ? '#00C853' : '#FF6B00'
+                                        background: so.status === 'SUBMITTED' ? 'rgba(0, 200, 83, 0.1)' : 'var(--bg-secondary)',
+                                        color: so.status === 'SUBMITTED' ? '#00C853' : 'var(--theme-primary)'
                                     }}>
                                         {so.status}
                                     </span>
                                 </td>
                                 <td className="whitespace-nowrap">
-                                    <span style={{ fontWeight: 800, color: '#1a1f36', fontSize: '0.85rem' }}>{so.currency} {parseFloat(so.total_amount).toLocaleString()}</span>
+                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{so.currency} {parseFloat(so.total_amount).toLocaleString()}</span>
                                 </td>
                                 <td className="whitespace-nowrap">
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#718096' }}>{so.created_at ? new Date(so.created_at).toLocaleDateString() : '-'}</span>
+                                    <span style={{ fontSize: '0.75rem' }}>{so.created_at ? new Date(so.created_at).toLocaleDateString() : '-'}</span>
                                 </td>
                                 <td style={{ textAlign: 'center' }}>
                                     <button
@@ -269,7 +365,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                             alignItems: 'center',
                                             gap: '6px',
                                             padding: '6px 12px',
-                                            background: '#0066CC',
+                                            background: 'var(--ae-blue)',
                                             color: 'white',
                                             border: 'none',
                                             borderRadius: '6px',
@@ -278,8 +374,8 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                             cursor: 'pointer',
                                             transition: 'all 0.2s'
                                         }}
-                                        onMouseOver={(e) => e.currentTarget.style.background = '#0052A3'}
-                                        onMouseOut={(e) => e.currentTarget.style.background = '#0066CC'}
+                                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
+                                        onMouseOut={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
                                     >
                                         <Eye size={14} /> {so.status === 'DRAFT' ? 'Review' : 'View'}
                                     </button>
@@ -289,6 +385,13 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                     </tbody>
                 </table>
             </div>
+
+            <Pagination
+                currentPage={currentPage}
+                totalItems={filteredSalesOrders.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+            />
         </div>
     );
 };

@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
     Save,
-    ChevronLeft,
-    Clock,
     Plus,
     X,
     CheckCircle2,
     FileText,
-    LayoutDashboard,
-    Upload,
     Loader2,
-    Trash2
+    Trash2,
+    PlusCircle
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -23,11 +20,13 @@ interface SalesOrderFormProps {
     isExtractingSO?: boolean;
 }
 
-const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onUploadPO, isExtractingSO }) => {
+const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [salesOrder, setSalesOrder] = useState<any>(null);
     const [products, setProducts] = useState<any[]>([]);
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
     const { showNotification } = useNotification();
 
     useEffect(() => {
@@ -201,10 +200,10 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                 <span style={{
                     width: '4px',
                     height: '18px',
-                    background: '#0066CC',
+                    background: 'var(--ae-blue)',
                     borderRadius: '2px'
                 }}></span>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#FF6B00', margin: 0 }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)', margin: 0 }}>
                     {title}
                 </h2>
             </div>
@@ -228,8 +227,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                     <section>
                         <SectionHeader title="Basic Order Information" />
                         <div className="ae-grid-4">
-                            <div className="ae-input-group">
-                                <label className="ae-label">Sales Order Number</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Order Number</label>
                                 <input
                                     type="text"
                                     value={salesOrder.so_number || 'Auto-generated on Submit'}
@@ -237,13 +236,13 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                                     style={{
                                         background: '#F8FAFC',
                                         fontWeight: 700,
-                                        color: '#0066CC',
+                                        color: 'var(--ae-blue)',
                                     }}
                                     disabled
                                 />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Customer Name</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Name</label>
                                 <div style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -271,8 +270,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                                     </span>
                                 </div>
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Customer Code</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Code</label>
                                 <input
                                     name="customer_code"
                                     type="text"
@@ -283,8 +282,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                                     placeholder="Enter Customer Code"
                                 />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Purchase Order Number <span style={{ color: '#FF6B00' }}>*</span></label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Purchase Order Number <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
                                 <input
                                     name="po_number"
                                     type="text"
@@ -294,8 +293,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                                     disabled={isSubmitted}
                                 />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Purchase Order Date</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Purchase Order Date</label>
                                 <input
                                     name="po_date"
                                     type="date"
@@ -305,8 +304,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                                     disabled={isSubmitted}
                                 />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">PO Valid From</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Valid From</label>
                                 <input
                                     name="po_from_date"
                                     type="date"
@@ -316,8 +315,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                                     disabled={isSubmitted}
                                 />
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">PO Valid To</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Valid To</label>
                                 <input
                                     name="po_to_date"
                                     type="date"
@@ -382,7 +381,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                                                     style={{
                                                         width: '100%',
                                                         padding: '6px 10px',
-                                                        border: `1px solid ${!item.product ? '#FF6B00' : '#E0E6ED'}`,
+                                                        border: `1px solid ${!item.product ? 'var(--theme-primary)' : '#E0E6ED'}`,
                                                         borderRadius: '6px',
                                                         fontSize: '0.8rem',
                                                         fontWeight: 600
@@ -474,10 +473,10 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                                     ))}
                                 </tbody>
                                 <tfoot>
-                                    <tr style={{ background: '#F8FAFC' }}>
-                                        <td colSpan={7} style={{ padding: '16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: '#718096', textTransform: 'uppercase' }}>Total Order Value</td>
-                                        <td style={{ padding: '16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: '#1a1f36' }}>
-                                            <span style={{ color: '#FF6B00', marginRight: '4px' }}>{getCurrencySymbol(salesOrder.currency)}</span>
+                                    <tr style={{ background: 'var(--bg-secondary)' }}>
+                                        <td colSpan={7} style={{ padding: '16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Order Value</td>
+                                        <td style={{ padding: '16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+                                            <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{getCurrencySymbol(salesOrder.currency)}</span>
                                             {parseFloat(salesOrder.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                         {!isSubmitted && <td></td>}
@@ -491,23 +490,23 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                     <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                         <SectionHeader title="Logistics & Currency" />
                         <div className="ae-grid-4">
-                            <div className="ae-input-group">
-                                <label className="ae-label">Currency</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Currency</label>
                                 <select name="currency" value={salesOrder.currency} onChange={handleInputChange} className="ae-input" disabled={isSubmitted}>
                                     <option value="INR">INR - Indian Rupee</option>
                                     <option value="USD">USD - US Dollar</option>
                                 </select>
                             </div>
-                            <div className="ae-input-group">
-                                <label className="ae-label">Order Date</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Order Date</label>
                                 <input name="order_date" type="date" value={salesOrder.order_date || ''} onChange={handleInputChange} className="ae-input" disabled={isSubmitted} />
                             </div>
-                            <div className="ae-input-group md:col-span-2">
-                                <label className="ae-label">Billing Address</label>
+                            <div className="md:col-span-2" style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Billing Address</label>
                                 <textarea name="billing_address" value={salesOrder.billing_address || ''} onChange={handleInputChange} className="ae-input" style={{ height: 'auto', minHeight: '120px' }} rows={4} disabled={isSubmitted} placeholder="Enter billing address" />
                             </div>
-                            <div className="ae-input-group md:col-span-2">
-                                <label className="ae-label">Shipping Address</label>
+                            <div className="md:col-span-2" style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Shipping Address</label>
                                 <textarea name="shipping_address" value={salesOrder.shipping_address || ''} onChange={handleInputChange} className="ae-input" style={{ height: 'auto', minHeight: '120px' }} rows={4} disabled={isSubmitted} placeholder="Enter shipping address" />
                             </div>
                         </div>
@@ -526,10 +525,10 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                             border: '1px solid #E2E8F0'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <FileText size={40} style={{ color: '#C53030' }} />
+                                <FileText size={40} style={{ color: 'var(--theme-primary)' }} />
                                 <div>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1a1f36', margin: '0 0 4px 0' }}>{salesOrder.po_file_name || 'PurchaseOrder.pdf'}</p>
-                                    <p style={{ fontSize: '0.7rem', color: '#718096', margin: 0 }}>PDF document uploaded via Extraction Engine</p>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>{salesOrder.po_file_name || 'PurchaseOrder.pdf'}</p>
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: 0 }}>PDF document uploaded via Extraction Engine</p>
                                 </div>
                             </div>
                             <button
@@ -537,13 +536,13 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                                 style={{
                                     padding: '8px 20px',
                                     borderRadius: '6px',
-                                    border: '1px solid #E0E6ED',
+                                    border: '1px solid var(--border-primary)',
                                     background: 'white',
                                     fontSize: '0.8rem',
                                     fontWeight: 700,
                                     cursor: 'pointer',
                                     transition: 'all 0.2s',
-                                    color: '#4A5568'
+                                    color: 'var(--text-secondary)'
                                 }}
                                 onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
                                 onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
@@ -559,16 +558,23 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                padding: '24px 0',
-                marginTop: '12px'
+                gap: '8px',
+                background: 'white',
+                padding: '6px',
+                borderRadius: '12px',
+                border: '1px solid #E0E6ED',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                width: 'fit-content',
+                flexShrink: 0,
+                zIndex: 10,
+                marginTop: '10px',
+                marginLeft: 'auto'
             }}>
                 {!isSubmitted && (
                     <>
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className="ae-btn-secondary"
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -576,16 +582,24 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                                 padding: '8px 24px',
                                 borderRadius: '8px',
                                 fontSize: '0.9rem',
-                                height: '40px'
+                                height: '40px',
+                                background: hoveredBtn === 'draft' && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
+                                color: showCancelModal ? '#CBD5E0' : (hoveredBtn === 'draft' ? 'white' : 'var(--text-secondary)'),
+                                border: 'none',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: hoveredBtn === 'draft' && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                             }}
+                            onMouseEnter={() => setHoveredBtn('draft')}
+                            onMouseLeave={() => setHoveredBtn(null)}
                         >
                             {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                            <span style={{ fontWeight: 800 }}>Save Draft</span>
+                            <span>Save as Draft</span>
                         </button>
                         <button
                             onClick={handleSubmit}
                             disabled={saving}
-                            className="ae-btn-primary"
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -593,15 +607,143 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                                 padding: '8px 24px',
                                 borderRadius: '8px',
                                 fontSize: '0.9rem',
-                                height: '40px'
+                                height: '40px',
+                                background: (!hoveredBtn || hoveredBtn === 'submit') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
+                                color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'submit') ? 'white' : 'var(--text-secondary)'),
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: (!hoveredBtn || hoveredBtn === 'submit') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                             }}
+                            onMouseEnter={() => setHoveredBtn('submit')}
+                            onMouseLeave={() => setHoveredBtn(null)}
                         >
-                            <CheckCircle2 size={18} />
-                            <span style={{ fontWeight: 800 }}>Save Order</span>
+                            <PlusCircle size={18} />
+                            <span style={{ fontWeight: 800 }}>Submit for Approval</span>
                         </button>
                     </>
                 )}
+
+                <button
+                    onClick={() => setShowCancelModal(true)}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 20px',
+                        borderRadius: '8px',
+                        fontSize: '0.9rem',
+                        background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        border: 'none',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        height: '40px',
+                        transition: 'all 0.2s',
+                        boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                    }}
+                    onMouseEnter={() => setHoveredBtn('cancel')}
+                    onMouseLeave={() => setHoveredBtn(null)}
+                >
+                    <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
+                    <span>Cancel</span>
+                </button>
             </div>
+
+            {/* Cancel Confirmation Modal */}
+            {showCancelModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(255, 255, 255, 0.4)',
+                    backdropFilter: 'blur(1px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    <div style={{
+                        background: 'white',
+                        width: '100%',
+                        maxWidth: '500px',
+                        borderRadius: '12px',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        border: '1px solid #E2E8F0',
+                        overflow: 'hidden',
+                        animation: 'modalScale 0.2s ease-out'
+                    }}>
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '10px',
+                                    background: '#FFF5F5',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
+                                        Leave this page?
+                                    </h3>
+                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                        If you leave, your unsaved changes will be discarded.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
+                                <button
+                                    onClick={() => setShowCancelModal(false)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        background: '#3B82F6',
+                                        color: 'white',
+                                        border: 'none',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        height: '40px'
+                                    }}
+                                >
+                                    Stay Here
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowCancelModal(false);
+                                        onBack();
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        background: 'white',
+                                        color: '#1a1f36',
+                                        border: '1px solid #E2E8F0',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        height: '40px'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                >
+                                    Leave & Discard Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

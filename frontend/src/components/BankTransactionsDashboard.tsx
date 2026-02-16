@@ -1,7 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, XCircle, RefreshCw, Upload, Cloud } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, Upload, Cloud, Filter, Search } from 'lucide-react';
 import api from '../api';
+import Pagination from './Pagination';
 import { useNotification } from '../context/NotificationContext';
 
 interface BankTransaction {
@@ -29,6 +30,14 @@ const BankTransactionsDashboard: React.FC = () => {
     const [transactions, setTransactions] = useState<BankTransaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'FOR_REVIEW' | 'CATEGORIZED' | 'EXCLUDED'>('FOR_REVIEW');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        description: '',
+        customer_name: '',
+        amount: ''
+    });
+    const ITEMS_PER_PAGE = 20;
     const [selectedTransaction, setSelectedTransaction] = useState<BankTransaction | null>(null);
     const [receiptsForMatching, setReceiptsForMatching] = useState<any[]>([]);
     const [selectedReceipts, setSelectedReceipts] = useState<number[]>([]);
@@ -162,10 +171,25 @@ const BankTransactionsDashboard: React.FC = () => {
         }
     };
 
-    const filteredTransactions = transactions.filter(t => t.status === activeTab);
+    const filteredTransactions = transactions.filter(t => {
+        const matchesTab = t.status === activeTab;
+        const matchesDescription = (t.description || '').toLowerCase().includes(filters.description.toLowerCase());
+        const matchesCustomer = (t.customer_name || '').toLowerCase().includes(filters.customer_name.toLowerCase());
+        const matchesAmount = !filters.amount ||
+            (t.deposit_amount && t.deposit_amount.includes(filters.amount)) ||
+            (t.withdrawal_amount && t.withdrawal_amount.includes(filters.amount)) ||
+            (t.amount_received && t.amount_received.includes(filters.amount));
+
+        return matchesTab && matchesDescription && matchesCustomer && matchesAmount;
+    });
+
+    const paginatedTransactions = filteredTransactions.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Hidden File Input */}
             <input
                 type="file"
@@ -178,8 +202,8 @@ const BankTransactionsDashboard: React.FC = () => {
             {/* Header & Actions */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                         Bank Transactions
                     </h2>
                 </div>
@@ -191,7 +215,7 @@ const BankTransactionsDashboard: React.FC = () => {
                     background: 'white',
                     padding: '6px 12px',
                     borderRadius: '12px',
-                    border: '1px solid #E0E6ED',
+                    border: '1px solid var(--border-primary)',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -202,12 +226,12 @@ const BankTransactionsDashboard: React.FC = () => {
                             style={{
                                 padding: '4px 8px',
                                 borderRadius: '8px',
-                                border: '1px solid #E0E6ED',
+                                border: '1px solid var(--border-primary)',
                                 fontSize: '0.8rem',
                                 fontWeight: 600,
                                 outline: 'none',
-                                color: '#2D3748',
-                                background: '#F8FAFC'
+                                color: 'var(--text-primary)',
+                                background: 'var(--bg-secondary)'
                             }}
                         >
                             <option value="generic">Generic (CSV)</option>
@@ -217,7 +241,7 @@ const BankTransactionsDashboard: React.FC = () => {
                         </select>
                     </div>
 
-                    <div style={{ width: '1px', height: '20px', background: '#E0E6ED' }}></div>
+                    <div style={{ width: '1px', height: '20px', background: 'var(--border-primary)' }}></div>
 
                     <button
                         onClick={handleSync}
@@ -234,20 +258,20 @@ const BankTransactionsDashboard: React.FC = () => {
                             border: 'none',
                             cursor: syncing ? 'not-allowed' : 'pointer',
                             transition: 'all 0.2s',
-                            background: '#F7FAFC',
-                            color: '#718096'
+                            background: 'var(--bg-secondary)',
+                            color: 'var(--text-secondary)'
                         }}
                         onMouseEnter={(e) => {
                             if (!syncing) {
-                                e.currentTarget.style.background = '#FF6B00';
+                                e.currentTarget.style.background = 'var(--theme-primary)';
                                 e.currentTarget.style.color = 'white';
-                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 107, 0, 0.3)';
+                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
                             }
                         }}
                         onMouseLeave={(e) => {
                             if (!syncing) {
-                                e.currentTarget.style.background = '#F7FAFC';
-                                e.currentTarget.style.color = '#718096';
+                                e.currentTarget.style.background = 'var(--bg-secondary)';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
                                 e.currentTarget.style.boxShadow = 'none';
                             }
                         }}
@@ -270,26 +294,48 @@ const BankTransactionsDashboard: React.FC = () => {
                             border: 'none',
                             cursor: uploading ? 'not-allowed' : 'pointer',
                             transition: 'all 0.2s',
-                            background: '#F7FAFC',
-                            color: '#718096'
+                            background: 'var(--bg-secondary)',
+                            color: 'var(--text-secondary)'
                         }}
                         onMouseEnter={(e) => {
                             if (!uploading) {
-                                e.currentTarget.style.background = '#FF6B00';
+                                e.currentTarget.style.background = 'var(--theme-primary)';
                                 e.currentTarget.style.color = 'white';
-                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 107, 0, 0.3)';
+                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
                             }
                         }}
                         onMouseLeave={(e) => {
                             if (!uploading) {
-                                e.currentTarget.style.background = '#F7FAFC';
-                                e.currentTarget.style.color = '#718096';
+                                e.currentTarget.style.background = 'var(--bg-secondary)';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
                                 e.currentTarget.style.boxShadow = 'none';
                             }
                         }}
                     >
                         {uploading ? <RefreshCw className="animate-spin" size={16} /> : <Upload size={16} />}
                         Upload Statement
+                    </button>
+                    <div style={{ width: '1px', height: '20px', background: 'var(--border-primary)' }}></div>
+                    <button
+                        className="ae-btn-secondary"
+                        onClick={() => setShowFilters(!showFilters)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 14px',
+                            fontSize: '0.8rem',
+                            height: '32px',
+                            borderRadius: '8px',
+                            background: showFilters ? 'var(--bg-secondary)' : 'white',
+                            color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
+                            borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                        }}
+                        title={showFilters ? "Hide Filters" : "Show Filters"}
+                    >
+                        <Filter size={16} /> Filters
                     </button>
                 </div>
             </div>
@@ -301,8 +347,8 @@ const BankTransactionsDashboard: React.FC = () => {
                 background: 'white',
                 padding: '6px',
                 borderRadius: '12px',
-                border: '1px solid #E2E8F0',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                border: '1px solid var(--border-primary)',
+                boxShadow: 'var(--shadow-sm)',
                 width: 'fit-content'
             }}>
                 {(['FOR_REVIEW', 'CATEGORIZED', 'EXCLUDED'] as const).map(tab => (
@@ -317,9 +363,9 @@ const BankTransactionsDashboard: React.FC = () => {
                             border: 'none',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
-                            background: activeTab === tab ? '#FF6B00' : 'transparent',
-                            color: activeTab === tab ? 'white' : '#718096',
-                            boxShadow: activeTab === tab ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                            background: activeTab === tab ? 'var(--theme-primary)' : 'transparent',
+                            color: activeTab === tab ? 'white' : 'var(--text-secondary)',
+                            boxShadow: activeTab === tab ? 'var(--shadow-md)' : 'none'
                         }}
                     >
                         {tab.replace('_', ' ')}
@@ -329,111 +375,172 @@ const BankTransactionsDashboard: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: selectedTransaction ? '1fr 400px' : '1fr', gap: '12px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
                 {/* Main Table */}
-                <div className="ae-table-container" style={{ height: '100%', maxHeight: 'none' }}>
-                    <table className="ae-table">
-                        <thead>
-                            <tr>
-                                <th style={{ width: '50px' }}>#</th>
-                                <th>Trans. Id</th>
-                                <th>Value Date</th>
-                                <th>Trans. Date</th>
-                                <th>Posted Date</th>
-                                <th>Ref. No.</th>
-                                <th>Transaction Remark</th>
-                                <th style={{ textAlign: 'right' }}>Withdrawal</th>
-                                <th style={{ textAlign: 'right' }}>Deposit</th>
-                                <th style={{ textAlign: 'right' }}>Balance</th>
-                                <th style={{ textAlign: 'right', position: 'sticky', right: 0, background: '#F7FAFC', zIndex: 1 }}>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+                    <div className="ae-table-container" style={{ height: 'auto', maxHeight: 'none', overflowY: 'visible' }}>
+                        <table className="ae-table">
+                            <thead>
                                 <tr>
-                                    <td colSpan={11} style={{ textAlign: 'center', padding: '100px' }}>
-                                        <RefreshCw className="animate-spin" style={{ margin: '0 auto' }} />
-                                    </td>
+                                    <th style={{ width: '50px' }}>#</th>
+                                    <th>Trans. Id</th>
+                                    <th>Value Date</th>
+                                    <th>Trans. Date</th>
+                                    <th>Posted Date</th>
+                                    <th>Ref. No.</th>
+                                    <th>Transaction Remark</th>
+                                    <th style={{ textAlign: 'right' }}>Withdrawal</th>
+                                    <th style={{ backgroundColor: 'var(--bg-secondary)' }}>Balance</th>
+                                    <th style={{ backgroundColor: 'var(--bg-secondary)', textAlign: 'center' }}>Actions</th>
                                 </tr>
-                            ) : filteredTransactions.length === 0 ? (
-                                <tr>
-                                    <td colSpan={11} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>
-                                        No transactions found in this category.
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredTransactions.map((t, index) => (
-                                    <tr key={t.id} style={{
-                                        background: selectedTransaction?.id === t.id ? '#FFF8F2' : 'transparent',
-                                        transition: 'background 0.2s'
-                                    }}>
-                                        <td style={{ color: '#718096', fontSize: '0.8rem' }}>{index + 1}</td>
-                                        <td>{t.transaction_id || '—'}</td>
-                                        <td>{t.value_date || '—'}</td>
-                                        <td style={{ fontWeight: 600 }}>{t.transaction_date}</td>
-                                        <td>{t.posted_date || '—'}</td>
-                                        <td>{t.cheque_ref_no || '—'}</td>
-                                        <td style={{ fontSize: '0.75rem', color: '#4A5568', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.transaction_remarks || t.description}>
-                                            {t.transaction_remarks || t.description}
-                                        </td>
-                                        <td style={{ textAlign: 'right', color: '#E53E3E' }}>
-                                            {parseFloat(t.withdrawal_amount || '0') > 0 ?
-                                                `$${parseFloat(t.withdrawal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
-                                        </td>
-                                        <td style={{ textAlign: 'right', color: '#38A169', fontWeight: 600 }}>
-                                            {parseFloat(t.deposit_amount || t.amount_received).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                        </td>
-                                        <td style={{ textAlign: 'right', fontWeight: 700 }}>
-                                            {t.balance ? `$${parseFloat(t.balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
-                                        </td>
-                                        <td style={{ textAlign: 'right', position: 'sticky', right: 0, background: selectedTransaction?.id === t.id ? '#FFF8F2' : 'white', boxShadow: '-2px 0 5px rgba(0,0,0,0.05)' }}>
-                                            {activeTab === 'FOR_REVIEW' && (
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => handleMatchClick(t)}
-                                                        className="ae-btn-secondary"
-                                                        style={{
-                                                            padding: '6px 12px',
-                                                            fontSize: '11px',
-                                                            background: 'transparent',
-                                                            border: '1px solid #718096',
-                                                            color: '#718096',
-                                                            transition: 'all 0.2s'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            e.currentTarget.style.background = 'black';
-                                                            e.currentTarget.style.color = 'white';
-                                                            e.currentTarget.style.borderColor = 'black';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.currentTarget.style.background = 'transparent';
-                                                            e.currentTarget.style.color = '#718096';
-                                                            e.currentTarget.style.borderColor = '#718096';
-                                                        }}
-                                                    >
-                                                        Match
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleExclude(t)}
-                                                        style={{ background: 'none', border: 'none', color: '#E53E3E', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}
-                                                    >
-                                                        Exclude
-                                                    </button>
-                                                </div>
-                                            )}
-                                            {activeTab === 'EXCLUDED' && (
-                                                <button
-                                                    onClick={() => handleUndoExclude(t)}
-                                                    className="ae-btn-secondary"
-                                                    style={{ padding: '6px 12px', fontSize: '11px' }}
-                                                >
-                                                    Undo
-                                                </button>
-                                            )}
+                                {showFilters && (
+                                    <tr style={{ background: 'var(--bg-secondary)' }}>
+                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}></th>
+                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                            <div className="ae-input-group">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={filters.description}
+                                                    onChange={e => setFilters({ ...filters, description: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                            <div className="ae-input-group">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={filters.customer_name}
+                                                    onChange={e => setFilters({ ...filters, customer_name: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}></th>
+                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                            <div className="ae-input-group">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={filters.amount}
+                                                    onChange={e => setFilters({ ...filters, amount: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}></th>
+                                        <th style={{ textAlign: 'center', backgroundColor: 'var(--bg-secondary)' }}>
+                                            <button
+                                                onClick={() => setFilters({
+                                                    description: '', customer_name: '', amount: ''
+                                                })}
+                                                style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                            >
+                                                Clear
+                                            </button>
+                                        </th>
+                                    </tr>
+                                )}
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={11} style={{ textAlign: 'center', padding: '100px' }}>
+                                            <RefreshCw className="animate-spin" style={{ margin: '0 auto' }} />
                                         </td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                ) : paginatedTransactions.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={11} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-tertiary)' }}>
+                                            No transactions found in this category.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    paginatedTransactions.map((t, index) => (
+                                        <tr key={t.id} style={{
+                                            background: 'var(--bg-secondary)',
+                                            transition: 'background 0.2s'
+                                        }}>
+                                            <td style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
+                                            <td>{t.transaction_id || '—'}</td>
+                                            <td>{t.value_date || '—'}</td>
+                                            <td style={{ fontWeight: 600 }}>{t.transaction_date}</td>
+                                            <td>{t.posted_date || '—'}</td>
+                                            <td>{t.cheque_ref_no || '—'}</td>
+                                            <td style={{ fontSize: '0.75rem', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.transaction_remarks || t.description}>
+                                                {t.transaction_remarks || t.description}
+                                            </td>
+                                            <td style={{ textAlign: 'right', color: '#E53E3E' }}>
+                                                {parseFloat(t.withdrawal_amount || '0') > 0 ?
+                                                    `$${parseFloat(t.withdrawal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                                            </td>
+                                            <td style={{ textAlign: 'right', color: '#38A169', fontWeight: 600 }}>
+                                                {parseFloat(t.deposit_amount || t.amount_received).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td style={{ textAlign: 'right', fontWeight: 700 }}>
+                                                {t.balance ? `$${parseFloat(t.balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                                            </td>
+                                            <td style={{ textAlign: 'right', position: 'sticky', right: 0, background: selectedTransaction?.id === t.id ? '#FFF8F2' : 'white', boxShadow: '-2px 0 5px rgba(0,0,0,0.05)' }}>
+                                                {activeTab === 'FOR_REVIEW' && (
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                        <button
+                                                            onClick={() => handleMatchClick(t)}
+                                                            className="ae-btn-secondary"
+                                                            style={{
+                                                                padding: '6px 12px',
+                                                                fontSize: '11px',
+                                                                background: 'transparent',
+                                                                border: '1px solid #718096',
+                                                                color: '#718096',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.background = 'black';
+                                                                e.currentTarget.style.color = 'white';
+                                                                e.currentTarget.style.borderColor = 'black';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = 'transparent';
+                                                                e.currentTarget.style.color = '#718096';
+                                                                e.currentTarget.style.borderColor = '#718096';
+                                                            }}
+                                                        >
+                                                            Match
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleExclude(t)}
+                                                            style={{ background: 'none', border: 'none', color: '#E53E3E', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}
+                                                        >
+                                                            Exclude
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                {activeTab === 'EXCLUDED' && (
+                                                    <button
+                                                        onClick={() => handleUndoExclude(t)}
+                                                        className="ae-btn-secondary"
+                                                        style={{ padding: '6px 12px', fontSize: '11px' }}
+                                                    >
+                                                        Undo
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <Pagination
+                        currentPage={currentPage}
+                        totalItems={filteredTransactions.length}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        onPageChange={setCurrentPage}
+                    />
                 </div>
 
                 {selectedTransaction && (
@@ -449,26 +556,26 @@ const BankTransactionsDashboard: React.FC = () => {
                         position: 'relative',
                         top: 0
                     }}>
-                        <div style={{ padding: '20px', background: '#F7FAFC', borderBottom: '1px solid #E0E6ED' }}>
+                        <div style={{ padding: '20px', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#2D3748' }}>Match Transaction</h3>
+                                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Match Transaction</h3>
                                 <button onClick={() => setSelectedTransaction(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
                                     <XCircle size={20} color="#718096" />
                                 </button>
                             </div>
-                            <div style={{ background: '#FFF8F2', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,107,0,0.2)' }}>
+                            <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-primary)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                     <div>
-                                        <div style={{ fontSize: '0.75rem', color: '#718096' }}>Amount to Match:</div>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FF6B00' }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Amount to Match:</div>
+                                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--theme-primary)' }}>
                                             ${parseFloat(selectedTransaction.amount_received).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </div>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '0.75rem', color: '#718096' }}>Customer:</div>
-                                        <div style={{ fontWeight: 700, color: '#2D3748', marginBottom: '4px' }}>{selectedTransaction.customer_name || '—'}</div>
-                                        <div style={{ fontSize: '0.75rem', color: '#718096' }}>Tx Date:</div>
-                                        <div style={{ fontWeight: 700, color: '#2D3748' }}>{selectedTransaction.transaction_date}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Customer:</div>
+                                        <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>{selectedTransaction.customer_name || '—'}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Tx Date:</div>
+                                        <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{selectedTransaction.transaction_date}</div>
                                     </div>
                                 </div>
                             </div>
@@ -476,7 +583,7 @@ const BankTransactionsDashboard: React.FC = () => {
 
                         <div style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
 
-                            <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '12px', color: '#4A5568' }}>
+                            <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text-secondary)' }}>
                                 Select Unreconciled Receipt Voucher:
                             </div>
                             {receiptsForMatching.length === 0 ? (
@@ -493,8 +600,8 @@ const BankTransactionsDashboard: React.FC = () => {
                                             padding: '12px',
                                             borderRadius: '10px',
                                             border: '1px solid',
-                                            borderColor: selectedReceipts.includes(r.id) ? '#FF6B00' : '#E0E6ED',
-                                            background: selectedReceipts.includes(r.id) ? '#FFF8F2' : 'white',
+                                            borderColor: selectedReceipts.includes(r.id) ? 'var(--theme-primary)' : 'var(--border-primary)',
+                                            background: selectedReceipts.includes(r.id) ? 'var(--bg-secondary)' : 'white',
                                             cursor: 'pointer'
                                         }}>
                                             <input
@@ -507,13 +614,13 @@ const BankTransactionsDashboard: React.FC = () => {
                                                         setSelectedReceipts([...selectedReceipts, r.id]);
                                                     }
                                                 }}
-                                                style={{ accentColor: '#FF6B00' }}
+                                                style={{ accentColor: 'var(--theme-primary)' }}
                                             />
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{r.receipt_no}</div>
                                                 <div style={{ fontSize: '0.75rem', color: '#718096', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                                     <span>Customer: {r.customer_name}</span>
-                                                    <span style={{ fontWeight: 600, color: '#4A5568' }}>Receipt Date: {r.payment_date}</span>
+                                                    <span style={{ fontWeight: 600 }}>Receipt Date: {r.payment_date}</span>
                                                 </div>
                                             </div>
                                             <div style={{ fontWeight: 800, color: '#2D3748' }}>

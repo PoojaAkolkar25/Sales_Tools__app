@@ -57,7 +57,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    borderBottom: '1px solid #EDF2F7'
+                    borderBottom: '1px solid var(--border-primary)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{
@@ -71,7 +71,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                         }}>
                             <AlertTriangle size={20} color="#E53E3E" />
                         </div>
-                        <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800, color: '#1A202C' }}>
+                        <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                             {title}
                         </h3>
                     </div>
@@ -85,7 +85,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
                 {/* Body */}
                 <div style={{ padding: '24px' }}>
-                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5 }}>
                         {message}
                     </p>
                 </div>
@@ -93,7 +93,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 {/* Footer */}
                 <div style={{
                     padding: '16px 24px',
-                    background: '#F8FAFC',
+                    background: 'var(--bg-secondary)',
                     display: 'flex',
                     justifyContent: 'flex-end',
                     gap: '12px'
@@ -105,19 +105,19 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                             borderRadius: '10px',
                             fontSize: '0.875rem',
                             fontWeight: 700,
-                            border: '1px solid #E2E8F0',
+                            border: '1px solid var(--border-primary)',
                             background: 'white',
-                            color: '#4A5568',
+                            color: 'var(--text-secondary)',
                             cursor: 'pointer',
                             transition: 'all 0.2s'
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#F7FAFC';
-                            e.currentTarget.style.borderColor = '#CBD5E0';
+                            e.currentTarget.style.background = 'var(--bg-secondary)';
+                            e.currentTarget.style.borderColor = 'var(--border-secondary)';
                         }}
                         onMouseLeave={(e) => {
                             e.currentTarget.style.background = 'white';
-                            e.currentTarget.style.borderColor = '#E2E8F0';
+                            e.currentTarget.style.borderColor = 'var(--border-primary)';
                         }}
                     >
                         {cancelText}
@@ -130,17 +130,17 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                             fontSize: '0.875rem',
                             fontWeight: 700,
                             border: 'none',
-                            background: '#1a1f36',
+                            background: 'var(--ae-navy)',
                             color: 'white',
                             cursor: 'pointer',
                             transition: 'all 0.2s'
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#2D3748';
+                            e.currentTarget.style.background = 'var(--ae-navy-light)';
                             e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#1a1f36';
+                            e.currentTarget.style.background = 'var(--ae-navy)';
                             e.currentTarget.style.boxShadow = 'none';
                         }}
                     >
