@@ -45,7 +45,12 @@ class PDFExtractor:
                     "STRICT RULES:\n"
                     "- OUTPUT FORMAT: Return ONLY the raw JSON object. DO NOT include markdown code blocks (like ```json), backticks, or any conversational text.\n"
                     "- CUSTOMER: Identify the BUYER/ISSUER of the PO. IGNORE 'AutomationEdge Technologies' as the customer (they are the supplier).\n"
-                    "- PO NUMBER: Extract the identifying PO Number. Look for labels like 'PO No', 'Order No', 'P.O.', 'Purchase Order #', 'Ref'. PO numbers often contain slashes (e.g., MACM/IT/PO/2026/015) or are alphanumeric. Ensure the COMPLETE number is extracted, including all special characters.\n"
+                    "- PO NUMBER: Extract the identifying PO Number. Look for labels like 'PO No', 'Order No', 'Purchase Order #', 'Ref', 'Reference'. PO numbers often contain slashes (e.g., MACM/IT/PO/2026/015, PO/IT/AUTOMATION/00229676/2025) or are alphanumeric (ETL-PO-2025-1064). Ensure the COMPLETE number is extracted, including all special characters.\n"
+                    "- ADDRESSES: Extract 'billing_address' and 'shipping_address'. \n"
+                    "  - Look for labels like 'Bill To', 'Billing Address', 'Bill As Per', 'Sold To'.\n"
+                    "  - Look for 'Ship To', 'Shipping Address', 'Deliver To', 'Location Name'.\n"
+                    "  - If 'Shipping Address' is not explicitly labeled but there is a table of 'Locations' or 'Shipment Details' at the bottom, concatenate those details.\n"
+                    "  - If only one address is found, use it for both. IGNORE AutomationEdge addresses.\n"
                     "- MAPPING: Match the customer in the PO to one of the EXISTING CUSTOMERS listed below if it's a clear match. If NO match is found in the list, return 'not match with company profile' as the customer_name.\n\n"
                     "EXISTING CUSTOMERS:\n"
                     f"- {customers_context}\n\n"
@@ -236,14 +241,19 @@ class PDFExtractor:
                 
                 # 1. PO Number Extraction (Wide regex net)
                 po_patterns = [
-                    r'(?:PO|Order|Purchase Order|Ref)\s*(?:No|Number)?\.?[:\s]*([A-Za-z0-9\-\/\.]{2,})',
+                    r'(?:PO|Order|Purchase Order)\s*(?:No|Number)?\.?[:\s]*([A-Za-z0-9\-\/\.]{4,})',
+                    r'PO\s*No\.?[:\s]*([A-Za-z0-9\-\/\.]{2,})',
+                    r'(?:Ref|Reference)\s*(?:No|Number)?\.?[:\s]*([A-Za-z0-9\-\/\.]{4,})',
                     r'([A-Za-z0-9\-]{3,}/[A-Za-z0-9/\-]{8,})' # Matches SO/PO patterns like MACM/IT/PO/2026/015
                 ]
                 for pattern in po_patterns:
                     match = re.search(pattern, full_text, re.I)
                     if match:
-                        data['po_number'] = match.group(1).strip()
-                        break
+                        potential_po = match.group(1).strip()
+                        # Avoid picking up single words or too short strings that aren't POs
+                        if len(potential_po) > 2 and not potential_po.upper().startswith('PR/'):
+                             data['po_number'] = potential_po
+                             break
                 
                 # 2. Date Extraction (Multi-format)
                 date_patterns = [
@@ -261,7 +271,6 @@ class PDFExtractor:
                                 data['po_date'] = datetime.strptime(date_str, fmt).date()
                                 break
                             except: continue
-                        if data['po_date']: break
                         if data['po_date']: break
 
                 # 2b. Delivery Date Extraction
@@ -281,7 +290,6 @@ class PDFExtractor:
                         if data['delivery_date']: break
 
                 # 3. Customer Identification
-                # Often the first few lines of the document or near "Bill To"
                 top_lines = [l.strip() for l in full_text.split('\n') if l.strip()][:15]
                 our_keywords = ['AUTOMATIONEDGE', 'AUTOMATION EDGE', 'TECHNOLOGIES']
                 
@@ -294,7 +302,6 @@ class PDFExtractor:
                 if data['customer_name'] == 'Pending Mapping':
                     for line in top_lines:
                         if not any(k in line.upper() for k in our_keywords) and len(line) > 3:
-                            # Skip lines that are likely addresses or dates
                             if any(k in line.upper() for k in ['SURVEY', 'FLOOR', 'OFFICE', 'BANER', 'PUNE', 'MUMBAI', 'INDIA', 'DATE']):
                                 continue
                             data['customer_name'] = line
@@ -306,13 +313,17 @@ class PDFExtractor:
                     data['customer_code'] = code_match.group(1).strip()
 
                 # 3c. Billing & Shipping Address
-                bill_addr_match = re.search(r'(?:Bill|Sold|Billing)\s*(?:To|Party|Address)?(?:\s*As\s*Per)?[:\s\n]+(.*?)(?:\n\s*\n|Ship|GSTIN|PAN|Item|$)', full_text, re.I | re.S)
+                bill_addr_match = re.search(r'(?:Bill|Sold|Billing)\s*(?:To|Party|Address|As\s*Per)?(?:\s*GSTIN)?[:\s\n]+(.*?)(?:\n\s*\n|Ship|GSTIN|PAN|Item|$)', full_text, re.I | re.S)
                 if bill_addr_match:
-                    data['billing_address'] = bill_addr_match.group(1).strip()
+                    addr = bill_addr_match.group(1).strip()
+                    if not any(k in addr.upper() for k in our_keywords):
+                        data['billing_address'] = addr
                 
-                ship_addr_match = re.search(r'(?:Ship|Deliver|Shipping)\s*(?:To|Party|Address)?[:\s\n]+(.*?)(?:\n\s*\n|Bill|GSTIN|PAN|Item|$)', full_text, re.I | re.S)
+                ship_addr_match = re.search(r'(?:Ship|Deliver|Shipping)\s*(?:To|Party|Location|Address)?[:\s\n]+(.*?)(?:\n\s*\n|Bill|GSTIN|PAN|Item|$)', full_text, re.I | re.S)
                 if ship_addr_match:
-                    data['shipping_address'] = ship_addr_match.group(1).strip()
+                    addr = ship_addr_match.group(1).strip()
+                    if not any(k in addr.upper() for k in our_keywords):
+                        data['shipping_address'] = addr
 
                 # 4. Currency
                 if any(c in full_text.upper() for c in ['$', 'USD', 'DOLLAR']):
@@ -476,8 +487,8 @@ class SalesOrderCreator:
             currency=extracted_data['currency'],
             status=SalesOrderStatus.DRAFT,
             po_file=po_file_obj,
-            billing_address=extracted_data['billing_address'] or cust_name,
-            shipping_address=extracted_data['shipping_address']
+            billing_address=extracted_data['billing_address'] or (customer_obj.address if customer_obj else cust_name),
+            shipping_address=extracted_data['shipping_address'] or (customer_obj.address if customer_obj else '')
         )
         
         total = 0
@@ -486,6 +497,7 @@ class SalesOrderCreator:
             SalesOrderItem.objects.create(
                 sales_order=so,
                 product=product,
+                product_name=item['description'], # Store extracted description as product name initially
                 description=item['description'],
                 qty=item['qty'],
                 rate=item['rate'],

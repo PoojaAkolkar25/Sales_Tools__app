@@ -27,14 +27,15 @@ const ALL_COLUMNS = [
     { key: 'cost_sheet_no', label: 'Cost Sheet No' },
     { key: 'cost_sheet_price', label: 'CS Amount' },
     { key: 'estimate_id', label: 'Est. ID' },
+    { key: 'created_at', label: 'Date' },
+    { key: 'estimate_date', label: 'Estimate Date' },
     { key: 'customer_name', label: 'Customer' },
     { key: 'project_name', label: 'Project' },
     { key: 'total_price', label: 'Est. Total Value' },
     { key: 'status', label: 'Status' },
     { key: 'subscription_from', label: 'Sub. From' },
     { key: 'subscription_to', label: 'Sub. To' },
-    { key: 'proposal', label: 'Proposal' },
-    { key: 'created_at', label: 'Date' }
+    { key: 'proposal', label: 'Proposal' }
 ];
 
 interface Estimate {
@@ -98,7 +99,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
     const [showColumnMenu, setShowColumnMenu] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
-        const saved = localStorage.getItem('estimateDashboard_visibleColumns_v2');
+        const saved = localStorage.getItem('estimateDashboard_visibleColumns_v3');
         return saved ? JSON.parse(saved) : ALL_COLUMNS.map(col => col.key);
     });
 
@@ -151,7 +152,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('estimateDashboard_visibleColumns_v2', JSON.stringify(visibleColumns));
+        localStorage.setItem('estimateDashboard_visibleColumns_v3', JSON.stringify(visibleColumns));
     }, [visibleColumns]);
 
     useEffect(() => {
@@ -779,6 +780,14 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                 </td>
                                             )}
 
+                                            {visibleColumns.includes('created_at') && (
+                                                <td style={{ fontSize: '0.75rem' }}>
+                                                    {est.created_at ? formatToAppDate(est.created_at) : '-'}
+                                                </td>
+                                            )}
+
+                                            {visibleColumns.includes('estimate_date') && <td style={{ fontSize: '0.75rem' }}>{est.estimate_date ? formatToAppDate(est.estimate_date) : '-'}</td>}
+
                                             {visibleColumns.includes('customer_name') && <td style={{ fontWeight: 500 }}>{est.customer_name}</td>}
                                             {visibleColumns.includes('project_name') && <td style={{ fontWeight: 500 }}>{est.project_name}</td>}
                                             {visibleColumns.includes('total_price') && <td style={{ fontWeight: 700 }}>₹{parseFloat(est.total_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>}
@@ -824,7 +833,6 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                     )}
                                                 </td>
                                             )}
-                                            {visibleColumns.includes('created_at') && <td style={{ fontSize: '0.75rem' }}>{formatToAppDate(est.estimate_date || est.created_at)}</td>}
 
                                             <td style={{
                                                 width: '120px',
@@ -860,33 +868,31 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                         <Eye size={14} />
                                                     </button>
 
-                                                    {est.approval_status === 'APPROVED' && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleDownloadPDF(est.id, est.estimate_id);
-                                                            }}
-                                                            style={{
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                gap: '6px',
-                                                                padding: '6px 12px',
-                                                                background: 'var(--theme-primary)',
-                                                                color: 'white',
-                                                                border: 'none',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.75rem',
-                                                                fontWeight: 600,
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                            onMouseOver={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
-                                                            onMouseOut={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
-                                                            title="Download Report"
-                                                        >
-                                                            <FileText size={14} />
-                                                        </button>
-                                                    )}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDownloadPDF(est.id, est.estimate_id);
+                                                        }}
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            padding: '6px 12px',
+                                                            background: 'var(--theme-primary)',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '6px',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 600,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
+                                                        onMouseOut={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
+                                                        title="Download Report"
+                                                    >
+                                                        <Download size={14} />
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>

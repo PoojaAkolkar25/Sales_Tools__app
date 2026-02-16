@@ -178,6 +178,18 @@ class EstimateViewSet(viewsets.ModelViewSet):
     def rewind(self, request, pk=None):
         original_estimate = self.get_object()
 
+        if not original_estimate.is_latest:
+            return Response(
+                {"error": "Only the latest version of an estimate can be rewound."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if original_estimate.version != 1:
+            return Response(
+                {"error": "Rewind is only allowed once (from version 1)."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Mark previous version as not latest
         original_estimate.is_latest = False
         original_estimate.save()
@@ -536,22 +548,32 @@ class EstimateViewSet(viewsets.ModelViewSet):
         })
         
         headers = [
-            'Estimate ID', 'Version', 'Customer', 'Project', 'Status',
-            'Total Price', 'Approval Status', 'Created At'
+            'Deal ID', 'Deal Amount', 'Cost Sheet No', 'CS Amount', 
+            'Est. ID', 'Date', 'Estimate Date', 'Customer', 'Project', 
+            'Est. Total Value', 'Status', 'Sub. From', 'Sub. To', 'Proposal'
         ]
         
         for col, header in enumerate(headers):
             worksheet.write(0, col, header, header_format)
             
         for row, est in enumerate(estimates, start=1):
-            worksheet.write(row, 0, est.estimate_id)
-            worksheet.write(row, 1, est.version)
-            worksheet.write(row, 2, est.customer_name)
-            worksheet.write(row, 3, est.project_name)
-            worksheet.write(row, 4, est.status)
-            worksheet.write(row, 5, float(est.total_price))
-            worksheet.write(row, 6, est.approval_status)
-            worksheet.write(row, 7, est.created_at.strftime("%Y-%m-%d %H:%M"))
+            proposal = est.proposals.order_by('-version').first()
+            proposal_name = proposal.filename if proposal else '-'
+            
+            worksheet.write(row, 0, est.deal.deal_id if est.deal else '—')
+            worksheet.write(row, 1, float(est.deal.deal_amount) if est.deal else 0)
+            worksheet.write(row, 2, est.cost_sheet.cost_sheet_no if est.cost_sheet else '—')
+            worksheet.write(row, 3, float(est.cost_sheet.total_estimated_price) if est.cost_sheet else 0)
+            worksheet.write(row, 4, est.estimate_id)
+            worksheet.write(row, 5, est.created_at.strftime("%Y-%m-%d %H:%M"))
+            worksheet.write(row, 6, est.estimate_date.strftime("%Y-%m-%d") if est.estimate_date else '—')
+            worksheet.write(row, 7, est.deal.customer.name if est.deal and est.deal.customer else '—')
+            worksheet.write(row, 8, est.deal.deal_name if est.deal else '—')
+            worksheet.write(row, 9, float(est.total_price))
+            worksheet.write(row, 10, est.get_status_display())
+            worksheet.write(row, 11, est.subscription_from.strftime("%Y-%m-%d") if est.subscription_from else '—')
+            worksheet.write(row, 12, est.subscription_to.strftime("%Y-%m-%d") if est.subscription_to else '—')
+            worksheet.write(row, 13, proposal_name)
             
         workbook.close()
         output.seek(0)

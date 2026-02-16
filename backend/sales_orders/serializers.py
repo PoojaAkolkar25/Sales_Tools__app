@@ -34,7 +34,12 @@ class SalesOrderSerializer(serializers.ModelSerializer):
 
     def get_customer_detail(self, obj):
         if obj.customer:
-            return {"id": obj.customer.id, "name": obj.customer.name}
+            return {
+                "id": obj.customer.id, 
+                "name": obj.customer.name,
+                "address": obj.customer.address,
+                "shipping_address": obj.customer.address # Default shipping to billing if needed, or just address
+            }
         return None
     
     class Meta:

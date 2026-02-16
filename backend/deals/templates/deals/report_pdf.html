@@ -3,6 +3,11 @@
 
 <head>
     <style>
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+
         body {
             font-family: 'Arial', sans-serif;
             color: #2D3748;
@@ -75,11 +80,12 @@
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Deal Name</th>
-                <th>Customer</th>
+                <th>Project Name</th>
+                <th>Company</th>
+                <th>Lead No.</th>
                 <th>Stage</th>
                 <th>Amount</th>
-                <th>Owner</th>
+                <th>Salesperson</th>
                 <th>Close Date</th>
             </tr>
         </thead>
@@ -88,7 +94,8 @@
             <tr>
                 <td style="font-weight: bold; color: #0066CC;">{{ deal.deal_id }}</td>
                 <td>{{ deal.deal_name }}</td>
-                <td>{{ deal.customer.name|default:"N/A" }}</td>
+                <td>{{ deal.company }}</td>
+                <td>{{ deal.lead.lead_no|default:"N/A" }}</td>
                 <td>{{ deal.stage|replace:"_, " }}</td>
                 <td>{{ deal.currency }} {{ deal.deal_amount|floatformat:2 }}</td>
                 <td>{{ deal.salesperson_name|default:"N/A" }}</td>
@@ -96,7 +103,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" style="text-align: center; padding: 30px;">No deals found.</td>
+                <td colspan="8" style="text-align: center; padding: 30px;">No deals found.</td>
             </tr>
             {% endfor %}
         </tbody>

@@ -406,8 +406,22 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
         }
     };
 
+    const getFileUrl = (url: string) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        const apiBase = api.defaults.baseURL || '';
+        const base = apiBase.replace('/api', '');
+        return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+    };
+
     const handleDownload = (fileUrl: string) => {
-        window.open(fileUrl, '_blank');
+        const fullUrl = getFileUrl(fileUrl);
+        window.open(fullUrl, '_blank');
+    };
+
+    const handleView = (fileUrl: string) => {
+        const fullUrl = getFileUrl(fileUrl);
+        window.open(fullUrl, '_blank');
     };
 
     const handleSave = async (shouldSubmit = false) => {
@@ -419,8 +433,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
             return;
         }
 
-        if ((id || shouldSubmit) && !estimate?.proposals?.length && !pendingFile) {
-            showNotification('Please attach a proposal file before submitting for approval.', 'error');
+        if (!estimate?.proposals?.length && !pendingFile) {
+            showNotification('Please attach a proposal file before saving.', 'error');
             return;
         }
 
@@ -900,10 +914,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                     </div>
                 </div>
 
-                {/* Proposal Attachments - Simplified */}
                 <div style={{ marginBottom: '24px' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>
-                        Attachments
+                        Proposal Attachment <span style={{ color: '#E53E3E' }}>*</span>
                     </label>
                     <div style={{
                         display: 'flex',
@@ -958,7 +971,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                 }
                             }}
                         >
-                            <Paperclip size={14} /> Attachments
+                            <Paperclip size={14} /> Proposal Attachment
                         </button>
 
                         {/* File List pills */}
@@ -1009,7 +1022,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                         border: '1px solid #E0E6ED',
                                         minWidth: 'fit-content'
                                     }}>
-                                        <FileIcon size={12} style={{ color: '#FF6B00' }} />
+                                        <FileIcon size={14} style={{ color: '#FF6B00' }} />
                                         <span style={{
                                             fontSize: '0.8rem',
                                             fontWeight: 600,
@@ -1023,6 +1036,26 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                         </span>
                                         <div style={{ display: 'flex', gap: '4px' }}>
                                             <button
+                                                type="button"
+                                                onClick={() => handleView(prop.file)}
+                                                style={{
+                                                    width: '22px',
+                                                    height: '22px',
+                                                    borderRadius: '50%',
+                                                    border: 'none',
+                                                    background: '#e0f2fe',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    cursor: 'pointer',
+                                                    color: '#0369a1'
+                                                }}
+                                                title="View"
+                                            >
+                                                <Eye size={10} />
+                                            </button>
+                                            <button
+                                                type="button"
                                                 onClick={() => handleDownload(prop.file)}
                                                 style={{
                                                     width: '22px',
@@ -1042,6 +1075,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                             </button>
                                             {estimate?.status !== 'SUBMITTED' && (
                                                 <button
+                                                    type="button"
                                                     onClick={() => handleRemoveProposal(prop.id)}
                                                     style={{
                                                         width: '22px',
@@ -1555,7 +1589,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                         }}>
                             <CheckCircle2 size={18} /> Approved
                         </span>
-                        {estimate?.is_latest && (
+                        {estimate?.is_latest && estimate?.version === 1 && (
                             <button
                                 onClick={handleRewind}
                                 disabled={saving}

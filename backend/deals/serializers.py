@@ -80,9 +80,17 @@ class AuditTrailSerializer(serializers.ModelSerializer):
 
 
 class DealAttachmentSerializer(serializers.ModelSerializer):
+    file = serializers.SerializerMethodField()
+    
     class Meta:
         model = DealAttachment
         fields = ['id', 'file', 'filename', 'uploaded_at']
+
+    def get_file(self, obj):
+        request = self.context.get('request')
+        if obj.file and request:
+            return request.build_absolute_uri(obj.file.url)
+        return obj.file.url if obj.file else None
 
 class DealSerializer(serializers.ModelSerializer):
     customer_name = serializers.ReadOnlyField(source='customer.name')

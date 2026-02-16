@@ -70,6 +70,7 @@ class SalesOrder(models.Model):
 class SalesOrderItem(models.Model):
     sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    product_name = models.CharField(max_length=255, blank=True, default='') # Manual text entry support
     description = models.TextField(blank=True)
     qty = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     rate = models.DecimalField(max_digits=15, decimal_places=2, default=0)

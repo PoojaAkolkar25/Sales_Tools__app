@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, ArrowLeft } from 'lucide-react';
+import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, ArrowLeft, Eye } from 'lucide-react';
 import api from '../api';
 
 interface Lead {
@@ -490,13 +490,22 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         }
     };
 
+    const getFileUrl = (url: string) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        const apiBase = api.defaults.baseURL || '';
+        const base = apiBase.replace('/api', '');
+        return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+    };
+
     const handleDownload = async (att: Attachment) => {
         try {
+            const fileUrl = getFileUrl(att.file);
             setUploadFeedback({ type: 'success', message: `Downloading ${att.filename}...` });
 
             // Create a temporary link to trigger download
             const link = document.createElement('a');
-            link.href = att.file;
+            link.href = fileUrl;
             link.download = att.filename;
             document.body.appendChild(link);
             link.click();
@@ -510,6 +519,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             console.error('Error downloading file', error);
             setUploadFeedback({ type: 'error', message: 'Download failed' });
         }
+    };
+
+    const handleView = (att: Attachment) => {
+        const fileUrl = getFileUrl(att.file);
+        window.open(fileUrl, '_blank');
     };
 
     const handleDeleteAttachment = async (attachmentId: number) => {
@@ -1550,7 +1564,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                 minWidth: 'fit-content'
                                             }}
                                         >
-                                            <File size={12} style={{ color: 'var(--theme-primary)' }} />
+                                            <File size={14} style={{ color: '#FF6B00' }} />
                                             <span style={{
                                                 fontSize: '0.8rem',
                                                 fontWeight: 600,
@@ -1564,6 +1578,26 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             </span>
                                             <div style={{ display: 'flex', gap: '4px' }}>
                                                 <button
+                                                    type="button"
+                                                    onClick={() => handleView(att)}
+                                                    style={{
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        borderRadius: '50%',
+                                                        border: 'none',
+                                                        background: '#e0f2fe',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        color: '#0369a1'
+                                                    }}
+                                                    title="View"
+                                                >
+                                                    <Eye size={10} />
+                                                </button>
+                                                <button
+                                                    type="button"
                                                     onClick={() => handleDownload(att)}
                                                     style={{
                                                         width: '22px',
@@ -1583,6 +1617,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                 </button>
                                                 {!isReadOnly && (
                                                     <button
+                                                        type="button"
                                                         onClick={() => handleDeleteAttachment(att.id)}
                                                         style={{
                                                             width: '22px',

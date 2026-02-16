@@ -129,9 +129,12 @@ class DealViewSet(viewsets.ModelViewSet):
         })
         
         headers = [
-            'Deal ID', 'Deal Name', 'Customer', 'Customer Email', 'Stage',
-            'Amount', 'Currency', 'Probability (%)', 'Close Date',
-            'HubSpot ID', 'Last Synced'
+            'Deal ID', 'Project Name', 'Company', 'Lead No.', 'Stage',
+            'Deal Date', 'Currency', 'Amount', 'Type',
+            'Customer/Partner Name', 'Customer Email', 'End Customer',
+            'Client Type', 'Inside Salesperson', 'Inside Sales Head',
+            'Salesperson', 'Sales Head', 'Proj. Manager', 'PM Head',
+            'Exp. Close Date', 'HubSpot ID', 'Last Synced'
         ]
         
         for col, header in enumerate(headers):
@@ -140,15 +143,26 @@ class DealViewSet(viewsets.ModelViewSet):
         for row, deal in enumerate(deals, start=1):
             worksheet.write(row, 0, deal.deal_id)
             worksheet.write(row, 1, deal.deal_name)
-            worksheet.write(row, 2, deal.customer.name if deal.customer else "N/A")
-            worksheet.write(row, 3, deal.customer_email)
+            worksheet.write(row, 2, deal.company)
+            worksheet.write(row, 3, deal.lead.lead_no if deal.lead else "N/A")
             worksheet.write(row, 4, deal.stage)
-            worksheet.write(row, 5, float(deal.amount))
+            worksheet.write(row, 5, str(deal.deal_date))
             worksheet.write(row, 6, deal.currency)
-            worksheet.write(row, 7, float(deal.probability))
-            worksheet.write(row, 8, str(deal.expected_close_date) if deal.expected_close_date else "N/A")
-            worksheet.write(row, 9, deal.hubspot_id or "N/A")
-            worksheet.write(row, 10, str(deal.last_synced_at) if deal.last_synced_at else "Not Synced")
+            worksheet.write(row, 7, float(deal.deal_amount))
+            worksheet.write(row, 8, deal.deal_type)
+            worksheet.write(row, 9, deal.customer.name if deal.customer else "N/A")
+            worksheet.write(row, 10, deal.customer_email)
+            worksheet.write(row, 11, deal.end_customer)
+            worksheet.write(row, 12, deal.client_type)
+            worksheet.write(row, 13, deal.inside_salesperson)
+            worksheet.write(row, 14, deal.inside_sales_head)
+            worksheet.write(row, 15, deal.salesperson_name)
+            worksheet.write(row, 16, deal.sales_head)
+            worksheet.write(row, 17, deal.project_manager)
+            worksheet.write(row, 18, deal.project_manager_head)
+            worksheet.write(row, 19, str(deal.expected_close_date) if deal.expected_close_date else "N/A")
+            worksheet.write(row, 20, deal.hubspot_id or "N/A")
+            worksheet.write(row, 21, str(deal.last_synced_at) if deal.last_synced_at else "Not Synced")
             
         workbook.close()
         output.seek(0)
@@ -195,9 +209,12 @@ class DealViewSet(viewsets.ModelViewSet):
         writer = csv.writer(buf)
 
         headers = [
-            'Deal ID', 'Deal Name', 'Customer', 'Customer Email', 'Stage',
-            'Amount', 'Currency', 'Probability (%)', 'Close Date',
-            'HubSpot ID', 'Last Synced'
+            'Deal ID', 'Project Name', 'Company', 'Lead No.', 'Stage',
+            'Deal Date', 'Currency', 'Amount', 'Type',
+            'Customer/Partner Name', 'Customer Email', 'End Customer',
+            'Client Type', 'Inside Salesperson', 'Inside Sales Head',
+            'Salesperson', 'Sales Head', 'Proj. Manager', 'PM Head',
+            'Exp. Close Date', 'Hubspot ID', 'Last Synced'
         ]
         writer.writerow(headers)
 
@@ -205,12 +222,23 @@ class DealViewSet(viewsets.ModelViewSet):
             writer.writerow([
                 deal.deal_id,
                 deal.deal_name,
+                deal.company,
+                deal.lead.lead_no if deal.lead else "N/A",
+                deal.stage,
+                str(deal.deal_date),
+                deal.currency,
+                float(deal.deal_amount) if deal.deal_amount is not None else "",
+                deal.deal_type,
                 deal.customer.name if deal.customer else "N/A",
                 deal.customer_email,
-                deal.stage,
-                float(deal.amount) if deal.amount is not None else "",
-                deal.currency,
-                float(deal.probability) if deal.probability is not None else "",
+                deal.end_customer,
+                deal.client_type,
+                deal.inside_salesperson,
+                deal.inside_sales_head,
+                deal.salesperson_name,
+                deal.sales_head,
+                deal.project_manager,
+                deal.project_manager_head,
                 str(deal.expected_close_date) if deal.expected_close_date else "",
                 deal.hubspot_id or "",
                 str(deal.last_synced_at) if deal.last_synced_at else ""
@@ -240,7 +268,7 @@ class DealViewSet(viewsets.ModelViewSet):
                 filename=file.name
             )
             
-            serializer = DealAttachmentSerializer(attachment)
+            serializer = DealAttachmentSerializer(attachment, context={'request': request})
             return Response({
                 'status': 'success',
                 'message': 'File uploaded successfully',

@@ -271,7 +271,21 @@ const UserManagement: React.FC = () => {
                 </div>
                 {!showForm && (
                     <button
-                        onClick={() => setShowForm(true)}
+                        onClick={() => {
+                            // Reset form data to ensure empty fields
+                            setFormData({ username: '', email: '', password: '', first_name: '', last_name: '', role: 'user' });
+                            setCompanyFormData({
+                                name: '', logo: null, address_line_1: '', address_line_2: '',
+                                country: 'India', state: '', city: '', pincode: '', phone_number: '',
+                                mobile_number: '', email: '', website_url: '', financial_year_begins: '01-Apr',
+                                base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
+                                is_gst_applicable: true, gstin: '', state_code: '',
+                                msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
+                            });
+                            setError('');
+                            setCompanyError('');
+                            setShowForm(true);
+                        }}
                         style={{
                             height: '36px',
                             fontSize: '0.85rem',
@@ -419,6 +433,7 @@ const UserManagement: React.FC = () => {
                                             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
+                                            autoComplete="off"
                                         />
                                     </div>
                                     <div>
@@ -469,6 +484,7 @@ const UserManagement: React.FC = () => {
                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
+                                            autoComplete="new-password"
                                         />
                                     </div>
                                     <div>

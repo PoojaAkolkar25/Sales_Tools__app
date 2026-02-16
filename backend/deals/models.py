@@ -54,6 +54,7 @@ class Customer(models.Model):
     pan = models.CharField(max_length=10, blank=True, default='', verbose_name="PAN")
     state = models.CharField(max_length=100, blank=True, default='')
     state_code = models.CharField(max_length=10, blank=True, default='')
+    currency = models.CharField(max_length=10, choices=Currency.choices, default=Currency.INR, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -5,10 +5,17 @@ from deals.serializers import DealSerializer
 
 class ProposalSerializer(serializers.ModelSerializer):
     uploaded_by_name = serializers.ReadOnlyField(source='uploaded_by.username')
+    file = serializers.SerializerMethodField()
     
     class Meta:
         model = Proposal
         fields = '__all__'
+
+    def get_file(self, obj):
+        request = self.context.get('request')
+        if obj.file and request:
+            return request.build_absolute_uri(obj.file.url)
+        return obj.file.url if obj.file else None
 
 class RenewalSerializer(serializers.ModelSerializer):
     class Meta:

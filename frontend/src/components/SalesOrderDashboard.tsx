@@ -222,7 +222,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                             <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Items (Summary)</th>
                             <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Status</th>
                             <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Amount</th>
-                            <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Date</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>PO Date</th>
                             <th style={{ backgroundColor: 'var(--bg-secondary)', textAlign: 'center', textTransform: 'uppercase' }}>Actions</th>
                         </tr>
                         {showFilters && (
@@ -355,7 +355,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                     <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{so.currency} {parseFloat(so.total_amount).toLocaleString()}</span>
                                 </td>
                                 <td className="whitespace-nowrap">
-                                    <span style={{ fontSize: '0.75rem' }}>{so.created_at ? new Date(so.created_at).toLocaleDateString() : '-'}</span>
+                                    <span style={{ fontSize: '0.75rem' }}>{so.po_date ? new Date(so.po_date).toLocaleDateString() : (so.order_date ? new Date(so.order_date).toLocaleDateString() : '-')}</span>
                                 </td>
                                 <td style={{ textAlign: 'center' }}>
                                     <button

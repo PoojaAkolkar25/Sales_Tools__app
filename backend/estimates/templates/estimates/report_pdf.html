@@ -74,28 +74,30 @@
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Created At</th>
+                <th>Estimate Date</th>
                 <th>Ver</th>
                 <th>Customer Name</th>
                 <th>Project Name</th>
                 <th>Status</th>
                 <th>Price</th>
-                <th>Date</th>
             </tr>
         </thead>
         <tbody>
             {% for est in estimates %}
             <tr>
                 <td style="font-weight: bold; color: #0066CC;">{{ est.estimate_id }}</td>
-                <td>v{{ est.version }}</td>
-                <td>{{ est.customer_name }}</td>
-                <td>{{ est.project_name }}</td>
-                <td>{{ est.status }}</td>
-                <td>${{ est.total_price|floatformat:2 }}</td>
                 <td>{{ est.created_at|date_format }}</td>
+                <td>{% if est.estimate_date %}{{ est.estimate_date|date_format }}{% else %}—{% endif %}</td>
+                <td>v{{ est.version }}</td>
+                <td>{{ est.deal.customer.name }}</td>
+                <td>{{ est.deal.deal_name }}</td>
+                <td>{{ est.status }}</td>
+                <td>₹{{ est.total_price|floatformat:2 }}</td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" style="text-align: center; padding: 30px;">No estimates found.</td>
+                <td colspan="8" style="text-align: center; padding: 30px;">No estimates found.</td>
             </tr>
             {% endfor %}
         </tbody>

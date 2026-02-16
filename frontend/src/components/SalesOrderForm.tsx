@@ -24,30 +24,33 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [salesOrder, setSalesOrder] = useState<any>(null);
-    const [products, setProducts] = useState<any[]>([]);
+
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
     const { showNotification } = useNotification();
 
     useEffect(() => {
-        fetchInitialData();
+
         if (id) {
             fetchSalesOrderDetails();
         }
     }, [id]);
 
-
-
-    const fetchInitialData = async () => {
-        try {
-            const [prodRes] = await Promise.all([
-                api.get('/products/')
-            ]);
-            setProducts(prodRes.data);
-        } catch (error) {
-            console.error('Error fetching initial data', error);
+    useEffect(() => {
+        if (salesOrder?.customer_detail?.address && !salesOrder.billing_address) {
+            setSalesOrder((prev: any) => ({ ...prev, billing_address: salesOrder.customer_detail.address }));
         }
-    };
+        if (salesOrder?.customer_detail?.shipping_address && !salesOrder.shipping_address) {
+            setSalesOrder((prev: any) => ({ ...prev, shipping_address: salesOrder.customer_detail.shipping_address }));
+        }
+        if (salesOrder?.customer_detail?.address && !salesOrder.shipping_address) {
+            setSalesOrder((prev: any) => ({ ...prev, shipping_address: salesOrder.customer_detail.address }));
+        }
+    }, [salesOrder?.customer_detail]);
+
+
+
+
 
     const fetchSalesOrderDetails = async () => {
         setLoading(true);
@@ -102,7 +105,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     const handleAddItem = () => {
         setSalesOrder((prev: any) => ({
             ...prev,
-            items: [...prev.items, { product: '', description: '', qty: 1, rate: 0, tax: 0, discount: 0, amount: 0 }]
+            items: [...prev.items, { product: '', product_name: '', description: '', qty: 1, rate: 0, tax: 0, discount: 0, amount: 0 }]
         }));
     };
 
@@ -187,6 +190,13 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
             case 'EURO': return '€';
             default: return currency;
         }
+    };
+
+    const getHighlightStyle = (value: any) => {
+        if (salesOrder.po_file_url && value) {
+            return { border: '2px solid #48BB78', background: '#F0FFF4' };
+        }
+        return {};
     };
 
     const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
@@ -291,6 +301,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     onChange={handleInputChange}
                                     className="ae-input"
                                     disabled={isSubmitted}
+                                    style={{ ...getHighlightStyle(salesOrder.po_number) }}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -302,6 +313,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     onChange={handleInputChange}
                                     className="ae-input"
                                     disabled={isSubmitted}
+                                    style={{ ...getHighlightStyle(salesOrder.po_date) }}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -313,6 +325,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     onChange={handleInputChange}
                                     className="ae-input"
                                     disabled={isSubmitted}
+                                    style={{ ...getHighlightStyle(salesOrder.po_from_date) }}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -324,6 +337,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     onChange={handleInputChange}
                                     className="ae-input"
                                     disabled={isSubmitted}
+                                    style={{ ...getHighlightStyle(salesOrder.po_to_date) }}
                                 />
                             </div>
                         </div>
@@ -375,22 +389,23 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                             </td>
                                             <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{index + 1}</td>
                                             <td style={{ padding: '8px 16px' }}>
-                                                <select
-                                                    value={item.product || ''}
-                                                    onChange={(e) => handleItemChange(index, 'product', e.target.value)}
+                                                <input
+                                                    type="text"
+                                                    value={item.product_name || item.product || ''}
+                                                    onChange={(e) => handleItemChange(index, 'product_name', e.target.value)}
                                                     style={{
                                                         width: '100%',
                                                         padding: '6px 10px',
-                                                        border: `1px solid ${!item.product ? 'var(--theme-primary)' : '#E0E6ED'}`,
+                                                        border: '1px solid #E2E8F0',
                                                         borderRadius: '6px',
                                                         fontSize: '0.8rem',
-                                                        fontWeight: 600
+                                                        fontWeight: 600,
+                                                        outline: 'none',
+                                                        ...getHighlightStyle(item.product_name || item.product)
                                                     }}
+                                                    placeholder="Product Name"
                                                     disabled={isSubmitted}
-                                                >
-                                                    <option value="">Select Product...</option>
-                                                    {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                                </select>
+                                                />
                                             </td>
                                             <td style={{ padding: '8px 16px' }}>
                                                 <input
@@ -404,7 +419,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                         borderRadius: '6px',
                                                         fontSize: '0.8rem',
                                                         color: '#1a1f36',
-                                                        outline: 'none'
+                                                        outline: 'none',
+                                                        ...getHighlightStyle(item.description)
                                                     }}
                                                     placeholder="Item Description"
                                                     disabled={isSubmitted}
@@ -415,7 +431,16 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     type="number"
                                                     value={item.qty}
                                                     onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
-                                                    style={{ width: '100%', padding: '6px 10px', border: '1px solid #E0E6ED', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, textAlign: 'center' }}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '6px 10px',
+                                                        border: '1px solid #E0E6ED',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: 700,
+                                                        textAlign: 'center',
+                                                        ...getHighlightStyle(item.qty)
+                                                    }}
                                                     disabled={isSubmitted}
                                                 />
                                             </td>
@@ -426,7 +451,15 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                         type="number"
                                                         value={item.rate}
                                                         onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
-                                                        style={{ width: '100%', padding: '6px 10px 6px 24px', border: '1px solid #E0E6ED', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700 }}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '6px 10px 6px 24px',
+                                                            border: '1px solid #E0E6ED',
+                                                            borderRadius: '6px',
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: 700,
+                                                            ...getHighlightStyle(item.rate)
+                                                        }}
                                                         disabled={isSubmitted}
                                                     />
                                                 </div>
@@ -492,22 +525,63 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                         <div className="ae-grid-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Currency</label>
-                                <select name="currency" value={salesOrder.currency} onChange={handleInputChange} className="ae-input" disabled={isSubmitted}>
+                                <select
+                                    name="currency"
+                                    value={salesOrder.currency}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    disabled={isSubmitted}
+                                    style={{ ...getHighlightStyle(salesOrder.currency) }}
+                                >
                                     <option value="INR">INR - Indian Rupee</option>
                                     <option value="USD">USD - US Dollar</option>
                                 </select>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Order Date</label>
-                                <input name="order_date" type="date" value={salesOrder.order_date || ''} onChange={handleInputChange} className="ae-input" disabled={isSubmitted} />
+                                <input
+                                    name="order_date"
+                                    type="date"
+                                    value={salesOrder.order_date || ''}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    disabled={isSubmitted}
+                                    style={{ ...getHighlightStyle(salesOrder.order_date) }}
+                                />
                             </div>
                             <div className="md:col-span-2" style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Billing Address</label>
-                                <textarea name="billing_address" value={salesOrder.billing_address || ''} onChange={handleInputChange} className="ae-input" style={{ height: 'auto', minHeight: '120px' }} rows={4} disabled={isSubmitted} placeholder="Enter billing address" />
+                                <textarea
+                                    name="billing_address"
+                                    value={salesOrder.billing_address || ''}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    style={{
+                                        height: 'auto',
+                                        minHeight: '120px',
+                                        ...getHighlightStyle(salesOrder.billing_address)
+                                    }}
+                                    rows={4}
+                                    disabled={isSubmitted}
+                                    placeholder="Enter billing address"
+                                />
                             </div>
                             <div className="md:col-span-2" style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Shipping Address</label>
-                                <textarea name="shipping_address" value={salesOrder.shipping_address || ''} onChange={handleInputChange} className="ae-input" style={{ height: 'auto', minHeight: '120px' }} rows={4} disabled={isSubmitted} placeholder="Enter shipping address" />
+                                <textarea
+                                    name="shipping_address"
+                                    value={salesOrder.shipping_address || ''}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    style={{
+                                        height: 'auto',
+                                        minHeight: '120px',
+                                        ...getHighlightStyle(salesOrder.shipping_address)
+                                    }}
+                                    rows={4}
+                                    disabled={isSubmitted}
+                                    placeholder="Enter shipping address"
+                                />
                             </div>
                         </div>
                     </section>

@@ -362,10 +362,7 @@ const AppContent: React.FC = () => {
       setSoRefreshTrigger(prev => prev + 1);
 
       if (response.data.so_id) {
-        setEditingSalesOrderId(response.data.so_id);
-        setSalesOrderView('dashboard'); // Stay on dashboard but it will be refreshed
-        // Or if the user wants to jump to details:
-        // handleViewSalesOrderDetails(response.data.so_id);
+        handleViewSalesOrderDetails(response.data.so_id);
       }
     } catch (error) {
       setIsExtractingSO(false);

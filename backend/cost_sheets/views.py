@@ -140,7 +140,7 @@ class CostSheetViewSet(viewsets.ModelViewSet):
             file=file,
             filename=file.name
         )
-        serializer = CostSheetAttachmentSerializer(attachment)
+        serializer = CostSheetAttachmentSerializer(attachment, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['delete'])
@@ -232,7 +232,7 @@ class CostSheetViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = f'attachment; filename="cost_sheets_report_{today}.csv"'
 
         writer = csv.writer(response)
-        writer.writerow(['CS Number', 'Lead Number', 'Deal Number', 'Customer', 'Project', 'Date', 'Status', 'Currency', 'Margin %', 'Est. Margin', 'Total Price'])
+        writer.writerow(['Lead Number', 'Deal No.', 'Customer Name', 'Project Name', 'Cost Sheet No.', 'Date', 'Status', 'Margin %', 'Est. Margin', 'Total Price'])
         
         for cs in queryset:
             margin_pct = 0
@@ -240,14 +240,13 @@ class CostSheetViewSet(viewsets.ModelViewSet):
                 margin_pct = round((cs.total_estimated_margin / cs.total_estimated_price) * 100, 2)
 
             writer.writerow([
-                cs.cost_sheet_no,
                 cs.lead.lead_no if cs.lead else '—',
                 cs.deal.deal_id if cs.deal else '—',
                 cs.lead.customer_name if cs.lead else '—',
                 cs.lead.project_name if cs.lead else '—',
+                cs.cost_sheet_no,
                 cs.cost_sheet_date.strftime('%Y-%m-%d') if cs.cost_sheet_date else '—',
                 cs.status,
-                cs.deal.currency if cs.deal and cs.deal.currency else '—',
                 f"{margin_pct}%",
                 cs.total_estimated_margin,
                 cs.total_estimated_price
@@ -339,7 +338,7 @@ class CostSheetViewSet(viewsets.ModelViewSet):
             'border': 1
         })
 
-        headers = ['CS Number', 'Lead Number', 'Deal Number', 'Customer', 'Project', 'Date', 'Status', 'Currency', 'Margin %', 'Est. Margin', 'Total Price']
+        headers = ['Lead Number', 'Deal No.', 'Customer Name', 'Project Name', 'Cost Sheet No.', 'Date', 'Status', 'Margin %', 'Est. Margin', 'Total Price']
         for col, header in enumerate(headers):
             worksheet.write(0, col, header, header_format)
 
@@ -348,19 +347,18 @@ class CostSheetViewSet(viewsets.ModelViewSet):
             if cs.total_estimated_price and cs.total_estimated_price > 0:
                 margin_pct = float(round((cs.total_estimated_margin / cs.total_estimated_price) * 100, 2))
 
-            worksheet.write(row, 0, cs.cost_sheet_no)
-            worksheet.write(row, 1, cs.lead.lead_no if cs.lead else '—')
-            worksheet.write(row, 2, cs.deal.deal_id if cs.deal else '—')
-            worksheet.write(row, 3, cs.lead.customer_name if cs.lead else '—')
-            worksheet.write(row, 4, cs.lead.project_name if cs.lead else '—')
+            worksheet.write(row, 0, cs.lead.lead_no if cs.lead else '—')
+            worksheet.write(row, 1, cs.deal.deal_id if cs.deal else '—')
+            worksheet.write(row, 2, cs.lead.customer_name if cs.lead else '—')
+            worksheet.write(row, 3, cs.lead.project_name if cs.lead else '—')
+            worksheet.write(row, 4, cs.cost_sheet_no)
             worksheet.write(row, 5, cs.cost_sheet_date.strftime('%Y-%m-%d') if cs.cost_sheet_date else '—')
             worksheet.write(row, 6, cs.status)
-            worksheet.write(row, 7, cs.deal.currency if cs.deal and cs.deal.currency else '—')
             
             # Format numbers properly
-            worksheet.write(row, 8, f"{margin_pct}%")
-            worksheet.write(row, 9, float(cs.total_estimated_margin))
-            worksheet.write(row, 10, float(cs.total_estimated_price))
+            worksheet.write(row, 7, f"{margin_pct}%")
+            worksheet.write(row, 8, float(cs.total_estimated_margin))
+            worksheet.write(row, 9, float(cs.total_estimated_price))
 
         workbook.close()
         output.seek(0)
@@ -388,7 +386,7 @@ class CostSheetViewSet(viewsets.ModelViewSet):
             'border': 1
         })
 
-        headers = ['CS Number', 'Lead Number', 'Deal Number', 'Customer', 'Project', 'Date', 'Status', 'Currency', 'Margin %', 'Est. Margin', 'Total Price']
+        headers = ['Lead Number', 'Deal No.', 'Customer Name', 'Project Name', 'Cost Sheet No.', 'Date', 'Status', 'Margin %', 'Est. Margin', 'Total Price']
         for col, header in enumerate(headers):
             worksheet.write(0, col, header, header_format)
 
@@ -396,17 +394,16 @@ class CostSheetViewSet(viewsets.ModelViewSet):
         if cost_sheet.total_estimated_price and cost_sheet.total_estimated_price > 0:
             margin_pct = float(round((cost_sheet.total_estimated_margin / cost_sheet.total_estimated_price) * 100, 2))
 
-        worksheet.write(1, 0, cost_sheet.cost_sheet_no)
-        worksheet.write(1, 1, cost_sheet.lead.lead_no if cost_sheet.lead else '—')
-        worksheet.write(1, 2, cost_sheet.deal.deal_id if cost_sheet.deal else '—')
-        worksheet.write(1, 3, cost_sheet.lead.customer_name if cost_sheet.lead else '—')
-        worksheet.write(1, 4, cost_sheet.lead.project_name if cost_sheet.lead else '—')
+        worksheet.write(1, 0, cost_sheet.lead.lead_no if cost_sheet.lead else '—')
+        worksheet.write(1, 1, cost_sheet.deal.deal_id if cost_sheet.deal else '—')
+        worksheet.write(1, 2, cost_sheet.lead.customer_name if cost_sheet.lead else '—')
+        worksheet.write(1, 3, cost_sheet.lead.project_name if cost_sheet.lead else '—')
+        worksheet.write(1, 4, cost_sheet.cost_sheet_no)
         worksheet.write(1, 5, cost_sheet.cost_sheet_date.strftime('%Y-%m-%d') if cost_sheet.cost_sheet_date else '—')
         worksheet.write(1, 6, cost_sheet.status)
-        worksheet.write(1, 7, cost_sheet.deal.currency if cost_sheet.deal and cost_sheet.deal.currency else '—')
-        worksheet.write(1, 8, f"{margin_pct}%")
-        worksheet.write(1, 9, float(cost_sheet.total_estimated_margin))
-        worksheet.write(1, 10, float(cost_sheet.total_estimated_price))
+        worksheet.write(1, 7, f"{margin_pct}%")
+        worksheet.write(1, 8, float(cost_sheet.total_estimated_margin))
+        worksheet.write(1, 9, float(cost_sheet.total_estimated_price))
 
         workbook.close()
         output.seek(0)
