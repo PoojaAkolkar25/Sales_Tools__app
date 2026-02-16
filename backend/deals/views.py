@@ -256,10 +256,7 @@ class DealViewSet(viewsets.ModelViewSet):
         file = request.FILES.get('file')
         
         if not file:
-            return Response({
-                'status': 'error',
-                'message': 'No file provided'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             attachment = DealAttachment.objects.create(
@@ -269,13 +266,22 @@ class DealViewSet(viewsets.ModelViewSet):
             )
             
             serializer = DealAttachmentSerializer(attachment, context={'request': request})
-            return Response({
-                'status': 'success',
-                'message': 'File uploaded successfully',
-                'attachment': serializer.data
-            }, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({
-                'status': 'error',
-                'message': f'File upload failed: {str(e)}'
+                'error': f'File upload failed: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['delete'])
+    def delete_attachment(self, request, pk=None):
+        """Delete an attachment from a deal."""
+        attachment_id = request.query_params.get('attachment_id')
+        if not attachment_id:
+            return Response({'error': 'attachment_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            attachment = DealAttachment.objects.get(id=attachment_id, deal_id=pk)
+            attachment.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except DealAttachment.DoesNotExist:
+            return Response({'error': 'Attachment not found'}, status=status.HTTP_404_NOT_FOUND)

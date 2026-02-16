@@ -2,9 +2,12 @@
 
 :root {
   /* --- Primary Theme (Orange & Blue) --- */
-  --theme-primary: #FF6B00; /* Primary Orange */
-  --theme-secondary: #F7FAFC; /* Light Gray Background */
-  --theme-accent: #0066CC; /* Azure Blue */
+  --theme-primary: #FF6B00;
+  /* Primary Orange */
+  --theme-secondary: #F7FAFC;
+  /* Light Gray Background */
+  --theme-accent: #0066CC;
+  /* Azure Blue */
 
   /* Brand Colors */
   --ae-blue: #0066CC;
@@ -50,38 +53,58 @@
 
 .theme-autumn {
   /* --- Autumn Theme (Secondary Light) --- */
-  --theme-primary: #BB4D00; /* Autumn Ember */
-  --theme-secondary: #FFF9F2; /* Warm Cream */
-  --theme-accent: #FBBA72; /* Sunlit Clay */
+  --theme-primary: #BB4D00;
+  /* Autumn Ember */
+  --theme-secondary: #FFF9F2;
+  /* Warm Cream */
+  --theme-accent: #FBBA72;
+  /* Sunlit Clay */
 
   /* Brand Colors */
-  --ae-blue: #CA5310; /* Bronze Spice */
-  --ae-navy: #691E06; /* Molten Lava */
-  --ae-navy-light: #8F250C; /* Brandy */
-  --ae-orange: #BB4D00; /* Autumn Ember */
-  --ae-orange-dark: #8F250C; /* Brandy */
+  --ae-blue: #CA5310;
+  /* Bronze Spice */
+  --ae-navy: #691E06;
+  /* Molten Lava */
+  --ae-navy-light: #8F250C;
+  /* Brandy */
+  --ae-orange: #BB4D00;
+  /* Autumn Ember */
+  --ae-orange-dark: #8F250C;
+  /* Brandy */
   --ae-green: #00C853;
-  --ae-gray-50: #FFF9F2; /* Warm Cream */
-  --ae-gray-100: #F3E5D8; /* Warm Sand */
-  --ae-gray-800: #4B1504; /* Dark Brandy Text */
-  --ae-gray-900: #260B02; /* Darkest Lava Text */
+  --ae-gray-50: #FFF9F2;
+  /* Warm Cream */
+  --ae-gray-100: #F3E5D8;
+  /* Warm Sand */
+  --ae-gray-800: #4B1504;
+  /* Dark Brandy Text */
+  --ae-gray-900: #260B02;
+  /* Darkest Lava Text */
 
   /* Semantic Color Variables */
   --bg-primary: #FFFFFF;
   --bg-secondary: #FFF9F2;
-  --bg-accent: #FBBA72; /* Sunlit Clay */
-  --bg-hover: #FBBA72; /* Sunlit Clay Hover */
+  --bg-accent: #FBBA72;
+  /* Sunlit Clay */
+  --bg-hover: #FBBA72;
+  /* Sunlit Clay Hover */
 
-  --text-primary: #691E06; /* Molten Lava */
-  --text-secondary: #8F250C; /* Brandy */
-  --text-tertiary: #CA5310; /* Bronze Spice */
+  --text-primary: #691E06;
+  /* Molten Lava */
+  --text-secondary: #8F250C;
+  /* Brandy */
+  --text-tertiary: #CA5310;
+  /* Bronze Spice */
 
   --border-primary: #F3E5D8;
   --border-secondary: #E9D7C5;
-  --border-accent: #BB4D00; /* Autumn Ember Border */
+  --border-accent: #BB4D00;
+  /* Autumn Ember Border */
 
-  --accent-primary: #BB4D00; /* Autumn Ember */
-  --accent-hover: #CA5310; /* Bronze Spice Hover */
+  --accent-primary: #BB4D00;
+  /* Autumn Ember */
+  --accent-hover: #CA5310;
+  /* Bronze Spice Hover */
 
   --shadow-md: 0 2px 8px rgba(187, 77, 0, 0.3);
 }
@@ -1867,4 +1890,24 @@ option {
 .ae-btn-footer-cancel:hover {
   background-color: #E2E8F0;
   color: #1E293B;
+}
+
+/* --- Dashboard Filter Input Groups --- */
+.ae-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ae-search-icon {
+  position: absolute;
+  left: 8px;
+  color: #A0AEC0;
+  pointer-events: none;
+}
+
+.ae-input-group .ae-input {
+  padding-left: 28px !important;
+  width: 100%;
 }

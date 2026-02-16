@@ -52,7 +52,12 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
         status: 'PENDING',
         period: '',
         startDate: '',
-        endDate: ''
+        endDate: '',
+        dateStr: '',
+        statusStr: '',
+        marginStr: '',
+        estMarginStr: '',
+        totalPriceStr: ''
     });
 
     const [isDownloading, setIsDownloading] = useState(false);
@@ -208,8 +213,12 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                 cs.status === filters.status ||
                 statusLabel.toLowerCase().includes(filters.status.toLowerCase());
 
-            // Date Selection Logic
-            let matchesDate = true;
+            // Text Date Filter
+            const displayDate = cs.cost_sheet_date ? new Date(cs.cost_sheet_date).toLocaleDateString() : new Date(cs.created_at).toLocaleDateString();
+            const matchesDateStr = (displayDate || '').toLowerCase().includes(filters.dateStr.toLowerCase());
+
+            // Period Logic (Top-level Period selector)
+            let matchesPeriod = true;
             if (filters.period) {
                 const rawDate = cs.cost_sheet_date || cs.created_at;
                 const csDate = new Date(rawDate);
@@ -220,36 +229,44 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                     const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
                     const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1);
                     const firstOfLastMonth = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1);
-                    matchesDate = csDate >= firstOfLastMonth && csDate <= lastOfLastMonth;
+                    matchesPeriod = csDate >= firstOfLastMonth && csDate <= lastOfLastMonth;
                 } else if (filters.period === 'last_3_months') {
                     const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
                     const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1);
                     const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1);
-                    matchesDate = csDate >= threeMonthsAgo && csDate <= lastOfLastMonth;
+                    matchesPeriod = csDate >= threeMonthsAgo && csDate <= lastOfLastMonth;
                 } else if (filters.period === 'last_6_months') {
                     const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, 1);
-                    matchesDate = csDate >= sixMonthsAgo && csDate < new Date(today.getFullYear(), today.getMonth(), 1);
+                    matchesPeriod = csDate >= sixMonthsAgo && csDate < new Date(today.getFullYear(), today.getMonth(), 1);
                 } else if (filters.period === 'last_year') {
                     const lastYear = today.getFullYear() - 1;
                     const startOfYear = new Date(lastYear, 0, 1);
                     const endOfYear = new Date(lastYear, 11, 31, 23, 59, 59);
-                    matchesDate = csDate >= startOfYear && csDate <= endOfYear;
+                    matchesPeriod = csDate >= startOfYear && csDate <= endOfYear;
                 } else if (filters.period === 'last_financial_year') {
                     let startYear = today.getFullYear();
                     if (today.getMonth() < 3) startYear -= 1; // Financial year starts in April
                     startYear -= 1;
                     const startOfFY = new Date(startYear, 3, 1);
                     const endOfFY = new Date(startYear + 1, 2, 31, 23, 59, 59);
-                    matchesDate = csDate >= startOfFY && csDate <= endOfFY;
+                    matchesPeriod = csDate >= startOfFY && csDate <= endOfFY;
                 } else if (filters.period === 'custom' && filters.startDate && filters.endDate) {
                     const start = new Date(filters.startDate);
                     const end = new Date(filters.endDate);
                     end.setHours(23, 59, 59, 999);
-                    matchesDate = csDate >= start && csDate <= end;
+                    matchesPeriod = csDate >= start && csDate <= end;
                 }
             }
 
-            return matchesCs && matchesLead && matchesDeal && matchesCustomer && matchesProject && matchesStatus && matchesDate;
+            // Text Filters for remaining columns
+            const matchesStatusStr = (statusLabel || '').toLowerCase().includes(filters.statusStr.toLowerCase());
+            const matchesMargin = (cs.total_margin_percentage?.toString() || '0').includes(filters.marginStr);
+            const matchesEstMargin = (parseFloat(cs.total_estimated_margin).toLocaleString() || '').includes(filters.estMarginStr);
+            const matchesTotalPrice = (parseFloat(cs.total_estimated_price).toLocaleString() || '').includes(filters.totalPriceStr);
+
+            return matchesCs && matchesLead && matchesDeal && matchesCustomer && matchesProject &&
+                matchesStatus && matchesDateStr && matchesPeriod &&
+                matchesStatusStr && matchesMargin && matchesEstMargin && matchesTotalPrice;
         }).sort((a, b) => {
             // Priority 1: SUBMITTED (Pending Approval) items at the absolute top
             if (a.status === 'SUBMITTED' && b.status !== 'SUBMITTED') return -1;
@@ -584,7 +601,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                 {visibleColumns.includes('margin_percentage') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Margin %</th>}
                                 {visibleColumns.includes('est_margin') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Est. Margin</th>}
                                 {visibleColumns.includes('total_price') && <th style={{ height: '40px', textAlign: 'right', top: 0, whiteSpace: 'nowrap', zIndex: 12, minWidth: '120px', backgroundColor: 'var(--bg-secondary)' }}>Total Price</th>}
-                                <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, width: '130px', backgroundColor: 'var(--bg-secondary)' }}>Actions</th>
+                                <th style={{ height: '40px', textAlign: 'center', position: 'sticky', top: 0, whiteSpace: 'nowrap', zIndex: 12, minWidth: '100px', backgroundColor: 'var(--bg-secondary)' }}>Actions</th>
                             </tr>
                             {showFilters && (
                                 <tr style={{ background: 'var(--bg-secondary)' }}>
@@ -649,32 +666,71 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         </div>
                                     </th>}
                                     {visibleColumns.includes('date') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC', minWidth: '160px' }}>
-                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                        <div className="ae-input-group">
+                                            <Search className="ae-search-icon" size={12} />
                                             <input
-                                                type="date"
                                                 className="ae-input"
-                                                value={filters.startDate}
-                                                onChange={e => setFilters({ ...filters, startDate: e.target.value })}
-                                                style={{ height: '24px', fontSize: '10px', padding: '0 4px' }}
-                                            />
-                                            <input
-                                                type="date"
-                                                className="ae-input"
-                                                value={filters.endDate}
-                                                onChange={e => setFilters({ ...filters, endDate: e.target.value })}
-                                                style={{ height: '24px', fontSize: '10px', padding: '0 4px' }}
+                                                placeholder="Filter..."
+                                                value={filters.dateStr}
+                                                onChange={e => setFilters({ ...filters, dateStr: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
                                             />
                                         </div>
                                     </th>}
-                                    {visibleColumns.includes('status') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                    {visibleColumns.includes('margin_percentage') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                    {visibleColumns.includes('est_margin') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                    {visibleColumns.includes('total_price') && <th style={{ padding: '6px 8px', top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}></th>}
-                                    <th style={{ textAlign: 'center', top: '40px', position: 'sticky', right: 0, backgroundColor: '#F7FAFC', zIndex: 12 }}>
+                                    {visibleColumns.includes('status') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                        <div className="ae-input-group">
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.statusStr}
+                                                onChange={e => setFilters({ ...filters, statusStr: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('margin_percentage') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC', minWidth: '100px' }}>
+                                        <div className="ae-input-group">
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.marginStr}
+                                                onChange={e => setFilters({ ...filters, marginStr: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('est_margin') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC', minWidth: '120px' }}>
+                                        <div className="ae-input-group">
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.estMarginStr}
+                                                onChange={e => setFilters({ ...filters, estMarginStr: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('total_price') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC', minWidth: '120px' }}>
+                                        <div className="ae-input-group">
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.totalPriceStr}
+                                                onChange={e => setFilters({ ...filters, totalPriceStr: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    <th style={{ textAlign: 'center', top: '40px', position: 'sticky', backgroundColor: '#F7FAFC', zIndex: 11, minWidth: '100px' }}>
                                         <button
                                             onClick={() => setFilters({
                                                 csNumber: '', leadNo: '', dealNo: '', customerName: '', projectName: '',
-                                                status: 'PENDING', period: '', startDate: '', endDate: ''
+                                                status: 'PENDING', period: '', startDate: '', endDate: '', dateStr: '',
+                                                statusStr: '', marginStr: '', estMarginStr: '', totalPriceStr: ''
                                             })}
                                             style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                         >
@@ -750,7 +806,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                 {cs.currency === 'INR' ? '₹' : cs.currency === 'USD' ? '$' : cs.currency === 'EURO' ? '€' : '$'}
                                                 {parseFloat(cs.total_estimated_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>}
-                                            <td style={{ textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                            <td style={{ textAlign: 'center', minWidth: '100px', display: 'flex', gap: '4px', justifyContent: 'center' }}>
                                                 <button
                                                     onClick={() => onView?.(cs.id)}
                                                     style={{
