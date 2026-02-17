@@ -116,6 +116,10 @@ const UserManagement: React.FC = () => {
         }
     };
 
+    const [editingId, setEditingId] = useState<number | null>(null);
+
+    // ... (existing useEffect) ...
+
     const handleCreateCompany = async (e: React.FormEvent) => {
         e.preventDefault();
         setCompanyError('');
@@ -123,15 +127,23 @@ const UserManagement: React.FC = () => {
             const formData = new FormData();
             Object.entries(companyFormData).forEach(([key, value]) => {
                 if (value !== null && value !== undefined) {
+                    // Check if value is a file (for logo) or just a string/number
                     formData.append(key, value as any);
                 }
             });
 
-            await api.post('finance/company-profile/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            if (editingId) {
+                await api.patch(`finance/company-profile/${editingId}/`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                showNotification('Customer updated successfully', 'success');
+            } else {
+                await api.post('finance/company-profile/', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                showNotification('Customer created successfully', 'success');
+            }
 
-            showNotification('Customer created successfully', 'success');
             setCompanyFormData({
                 name: '', logo: null, address_line_1: '', address_line_2: '',
                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
@@ -140,18 +152,19 @@ const UserManagement: React.FC = () => {
                 is_gst_applicable: true, gstin: '', state_code: '',
                 msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
             });
+            setEditingId(null);
             fetchCompanies();
             setShowForm(false);
         } catch (err: any) {
-            console.error('Error creating company', err);
+            console.error('Error saving company', err);
             const errorData = err.response?.data;
             if (errorData && typeof errorData === 'object') {
                 const errorMessages = Object.entries(errorData)
                     .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
                     .join(' | ');
-                setCompanyError(errorMessages || 'Error creating customer');
+                setCompanyError(errorMessages || 'Error saving customer');
             } else {
-                setCompanyError(err.response?.data?.message || 'Error creating customer');
+                setCompanyError(err.response?.data?.message || 'Error saving customer');
             }
         }
     };
@@ -211,6 +224,8 @@ const UserManagement: React.FC = () => {
 
         if (gstin.length >= 2) {
             stateCode = gstin.substring(0, 2);
+            /* eslint-disable-next-line */
+            // @ts-ignore
             const matchedState = states.find(s => s.code === stateCode);
             if (matchedState) {
                 stateId = matchedState.id;
@@ -266,7 +281,7 @@ const UserManagement: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                        {showForm ? `Create New ${viewMode === 'user' ? 'User' : 'Customer'}` : 'User Management'}
+                        {showForm ? `${editingId ? 'Edit' : 'Create New'} ${viewMode === 'user' ? 'User' : 'Customer'}` : 'User Management'}
                     </h1>
                 </div>
                 {!showForm && (
@@ -282,6 +297,7 @@ const UserManagement: React.FC = () => {
                                 is_gst_applicable: true, gstin: '', state_code: '',
                                 msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
                             });
+                            setEditingId(null);
                             setError('');
                             setCompanyError('');
                             setShowForm(true);
@@ -309,107 +325,109 @@ const UserManagement: React.FC = () => {
             </div>
 
             {/* Action Row - Only shown when not in form mode */}
-            {!showForm && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{
-                        display: 'flex',
-                        gap: '4px',
-                        alignItems: 'center',
-                        background: 'white',
-                        padding: '6px',
-                        borderRadius: '12px',
-                        border: '1px solid var(--border-primary)',
-                        boxShadow: 'var(--shadow-sm)'
-                    }}>
-                        <button
-                            onClick={() => setViewMode('user')}
-                            style={{
-                                padding: '6px 20px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                background: viewMode === 'user' ? 'var(--theme-primary)' : 'transparent',
-                                color: viewMode === 'user' ? 'white' : 'var(--text-secondary)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}
-                        >
-                            <UserIcon size={14} /> Users
-                        </button>
-                        <button
-                            onClick={() => setViewMode('company')}
-                            style={{
-                                padding: '6px 20px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                background: viewMode === 'company' ? 'var(--theme-primary)' : 'transparent',
-                                color: viewMode === 'company' ? 'white' : 'var(--text-secondary)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}
-                        >
-                            <Users size={14} /> Customers
-                        </button>
-                    </div>
-
-                    {/* Search Bar matching Deal Management */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        background: 'white',
-                        border: '1px solid var(--border-primary)',
-                        borderRadius: '10px',
-                        padding: '0 12px',
-                        width: '350px',
-                        height: '40px'
-                    }}>
-                        <div style={{ marginRight: '8px', color: 'var(--text-tertiary)' }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            {
+                !showForm && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{
+                            display: 'flex',
+                            gap: '4px',
+                            alignItems: 'center',
+                            background: 'white',
+                            padding: '6px',
+                            borderRadius: '12px',
+                            border: '1px solid var(--border-primary)',
+                            boxShadow: 'var(--shadow-sm)'
+                        }}>
+                            <button
+                                onClick={() => setViewMode('user')}
+                                style={{
+                                    padding: '6px 20px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    background: viewMode === 'user' ? 'var(--theme-primary)' : 'transparent',
+                                    color: viewMode === 'user' ? 'white' : 'var(--text-secondary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}
+                            >
+                                <UserIcon size={14} /> Users
+                            </button>
+                            <button
+                                onClick={() => setViewMode('company')}
+                                style={{
+                                    padding: '6px 20px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    background: viewMode === 'company' ? 'var(--theme-primary)' : 'transparent',
+                                    color: viewMode === 'company' ? 'white' : 'var(--text-secondary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}
+                            >
+                                <Users size={14} /> Customers
+                            </button>
                         </div>
-                        <input
-                            type="text"
-                            placeholder={`Search by ${viewMode === 'user' ? 'Username, Email or Role' : 'Customer Name, City or Email'}...`}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{ border: 'none', outline: 'none', fontSize: '0.9rem', width: '100%', color: 'var(--text-primary)', fontWeight: 600 }}
-                        />
-                    </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <button
-                            className="ae-btn-secondary"
-                            onClick={() => setShowFilters(!showFilters)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '6px 14px',
-                                fontSize: '0.8rem',
-                                height: '40px',
-                                borderRadius: '10px',
-                                background: showFilters ? 'var(--bg-accent)' : 'white',
-                                color: showFilters ? 'var(--theme-primary)' : 'var(--ae-gray-800)',
-                                borderColor: showFilters ? 'var(--theme-primary)' : 'var(--ae-gray-100)',
-                                border: '1px solid',
-                                fontWeight: 700,
-                                cursor: 'pointer'
-                            }}
-                            title={showFilters ? "Hide Filters" : "Show Filters"}
-                        >
-                            <Filter size={16} /> Filters
-                        </button>
+                        {/* Search Bar matching Deal Management */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            background: 'white',
+                            border: '1px solid var(--border-primary)',
+                            borderRadius: '10px',
+                            padding: '0 12px',
+                            width: '350px',
+                            height: '40px'
+                        }}>
+                            <div style={{ marginRight: '8px', color: 'var(--text-tertiary)' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder={`Search by ${viewMode === 'user' ? 'Username, Email or Role' : 'Customer Name, City or Email'}...`}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{ border: 'none', outline: 'none', fontSize: '0.9rem', width: '100%', color: 'var(--text-primary)', fontWeight: 600 }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button
+                                className="ae-btn-secondary"
+                                onClick={() => setShowFilters(!showFilters)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 14px',
+                                    fontSize: '0.8rem',
+                                    height: '40px',
+                                    borderRadius: '10px',
+                                    background: showFilters ? 'var(--bg-accent)' : 'white',
+                                    color: showFilters ? 'var(--theme-primary)' : 'var(--ae-gray-800)',
+                                    borderColor: showFilters ? 'var(--theme-primary)' : 'var(--ae-gray-100)',
+                                    border: '1px solid',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                }}
+                                title={showFilters ? "Hide Filters" : "Show Filters"}
+                            >
+                                <Filter size={16} /> Filters
+                            </button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', flex: 1, overflowY: 'auto' }}>
                 {showForm ? (
@@ -855,11 +873,14 @@ const UserManagement: React.FC = () => {
                                     cursor: 'pointer'
                                 }}
                             >
-                                <CheckCircle size={16} /> {viewMode === 'user' ? 'CREATE USER' : 'SAVE CUSTOMER RECORD'}
+                                <CheckCircle size={16} /> {viewMode === 'user' ? 'CREATE USER' : (editingId ? 'UPDATE CUSTOMER' : 'SAVE CUSTOMER RECORD')}
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setShowForm(false)}
+                                onClick={() => {
+                                    setShowForm(false);
+                                    setEditingId(null);
+                                }}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -1021,7 +1042,8 @@ const UserManagement: React.FC = () => {
                                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                     <button
                                                         onClick={() => {
-                                                            setCompanyFormData({ ...comp, logo: null });
+                                                            setCompanyFormData({ ...comp, logo: null }); // Ensure logo is null or handle properly
+                                                            setEditingId(comp.id); // Set the editing ID
                                                             setViewMode('company');
                                                             setShowForm(true);
                                                         }}
@@ -1040,7 +1062,7 @@ const UserManagement: React.FC = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

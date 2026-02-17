@@ -106,9 +106,7 @@ const BankTransactionsDashboard: React.FC = () => {
 
         setUploading(true);
         try {
-            const response = await api.post('/finance/bank-transactions/upload/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const response = await api.post('/finance/bank-transactions/upload/', formData);
             showNotification(`Uploaded ${response.data.count} transactions successfully`, 'success');
             fetchTransactions();
         } catch (error: any) {

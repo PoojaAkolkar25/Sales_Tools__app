@@ -438,6 +438,10 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
                 header_row = 0
                 if bank_type == 'icici' and file_obj.name.endswith('.xlsx'):
                     header_row = 16 # ICICI typically has headers at row 17
+                elif bank_type == 'idfc':
+                    header_row = 8 # IDFC headers at row 9 usually
+                elif bank_type == 'bofa':
+                    header_row = 7 # BoA headers at row 8 usually
                 
                 df = pd.read_excel(file_obj, header=header_row)
                 df = df.where(pd.notnull(df), None)
@@ -458,23 +462,46 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
                 except (ValueError, TypeError):
                     return 0
                     
-            def parse_date(date_val):
+            def parse_date(date_val, specific_formats=None):
                 if not date_val: return None
                 if hasattr(date_val, 'date'): return date_val.date()
                 
                 date_str = str(date_val).strip()
                 if date_str.lower() in ['nan', 'nat', 'none', '']: return None
 
-                formats = [
+                # Handle IDFC "DD/MM/YYYY HH:MM:SS" format or similar
+                if ' ' in date_str and ':' in date_str:
+                    try:
+                        return datetime.strptime(date_str.split(' ')[0], '%d/%m/%Y').date()
+                    except:
+                        pass
+                    try:
+                         return datetime.strptime(date_str.split(' ')[0], '%d-%m-%Y').date()
+                    except:
+                        pass
+                
+                # Default formats (Indian/Global)
+                default_formats = [
                     '%d/%b/%Y', '%d-%b-%Y', '%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', 
                     '%d-%b-%y', '%m/%d/%Y', '%m-%d-%Y', '%b %d, %Y'
                 ]
-                for fmt in formats:
+                
+                formats_to_try = specific_formats if specific_formats else default_formats
+                
+                for fmt in formats_to_try:
                     try:
-                        from datetime import datetime
                         return datetime.strptime(date_str, fmt).date()
                     except ValueError:
                         continue
+                
+                # If specific formats failed, try default as fallback
+                if specific_formats:
+                    for fmt in default_formats:
+                        try:
+                            return datetime.strptime(date_str, fmt).date()
+                        except ValueError:
+                            continue
+                            
                 return None
 
             for row in data:
@@ -500,20 +527,29 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
                         balance = parse_decimal(row.get('Balance (INR)'))
                     
                     elif bank_type == 'idfc':
-                        tx_date = parse_date(row.get('Date') or row.get('Transaction Date'))
-                        remarks = str(row.get('Narration') or row.get('Description') or '')
+                        # IDFC: "Trans Date and Time", "Value Date", "Transaction Details", "Ref/Cheque No", "Debit", "Credit", "Balance"
+                        tx_date = parse_date(row.get('Trans Date and Time'))
+                        val_date = parse_date(row.get('Value Date'))
+                        remarks = str(row.get('Transaction Details') or '')
+                        cheque_ref = str(row.get('Ref/Cheque No') or '')
                         withdrawal = parse_decimal(row.get('Debit'))
                         deposit = parse_decimal(row.get('Credit'))
                         balance = parse_decimal(row.get('Balance'))
-                        tx_id = str(row.get('Ref No./Cheque No.') or '')
-                    
+
                     elif bank_type == 'bofa':
-                        tx_date = parse_date(row.get('Date'))
+                        # BoA: "Date", "Description", "Amount", "Running Bal."
+                        # Prioritize US Date Format MM/DD/YYYY
+                        us_formats = ['%m/%d/%Y', '%m-%d-%Y', '%Y-%m-%d']
+                        tx_date = parse_date(row.get('Date'), specific_formats=us_formats)
                         remarks = str(row.get('Description') or '')
                         amount = parse_decimal(row.get('Amount'))
-                        deposit = amount if amount > 0 else 0
-                        withdrawal = abs(amount) if amount < 0 else 0
-                        balance = parse_decimal(row.get('Running Bal.') or row.get('Balance'))
+                        if amount > 0:
+                            deposit = amount
+                            withdrawal = 0
+                        else:
+                            deposit = 0
+                            withdrawal = abs(amount)
+                        balance = parse_decimal(row.get('Running Bal.'))
 
                     else: # Generic
                         tx_date = parse_date(row.get('Date') or row.get('Transaction Date'))
