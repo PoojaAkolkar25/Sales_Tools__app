@@ -429,8 +429,9 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                             <td style={{ padding: '8px 16px' }}>
                                                 <input
                                                     type="number"
-                                                    value={item.qty}
+                                                    value={item.qty === 0 ? '' : item.qty}
                                                     onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
+                                                    placeholder="0"
                                                     style={{
                                                         width: '100%',
                                                         padding: '6px 10px',
@@ -449,8 +450,9 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     <span style={{ position: 'absolute', left: '10px', fontSize: '0.8rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(salesOrder.currency)}</span>
                                                     <input
                                                         type="number"
-                                                        value={item.rate}
+                                                        value={item.rate === 0 ? '' : item.rate}
                                                         onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
+                                                        placeholder="0"
                                                         style={{
                                                             width: '100%',
                                                             padding: '6px 10px 6px 24px',
@@ -459,6 +461,12 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                             fontSize: '0.8rem',
                                                             fontWeight: 700,
                                                             ...getHighlightStyle(item.rate)
+                                                        }}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Tab' && !e.shiftKey && index === salesOrder.items.length - 1) {
+                                                                e.preventDefault();
+                                                                handleAddItem();
+                                                            }
                                                         }}
                                                         disabled={isSubmitted}
                                                     />
@@ -563,7 +571,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     }}
                                     rows={4}
                                     disabled={isSubmitted}
-                                    placeholder="Enter billing address"
+                                    placeholder="Billing Address"
                                 />
                             </div>
                             <div className="md:col-span-2" style={{ display: 'flex', flexDirection: 'column' }}>
@@ -580,7 +588,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     }}
                                     rows={4}
                                     disabled={isSubmitted}
-                                    placeholder="Enter shipping address"
+                                    placeholder="Shipping Address"
                                 />
                             </div>
                         </div>

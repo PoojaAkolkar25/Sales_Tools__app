@@ -415,26 +415,26 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden',
-                maxHeight: 'none',
-                overflowY: 'visible'
+                overflow: 'visible',
+                maxHeight: 'none'
             }}>
                 {/* Controls Status Tabs and Actions - Padded Header Area */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '16px',
-                    padding: '20px',
-                    borderBottom: '1px solid var(--border-primary)'
+                    gap: '8px',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid var(--border-primary)',
+                    whiteSpace: 'nowrap',
+                    position: 'relative'
                 }}>
                     {/* Status Tabs */}
                     <div style={{
                         display: 'flex',
-                        gap: '4px',
+                        gap: '2px',
                         background: 'white',
-                        padding: '6px',
+                        padding: '4px',
                         borderRadius: '12px',
                         border: '1px solid var(--border-primary)',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
@@ -444,9 +444,9 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                 key={flow.value}
                                 onClick={() => setFilters({ ...filters, status: flow.value })}
                                 style={{
-                                    padding: '6px 14px',
+                                    padding: '5px 10px',
                                     borderRadius: '8px',
-                                    fontSize: '0.8rem',
+                                    fontSize: '0.75rem',
                                     fontWeight: 700,
                                     border: 'none',
                                     cursor: 'pointer',

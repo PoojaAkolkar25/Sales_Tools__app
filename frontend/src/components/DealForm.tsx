@@ -8,7 +8,6 @@ import {
     File,
     Save,
     Eye,
-    X,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -44,6 +43,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
         phone_number: '',
         mobile_number: ''
     });
+    const [newItemExtra, setNewItemExtra] = useState({ email: '', contact: '' });
 
     // Attachment states
     const [attachments, setAttachments] = useState<any[]>([]);
@@ -51,6 +51,12 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
     const [uploadFeedback, setUploadFeedback] = useState<{ type: 'success' | 'error' | ''; message: string }>({ type: '', message: '' });
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+    const [localId, setLocalId] = useState<number | null>(id);
+
+    // Sync localId when id prop changes (e.g. navigation or parent update)
+    useEffect(() => {
+        setLocalId(id);
+    }, [id]);
 
 
 
@@ -310,7 +316,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        let activeId = id;
+        let activeId = localId;
         if (!activeId) {
             setUploading(true);
             setUploadFeedback({ type: 'success', message: 'Creating deal to attach file...' });
@@ -330,6 +336,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
             const uploadData = new FormData();
             uploadData.append('file', file);
 
+            // Backend now returns the attachment object directly
             const response = await api.post(`/deals/${activeId}/upload_attachment/`, uploadData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
@@ -337,14 +344,6 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
             setAttachments([...attachments, response.data]);
             setUploadFeedback({ type: 'success', message: 'File uploaded successfully' });
             setTimeout(() => setUploadFeedback({ type: '', message: '' }), 4000);
-
-            // If the deal was just created, we might want to update the URL or notify parent
-            // But usually we just need the ID locally.
-            // If the app doesn't navigate on create, we should set the ID if it was null.
-            // Wait, looking at current component logic, id is a prop.
-            // If we are creating, we might need to tell the parent.
-            // However, handleSave calls await api.post('/deals/', dataToSubmit);
-            // I'll see if I need to do more here.
         } catch (error) {
             console.error('Error uploading file', error);
             setUploadFeedback({ type: 'error', message: 'Failed to upload file' });
@@ -368,12 +367,20 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
             const fileUrl = getFileUrl(att.file);
             setUploadFeedback({ type: 'success', message: `Downloading ${att.filename}...` });
 
+            // Using api.get with responseType 'blob' to leverage axios config and CORS
+            const response = await api.get(fileUrl, { responseType: 'blob' });
+
+            // Create blob from response data
+            const blob = new Blob([response.data]);
+            const url = window.URL.createObjectURL(blob);
+
             const link = document.createElement('a');
-            link.href = fileUrl;
-            link.download = att.filename;
+            link.href = url;
+            link.setAttribute('download', att.filename);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
 
             setTimeout(() => {
                 setUploadFeedback({ type: 'success', message: `${att.filename} downloaded!` });
@@ -391,9 +398,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
     };
 
     const handleDeleteAttachment = async (attId: number) => {
-        if (!id) return;
+        if (!localId) return;
         try {
-            await api.delete(`/deals/${id}/delete_attachment/?attachment_id=${attId}`);
+            await api.delete(`/deals/${localId}/delete_attachment/?attachment_id=${attId}`);
             setAttachments(attachments.filter(a => a.id !== attId));
             showNotification('Attachment deleted successfully', 'success');
         } catch (error) {
@@ -437,6 +444,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
             } else {
                 const res = await api.post('/deals/', dataToSubmit);
                 finalId = res.data.id;
+                setLocalId(finalId);
                 // Update navigation/state if needed
                 if (!isAutoSave) showNotification('Deal created successfully', 'success');
             }
@@ -662,10 +670,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                 <td style={{ padding: '8px' }}>
                                                     <input
                                                         type="number"
-                                                        value={item.quantity}
+                                                        value={item.quantity === 0 ? '' : item.quantity}
                                                         onChange={(e) => handleDealTypeChange(index, 'quantity', e.target.value)}
                                                         className="ae-input"
-                                                        min="1"
                                                         placeholder="0"
                                                         style={{ height: '36px', padding: '4px 8px', textAlign: 'left' }}
                                                     />
@@ -677,7 +684,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                         </span>
                                                         <input
                                                             type="number"
-                                                            value={item.amount}
+                                                            value={item.amount === 0 ? '' : item.amount}
                                                             onChange={(e) => handleDealTypeChange(index, 'amount', e.target.value)}
                                                             className="ae-input"
                                                             placeholder="0"
@@ -725,7 +732,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             </table>
                         </div>
 
-                        <div className="ae-grid-4 mt-6" style={{ borderTop: '1px solid #E2E8F0', paddingTop: '20px' }}>
+                        <div className="ae-grid-4 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Stage *</label>
                                 <select name="stage" value={formData.stage} onChange={handleInputChange} className="ae-input" required>
@@ -798,79 +805,67 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 name="remark"
                                 value={formData.remark}
                                 onChange={handleInputChange}
-                                style={{
-                                    width: '100%',
-                                    border: '1px solid #E2E8F0',
-                                    borderRadius: '6px',
-                                    padding: '12px',
-                                    minHeight: '80px',
-                                    outline: 'none',
-                                    background: 'white',
-                                    fontSize: '0.85rem'
-                                }}
+                                className="ae-input"
                                 placeholder="Description/Remark"
-                            ></textarea>
+                                style={{ height: '100px', padding: '12px', resize: 'vertical' }}
+                            />
                         </div>
 
-                        {/* Attachments Section */}
                         <div style={{ marginTop: '24px' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>
-                                Attachments
-                            </label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Attachments</label>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '16px',
-                                padding: '4px 12px',
+                                gap: '12px',
                                 background: '#F8FAFC',
+                                padding: '8px 12px',
                                 borderRadius: '12px',
-                                border: '1px solid #E0E6ED',
-                                width: 'fit-content',
-                                minWidth: 'fit-content',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                                border: '1px solid #E2E8F0',
+                                minHeight: '50px'
                             }}>
-                                <input
-                                    id="file-upload-input"
-                                    type="file"
-                                    onChange={handleFileUpload}
-                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                                    disabled={uploading}
-                                    style={{ display: 'none' }}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => document.getElementById('file-upload-input')?.click()}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        background: 'white',
-                                        color: '#1a1f36',
-                                        border: '1px solid #E0E6ED',
-                                        height: '34px',
-                                        padding: '0 16px',
-                                        borderRadius: '8px',
-                                        fontWeight: 700,
-                                        fontSize: '0.85rem',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        whiteSpace: 'nowrap'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = '#FF6B00';
-                                        e.currentTarget.style.color = 'white';
-                                        e.currentTarget.style.borderColor = '#FF6B00';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = 'white';
-                                        e.currentTarget.style.color = '#1a1f36';
-                                        e.currentTarget.style.borderColor = '#E0E6ED';
-                                    }}
-                                >
-                                    <Paperclip size={14} /> Attachments
-                                </button>
+                                {/* LEFT: Attachment Button */}
+                                <div style={{ flexShrink: 0 }}>
+                                    <input
+                                        id="deal-file-upload"
+                                        type="file"
+                                        onChange={handleFileUpload}
+                                        style={{ display: 'none' }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => document.getElementById('deal-file-upload')?.click()}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            background: 'white',
+                                            color: '#1a1f36',
+                                            border: '1px solid #E0E6ED',
+                                            height: '34px',
+                                            padding: '0 16px',
+                                            borderRadius: '8px',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'var(--theme-primary)';
+                                            e.currentTarget.style.color = 'white';
+                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'white';
+                                            e.currentTarget.style.color = '#1a1f36';
+                                            e.currentTarget.style.borderColor = '#E0E6ED';
+                                        }}
+                                    >
+                                        <Paperclip size={14} /> Attachments
+                                    </button>
+                                </div>
 
-                                {/* Middle: File List pills */}
+                                {/* MIDDLE: File List pills */}
                                 <div style={{
                                     flex: 1,
                                     display: 'flex',
@@ -880,95 +875,93 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     alignItems: 'center'
                                 }}>
                                     {attachments.length > 0 ? (
-                                        <>
-                                            {attachments.map((att) => (
-                                                <div
-                                                    key={att.id}
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '8px',
-                                                        padding: '4px 10px',
-                                                        background: 'white',
-                                                        borderRadius: '8px',
-                                                        border: '1px solid #E0E6ED',
-                                                        minWidth: 'fit-content'
-                                                    }}
-                                                >
-                                                    <File size={14} style={{ color: '#FF6B00' }} />
-                                                    <span style={{
-                                                        fontSize: '0.8rem',
-                                                        fontWeight: 600,
-                                                        color: '#1a1f36',
-                                                        maxWidth: '120px',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap'
-                                                    }}>
-                                                        {att.filename}
-                                                    </span>
-                                                    <div style={{ display: 'flex', gap: '4px' }}>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => { e.stopPropagation(); handleView(att); }}
-                                                            style={{
-                                                                width: '22px',
-                                                                height: '22px',
-                                                                borderRadius: '50%',
-                                                                border: 'none',
-                                                                background: '#e0f2fe',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                cursor: 'pointer',
-                                                                color: '#0369a1'
-                                                            }}
-                                                            title="View"
-                                                        >
-                                                            <Eye size={10} />
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => { e.stopPropagation(); handleDownload(att); }}
-                                                            style={{
-                                                                width: '22px',
-                                                                height: '22px',
-                                                                borderRadius: '50%',
-                                                                border: 'none',
-                                                                background: '#f1f5f9',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                cursor: 'pointer',
-                                                                color: '#475569'
-                                                            }}
-                                                            title="Download"
-                                                        >
-                                                            <Download size={10} />
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(att.id); }}
-                                                            style={{
-                                                                width: '22px',
-                                                                height: '22px',
-                                                                borderRadius: '50%',
-                                                                border: 'none',
-                                                                background: '#fee2e2',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                cursor: 'pointer',
-                                                                color: '#ef4444'
-                                                            }}
-                                                            title="Delete"
-                                                        >
-                                                            <Trash2 size={10} />
-                                                        </button>
-                                                    </div>
+                                        attachments.map((att) => (
+                                            <div
+                                                key={att.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    padding: '4px 10px',
+                                                    background: 'white',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #E0E6ED',
+                                                    minWidth: 'fit-content'
+                                                }}
+                                            >
+                                                <File size={14} style={{ color: '#FF6B00' }} />
+                                                <span style={{
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 600,
+                                                    color: '#1a1f36',
+                                                    maxWidth: '120px',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap'
+                                                }}>
+                                                    {att.filename}
+                                                </span>
+                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleView(att)}
+                                                        style={{
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            borderRadius: '50%',
+                                                            border: 'none',
+                                                            background: '#e0f2fe',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            color: '#0369a1'
+                                                        }}
+                                                        title="View"
+                                                    >
+                                                        <Eye size={10} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDownload(att)}
+                                                        style={{
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            borderRadius: '50%',
+                                                            border: 'none',
+                                                            background: '#f1f5f9',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            color: '#475569'
+                                                        }}
+                                                        title="Download"
+                                                    >
+                                                        <Download size={10} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteAttachment(att.id)}
+                                                        style={{
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            borderRadius: '50%',
+                                                            border: 'none',
+                                                            background: '#fee2e2',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            color: '#ef4444'
+                                                        }}
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 size={10} />
+                                                    </button>
                                                 </div>
-                                            ))}
-                                        </>
+                                            </div>
+                                        ))
                                     ) : (
                                         <span style={{ fontSize: '0.9rem', color: '#A0AEC0', fontStyle: 'italic', marginLeft: '10px' }}>
                                             {uploading ? 'Uploading...' : 'No attachments yet'}
@@ -986,8 +979,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                             color: uploadFeedback.type === 'error' ? '#C53030' : '#2F855A',
                                             border: `1px solid ${uploadFeedback.type === 'error' ? '#FEB2B2' : '#9AE6B4'}`,
                                             marginLeft: '10px',
-                                            whiteSpace: 'nowrap',
-                                            animation: 'fadeIn 0.3s ease'
+                                            whiteSpace: 'nowrap'
                                         }}>
                                             {uploadFeedback.message}
                                         </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, ArrowLeft, Eye } from 'lucide-react';
 import api from '../api';
+import { useNotification } from '../context/NotificationContext';
 
 interface Lead {
     id: number;
@@ -139,6 +140,7 @@ const ReadOnlyCell = ({ value, bold = false, symbol = '', color, fontSize, fontW
 );
 
 const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
+    const { showNotification } = useNotification();
     const [localId, setLocalId] = useState<number | null>(id || null);
     const [lead, setLead] = useState<Lead | null>(null);
 
@@ -187,13 +189,6 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     // Remark States
     const [overallRemarks, setOverallRemarks] = useState('');
 
-    // Toast State
-    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
-    const handleShowToast = (message: string, type: 'success' | 'error' = 'success') => {
-        setToast({ message, type });
-        setTimeout(() => setToast(null), 3000);
-    };
 
 
     const isReadOnly = status !== 'PENDING' && status !== 'REVERTED';
@@ -503,13 +498,20 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             const fileUrl = getFileUrl(att.file);
             setUploadFeedback({ type: 'success', message: `Downloading ${att.filename}...` });
 
-            // Create a temporary link to trigger download
+            // Using api.get with responseType 'blob' to leverage axios config and CORS
+            const response = await api.get(fileUrl, { responseType: 'blob' });
+
+            // Create blob from response data
+            const blob = new Blob([response.data]);
+            const url = window.URL.createObjectURL(blob);
+
             const link = document.createElement('a');
-            link.href = fileUrl;
-            link.download = att.filename;
+            link.href = url;
+            link.setAttribute('download', att.filename);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
 
             setTimeout(() => {
                 setUploadFeedback({ type: 'success', message: `${att.filename} downloaded!` });
@@ -530,9 +532,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         try {
             await api.delete(`/cost-sheets/${localId}/delete_attachment/?attachment_id=${attachmentId}`);
             setAttachments(attachments.filter(a => a.id !== attachmentId));
+            showNotification('Attachment deleted successfully', 'success');
         } catch (error) {
             console.error('Error deleting attachment', error);
-            setCustomAlert({ message: 'Failed to delete attachment', type: 'error' });
+            showNotification('Failed to delete attachment', 'error');
         }
     };
 
@@ -644,7 +647,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         try {
             await api.post(`/cost-sheets/${localId}/reject/`, { comments: rejectComment });
             setShowRejectModal(false);
-            handleShowToast('sheet sent for reject', 'success');
+            showNotification('sheet sent for reject', 'success');
             // Give user time to see toast before redirecting
             setTimeout(() => {
                 if (onBack) onBack();
@@ -659,7 +662,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         try {
             await api.post(`/cost-sheets/${localId}/revert/`, { comments: revertComment });
             setShowRevertModal(false);
-            handleShowToast('sheet sent for revert', 'success');
+            showNotification('sheet sent for revert', 'success');
             // Give user time to see toast before redirecting
             setTimeout(() => {
                 if (onBack) onBack();
@@ -1451,13 +1454,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     </section>
 
                     <section className="remarks-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
-                        <SectionHeader title="Summary & Overall Remarks" />
+                        <SectionHeader title="Description/Remark" />
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <textarea
                                 value={overallRemarks}
                                 onChange={(e) => setOverallRemarks(e.target.value)}
                                 readOnly={isReadOnly}
-                                placeholder="Observations & Notes"
+                                placeholder="Description/Remark"
                                 style={{
                                     width: '100%',
                                     border: isReadOnly ? 'none' : '1px solid #E2E8F0',
@@ -2365,86 +2368,6 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             </div>
                         </div>
                     </div>
-                </div>,
-                document.body
-            )}
-
-
-
-            {/* Premium Toast Notification */}
-            {toast && createPortal(
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: '24px',
-                        right: '24px',
-                        zIndex: 10001,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        background: 'white',
-                        padding: '16px 20px',
-                        borderRadius: '16px',
-                        boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
-                        border: '1px solid #E2E8F0',
-                        borderLeft: `4px solid ${toast.type === 'success' ? '#10B981' : '#EF4444'}`,
-                        animation: 'toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                        minWidth: '300px'
-                    }}
-                >
-                    <div style={{
-                        width: '32px',
-                        height: '32px',
-                        background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                    }}>
-                        {toast.type === 'success' ? (
-                            <CheckCircle size={18} color="#10B981" />
-                        ) : (
-                            <XCircle size={18} color="#EF4444" />
-                        )}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <p style={{
-                            margin: 0,
-                            fontSize: '0.9rem',
-                            fontWeight: 700,
-                            color: '#1e293b'
-                        }}>
-                            {toast.type === 'success' ? 'Success' : 'Error'}
-                        </p>
-                        <p style={{
-                            margin: 0,
-                            fontSize: '0.85rem',
-                            fontWeight: 500,
-                            color: '#64748b'
-                        }}>
-                            {toast.message}
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => setToast(null)}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#94a3b8',
-                            padding: '4px'
-                        }}
-                    >
-                        <X size={16} />
-                    </button>
-
-                    <style>{`
-                        @keyframes toastIn {
-                            from { transform: translateX(100%); opacity: 0; }
-                            to { transform: translateX(0); opacity: 1; }
-                        }
-                    `}</style>
                 </div>,
                 document.body
             )}
