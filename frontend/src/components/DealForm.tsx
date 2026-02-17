@@ -8,7 +8,6 @@ import {
     File,
     Save,
     Eye,
-    X,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -44,6 +43,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
         phone_number: '',
         mobile_number: ''
     });
+    const [newItemExtra, setNewItemExtra] = useState({ email: '', contact: '' });
 
     // Attachment states
     const [attachments, setAttachments] = useState<any[]>([]);
@@ -670,10 +670,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                 <td style={{ padding: '8px' }}>
                                                     <input
                                                         type="number"
-                                                        value={item.quantity}
+                                                        value={item.quantity === 0 ? '' : item.quantity}
                                                         onChange={(e) => handleDealTypeChange(index, 'quantity', e.target.value)}
                                                         className="ae-input"
-                                                        min="1"
                                                         placeholder="0"
                                                         style={{ height: '36px', padding: '4px 8px', textAlign: 'left' }}
                                                     />
@@ -685,7 +684,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                         </span>
                                                         <input
                                                             type="number"
-                                                            value={item.amount}
+                                                            value={item.amount === 0 ? '' : item.amount}
                                                             onChange={(e) => handleDealTypeChange(index, 'amount', e.target.value)}
                                                             className="ae-input"
                                                             placeholder="0"

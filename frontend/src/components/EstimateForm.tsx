@@ -63,6 +63,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
 
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+    const [uploadFeedback, setUploadFeedback] = useState({ type: '', message: '' });
 
     // Email Modal State
     const [emailModal, setEmailModal] = useState<{
@@ -390,11 +391,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
         }
     };
     const handleRemoveProposal = async (proposalId: number) => {
-        if (!window.confirm('Are you sure you want to remove this attachment?')) return;
-
         try {
             await api.delete(`/proposals/${proposalId}/`);
-            showNotification('Proposal attachment removed', 'success');
+            showNotification('Proposal attachment removed successfully', 'success');
             // Update state to remove the proposal
             setEstimate((prev: any) => ({
                 ...prev,
@@ -414,14 +413,37 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
         return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
     };
 
-    const handleDownload = (fileUrl: string) => {
-        const fullUrl = getFileUrl(fileUrl);
-        window.open(fullUrl, '_blank');
+    const handleDownload = async (prop: any) => {
+        try {
+            const fileUrl = getFileUrl(prop.file);
+            setUploadFeedback({ type: 'success', message: `Downloading ${prop.filename}...` });
+
+            const response = await api.get(fileUrl, { responseType: 'blob' });
+            const blob = new Blob([response.data], { type: response.headers['content-type'] });
+            const url = window.URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', prop.filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            setTimeout(() => {
+                setUploadFeedback({ type: 'success', message: `${prop.filename} downloaded!` });
+                setTimeout(() => setUploadFeedback({ type: '', message: '' }), 3000);
+            }, 1000);
+        } catch (error) {
+            console.error('Error downloading file', error);
+            setUploadFeedback({ type: 'error', message: 'Download failed' });
+        }
     };
 
-    const handleView = (fileUrl: string) => {
-        const fullUrl = getFileUrl(fileUrl);
-        window.open(fullUrl, '_blank');
+    const handleView = (prop: any) => {
+        if (!prop?.file) return;
+        const fileUrl = getFileUrl(prop.file);
+        window.open(fileUrl, '_blank');
     };
 
     const handleSave = async (shouldSubmit = false) => {
@@ -1037,7 +1059,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                         <div style={{ display: 'flex', gap: '4px' }}>
                                             <button
                                                 type="button"
-                                                onClick={() => handleView(prop.file)}
+                                                onClick={() => handleView(prop)}
                                                 style={{
                                                     width: '22px',
                                                     height: '22px',
@@ -1056,7 +1078,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => handleDownload(prop.file)}
+                                                onClick={() => handleDownload(prop)}
                                                 style={{
                                                     width: '22px',
                                                     height: '22px',
@@ -1101,6 +1123,22 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                 <span style={{ fontSize: '0.9rem', color: '#A0AEC0', fontStyle: 'italic', marginLeft: '10px' }}>
                                     {!pendingFile && 'No attachments yet'}
                                 </span>
+                            )}
+                            {uploadFeedback.message && (
+                                <div style={{
+                                    padding: '4px 12px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                    background: uploadFeedback.type === 'error' ? '#FFF5F5' : '#F0FFF4',
+                                    color: uploadFeedback.type === 'error' ? '#C53030' : '#2F855A',
+                                    border: `1px solid ${uploadFeedback.type === 'error' ? '#FEB2B2' : '#9AE6B4'}`,
+                                    marginLeft: '10px',
+                                    whiteSpace: 'nowrap',
+                                    animation: 'fadeIn 0.3s ease'
+                                }}>
+                                    {uploadFeedback.message}
+                                </div>
                             )}
                         </div>
                     </div>

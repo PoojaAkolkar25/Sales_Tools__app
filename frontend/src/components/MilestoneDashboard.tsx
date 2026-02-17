@@ -39,8 +39,14 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
     // Filter States
     const [filters, setFilters] = useState({
         milestoneNo: '',
+        dealId: '',
         soNumber: '',
         customerName: '',
+        description: '',
+        dueDateSearch: '',
+        amountSearch: '',
+        statusSearch: '',
+        invoiceNo: '',
         status: 'PENDING',
         period: '',
         startDate: '',
@@ -168,11 +174,15 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
 
     const filteredMilestones = useMemo(() => {
         return milestones.filter(m => {
-            const matchesSearch = true;
-
             const matchesMilestone = (m.milestone_no || '').toLowerCase().includes(filters.milestoneNo.toLowerCase());
+            const matchesDeal = (m.sales_order_details?.deal_id || '').toLowerCase().includes(filters.dealId.toLowerCase());
             const matchesSO = (m.sales_order_details?.so_number || '').toLowerCase().includes(filters.soNumber.toLowerCase());
             const matchesCustomer = (m.sales_order_details?.customer_name || '').toLowerCase().includes(filters.customerName.toLowerCase());
+            const matchesDescription = (m.description || '').toLowerCase().includes(filters.description.toLowerCase());
+            const matchesDueDate = (new Date(m.due_date).toLocaleDateString() || '').toLowerCase().includes(filters.dueDateSearch.toLowerCase());
+            const matchesAmount = (m.amount?.toString() || '').includes(filters.amountSearch);
+            const matchesStatusSearch = (m.status || '').toLowerCase().includes(filters.statusSearch.toLowerCase());
+            const matchesInvoice = (m.invoice_details?.invoice_no || '').toLowerCase().includes(filters.invoiceNo.toLowerCase());
             const matchesStatus = filters.status === '' || m.status === filters.status;
 
             // Date filtering
@@ -212,7 +222,9 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                 }
             }
 
-            return matchesSearch && matchesMilestone && matchesSO && matchesCustomer && matchesStatus && matchesDate;
+            return matchesMilestone && matchesDeal && matchesSO && matchesCustomer &&
+                matchesDescription && matchesDueDate && matchesAmount &&
+                matchesStatusSearch && matchesInvoice && matchesStatus && matchesDate;
         }).sort((a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime());
     }, [milestones, filters]);
 
@@ -408,13 +420,12 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                     right: 0,
                                     marginTop: '8px',
                                     background: 'white',
-                                    borderRadius: '8px',
+                                    borderRadius: '12px',
                                     boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
                                     border: '1px solid #E2E8F0',
                                     zIndex: 100,
                                     minWidth: '220px',
-                                    maxHeight: '450px',
-                                    overflowY: 'auto'
+                                    overflow: 'hidden'
                                 }}>
                                     <div style={{
                                         padding: '12px 16px',
@@ -461,42 +472,44 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                             Clear All
                                         </button>
                                     </div>
-                                    {ALL_COLUMNS.map(col => (
-                                        <label key={col.key} style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                            padding: '10px 16px',
-                                            fontSize: '0.85rem',
-                                            color: 'var(--text-primary)',
-                                            cursor: 'pointer',
-                                            userSelect: 'none',
-                                            transition: 'background 0.2s',
-                                            borderBottom: '1px solid var(--border-primary)'
-                                        }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={visibleColumns.includes(col.key)}
-                                                onChange={() => {
-                                                    if (visibleColumns.includes(col.key)) {
-                                                        setVisibleColumns(visibleColumns.filter(c => c !== col.key));
-                                                    } else {
-                                                        setVisibleColumns([...visibleColumns, col.key]);
-                                                    }
-                                                }}
-                                                style={{
-                                                    cursor: 'pointer',
-                                                    width: '16px',
-                                                    height: '16px',
-                                                    accentColor: 'var(--theme-primary)'
-                                                }}
-                                            />
-                                            <span style={{ fontWeight: 600 }}>{col.label}</span>
-                                        </label>
-                                    ))}
+                                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                        {ALL_COLUMNS.map(col => (
+                                            <label key={col.key} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '12px',
+                                                padding: '10px 16px',
+                                                fontSize: '0.85rem',
+                                                color: 'var(--text-primary)',
+                                                cursor: 'pointer',
+                                                userSelect: 'none',
+                                                transition: 'background 0.2s',
+                                                borderBottom: '1px solid var(--border-primary)'
+                                            }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={visibleColumns.includes(col.key)}
+                                                    onChange={() => {
+                                                        if (visibleColumns.includes(col.key)) {
+                                                            setVisibleColumns(visibleColumns.filter(c => c !== col.key));
+                                                        } else {
+                                                            setVisibleColumns([...visibleColumns, col.key]);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        cursor: 'pointer',
+                                                        width: '16px',
+                                                        height: '16px',
+                                                        accentColor: 'var(--theme-primary)'
+                                                    }}
+                                                />
+                                                <span style={{ fontWeight: 600 }}>{col.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -530,7 +543,21 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                                     placeholder="Filter..."
                                                     value={filters.milestoneNo}
                                                     onChange={e => setFilters({ ...filters, milestoneNo: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                    )}
+                                    {visibleColumns.includes('deal') && (
+                                        <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                            <div className="ae-input-group">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={filters.dealId}
+                                                    onChange={e => setFilters({ ...filters, dealId: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
                                                 />
                                             </div>
                                         </th>
@@ -544,12 +571,11 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                                     placeholder="Filter..."
                                                     value={filters.soNumber}
                                                     onChange={e => setFilters({ ...filters, soNumber: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
                                                 />
                                             </div>
                                         </th>
                                     )}
-                                    {visibleColumns.includes('deal') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}></th>}
                                     {visibleColumns.includes('customer') && (
                                         <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
                                             <div className="ae-input-group">
@@ -559,19 +585,98 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                                     placeholder="Filter..."
                                                     value={filters.customerName}
                                                     onChange={e => setFilters({ ...filters, customerName: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
                                                 />
                                             </div>
                                         </th>
                                     )}
-                                    {visibleColumns.includes('description') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}></th>}
-                                    {visibleColumns.includes('due_date') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}></th>}
-                                    {visibleColumns.includes('amount') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}></th>}
-                                    {visibleColumns.includes('status') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}></th>}
-                                    {visibleColumns.includes('invoice_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}></th>}
+                                    {visibleColumns.includes('description') && (
+                                        <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                            <div className="ae-input-group">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={filters.description}
+                                                    onChange={e => setFilters({ ...filters, description: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                    )}
+                                    {visibleColumns.includes('due_date') && (
+                                        <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                            <div className="ae-input-group">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={filters.dueDateSearch}
+                                                    onChange={e => setFilters({ ...filters, dueDateSearch: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                    )}
+                                    {visibleColumns.includes('amount') && (
+                                        <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                            <div className="ae-input-group">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={filters.amountSearch}
+                                                    onChange={e => setFilters({ ...filters, amountSearch: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                    )}
+                                    {visibleColumns.includes('status') && (
+                                        <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                            <div className="ae-input-group">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={filters.statusSearch}
+                                                    onChange={e => setFilters({ ...filters, statusSearch: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                    )}
+                                    {visibleColumns.includes('invoice_no') && (
+                                        <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                            <div className="ae-input-group">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={filters.invoiceNo}
+                                                    onChange={e => setFilters({ ...filters, invoiceNo: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                    )}
                                     <th style={{ textAlign: 'center', top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
                                         <button
-                                            onClick={() => setFilters({ milestoneNo: '', soNumber: '', customerName: '', status: '', period: '', startDate: '', endDate: '' })}
+                                            onClick={() => setFilters({
+                                                milestoneNo: '',
+                                                dealId: '',
+                                                soNumber: '',
+                                                customerName: '',
+                                                description: '',
+                                                dueDateSearch: '',
+                                                amountSearch: '',
+                                                statusSearch: '',
+                                                invoiceNo: '',
+                                                status: 'PENDING',
+                                                period: '',
+                                                startDate: '',
+                                                endDate: ''
+                                            })}
                                             style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                         >
                                             Clear

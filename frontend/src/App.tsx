@@ -33,6 +33,7 @@ import Home from './components/Home';
 import Navbar from './components/Navbar';
 import Payment from './components/Payment';
 import InvoiceDashboard from './components/InvoiceDashboard';
+import InvoiceForm from './components/InvoiceForm';
 import api from './api';
 import './index.css';
 import { NotificationProvider, useNotification } from './context/NotificationContext';
@@ -264,6 +265,8 @@ const AppContent: React.FC = () => {
   const [soRefreshTrigger, setSoRefreshTrigger] = useState(0);
   const [inventoryView, setInventoryView] = useState<'form' | 'dashboard'>('dashboard');
   const [editingInventoryId, setEditingInventoryId] = useState<number | null>(null);
+  const [invoiceView, setInvoiceView] = useState<'form' | 'dashboard'>('dashboard');
+  const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
 
   const [milestoneView, setMilestoneView] = useState<'form' | 'dashboard'>('dashboard');
 
@@ -512,6 +515,18 @@ const AppContent: React.FC = () => {
                         color: costSheetView === 'dashboard' ? 'white' : 'var(--text-secondary)',
                         boxShadow: costSheetView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
+                      onMouseEnter={(e) => {
+                        if (costSheetView !== 'dashboard') {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (costSheetView !== 'dashboard') {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
                     >
                       <LayoutDashboard size={18} /> Dashboard
                     </button>
@@ -532,6 +547,18 @@ const AppContent: React.FC = () => {
                         background: (costSheetView === 'form' && !editingId) ? 'var(--theme-primary)' : 'transparent',
                         color: (costSheetView === 'form' && !editingId) ? 'white' : 'var(--text-secondary)',
                         boxShadow: (costSheetView === 'form' && !editingId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (costSheetView !== 'form' || editingId) {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (costSheetView !== 'form' || editingId) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
                       }}
                     >
                       <PlusCircle size={18} /> Create New
@@ -628,6 +655,18 @@ const AppContent: React.FC = () => {
                         color: leadView === 'dashboard' ? 'white' : 'var(--text-secondary)',
                         boxShadow: leadView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
+                      onMouseEnter={(e) => {
+                        if (leadView !== 'dashboard') {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (leadView !== 'dashboard') {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
                     >
                       <LayoutDashboard size={18} /> Dashboard
                     </button>
@@ -648,6 +687,18 @@ const AppContent: React.FC = () => {
                         background: (leadView === 'form' && !editingLeadId) ? 'var(--theme-primary)' : 'transparent',
                         color: (leadView === 'form' && !editingLeadId) ? 'white' : 'var(--text-secondary)',
                         boxShadow: (leadView === 'form' && !editingLeadId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (leadView !== 'form' || editingLeadId) {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (leadView !== 'form' || editingLeadId) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
                       }}
                     >
                       <PlusCircle size={18} /> Create New
@@ -728,6 +779,18 @@ const AppContent: React.FC = () => {
                         color: dealView === 'dashboard' ? 'white' : 'var(--text-secondary)',
                         boxShadow: dealView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
+                      onMouseEnter={(e) => {
+                        if (dealView !== 'dashboard') {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (dealView !== 'dashboard') {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
                     >
                       <LayoutDashboard size={18} /> Dashboard
                     </button>
@@ -748,6 +811,18 @@ const AppContent: React.FC = () => {
                         background: (dealView === 'form' && !editingDealId) ? 'var(--theme-primary)' : 'transparent',
                         color: (dealView === 'form' && !editingDealId) ? 'white' : 'var(--text-secondary)',
                         boxShadow: (dealView === 'form' && !editingDealId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (dealView !== 'form' || editingDealId) {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (dealView !== 'form' || editingDealId) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
                       }}
                     >
                       <PlusCircle size={18} /> Create New
@@ -838,6 +913,18 @@ const AppContent: React.FC = () => {
                         color: estimateView === 'dashboard' ? 'white' : 'var(--text-secondary)',
                         boxShadow: estimateView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
+                      onMouseEnter={(e) => {
+                        if (estimateView !== 'dashboard') {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (estimateView !== 'dashboard') {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
                     >
                       <LayoutDashboard size={18} /> Dashboard
                     </button>
@@ -862,6 +949,18 @@ const AppContent: React.FC = () => {
                         color: (estimateView === 'form' && !editingEstimateId) ? 'white' : 'var(--text-secondary)',
                         boxShadow: (estimateView === 'form' && !editingEstimateId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
+                      onMouseEnter={(e) => {
+                        if (estimateView !== 'form' || editingEstimateId) {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (estimateView !== 'form' || editingEstimateId) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
                     >
                       <PlusCircle size={18} /> Create New
                     </button>
@@ -879,8 +978,21 @@ const AppContent: React.FC = () => {
                         height: '32px',
                         borderRadius: '8px',
                         color: '#718096',
-                        borderColor: '#E2E8F0',
-                        fontWeight: 700
+                        border: '1px solid #E2E8F0',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: 'transparent'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                        e.currentTarget.style.color = 'var(--ae-orange)';
+                        e.currentTarget.style.borderColor = 'var(--ae-orange)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = '#718096';
+                        e.currentTarget.style.borderColor = '#E2E8F0';
                       }}
                     >
                       <Eye size={16} /> Preview
@@ -957,6 +1069,18 @@ const AppContent: React.FC = () => {
                         color: salesOrderView === 'dashboard' ? 'white' : 'var(--text-secondary)',
                         boxShadow: salesOrderView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
+                      onMouseEnter={(e) => {
+                        if (salesOrderView !== 'dashboard') {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (salesOrderView !== 'dashboard') {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
                     >
                       <LayoutDashboard size={18} /> Dashboard
                     </button>
@@ -1016,7 +1140,125 @@ const AppContent: React.FC = () => {
       < Route path="/invoice" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <InvoiceDashboard />
+            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+              <div className="space-y-8">
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '24px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Invoice Management</h1>
+                  </div>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '12px',
+                  gap: '24px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    alignItems: 'center',
+                    background: 'white',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-primary)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                  }}>
+                    <button
+                      onClick={() => setInvoiceView('dashboard')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: invoiceView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                        color: invoiceView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: invoiceView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (invoiceView !== 'dashboard') {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (invoiceView !== 'dashboard') {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
+                    >
+                      <LayoutDashboard size={18} /> Dashboard
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingInvoiceId(null);
+                        setInvoiceView('form');
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: (invoiceView === 'form' && !editingInvoiceId) ? 'var(--theme-primary)' : 'transparent',
+                        color: (invoiceView === 'form' && !editingInvoiceId) ? 'white' : 'var(--text-secondary)',
+                        boxShadow: (invoiceView === 'form' && !editingInvoiceId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (invoiceView !== 'form' || editingInvoiceId) {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (invoiceView !== 'form' || editingInvoiceId) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
+                    >
+                      <PlusCircle size={18} /> Create New
+                    </button>
+                  </div>
+                </div>
+
+                {invoiceView === 'form' ? (
+                  <InvoiceForm
+                    invoiceId={editingInvoiceId}
+                    onBack={() => setInvoiceView('dashboard')}
+                  />
+                ) : (
+                  <InvoiceDashboard
+                    onView={(id: number) => {
+                      setEditingInvoiceId(id);
+                      setInvoiceView('form');
+                    }}
+                  />
+                )}
+              </div>
+            </div>
           </ModuleWrapper >
         ) : <Navigate to="/login" />
       } />
@@ -1096,6 +1338,18 @@ const AppContent: React.FC = () => {
                         color: milestoneView === 'dashboard' ? 'white' : 'var(--text-secondary)',
                         boxShadow: milestoneView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                       }}
+                      onMouseEnter={(e) => {
+                        if (milestoneView !== 'dashboard') {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (milestoneView !== 'dashboard') {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
                     >
                       <LayoutDashboard size={18} /> Dashboard
                     </button>
@@ -1118,6 +1372,18 @@ const AppContent: React.FC = () => {
                         background: milestoneView === 'form' ? '#FF6B00' : 'transparent',
                         color: milestoneView === 'form' ? 'white' : '#718096',
                         boxShadow: milestoneView === 'form' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (milestoneView !== 'form') {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (milestoneView !== 'form') {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = '#718096';
+                        }
                       }}
                     >
                       <PlusCircle size={18} /> Create New

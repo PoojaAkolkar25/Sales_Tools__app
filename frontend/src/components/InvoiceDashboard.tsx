@@ -1,59 +1,87 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Download, CheckCircle, XCircle, Mail, BarChart3, Eye, Pencil, Send, Filter } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Download, CheckCircle, XCircle, Mail, BarChart3, Eye, Pencil, Send, Filter, ChevronDown, FileText, FileSpreadsheet, Columns } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
-import InvoiceForm from './InvoiceForm';
 import { useNotification } from '../context/NotificationContext';
 import Pagination from './Pagination';
 
-const InvoiceDashboard: React.FC = () => {
+interface Invoice {
+    id: number;
+    invoice_no: string;
+    deal: number;
+    deal_no?: string;
+    customer_name: string;
+    invoice_date: string;
+    valid_until?: string;
+    total_amount: number;
+    currency: string;
+    status: string;
+    invoice_type: string;
+    // Add other fields as needed based on API response
+}
+
+const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }) => {
     const navigate = useNavigate();
     const { showNotification } = useNotification();
-    const [invoices, setInvoices] = useState<any[]>([]);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [loading, setLoading] = useState(true);
-    const [view, setView] = useState<'dashboard' | 'form'>('dashboard');
-    const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
     const [showFilters, setShowFilters] = useState(false);
+    const [showReports, setShowReports] = useState(false);
+    const [showExportMenu, setShowExportMenu] = useState(false);
+    const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [reportModal, setReportModal] = useState<{ show: boolean; title: string; data: any; type: 'tax' | 'billing' | null }>({ show: false, title: '', data: null, type: null });
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 20;
-    const [statusFilter, setStatusFilter] = useState('');
-    const [typeFilter, setTypeFilter] = useState('');
-    const [dateRangeFilter, setDateRangeFilter] = useState('');
-    const [invoiceNoSearch, setInvoiceNoSearch] = useState('');
-    const [customerSearch, setCustomerSearch] = useState('');
-    const [dealSearch, setDealSearch] = useState('');
+
+    const ALL_COLUMNS = [
+        { key: 'invoice_no', label: 'Invoice No' },
+        { key: 'deal_no', label: 'Deal ID' },
+        { key: 'customer', label: 'Customer' },
+        { key: 'date', label: 'Date' },
+        { key: 'amount', label: 'Amount' },
+        { key: 'type', label: 'Type' },
+        { key: 'status', label: 'Status' }
+    ];
+
+    const [visibleColumns, setVisibleColumns] = useState(ALL_COLUMNS.map(c => c.key));
+
+    // Filters State
+    const [filters, setFilters] = useState({
+        status: 'DRAFT',
+        invoice_no: '',
+        deal_no: '',
+        customer_name: '',
+        type: '',
+        date_range: '',
+        period: '', // For consistency with DealDashboard if needed
+        date_input: '',
+        amount_input: '',
+        status_input: ''
+    });
 
     useEffect(() => {
-        if (view === 'dashboard') {
-            fetchInvoices();
-        }
-    }, [view, statusFilter, typeFilter, dateRangeFilter, invoiceNoSearch, customerSearch, dealSearch]);
+        fetchInvoices();
+    }, []);
+
+    // Reset page on filter change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filters]);
 
     const fetchInvoices = async () => {
         setLoading(true);
         try {
-            // Build query parameters
-            const params = new URLSearchParams();
-            if (statusFilter) params.append('status', statusFilter);
-            if (typeFilter) params.append('invoice_type', typeFilter);
-            if (dateRangeFilter) params.append('date_range', dateRangeFilter);
-            if (invoiceNoSearch) params.append('invoice_no', invoiceNoSearch);
-            if (customerSearch) params.append('customer_name', customerSearch);
-            if (dealSearch) params.append('deal', dealSearch);
-
-            const response = await api.get(`/finance/invoices/?${params.toString()}`);
+            // Fetch all invoices for client-side filtering to support tabs with counts
+            const response = await api.get(`/finance/invoices/`);
             setInvoices(response.data);
         } catch (error) {
             console.error('Error fetching invoices', error);
+            showNotification('Error fetching invoices', 'error');
         } finally {
             setLoading(false);
         }
     };
-
-    const paginatedInvoices = invoices.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
 
     const handleDownload = async (id: number, no: string) => {
         try {
@@ -91,40 +119,70 @@ const InvoiceDashboard: React.FC = () => {
         }
     };
 
+    const exportToExcel = async () => {
+        setIsDownloading(true);
+        try {
+            const response = await api.get('/finance/invoices/export_excel/', { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'Invoices_Report.xlsx');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            showNotification('Excel report downloaded successfully', 'success');
+        } catch (error) {
+            showNotification('Error downloading Excel report', 'error');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    const exportToPDF = async () => {
+        setIsDownloading(true);
+        try {
+            const response = await api.get('/finance/invoices/export_pdf/', { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'Invoices_Report.pdf');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            showNotification('PDF report downloaded successfully', 'success');
+        } catch (error) {
+            showNotification('Error downloading PDF report', 'error');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     const handleReport = async (type: 'register' | 'tax_summary' | 'customer_billing') => {
         try {
             const res = await api.get(`/finance/invoices/report_${type}/`);
-            console.log(`${type} report:`, res.data);
 
-            // Format and display report data
             if (type === 'tax_summary') {
-                const summary = res.data;
-                const message = `Tax Summary:\nCGST: ₹${summary.total_cgst || 0}\nSGST: ₹${summary.total_sgst || 0}\nIGST: ₹${summary.total_igst || 0}\nSales Tax: ₹${summary.total_sales_tax || 0}`;
-                alert(message);
-            } else if (type === 'customer_billing') {
-                const customers = res.data;
-                let message = 'Customer-wise Billing:\n\n';
-                customers.forEach((c: any) => {
-                    message += `${c.customer_name}\n- Invoices: ${c.total_invoices}\n- Billed: ₹${c.total_billed}\n- Outstanding: ₹${c.total_outstanding}\n\n`;
+                setReportModal({
+                    show: true,
+                    title: 'Tax Summary',
+                    data: res.data,
+                    type: 'tax'
                 });
-                alert(message);
+            } else if (type === 'customer_billing') {
+                setReportModal({
+                    show: true,
+                    title: 'Customer-wise Billing',
+                    data: res.data,
+                    type: 'billing'
+                });
             } else {
                 showNotification(`${type.replace('_', ' ')} data logged to console`, 'info');
+                console.log(`${type} report:`, res.data);
             }
         } catch (error) {
             showNotification('Error generating report', 'error');
         }
     };
-
-    if (view === 'form') {
-        return <InvoiceForm
-            onBack={() => {
-                setView('dashboard');
-                setEditingInvoiceId(null);
-            }}
-            invoiceId={editingInvoiceId}
-        />;
-    }
 
     const getStatusStyle = (status: string) => {
         switch (status) {
@@ -137,246 +195,625 @@ const InvoiceDashboard: React.FC = () => {
         }
     };
 
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {/* Header Area */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                        Invoices
-                    </h1>
-                </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="ae-input"
-                        style={{ padding: '6px 12px', fontSize: '0.8rem', width: 'auto' }}
-                    >
-                        <option value="">All Statuses</option>
-                        <option value="DRAFT">Draft</option>
-                        <option value="PENDING_APPROVAL">Pending Approval</option>
-                        <option value="APPROVED">Approved</option>
-                        <option value="SENT">Sent</option>
-                        <option value="PAID">Paid</option>
-                    </select>
-                    <button onClick={() => handleReport('register')} className="ae-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}>
-                        <BarChart3 size={16} /> Register
-                    </button>
-                    <button onClick={() => handleReport('tax_summary')} className="ae-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}>
-                        <BarChart3 size={16} /> Tax Summary
-                    </button>
-                    <button onClick={() => handleReport('customer_billing')} className="ae-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}>
-                        <BarChart3 size={16} /> Customer Billing
-                    </button>
-                    <button
-                        className="ae-btn-secondary"
-                        onClick={() => setShowFilters(!showFilters)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 14px',
-                            fontSize: '0.8rem',
-                            height: '32px',
-                            borderRadius: '8px',
-                            background: showFilters ? 'var(--bg-secondary)' : 'white',
-                            color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
-                            borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)',
-                            fontWeight: 700,
-                            cursor: 'pointer'
-                        }}
-                        title={showFilters ? "Hide Filters" : "Show Filters"}
-                    >
-                        <Filter size={16} /> Filters
-                    </button>
-                    <button onClick={() => setView('form')} className="ae-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}>
-                        <Plus size={16} /> Create Invoice
-                    </button>
-                </div>
-            </div>
+    // Client-side filtering
+    const filteredInvoices = useMemo(() => {
+        return invoices.filter(inv => {
+            const matchesStatus = filters.status === '' || inv.status === filters.status;
+            const matchesInvoiceNo = (inv.invoice_no || '').toLowerCase().includes(filters.invoice_no.toLowerCase());
+            const matchesDeal = (inv.deal_no || '').toLowerCase().includes(filters.deal_no.toLowerCase());
+            const matchesCustomer = (inv.customer_name || '').toLowerCase().includes(filters.customer_name.toLowerCase());
+            const matchesType = filters.type === '' || inv.invoice_type === filters.type;
 
-            {/* Advanced Filters Section */}
-            {showFilters && (
-                <div className="glass-card" style={{ padding: '20px', marginBottom: '20px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                        <div className="ae-input-group">
-                            <label className="ae-label" style={{ fontSize: '0.75rem' }}>Invoice Number</label>
-                            <input
-                                type="text"
-                                className="ae-input"
-                                placeholder="Search by invoice #"
-                                value={invoiceNoSearch}
-                                onChange={(e) => setInvoiceNoSearch(e.target.value)}
-                                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                            />
+            // Date logic
+            let matchesDate = true;
+            if (filters.date_range) {
+                const invDate = new Date(inv.invoice_date);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (filters.date_range === 'last_month') {
+                    const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                    const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1);
+                    const firstOfLastMonth = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1);
+                    matchesDate = invDate >= firstOfLastMonth && invDate <= lastOfLastMonth;
+                } else if (filters.date_range === 'last_3_months') {
+                    const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                    const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1);
+                    const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+                    matchesDate = invDate >= threeMonthsAgo && invDate <= lastOfLastMonth;
+                } else if (filters.date_range === 'last_6_months') {
+                    const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, 1);
+                    matchesDate = invDate >= sixMonthsAgo && invDate < new Date(today.getFullYear(), today.getMonth(), 1);
+                } else if (filters.date_range === 'last_year') {
+                    const lastYear = today.getFullYear() - 1;
+                    const startOfYear = new Date(lastYear, 0, 1);
+                    const endOfYear = new Date(lastYear, 11, 31, 23, 59, 59);
+                    matchesDate = invDate >= startOfYear && invDate <= endOfYear;
+                }
+            }
+
+            return matchesStatus && matchesInvoiceNo && matchesDeal && matchesCustomer && matchesType && matchesDate;
+        });
+    }, [invoices, filters]);
+
+    const paginatedInvoices = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredInvoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    }, [filteredInvoices, currentPage]);
+
+    const counts = useMemo(() => ({
+        all: invoices.length,
+        draft: invoices.filter(i => i.status === 'DRAFT').length,
+        pending: invoices.filter(i => i.status === 'PENDING_APPROVAL').length,
+        approved: invoices.filter(i => i.status === 'APPROVED').length,
+        sent: invoices.filter(i => i.status === 'SENT').length,
+        paid: invoices.filter(i => i.status === 'PAID').length
+    }), [invoices]);
+
+    const statusFlow = [
+        { label: `Draft (${counts.draft})`, value: 'DRAFT' },
+        { label: `Pending (${counts.pending})`, value: 'PENDING_APPROVAL' },
+        { label: `Approved (${counts.approved})`, value: 'APPROVED' },
+        { label: `Sent (${counts.sent})`, value: 'SENT' },
+        { label: `Paid (${counts.paid})`, value: 'PAID' },
+        { label: `All (${counts.all})`, value: '' }
+    ];
+
+    return (
+        <div className="space-y-6">
+            <div className="ae-table-container" style={{
+                marginTop: '12px',
+                marginBottom: '60px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                maxHeight: 'none',
+                overflowY: 'visible'
+            }}>
+                {/* Controls Status Tabs and Actions - Padded Header Area */}
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                    padding: '20px',
+                    borderBottom: '1px solid var(--border-primary)'
+                }}>
+
+                    {/* Row 1: Status Tabs (Left) and Main Actions (Right) */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '16px'
+                    }}>
+                        {/* Status Tabs - Left Side */}
+                        <div style={{
+                            display: 'flex',
+                            gap: '4px',
+                            background: 'white',
+                            padding: '6px',
+                            borderRadius: '12px',
+                            border: '1px solid var(--border-primary)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                            width: 'fit-content'
+                        }}>
+                            {statusFlow.map((flow) => (
+                                <button
+                                    key={flow.value}
+                                    onClick={() => setFilters({ ...filters, status: flow.value })}
+                                    style={{
+                                        padding: '6px 14px',
+                                        borderRadius: '8px',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 700,
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        background: filters.status === flow.value ? 'var(--theme-primary)' : 'transparent',
+                                        color: filters.status === flow.value ? 'white' : 'var(--text-secondary)',
+                                        boxShadow: filters.status === flow.value ? 'var(--shadow-md)' : 'none'
+                                    }}
+                                >
+                                    {flow.label}
+                                </button>
+                            ))}
                         </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label" style={{ fontSize: '0.75rem' }}>Customer Name</label>
-                            <input
-                                type="text"
-                                className="ae-input"
-                                placeholder="Search by customer"
-                                value={customerSearch}
-                                onChange={(e) => setCustomerSearch(e.target.value)}
-                                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                            />
+
+                        {/* Actions (Period, Export, Filters, Columns) - Right Side */}
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Period:</span>
+                                <select
+                                    className="ae-input"
+                                    value={filters.date_range}
+                                    onChange={e => setFilters({ ...filters, date_range: e.target.value })}
+                                    style={{ height: '32px', fontSize: '0.8rem', width: '130px', padding: '0 12px' }}
+                                >
+                                    <option value="">All Time</option>
+                                    <option value="last_month">Last Month</option>
+                                    <option value="last_3_months">Last 3 Months</option>
+                                    <option value="last_6_months">Last 6 Months</option>
+                                    <option value="last_year">Last Year</option>
+                                </select>
+                            </div>
+
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    className="ae-btn-secondary"
+                                    disabled={isDownloading}
+                                    onClick={() => setShowExportMenu(!showExportMenu)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '6px 14px',
+                                        fontSize: '0.8rem',
+                                        height: '32px',
+                                        borderRadius: '8px',
+                                        background: 'white',
+                                        color: 'var(--text-secondary)',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <Download size={16} /> Export <ChevronDown size={14} />
+                                </button>
+                                {showExportMenu && (
+                                    <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
+                                        <button
+                                            disabled={isDownloading}
+                                            onClick={() => { exportToExcel(); setShowExportMenu(false); }}
+                                            style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                        >
+                                            <FileSpreadsheet size={16} style={{ color: '#2563EB' }} /> Excel Report
+                                        </button>
+                                        <button
+                                            disabled={isDownloading}
+                                            onClick={() => { exportToPDF(); setShowExportMenu(false); }}
+                                            style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                        >
+                                            <FileText size={16} style={{ color: '#E53E3E' }} /> PDF Report
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    className="ae-btn-secondary"
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '6px 14px',
+                                        fontSize: '0.8rem',
+                                        height: '32px',
+                                        borderRadius: '8px',
+                                        background: showFilters ? 'var(--bg-secondary)' : 'white',
+                                        color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
+                                        borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                    }}
+                                    title={showFilters ? "Hide Filters" : "Show Filters"}
+                                >
+                                    <Filter size={16} /> Filters
+                                </button>
+                            </div>
+
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    className="ae-btn-secondary"
+                                    onClick={() => setShowColumnMenu(!showColumnMenu)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '6px 14px',
+                                        fontSize: '0.8rem',
+                                        height: '32px',
+                                        borderRadius: '8px',
+                                        background: 'white',
+                                        color: 'var(--text-secondary)',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <Columns size={16} /> Columns <ChevronDown size={14} />
+                                </button>
+                                {showColumnMenu && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        right: 0,
+                                        marginTop: '8px',
+                                        background: 'white',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
+                                        border: '1px solid var(--border-primary)',
+                                        zIndex: 100,
+                                        minWidth: '220px',
+                                        maxHeight: '450px',
+                                        overflowY: 'auto'
+                                    }}>
+                                        <div style={{
+                                            padding: '12px 16px',
+                                            borderBottom: '1px solid var(--border-primary)',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            background: 'var(--bg-secondary)'
+                                        }}>
+                                            <button
+                                                onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: 'var(--ae-blue)',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                    padding: '4px 8px',
+                                                    borderRadius: '4px',
+                                                    transition: 'background 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                            >
+                                                Select All
+                                            </button>
+                                            <button
+                                                onClick={() => setVisibleColumns([])}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: 'var(--text-tertiary)',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                    padding: '4px 8px',
+                                                    borderRadius: '4px',
+                                                    transition: 'background 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                            >
+                                                Clear All
+                                            </button>
+                                        </div>
+                                        {ALL_COLUMNS.map(col => (
+                                            <label key={col.key} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '12px',
+                                                padding: '10px 16px',
+                                                fontSize: '0.85rem',
+                                                color: 'var(--text-primary)',
+                                                cursor: 'pointer',
+                                                userSelect: 'none',
+                                                transition: 'background 0.2s',
+                                                borderBottom: '1px solid var(--border-primary)'
+                                            }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={visibleColumns.includes(col.key)}
+                                                    onChange={() => {
+                                                        if (visibleColumns.includes(col.key)) {
+                                                            setVisibleColumns(visibleColumns.filter(c => c !== col.key));
+                                                        } else {
+                                                            setVisibleColumns([...visibleColumns, col.key]);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        cursor: 'pointer',
+                                                        width: '16px',
+                                                        height: '16px',
+                                                        accentColor: 'var(--theme-primary)'
+                                                    }}
+                                                />
+                                                <span style={{ fontWeight: 600 }}>{col.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label" style={{ fontSize: '0.75rem' }}>Deal ID</label>
-                            <input
-                                type="text"
-                                className="ae-input"
-                                placeholder="Filter by deal"
-                                value={dealSearch}
-                                onChange={(e) => setDealSearch(e.target.value)}
-                                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                            />
-                        </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label" style={{ fontSize: '0.75rem' }}>Invoice Type</label>
-                            <select
-                                value={typeFilter}
-                                onChange={(e) => setTypeFilter(e.target.value)}
-                                className="ae-input"
-                                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                            >
-                                <option value="">All Types</option>
-                                <option value="DOMESTIC">Domestic</option>
-                                <option value="INTER_STATE">Inter-State</option>
-                                <option value="EXPORT">Export</option>
-                                <option value="USA">USA</option>
-                            </select>
-                        </div>
-                        <div className="ae-input-group">
-                            <label className="ae-label" style={{ fontSize: '0.75rem' }}>Date Range</label>
-                            <select
-                                value={dateRangeFilter}
-                                onChange={(e) => setDateRangeFilter(e.target.value)}
-                                className="ae-input"
-                                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                            >
-                                <option value="">All Dates</option>
-                                <option value="last_month">Last Month</option>
-                                <option value="last_3_months">Last 3 Months</option>
-                                <option value="last_6_months">Last 6 Months</option>
-                                <option value="last_year">Last Year</option>
-                            </select>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
+                    </div>
+
+                    {/* Row 2: Reports (Right Aligned) */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+                        <div style={{ position: 'relative' }}>
                             <button
-                                onClick={() => {
-                                    setStatusFilter('');
-                                    setTypeFilter('');
-                                    setDateRangeFilter('');
-                                    setInvoiceNoSearch('');
-                                    setCustomerSearch('');
-                                    setDealSearch('');
-                                }}
                                 className="ae-btn-secondary"
-                                style={{ padding: '6px 12px', fontSize: '0.8rem', width: '100%' }}
+                                onClick={() => setShowReports(!showReports)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 14px',
+                                    fontSize: '0.8rem',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    background: showReports ? 'var(--bg-secondary)' : 'white',
+                                    color: showReports ? 'var(--theme-primary)' : 'var(--text-secondary)',
+                                    borderColor: showReports ? 'var(--theme-primary)' : 'var(--border-primary)',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                }}
                             >
-                                Clear Filters
+                                <BarChart3 size={16} /> Reports <ChevronDown size={14} />
                             </button>
+                            {showReports && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: 0,
+                                    marginTop: '4px',
+                                    background: 'white',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                                    border: '1px solid var(--border-primary)',
+                                    zIndex: 50,
+                                    minWidth: '160px',
+                                    overflow: 'hidden'
+                                }}>
+                                    <button
+                                        onClick={() => { handleReport('register'); setShowReports(false); }}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '10px 16px',
+                                            fontSize: '0.8rem',
+                                            width: '100%',
+                                            border: 'none',
+                                            background: 'white',
+                                            color: 'var(--text-primary)',
+                                            cursor: 'pointer',
+                                            textAlign: 'left'
+                                        }}
+                                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                        onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+                                    >
+                                        Register
+                                    </button>
+                                    <button
+                                        onClick={() => { handleReport('tax_summary'); setShowReports(false); }}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '10px 16px',
+                                            fontSize: '0.8rem',
+                                            width: '100%',
+                                            border: 'none',
+                                            background: 'white',
+                                            color: 'var(--text-primary)',
+                                            cursor: 'pointer',
+                                            textAlign: 'left'
+                                        }}
+                                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                        onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+                                    >
+                                        Tax Summary
+                                    </button>
+                                    <button
+                                        onClick={() => { handleReport('customer_billing'); setShowReports(false); }}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '10px 16px',
+                                            fontSize: '0.8rem',
+                                            width: '100%',
+                                            border: 'none',
+                                            background: 'white',
+                                            color: 'var(--text-primary)',
+                                            cursor: 'pointer',
+                                            textAlign: 'left'
+                                        }}
+                                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                        onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+                                    >
+                                        Billing
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
-            )}
 
-            {/* Invoice List */}
-            <div className="glass-card" style={{ padding: '24px' }}>
-                <div className="ae-table-container" style={{ maxHeight: 'none', overflowY: 'visible' }}>
-                    <table className="ae-table">
+                {/* Table Area */}
+                <div style={{ overflowX: 'auto' }}>
+                    <table className="ae-table" style={{ width: '100%' }}>
                         <thead>
                             <tr>
-                                <th>Invoice No</th>
-                                <th>Deal ID</th>
-                                <th>Customer</th>
-                                <th>Date</th>
-                                <th>Amount</th>
-                                <th>Type</th>
-                                <th>Status</th>
-                                <th style={{ textAlign: 'right' }}>Actions</th>
+                                {visibleColumns.includes('invoice_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Invoice No</th>}
+                                {visibleColumns.includes('deal_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Deal ID</th>}
+                                {visibleColumns.includes('customer') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Customer</th>}
+                                {visibleColumns.includes('date') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Date</th>}
+                                {visibleColumns.includes('amount') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Amount</th>}
+                                {visibleColumns.includes('type') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Type</th>}
+                                {visibleColumns.includes('status') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Status</th>}
+                                <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)', minWidth: '100px' }}>Actions</th>
                             </tr>
+                            {showFilters && (
+                                <tr>
+                                    {visibleColumns.includes('invoice_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                        <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.invoice_no}
+                                                onChange={e => setFilters({ ...filters, invoice_no: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('deal_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                        <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.deal_no}
+                                                onChange={e => setFilters({ ...filters, deal_no: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('customer') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                        <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.customer_name}
+                                                onChange={e => setFilters({ ...filters, customer_name: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('date') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                        <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.date_input}
+                                                onChange={e => setFilters({ ...filters, date_input: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('amount') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                        <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters.amount_input}
+                                                onChange={e => setFilters({ ...filters, amount_input: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', width: '80px', paddingTop: 0, paddingBottom: 0 }}
+                                            />
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('type') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                        <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <select
+                                                className="ae-input"
+                                                value={filters.type}
+                                                onChange={e => setFilters({ ...filters, type: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            >
+                                                <option value="">All</option>
+                                                <option value="Standard">Standard</option>
+                                                <option value="Proforma">Proforma</option>
+                                                <option value="Export">Export</option>
+                                                <option value="Service">Service</option>
+                                            </select>
+                                        </div>
+                                    </th>}
+                                    {visibleColumns.includes('status') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
+                                        <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <select
+                                                className="ae-input"
+                                                value={filters.status_input}
+                                                onChange={e => setFilters({ ...filters, status_input: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                            >
+                                                <option value="">All</option>
+                                                <option value="DRAFT">Draft</option>
+                                                <option value="PENDING_APPROVAL">Pending</option>
+                                                <option value="APPROVED">Approved</option>
+                                                <option value="SENT">Sent</option>
+                                                <option value="PAID">Paid</option>
+                                            </select>
+                                        </div>
+                                    </th>}
+                                    <th style={{ textAlign: 'center', top: '40px', position: 'sticky', backgroundColor: '#F7FAFC', zIndex: 11, minWidth: '100px' }}>
+                                        <button
+                                            onClick={() => setFilters({
+                                                status: 'DRAFT', invoice_no: '', deal_no: '', customer_name: '',
+                                                type: '', date_range: '', period: '', date_input: '', amount_input: '', status_input: ''
+                                            })}
+                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                        >
+                                            Clear
+                                        </button>
+                                    </th>
+                                </tr>
+                            )}
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>Loading...</td></tr>
+                                <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>Loading...</td></tr>
                             ) : paginatedInvoices.length === 0 ? (
-                                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>No invoices found</td></tr>
+                                <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No invoices found.</td></tr>
                             ) : (
-                                paginatedInvoices.map(inv => (
+                                paginatedInvoices.map((inv: Invoice) => (
                                     <tr key={inv.id}>
-                                        <td style={{ fontWeight: 700, color: 'var(--theme-primary)' }}>{inv.invoice_no}</td>
-                                        <td
-                                            style={{ fontWeight: 700, color: 'var(--ae-blue)', cursor: 'pointer' }}
+                                        {visibleColumns.includes('invoice_no') && <td style={{ fontWeight: 700, color: 'var(--theme-primary)' }}>{inv.invoice_no}</td>}
+                                        {visibleColumns.includes('deal_no') && <td
+                                            style={{ fontWeight: 700, color: 'var(--ae-blue)', cursor: 'pointer', textDecoration: 'underline' }}
                                             onClick={() => navigate(`/deal?id=${inv.deal}`)}
                                         >
-                                            {inv.deal_no || '---'}
-                                        </td>
-                                        <td>{inv.customer_name}</td>
-                                        <td>{new Date(inv.invoice_date).toLocaleDateString()}</td>
-                                        <td style={{ fontWeight: 600 }}>{inv.currency} {inv.total_amount.toLocaleString()}</td>
-                                        <td>
+                                            {inv.deal_no}
+                                        </td>}
+                                        {visibleColumns.includes('customer') && <td>{inv.customer_name}</td>}
+                                        {visibleColumns.includes('date') && <td>{new Date(inv.invoice_date).toLocaleDateString()}</td>}
+                                        {visibleColumns.includes('amount') && <td style={{ fontWeight: 600 }}>{inv.currency} {inv.total_amount.toLocaleString()}</td>}
+                                        {visibleColumns.includes('type') && <td>
                                             <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
                                                 {inv.invoice_type}
                                             </span>
-                                        </td>
-                                        <td>
+                                        </td>}
+                                        {visibleColumns.includes('status') && <td>
                                             <span style={{
-                                                fontSize: '0.75rem',
-                                                padding: '4px 8px',
-                                                borderRadius: '4px',
-                                                fontWeight: 600,
-                                                display: 'inline-block',
-                                                background: getStatusStyle(inv.status).bg,
-                                                color: getStatusStyle(inv.status).color
+                                                fontSize: '0.7rem',
+                                                padding: '4px 10px',
+                                                borderRadius: '20px',
+                                                fontWeight: 800,
+                                                letterSpacing: '0.5px',
+                                                textTransform: 'uppercase',
+                                                ...getStatusStyle(inv.status)
                                             }}>
                                                 {inv.status.replace('_', ' ')}
                                             </span>
-                                        </td>
+                                        </td>}
                                         <td>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                {/* Always show Download and View/Edit */}
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                                                 <button onClick={() => handleDownload(inv.id, inv.invoice_no)} title="Download PDF" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
                                                     <Download size={16} />
                                                 </button>
-
-                                                {/* View/Edit Button */}
-                                                <button
-                                                    onClick={() => {
-                                                        setEditingInvoiceId(inv.id);
-                                                        setView('form');
-                                                    }}
-                                                    title={inv.status === 'DRAFT' ? "Edit Invoice" : "View Invoice"}
-                                                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
-                                                >
-                                                    {inv.status === 'DRAFT' ? <Pencil size={16} /> : <Eye size={16} />}
+                                                <button onClick={() => onView(inv.id)} title="View Invoice" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
+                                                    <Eye size={16} />
                                                 </button>
-
-                                                {inv.status === 'DRAFT' && (
-                                                    <button onClick={() => handleAction(inv.id, 'submit_for_approval')} title="Submit for Approval" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--ae-blue)' }}>
-                                                        <Send size={16} />
-                                                    </button>
-                                                )}
-
+                                                {inv.status === 'DRAFT' && <button title="Edit Invoice" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
+                                                    <Pencil size={16} />
+                                                </button>}
+                                                {inv.status === 'DRAFT' && <button onClick={() => handleAction(inv.id, 'submit_for_approval')} title="Submit for Approval" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
+                                                    <Send size={16} />
+                                                </button>}
                                                 {inv.status === 'PENDING_APPROVAL' && (
                                                     <>
-                                                        <button onClick={() => handleAction(inv.id, 'approve')} title="Approve" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--ae-green)' }}>
+                                                        <button onClick={() => handleAction(inv.id, 'approve')} title="Approve" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--semantic-success)' }}>
                                                             <CheckCircle size={16} />
                                                         </button>
-                                                        <button onClick={() => handleAction(inv.id, 'reject')} title="Reject" style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#E53E3E' }}>
+                                                        <button onClick={() => handleAction(inv.id, 'reject')} title="Reject" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--semantic-error)' }}>
                                                             <XCircle size={16} />
                                                         </button>
                                                     </>
                                                 )}
-
-                                                {(inv.status === 'APPROVED' || inv.status === 'SENT' || inv.status === 'PAID' || inv.status === 'PARTIAL') && (
-                                                    <button onClick={() => handleSendEmail(inv.id)} title="Send Email" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--ae-navy-light)' }}>
-                                                        <Mail size={16} />
-                                                    </button>
-                                                )}
+                                                {inv.status === 'APPROVED' && <button onClick={() => handleSendEmail(inv.id)} title="Send Email" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
+                                                    <Mail size={16} />
+                                                </button>}
                                             </div>
                                         </td>
                                     </tr>
@@ -385,15 +822,129 @@ const InvoiceDashboard: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
-
-                <Pagination
-                    currentPage={currentPage}
-                    totalItems={invoices.length}
-                    itemsPerPage={ITEMS_PER_PAGE}
-                    onPageChange={setCurrentPage}
-                />
             </div>
-        </div>
+
+            <Pagination
+                currentPage={currentPage}
+                totalItems={filteredInvoices.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+            />
+
+            {/* Report Modal */}
+            {reportModal.show && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(2px)'
+                }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '16px',
+                        width: '500px',
+                        maxWidth: '95%',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        overflow: 'hidden',
+                        animation: 'fadeIn 0.2s ease-out'
+                    }}>
+                        <div style={{
+                            padding: '20px',
+                            borderBottom: '1px solid var(--border-primary)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: 'var(--bg-secondary)'
+                        }}>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                {reportModal.title}
+                            </h3>
+                            <button
+                                onClick={() => setReportModal({ ...reportModal, show: false })}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                            >
+                                <XCircle size={20} />
+                            </button>
+                        </div>
+
+                        <div style={{ padding: '24px' }}>
+                            {reportModal.type === 'tax' && reportModal.data && (
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    {[
+                                        { label: 'CGST', value: reportModal.data.total_cgst },
+                                        { label: 'SGST', value: reportModal.data.total_sgst },
+                                        { label: 'IGST', value: reportModal.data.total_igst },
+                                        { label: 'Sales Tax', value: reportModal.data.total_sales_tax }
+                                    ].map((item, index) => (
+                                        <div key={index} style={{
+                                            padding: '16px',
+                                            borderRadius: '12px',
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-primary)'
+                                        }}>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>{item.label}</div>
+                                            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--theme-primary)' }}>
+                                                ₹{(item.value || 0).toLocaleString()}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {reportModal.type === 'billing' && reportModal.data && (
+                                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                    <table className="ae-table" style={{ width: '100%' }}>
+                                        <thead>
+                                            <tr>
+                                                <th style={{ background: 'var(--bg-secondary)', fontSize: '0.75rem' }}>Customer</th>
+                                                <th style={{ background: 'var(--bg-secondary)', fontSize: '0.75rem', textAlign: 'right' }}>Inv</th>
+                                                <th style={{ background: 'var(--bg-secondary)', fontSize: '0.75rem', textAlign: 'right' }}>Billed</th>
+                                                <th style={{ background: 'var(--bg-secondary)', fontSize: '0.75rem', textAlign: 'right' }}>Outstanding</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {reportModal.data.map((c: any, i: number) => (
+                                                <tr key={i}>
+                                                    <td style={{ fontWeight: 600 }}>{c.customer_name}</td>
+                                                    <td style={{ textAlign: 'right' }}>{c.total_invoices}</td>
+                                                    <td style={{ textAlign: 'right' }}>₹{c.total_billed.toLocaleString()}</td>
+                                                    <td style={{ textAlign: 'right', color: c.total_outstanding > 0 ? '#E53E3E' : 'inherit' }}>
+                                                        ₹{c.total_outstanding.toLocaleString()}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{
+                            padding: '16px 24px',
+                            borderTop: '1px solid var(--border-primary)',
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            background: '#F7FAFC'
+                        }}>
+                            <button
+                                onClick={() => setReportModal({ ...reportModal, show: false })}
+                                className="ae-btn-secondary"
+                                style={{ padding: '8px 24px' }}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div >
     );
 };
 

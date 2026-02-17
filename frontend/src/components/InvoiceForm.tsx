@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Trash2, Plus, FileText } from 'lucide-react';
+import { Save, Trash2, FileText } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 
 interface LineItem {
+    type: string;
     description: string;
     hsn_sac: string;
     quantity: number;
@@ -47,7 +48,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
     const [sealFile, setSealFile] = useState<File | null>(null);
 
     const [lineItems, setLineItems] = useState<LineItem[]>([
-        { description: '', hsn_sac: '', quantity: 1, rate: 0, discount: 0, gst_rate: 18 }
+        { type: 'Service', description: '', hsn_sac: '', quantity: 0, rate: 0, discount: 0, gst_rate: 18 }
     ]);
 
     const [totals, setTotals] = useState({
@@ -151,6 +152,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
             // Map items from cost sheet if available
             if (cs.total_estimated_price) {
                 setLineItems([{
+                    type: 'Service',
                     description: `Project: ${cs.project_name}`,
                     hsn_sac: '998311',
                     quantity: 1,
@@ -179,6 +181,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
 
                 if (est.items && est.items.length > 0) {
                     setLineItems(est.items.map((item: any) => ({
+                        type: 'Service',
                         description: item.particulars + (item.description ? ` - ${item.description}` : ''),
                         hsn_sac: item.hsn_sac || '',
                         quantity: item.qty,
@@ -234,7 +237,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
     };
 
     const addLineItem = () => {
-        setLineItems([...lineItems, { description: '', hsn_sac: '', quantity: 1, rate: 0, discount: 0, gst_rate: 18 }]);
+        setLineItems([...lineItems, { type: 'Service', description: '', hsn_sac: '', quantity: 0, rate: 0, discount: 0, gst_rate: 18 }]);
     };
 
     const removeLineItem = (index: number) => {
@@ -289,55 +292,6 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button
-                    onClick={() => setShowCancelModal(true)}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 24px',
-                        borderRadius: '8px',
-                        fontSize: '0.9rem',
-                        fontWeight: 700,
-                        background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
-                        color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
-                    }}
-                    onMouseEnter={() => setHoveredBtn('cancel')}
-                    onMouseLeave={() => setHoveredBtn(null)}
-                >
-                    <ArrowLeft size={18} /> Back to Dashboard
-                </button>
-                {!isReadOnly && (
-                    <button
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '8px 24px',
-                            borderRadius: '8px',
-                            fontSize: '0.9rem',
-                            fontWeight: 800,
-                            background: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                            color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            boxShadow: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
-                        }}
-                        onMouseEnter={() => setHoveredBtn('save')}
-                        onMouseLeave={() => setHoveredBtn(null)}
-                    >
-                        <Save size={18} /> {loading ? 'Saving...' : 'Save Invoice'}
-                    </button>
-                )}
-            </div>
 
             <div className="glass-card" style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
@@ -404,48 +358,125 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 </div>
 
                 <div style={{ marginBottom: '32px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Line Items</h3>
-                        {!isReadOnly && (
-                            <button type="button" onClick={addLineItem} className="ae-btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <Plus size={14} /> Add Item
-                            </button>
-                        )}
-                    </div>
-                    <div className="ae-table-container">
+                    <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--ae-orange)', borderLeft: '3px solid var(--ae-orange)', paddingLeft: '12px', marginBottom: '16px' }}>Invoice Items</h3>
+                    <div className="ae-table-container" style={{ borderRadius: '12px', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
                         <table className="ae-table">
-                            <thead>
+                            <thead style={{ background: '#f8fafc' }}>
                                 <tr>
-                                    <th style={{ width: '40%' }}>Description</th>
-                                    <th>HSN/SAC</th>
-                                    <th>Qty</th>
-                                    <th>Rate</th>
-                                    <th>Disc</th>
-                                    <th>GST %</th>
-                                    <th>Total</th>
-                                    <th></th>
+                                    <th style={{ width: '60px', textAlign: 'center' }}>Sr.No.</th>
+                                    <th style={{ width: '150px' }}>Type *</th>
+                                    <th style={{ width: '30%' }}>Description</th>
+                                    <th>Currency</th>
+                                    <th style={{ textAlign: 'center' }}>Qty</th>
+                                    <th style={{ textAlign: 'center' }}>Rate</th>
+                                    <th style={{ textAlign: 'center' }}>GST %</th>
+                                    <th style={{ textAlign: 'right', paddingRight: '24px' }}>Amount</th>
+                                    <th style={{ width: '50px' }}></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {lineItems.map((item, index) => (
                                     <tr key={index}>
-                                        <td>
-                                            <input className="ae-input" disabled={isReadOnly} style={{ border: 'none', background: 'transparent' }} value={item.description} onChange={e => updateLineItem(index, 'description', e.target.value)} />
+                                        <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                                {!isReadOnly && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={addLineItem}
+                                                        style={{
+                                                            width: '20px',
+                                                            height: '20px',
+                                                            borderRadius: '50%',
+                                                            background: '#e0f2fe',
+                                                            color: '#0ea5e9',
+                                                            border: 'none',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            fontSize: '14px',
+                                                            fontWeight: 800
+                                                        }}
+                                                    >
+                                                        +
+                                                    </button>
+                                                )}
+                                                <span style={{ color: '#64748b', fontWeight: 600 }}>{index + 1}</span>
+                                            </div>
                                         </td>
                                         <td>
-                                            <input className="ae-input" disabled={isReadOnly} style={{ border: 'none', background: 'transparent' }} value={item.hsn_sac} onChange={e => updateLineItem(index, 'hsn_sac', e.target.value)} />
+                                            <select
+                                                className="ae-input"
+                                                disabled={isReadOnly}
+                                                style={{ border: '1px solid #e2e8f0', background: 'white', height: '36px', borderRadius: '8px' }}
+                                                value={item.type}
+                                                onChange={e => updateLineItem(index, 'type', e.target.value)}
+                                            >
+                                                <option value="Service">Service</option>
+                                                <option value="Product">Product</option>
+                                                <option value="Other">Other</option>
+                                            </select>
                                         </td>
                                         <td>
-                                            <input type="number" disabled={isReadOnly} className="ae-input" style={{ border: 'none', background: 'transparent', width: '60px' }} value={item.quantity} onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value) || 0)} />
+                                            <input
+                                                className="ae-input"
+                                                disabled={isReadOnly}
+                                                placeholder="Description"
+                                                style={{ border: '1px solid #f1f5f9', background: 'transparent' }}
+                                                value={item.description}
+                                                onChange={e => updateLineItem(index, 'description', e.target.value)}
+                                            />
                                         </td>
                                         <td>
-                                            <input type="number" disabled={isReadOnly} className="ae-input" style={{ border: 'none', background: 'transparent', width: '100px' }} value={item.rate} onChange={e => updateLineItem(index, 'rate', parseFloat(e.target.value) || 0)} />
+                                            <select
+                                                className="ae-input"
+                                                disabled={isReadOnly}
+                                                style={{ border: '1px solid #f1f5f9', background: 'transparent' }}
+                                                value={formData.currency}
+                                                onChange={e => setFormData({ ...formData, currency: e.target.value })}
+                                            >
+                                                <option value="INR">INR</option>
+                                                <option value="USD">USD</option>
+                                            </select>
                                         </td>
-                                        <td>
-                                            <input type="number" disabled={isReadOnly} className="ae-input" style={{ border: 'none', background: 'transparent', width: '80px' }} value={item.discount} onChange={e => updateLineItem(index, 'discount', parseFloat(e.target.value) || 0)} />
+                                        <td style={{ textAlign: 'center' }}>
+                                            <input
+                                                type="number"
+                                                disabled={isReadOnly}
+                                                className="ae-input"
+                                                style={{ border: '1px solid #f1f5f9', background: 'transparent', width: '60px', textAlign: 'center' }}
+                                                value={item.quantity === 0 ? '' : item.quantity}
+                                                placeholder="0"
+                                                onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                            />
                                         </td>
-                                        <td>
-                                            <select className="ae-input" disabled={isReadOnly} style={{ border: 'none', background: 'transparent' }} value={item.gst_rate} onChange={e => updateLineItem(index, 'gst_rate', parseInt(e.target.value))}>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                <span style={{ color: '#64748b' }}>{formData.currency === 'INR' ? '₹' : '$'}</span>
+                                                <input
+                                                    type="number"
+                                                    disabled={isReadOnly}
+                                                    className="ae-input"
+                                                    style={{ border: '1px solid #f1f5f9', background: 'transparent', width: '80px' }}
+                                                    value={item.rate === 0 ? '' : item.rate}
+                                                    placeholder="0"
+                                                    onChange={e => updateLineItem(index, 'rate', parseFloat(e.target.value) || 0)}
+                                                />
+                                            </div>
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <select
+                                                className="ae-input"
+                                                disabled={isReadOnly}
+                                                style={{ border: '1px solid #f1f5f9', background: 'transparent', width: '70px', textAlign: 'center' }}
+                                                value={item.gst_rate}
+                                                onChange={e => updateLineItem(index, 'gst_rate', parseInt(e.target.value))}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Tab' && index === lineItems.length - 1 && !e.shiftKey) {
+                                                        addLineItem();
+                                                    }
+                                                }}
+                                            >
                                                 <option value="0">0%</option>
                                                 <option value="5">5%</option>
                                                 <option value="12">12%</option>
@@ -453,12 +484,12 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                                 <option value="28">28%</option>
                                             </select>
                                         </td>
-                                        <td style={{ fontWeight: 700 }}>
-                                            {((item.quantity * item.rate - item.discount) * (1 + (formData.is_gst_applicable ? item.gst_rate : 0) / 100)).toFixed(2)}
+                                        <td style={{ textAlign: 'right', fontWeight: 800, color: '#1e293b', paddingRight: '24px' }}>
+                                            {formData.currency === 'INR' ? '₹' : '$'}{((item.quantity * item.rate - item.discount) * (1 + (formData.is_gst_applicable ? item.gst_rate : 0) / 100)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                         <td>
                                             {!isReadOnly && (
-                                                <button type="button" onClick={() => removeLineItem(index)} style={{ color: '#E53E3E', border: 'none', background: 'none', cursor: 'pointer' }}>
+                                                <button type="button" onClick={() => removeLineItem(index)} style={{ color: '#ef4444', border: 'none', background: 'none', cursor: 'pointer', padding: '4px' }}>
                                                     <Trash2 size={16} />
                                                 </button>
                                             )}
@@ -467,6 +498,12 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 ))}
                             </tbody>
                         </table>
+                        <div style={{ background: '#f8fafc', padding: '12px 24px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', borderTop: '1px solid #f1f5f9' }}>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#475569' }}>Total Invoice Value:</span>
+                            <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--ae-orange)' }}>
+                                {formData.currency === 'INR' ? '₹' : '$'}{totals.grand_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -474,7 +511,14 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Billing Address</label>
-                            <textarea className="ae-input" rows={3} disabled={isReadOnly} value={formData.billing_address} onChange={e => setFormData({ ...formData, billing_address: e.target.value })} />
+                            <textarea
+                                className="ae-input"
+                                rows={3}
+                                disabled={isReadOnly}
+                                value={formData.billing_address}
+                                onChange={e => setFormData({ ...formData, billing_address: e.target.value })}
+                                placeholder="Billing Address"
+                            />
                         </div>
 
                         <div style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
@@ -504,12 +548,25 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             {formData.invoice_type === 'EXPORT' ? (
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>LUT Declaration (Export)</label>
-                                    <textarea className="ae-input" rows={3} disabled={isReadOnly} value={formData.lut_declaration} onChange={e => setFormData({ ...formData, lut_declaration: e.target.value })} />
+                                    <textarea
+                                        className="ae-input"
+                                        rows={3}
+                                        disabled={isReadOnly}
+                                        value={formData.lut_declaration}
+                                        onChange={e => setFormData({ ...formData, lut_declaration: e.target.value })}
+                                    />
                                 </div>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>GST Declaration (India)</label>
-                                    <textarea className="ae-input" rows={3} disabled={isReadOnly} value={formData.gst_declaration} onChange={e => setFormData({ ...formData, gst_declaration: e.target.value })} />
+                                    <textarea
+                                        className="ae-input"
+                                        rows={3}
+                                        disabled={isReadOnly}
+                                        style={{ resize: 'none', lineHeight: '1.5' }}
+                                        value={formData.gst_declaration}
+                                        onChange={e => setFormData({ ...formData, gst_declaration: e.target.value })}
+                                    />
                                 </div>
                             )}
                         </div>
@@ -542,6 +599,74 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>Grand Total</span>
                             <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--theme-primary)' }}>{formData.currency} {totals.grand_total.toLocaleString()}</span>
                         </div>
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: '12px',
+                        marginTop: '32px',
+                        paddingTop: '24px',
+                        borderTop: '1px solid var(--border-primary)'
+                    }}>
+                        {!isReadOnly && (
+                            <button
+                                type="button"
+                                onClick={handleSubmit}
+                                disabled={loading}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '10px 28px',
+                                    borderRadius: '12px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 800,
+                                    background: 'var(--theme-primary)',
+                                    color: 'white',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    boxShadow: '0 4px 12px rgba(187, 77, 0, 0.2)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    setHoveredBtn('save');
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(187, 77, 0, 0.3)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    setHoveredBtn(null);
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(187, 77, 0, 0.2)';
+                                }}
+                            >
+                                <Save size={18} />
+                                {loading ? 'Saving...' : 'Save Invoice'}
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setShowCancelModal(true)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 24px',
+                                borderRadius: '12px',
+                                fontSize: '0.9rem',
+                                fontWeight: 700,
+                                background: hoveredBtn === 'cancel' ? '#f1f5f9' : 'transparent',
+                                color: 'var(--text-secondary)',
+                                border: '1px solid var(--border-primary)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={() => setHoveredBtn('cancel')}
+                            onMouseLeave={() => setHoveredBtn(null)}
+                        >
+                            Cancel
+                        </button>
                     </div>
                 </div>
             </div>
