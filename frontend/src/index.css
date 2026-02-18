@@ -1911,3 +1911,16 @@ option {
   padding-left: 28px !important;
   width: 100%;
 }
+
+/* --- Standard Table Row Styling --- */
+.ae-table-row td {
+  border-bottom: 1px solid var(--ae-gray-100);
+}
+
+.ae-table-row:last-child td {
+  border-bottom: none;
+}
+
+.ae-table-row:hover td {
+  background-color: var(--bg-hover);
+}

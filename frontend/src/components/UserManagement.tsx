@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search } from 'lucide-react';
+import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search, LayoutDashboard, PlusCircle, Paperclip, FileText, Eye } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const UserManagement: React.FC = () => {
@@ -29,11 +29,16 @@ const UserManagement: React.FC = () => {
         reporting_to: ''
     });
     const [error, setError] = useState('');
+    const [companyError, setCompanyError] = useState('');
+
+    // Column Filters State
+    const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+    const [searchTerm, setSearchTerm] = useState('');
     const [showFilters, setShowFilters] = useState(false);
 
     const [companyFormData, setCompanyFormData] = useState({
         name: '',
-        logo: null as File | null,
+        logo: null as File | string | null,
         address_line_1: '',
         address_line_2: '',
         country: 'India',
@@ -47,7 +52,7 @@ const UserManagement: React.FC = () => {
         financial_year_begins: '01-Apr',
         base_currency: 'INR',
         currency_symbol: '₹ / INR',
-        decimal_places: 2,
+        decimal_places: '' as any, // Initialize as empty string for placeholder
         is_gst_applicable: true,
         gstin: '',
         state_code: '',
@@ -57,9 +62,6 @@ const UserManagement: React.FC = () => {
         tan: '',
         cin: ''
     });
-    const [companyError, setCompanyError] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
-
     const [partnerFormData, setPartnerFormData] = useState({
         name: '',
         linked_company: '',
@@ -101,8 +103,8 @@ const UserManagement: React.FC = () => {
         subcategory: '',
         description: '',
         uom: '',
-        standard_price: 0,
-        tax_percentage: 18,
+        standard_price: '' as any, // Initialize as empty string for placeholder
+        tax_percentage: '' as any, // Initialize as empty string for placeholder
         hsn_sac_code: '',
         currency: 'INR',
         status: 'ACTIVE'
@@ -195,7 +197,7 @@ const UserManagement: React.FC = () => {
 
     const fetchProducts = async () => {
         try {
-            const response = await api.get('deals/products/');
+            const response = await api.get('products/');
             setProducts(response.data);
         } catch (err) {
             console.error('Error fetching products', err);
@@ -231,13 +233,20 @@ const UserManagement: React.FC = () => {
             const formData = new FormData();
             Object.entries(companyFormData).forEach(([key, value]) => {
                 if (value !== null && value !== undefined) {
-                    // Check if value is a file (for logo) or just a string/number
-                    formData.append(key, value as any);
+                    // Special handling for logo: only append if it's a File (new upload)
+                    if (key === 'logo') {
+                        if (value instanceof File) {
+                            formData.append(key, value);
+                        }
+                        // If it's a string (existing URL) or null, don't append (backend preserves existing unless explicit delete handling is added)
+                    } else {
+                        formData.append(key, value as any);
+                    }
                 }
             });
 
             if (editingId) {
-                await api.patch(`finance/company-profile/${editingId}/`, formData, {
+                await api.patch(`finance / company - profile / ${editingId}/`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 showNotification('Customer updated successfully', 'success');
@@ -507,46 +516,114 @@ const UserManagement: React.FC = () => {
         });
     };
 
-    const filteredUsers = users.filter(user => {
-        const searchStr = searchTerm.toLowerCase();
-        return (
-            user.username?.toLowerCase().includes(searchStr) ||
-            user.email?.toLowerCase().includes(searchStr) ||
-            user.first_name?.toLowerCase().includes(searchStr) ||
-            user.last_name?.toLowerCase().includes(searchStr) ||
-            user.role?.toLowerCase().includes(searchStr)
-        );
-    });
+    const filteredUsers = useMemo(() => {
+        return users.filter(user => {
+            const matchesSearch = (
+                (user.username?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (user.role?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+            );
 
-    const filteredCompanies = companies.filter(comp => {
-        const searchStr = searchTerm.toLowerCase();
-        return (
-            comp.name?.toLowerCase().includes(searchStr) ||
-            comp.email?.toLowerCase().includes(searchStr) ||
-            comp.city?.toLowerCase().includes(searchStr) ||
-            comp.state_name?.toLowerCase().includes(searchStr)
-        );
-    });
+            const matchesFilters = Object.entries(columnFilters).every(([key, value]) => {
+                if (!value) return true;
+                const itemValue = (user as any)[key]?.toString().toLowerCase() ?? '';
+                return itemValue.includes(value.toLowerCase());
+            });
 
-    const filteredPartners = partners.filter(p => {
-        const searchStr = searchTerm.toLowerCase();
-        return (
-            p.name?.toLowerCase().includes(searchStr) ||
-            p.code?.toLowerCase().includes(searchStr) ||
-            p.email?.toLowerCase().includes(searchStr) ||
-            p.primary_contact?.toLowerCase().includes(searchStr)
-        );
-    });
+            return matchesSearch && matchesFilters;
+        });
+    }, [users, searchTerm, columnFilters]);
 
-    const filteredEndCustomers = endCustomers.filter(ec => {
-        const searchStr = searchTerm.toLowerCase();
-        return (
-            ec.name?.toLowerCase().includes(searchStr) ||
-            ec.code?.toLowerCase().includes(searchStr) ||
-            ec.email?.toLowerCase().includes(searchStr) ||
-            ec.contact_person?.toLowerCase().includes(searchStr)
-        );
-    });
+    const filteredPartners = useMemo(() => {
+        return partners.filter(partner => {
+            const matchesSearch = (
+                (partner.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (partner.code?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (partner.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+            );
+
+            const matchesFilters = Object.entries(columnFilters).every(([key, value]) => {
+                if (!value) return true;
+                const itemValue = (partner as any)[key]?.toString().toLowerCase() ?? '';
+                return itemValue.includes(value.toLowerCase());
+            });
+
+            return matchesSearch && matchesFilters;
+        });
+    }, [partners, searchTerm, columnFilters]);
+
+    const filteredEndCustomers = useMemo(() => {
+        return endCustomers.filter(customer => {
+            const matchesSearch = (
+                (customer.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (customer.code?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (customer.contact_person?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+            );
+
+            const matchesFilters = Object.entries(columnFilters).every(([key, value]) => {
+                if (!value) return true;
+                const itemValue = (customer as any)[key]?.toString().toLowerCase() ?? '';
+                // Handle nested or special fields if necessary, e.g., linked_partner name
+                // For now assuming flat structure or basic check
+                return itemValue.includes(value.toLowerCase());
+            });
+
+            return matchesSearch && matchesFilters;
+        });
+    }, [endCustomers, searchTerm, columnFilters]);
+
+    const filteredCompanies = useMemo(() => {
+        return companies.filter(company => {
+            const matchesSearch = (
+                (company.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (company.city?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (company.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+            );
+
+            const matchesFilters = Object.entries(columnFilters).every(([key, value]) => {
+                if (!value) return true;
+                const itemValue = (company as any)[key]?.toString().toLowerCase() ?? '';
+                return itemValue.includes(value.toLowerCase());
+            });
+
+            return matchesSearch && matchesFilters;
+        });
+    }, [companies, searchTerm, columnFilters]);
+
+    const filteredFinancialYears = useMemo(() => {
+        return financialYears.filter(fy => {
+            const matchesSearch = (
+                (fy.label?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (fy.code?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+            );
+
+            const matchesFilters = Object.entries(columnFilters).every(([key, value]) => {
+                if (!value) return true;
+                const itemValue = (fy as any)[key]?.toString().toLowerCase() ?? '';
+                return itemValue.includes(value.toLowerCase());
+            });
+
+            return matchesSearch && matchesFilters;
+        });
+    }, [financialYears, searchTerm, columnFilters]);
+
+    const filteredProducts = useMemo(() => {
+        return products.filter(product => {
+            const matchesSearch = (
+                (product.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (product.product_code?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (product.description?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+            );
+
+            const matchesFilters = Object.entries(columnFilters).every(([key, value]) => {
+                if (!value) return true;
+                const itemValue = (product as any)[key]?.toString().toLowerCase() ?? '';
+                return itemValue.includes(value.toLowerCase());
+            });
+
+            return matchesSearch && matchesFilters;
+        });
+    }, [products, searchTerm, columnFilters]);
 
     if (loading) {
         return (
@@ -570,14 +647,60 @@ const UserManagement: React.FC = () => {
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                         {showForm ? `${editingId ? 'Edit' : 'Create New'} ${viewMode === 'user' ? 'User' :
                             viewMode === 'partner' ? 'Partner' :
-                                viewMode === 'end_customer' ? 'End Customer' : 'Company'
-                            }` : 'User Management'}
+                                viewMode === 'end_customer' ? 'End Customer' : 'Customer'
+                            }` : (
+                            viewMode === 'user' ? 'User Management' :
+                                viewMode === 'partner' ? 'Partner Management' :
+                                    viewMode === 'end_customer' ? 'End Customer Management' :
+                                        viewMode === 'company' ? 'Customer Management' :
+                                            viewMode === 'financial_year' ? 'Financial Year Management' :
+                                                viewMode === 'product' ? 'Product / Service Management' :
+                                                    'User Management'
+                        )}
                     </h1>
                 </div>
-                {!showForm && (
+            </div>
+
+            {/* Dashboard / Create New Toggle */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingBottom: '12px',
+                gap: '24px'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    alignItems: 'center',
+                    background: 'white',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                }}>
+                    <button
+                        onClick={() => setShowForm(false)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: !showForm ? 'var(--theme-primary)' : 'transparent',
+                            color: !showForm ? 'white' : 'var(--text-secondary)',
+                            boxShadow: !showForm ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                    >
+                        <LayoutDashboard size={18} /> Dashboard
+                    </button>
                     <button
                         onClick={() => {
-                            // Reset form data to ensure empty fields
                             setFormData({
                                 username: '', email: '', password: '',
                                 first_name: '', last_name: '', role: 'app_user',
@@ -607,25 +730,25 @@ const UserManagement: React.FC = () => {
                             setShowForm(true);
                         }}
                         style={{
-                            height: '36px',
-                            fontSize: '0.85rem',
-                            background: 'var(--theme-primary)',
-                            color: 'white',
-                            border: 'none',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            padding: '0 20px',
-                            borderRadius: '10px',
-                            transition: 'all 0.2s',
-                            cursor: 'pointer',
+                            padding: '6px 16px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
                             fontWeight: 700,
-                            boxShadow: '0 4px 6px -1px rgba(187, 77, 0, 0.2)'
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: showForm && !editingId ? 'var(--theme-primary)' : 'transparent',
+                            color: showForm && !editingId ? 'white' : 'var(--text-secondary)',
+                            boxShadow: showForm && !editingId ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                         }}
                     >
-                        <UserPlus size={14} /> Create New
+                        <PlusCircle size={18} /> Create New
                     </button>
-                )}
+                </div>
             </div>
 
             {/* Action Row - Only shown when not in form mode */}
@@ -640,10 +763,12 @@ const UserManagement: React.FC = () => {
                             padding: '6px',
                             borderRadius: '12px',
                             border: '1px solid var(--border-primary)',
-                            boxShadow: 'var(--shadow-sm)'
+                            boxShadow: 'var(--shadow-sm)',
+                            flex: 1,
+                            marginRight: '16px'
                         }}>
                             <button
-                                onClick={() => setViewMode('user')}
+                                onClick={() => { setViewMode('user'); setColumnFilters({}); }}
                                 style={{
                                     padding: '6px 20px',
                                     borderRadius: '8px',
@@ -662,7 +787,7 @@ const UserManagement: React.FC = () => {
                                 <UserIcon size={14} /> Users
                             </button>
                             <button
-                                onClick={() => setViewMode('partner')}
+                                onClick={() => { setViewMode('partner'); setColumnFilters({}); }}
                                 style={{
                                     padding: '6px 20px',
                                     borderRadius: '8px',
@@ -681,7 +806,7 @@ const UserManagement: React.FC = () => {
                                 <Shield size={14} /> Partner
                             </button>
                             <button
-                                onClick={() => setViewMode('end_customer')}
+                                onClick={() => { setViewMode('end_customer'); setColumnFilters({}); }}
                                 style={{
                                     padding: '6px 20px',
                                     borderRadius: '8px',
@@ -700,7 +825,7 @@ const UserManagement: React.FC = () => {
                                 <Users size={14} /> End Customer
                             </button>
                             <button
-                                onClick={() => setViewMode('company')}
+                                onClick={() => { setViewMode('company'); setColumnFilters({}); }}
                                 style={{
                                     padding: '6px 20px',
                                     borderRadius: '8px',
@@ -716,10 +841,10 @@ const UserManagement: React.FC = () => {
                                     gap: '8px'
                                 }}
                             >
-                                <Users size={14} /> Company
+                                <Users size={14} /> Customer
                             </button>
                             <button
-                                onClick={() => setViewMode('financial_year')}
+                                onClick={() => { setViewMode('financial_year'); setColumnFilters({}); }}
                                 style={{
                                     padding: '6px 20px',
                                     borderRadius: '8px',
@@ -738,7 +863,7 @@ const UserManagement: React.FC = () => {
                                 <CheckCircle size={14} /> Financial Year
                             </button>
                             <button
-                                onClick={() => setViewMode('product')}
+                                onClick={() => { setViewMode('product'); setColumnFilters({}); }}
                                 style={{
                                     padding: '6px 20px',
                                     borderRadius: '8px',
@@ -758,32 +883,7 @@ const UserManagement: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Search Bar matching Deal Management */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            background: 'white',
-                            border: '1px solid var(--border-primary)',
-                            borderRadius: '10px',
-                            padding: '0 12px',
-                            width: '350px',
-                            height: '40px'
-                        }}>
-                            <div style={{ marginRight: '8px', color: 'var(--text-tertiary)' }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                            </div>
-                            <input
-                                type="text"
-                                placeholder={`Search by ${viewMode === 'user' ? 'Username, Email or Role' :
-                                    viewMode === 'partner' ? 'Partner Name, Code or Email' :
-                                        viewMode === 'end_customer' ? 'Customer Name, Code or Contact' :
-                                            'Company Name, City or Email'
-                                    }...`}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                style={{ border: 'none', outline: 'none', fontSize: '0.9rem', width: '100%', color: 'var(--text-primary)', fontWeight: 600 }}
-                            />
-                        </div>
+
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <button
@@ -824,7 +924,7 @@ const UserManagement: React.FC = () => {
                                             handleCreateCompany
                     } style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         <div style={{
-                            background: 'var(--bg-secondary)',
+                            background: 'white',
                             borderRadius: '12px',
                             padding: '24px',
                             border: '1px solid var(--border-primary)'
@@ -832,78 +932,78 @@ const UserManagement: React.FC = () => {
                             {viewMode === 'user' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Username <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Enter username"
+                                            placeholder="Username"
                                             value={formData.username}
                                             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                             autoComplete="off"
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             First Name
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Enter first name"
+                                            placeholder="First Name"
                                             value={formData.first_name}
                                             onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Last Name
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Enter last name"
+                                            placeholder="Last Name"
                                             value={formData.last_name}
                                             onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Email Address <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="email"
-                                            placeholder="Enter email address"
+                                            placeholder="Email Address"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Password <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="password"
-                                            placeholder="Enter password"
+                                            placeholder="Password"
                                             value={formData.password}
                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                             autoComplete="new-password"
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Role
                                         </label>
                                         <select
                                             value={formData.role}
                                             onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         >
                                             <option value="app_user">User</option>
                                             <option value="app_admin">Admin</option>
@@ -914,49 +1014,49 @@ const UserManagement: React.FC = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Mobile Number
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Enter mobile number"
+                                            placeholder="Mobile Number"
                                             value={formData.mobile}
                                             onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Department
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Enter department"
+                                            placeholder="Department"
                                             value={formData.department}
                                             onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Region
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Enter region"
+                                            placeholder="Region"
                                             value={formData.region}
                                             onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Reporting To
                                         </label>
                                         <select
                                             value={formData.reporting_to}
                                             onChange={(e) => setFormData({ ...formData, reporting_to: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         >
                                             <option value="">Select Manager</option>
                                             {users.map(u => <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>)}
@@ -966,84 +1066,88 @@ const UserManagement: React.FC = () => {
                             ) : viewMode === 'partner' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Partner Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="text"
+                                            placeholder="Partner Name"
                                             value={partnerFormData.name}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Linked Company
                                         </label>
                                         <select
                                             value={partnerFormData.linked_company}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, linked_company: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         >
                                             <option value="">Select Company</option>
                                             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                         </select>
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Type
                                         </label>
                                         <select
                                             value={partnerFormData.type}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, type: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         >
                                             <option value="CUSTOMER">Customer</option>
                                             <option value="CHANNEL_PARTNER">Channel Partner</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Industry
                                         </label>
                                         <input
                                             type="text"
+                                            placeholder="Industry"
                                             value={partnerFormData.industry}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, industry: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Primary Contact Name
                                         </label>
                                         <input
                                             type="text"
+                                            placeholder="Primary Contact Name"
                                             value={partnerFormData.primary_contact}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, primary_contact: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Email Address
                                         </label>
                                         <input
                                             type="email"
+                                            placeholder="Email Address"
                                             value={partnerFormData.email}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, email: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Payment Terms
                                         </label>
                                         <select
                                             value={partnerFormData.payment_terms}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, payment_terms: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         >
                                             <option value="NET_30">Net 30</option>
                                             <option value="NET_60">Net 60</option>
@@ -1055,25 +1159,26 @@ const UserManagement: React.FC = () => {
                             ) : viewMode === 'end_customer' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Customer Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="text"
+                                            placeholder="Customer Name"
                                             value={endCustomerFormData.name}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Linked Partner <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <select
                                             value={endCustomerFormData.linked_partner}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, linked_partner: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         >
                                             <option value="">Select Partner</option>
@@ -1081,87 +1186,91 @@ const UserManagement: React.FC = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Deal Type
                                         </label>
                                         <select
                                             value={endCustomerFormData.deal_type}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, deal_type: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         >
                                             <option value="DIRECT">Direct</option>
                                             <option value="INDIRECT">Indirect</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Location
                                         </label>
                                         <input
                                             type="text"
+                                            placeholder="Location"
                                             value={endCustomerFormData.location}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, location: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Contact Person
                                         </label>
                                         <input
                                             type="text"
+                                            placeholder="Contact Person"
                                             value={endCustomerFormData.contact_person}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, contact_person: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Email Address
                                         </label>
                                         <input
                                             type="email"
+                                            placeholder="Email Address"
                                             value={endCustomerFormData.email}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, email: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                 </div>
                             ) : viewMode === 'financial_year' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Label (e.g. FY 2025-26) <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="text"
+                                            placeholder="Label"
                                             value={fyFormData.label}
                                             onChange={(e) => setFyFormData({ ...fyFormData, label: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Start Date <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="date"
                                             value={fyFormData.start_date}
                                             onChange={(e) => setFyFormData({ ...fyFormData, start_date: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             End Date <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="date"
                                             value={fyFormData.end_date}
                                             onChange={(e) => setFyFormData({ ...fyFormData, end_date: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -1178,73 +1287,77 @@ const UserManagement: React.FC = () => {
                             ) : viewMode === 'product' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Product Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="text"
+                                            placeholder="Product Name"
                                             value={productFormData.name}
                                             onChange={(e) => setProductFormData({ ...productFormData, name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Category
                                         </label>
                                         <select
                                             value={productFormData.category}
                                             onChange={(e) => setProductFormData({ ...productFormData, category: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         >
                                             <option value="SOFTWARE">Software</option>
                                             <option value="SERVICE">Service</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Subcategory
                                         </label>
                                         <input
                                             type="text"
+                                            placeholder="Subcategory"
                                             value={productFormData.subcategory}
                                             onChange={(e) => setProductFormData({ ...productFormData, subcategory: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Standard Price
                                         </label>
                                         <input
                                             type="number"
+                                            placeholder="0"
                                             value={productFormData.standard_price}
-                                            onChange={(e) => setProductFormData({ ...productFormData, standard_price: Number(e.target.value) })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            onChange={(e) => setProductFormData({ ...productFormData, standard_price: e.target.value === '' ? '' : Number(e.target.value) })}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Tax Percentage (%)
                                         </label>
                                         <input
                                             type="number"
+                                            placeholder="18"
                                             value={productFormData.tax_percentage}
-                                            onChange={(e) => setProductFormData({ ...productFormData, tax_percentage: Number(e.target.value) })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            onChange={(e) => setProductFormData({ ...productFormData, tax_percentage: e.target.value === '' ? '' : Number(e.target.value) })}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             UOM
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Unit of Measure"
+                                            placeholder="UOM"
                                             value={productFormData.uom}
                                             onChange={(e) => setProductFormData({ ...productFormData, uom: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                 </div>
@@ -1264,122 +1377,260 @@ const UserManagement: React.FC = () => {
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Customer Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    placeholder="Customer Name"
                                                     value={companyFormData.name}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Logo
                                                 </label>
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, logo: e.target.files ? e.target.files[0] : null })}
-                                                    style={{ width: '100%', padding: '6px 10px', fontSize: '0.85rem' }}
-                                                />
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '10px',
+                                                    padding: '6px 10px', // Match text input padding
+                                                    background: 'white', // Match text input background
+                                                    borderRadius: '6px', // Match text input border radius
+                                                    border: '1px solid var(--border-primary)', // Match text input border
+                                                    height: '34px', // Match text input height
+                                                    width: '100%'
+                                                }}>
+                                                    <input
+                                                        type="file"
+                                                        id="logo-upload"
+                                                        accept="image/*"
+                                                        style={{ display: 'none' }}
+                                                        onChange={(e) => setCompanyFormData({ ...companyFormData, logo: e.target.files ? e.target.files[0] : null })}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => document.getElementById('logo-upload')?.click()}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px',
+                                                            background: 'white',
+                                                            color: '#1a1f36',
+                                                            border: '1px solid #E0E6ED',
+                                                            height: '24px', // Reduced height to fit inside the input-like container
+                                                            padding: '0 8px',
+                                                            borderRadius: '4px', // Slightly smaller radius
+                                                            fontWeight: 600,
+                                                            fontSize: '0.75rem',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s ease',
+                                                            whiteSpace: 'nowrap'
+                                                        }}
+                                                    >
+                                                        <Paperclip size={12} /> Attach Logo
+                                                    </button>
+
+                                                    <div style={{ flex: 1, display: 'flex', gap: '8px', overflowX: 'auto', padding: '4px 0', alignItems: 'center' }}>
+                                                        {companyFormData.logo && companyFormData.logo instanceof File && (
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '8px',
+                                                                flex: 1, // Allow this container to take available space
+                                                                minWidth: 0, // Crucial for text truncation in flexbox
+                                                                justifyContent: 'space-between' // Push buttons to the far right
+                                                            }}>
+                                                                <span style={{
+                                                                    fontSize: '0.85rem',
+                                                                    color: '#4A5568',
+                                                                    fontWeight: 500,
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap',
+                                                                    maxWidth: '150px' // Strictly constrain width to prevent layout shift
+                                                                }} title={companyFormData.logo.name}>
+                                                                    {companyFormData.logo.name}
+                                                                </span>
+                                                                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            if (companyFormData.logo instanceof File) {
+                                                                                const url = URL.createObjectURL(companyFormData.logo);
+                                                                                window.open(url, '_blank');
+                                                                            }
+                                                                        }}
+                                                                        style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#718096', display: 'flex' }}
+                                                                        title="View Pending Logo"
+                                                                    >
+                                                                        <Eye size={14} />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setCompanyFormData({ ...companyFormData, logo: null })}
+                                                                        style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#E53E3E' }}
+                                                                        title="Remove pending file"
+                                                                    >
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {companyFormData.logo && typeof companyFormData.logo === 'string' && (
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '8px',
+                                                                flex: 1,
+                                                                minWidth: 0,
+                                                                justifyContent: 'space-between'
+                                                            }}>
+                                                                <span style={{
+                                                                    fontSize: '0.85rem',
+                                                                    fontWeight: 500,
+                                                                    color: '#4A5568',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap',
+                                                                    maxWidth: '150px' // Strictly constrain width
+                                                                }} title="Current Logo">
+                                                                    Current Logo
+                                                                </span>
+                                                                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => window.open(companyFormData.logo as string, '_blank')}
+                                                                        style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#718096', display: 'flex' }}
+                                                                        title="View Current Logo"
+                                                                    >
+                                                                        <Eye size={14} />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setCompanyFormData({ ...companyFormData, logo: null })}
+                                                                        style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#E53E3E' }}
+                                                                        title="Delete Current Logo"
+                                                                    >
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {!companyFormData.logo && (
+                                                            <span style={{ fontSize: '0.9rem', color: '#A0AEC0', fontStyle: 'italic', marginLeft: '10px' }}>
+                                                                No logo uploaded
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Email Address
                                                 </label>
                                                 <input
                                                     type="email"
+                                                    placeholder="Email Address"
                                                     value={companyFormData.email}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Phone Number
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    placeholder="Phone Number"
                                                     value={companyFormData.phone_number}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, phone_number: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Mobile Number
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    placeholder="Mobile Number"
                                                     value={companyFormData.mobile_number}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, mobile_number: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Website URL
                                                 </label>
                                                 <input
                                                     type="url"
+                                                    placeholder="Website URL"
                                                     value={companyFormData.website_url}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, website_url: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="section">
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
                                         <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Address Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div style={{ gridColumn: 'span 2' }}>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Address Line 1
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    placeholder="Address Line 1"
                                                     value={companyFormData.address_line_1}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, address_line_1: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Address Line 2
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    placeholder="Address Line 2"
                                                     value={companyFormData.address_line_2}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, address_line_2: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Country
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    placeholder="Country"
                                                     value={companyFormData.country}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, country: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     State
                                                 </label>
                                                 <select
                                                     value={companyFormData.state}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, state: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 >
                                                     <option value="">Select State</option>
                                                     {states.map(state => (
@@ -1388,57 +1639,59 @@ const UserManagement: React.FC = () => {
                                                 </select>
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     City
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    placeholder="City"
                                                     value={companyFormData.city}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, city: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Pincode
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    placeholder="Pincode"
                                                     value={companyFormData.pincode}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, pincode: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="section">
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
                                         <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Financial Settings
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Financial Year Begins
                                                 </label>
                                                 <select
                                                     value={companyFormData.financial_year_begins}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, financial_year_begins: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 >
                                                     <option value="01-Apr">01-Apr</option>
                                                     <option value="01-Jan">01-Jan</option>
                                                 </select>
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Base Currency
                                                 </label>
                                                 <select
                                                     value={companyFormData.base_currency}
                                                     onChange={(e) => handleCurrencyChange(e.target.value)}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 >
                                                     <option value="INR">INR</option>
                                                     <option value="USD">USD</option>
@@ -1446,20 +1699,21 @@ const UserManagement: React.FC = () => {
                                                 </select>
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Decimal Places
                                                 </label>
                                                 <input
                                                     type="number"
+                                                    placeholder="2"
                                                     value={companyFormData.decimal_places}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, decimal_places: parseInt(e.target.value) })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, decimal_places: e.target.value === '' ? '' : parseInt(e.target.value) })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="section">
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
                                         <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Tax Registration Details
@@ -1477,18 +1731,19 @@ const UserManagement: React.FC = () => {
                                             {companyFormData.is_gst_applicable && (
                                                 <>
                                                     <div>
-                                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                             GSTIN
                                                         </label>
                                                         <input
                                                             type="text"
+                                                            placeholder="GSTIN"
                                                             value={companyFormData.gstin}
                                                             onChange={(e) => handleGSTINChange(e.target.value)}
-                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                             State Code
                                                         </label>
                                                         <input
@@ -1501,42 +1756,45 @@ const UserManagement: React.FC = () => {
                                                 </>
                                             )}
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     PAN
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    placeholder="PAN"
                                                     value={companyFormData.pan}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, pan: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     TAN
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    placeholder="TAN"
                                                     value={companyFormData.tan}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, tan: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     CIN
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    placeholder="CIN"
                                                     value={companyFormData.cin}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, cin: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="section">
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
                                         <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             MSME Details
@@ -1553,14 +1811,15 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             {companyFormData.msme_registered && (
                                                 <div>
-                                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '2px' }}>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                         MSME Number
                                                     </label>
                                                     <input
                                                         type="text"
+                                                        placeholder="MSME Number"
                                                         value={companyFormData.msme_number}
                                                         onChange={(e) => setCompanyFormData({ ...companyFormData, msme_number: e.target.value })}
-                                                        style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
+                                                        style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     />
                                                 </div>
                                             )}
@@ -1630,365 +1889,396 @@ const UserManagement: React.FC = () => {
                         </div>
                     </form>
                 ) : (
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-                        <div style={{ flex: 1 }}>
-                            <table className="ae-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
-                                <thead style={{ position: 'sticky', top: 0, zIndex: 20 }}>
-                                    <tr>
-                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)', width: '30%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-                                            {viewMode === 'user' ? 'User' : viewMode === 'partner' ? 'Partner' : viewMode === 'end_customer' ? 'End Customer' : viewMode === 'financial_year' ? 'Financial Year' : viewMode === 'product' ? 'Product / Service' : 'Company'}
+                    <div className="section-panel !p-0 overflow-hidden">
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr style={{ background: 'var(--bg-secondary)' }}>
+                                    <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {viewMode === 'user' ? 'User' : viewMode === 'partner' ? 'Partner' : viewMode === 'end_customer' ? 'End Customer' : viewMode === 'financial_year' ? 'Financial Year' : viewMode === 'product' ? 'Product / Service' : 'Customer'}
+                                    </th>
+                                    <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {viewMode === 'financial_year' ? 'Start Date' : viewMode === 'product' ? 'Category' : 'Email'}
+                                    </th>
+                                    <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {viewMode === 'user' ? 'Role' : viewMode === 'partner' ? 'Type / Industry' : viewMode === 'end_customer' ? 'Partner / Location' : viewMode === 'financial_year' ? 'End Date' : viewMode === 'product' ? 'Code / Sub' : 'City / State'}
+                                    </th>
+                                    <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+                                    <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
+                                </tr>
+                                {showFilters && (
+                                    <tr style={{ background: 'var(--bg-secondary)' }}>
+                                        <th style={{ padding: '8px 24px' }}>
+                                            <div className="ae-input-group !mb-0">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={columnFilters[viewMode === 'user' ? 'username' : viewMode === 'partner' ? 'name' : viewMode === 'end_customer' ? 'name' : viewMode === 'financial_year' ? 'label' : viewMode === 'product' ? 'name' : 'name'] || ''}
+                                                    onChange={(e) => setColumnFilters({ ...columnFilters, [viewMode === 'user' ? 'username' : viewMode === 'partner' ? 'name' : viewMode === 'end_customer' ? 'name' : viewMode === 'financial_year' ? 'label' : viewMode === 'product' ? 'name' : 'name']: e.target.value })}
+                                                    style={{ height: '28px', fontSize: '11px' }}
+                                                />
+                                            </div>
                                         </th>
-                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)', width: '25%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-                                            {viewMode === 'financial_year' ? 'Start Date' : viewMode === 'product' ? 'Category' : 'Email'}
+                                        <th style={{ padding: '8px 24px' }}>
+                                            <div className="ae-input-group !mb-0">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={columnFilters[viewMode === 'user' ? 'email' : viewMode === 'partner' ? 'email' : viewMode === 'end_customer' ? 'email' : viewMode === 'financial_year' ? 'start_date' : viewMode === 'product' ? 'category' : 'email'] || ''}
+                                                    onChange={(e) => setColumnFilters({ ...columnFilters, [viewMode === 'user' ? 'email' : viewMode === 'partner' ? 'email' : viewMode === 'end_customer' ? 'email' : viewMode === 'financial_year' ? 'start_date' : viewMode === 'product' ? 'category' : 'email']: e.target.value })}
+                                                    style={{ height: '28px', fontSize: '11px' }}
+                                                />
+                                            </div>
                                         </th>
-                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-                                            {viewMode === 'user' ? 'Role' : viewMode === 'partner' ? 'Type / Industry' : viewMode === 'end_customer' ? 'Partner / Location' : viewMode === 'financial_year' ? 'End Date' : viewMode === 'product' ? 'Code / Sub' : 'City / State'}
+                                        <th style={{ padding: '8px 24px' }}>
+                                            <div className="ae-input-group !mb-0">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={columnFilters[viewMode === 'user' ? 'role' : viewMode === 'partner' ? 'type' : viewMode === 'end_customer' ? 'location' : viewMode === 'financial_year' ? 'end_date' : viewMode === 'product' ? 'product_code' : 'city'] || ''}
+                                                    onChange={(e) => setColumnFilters({ ...columnFilters, [viewMode === 'user' ? 'role' : viewMode === 'partner' ? 'type' : viewMode === 'end_customer' ? 'location' : viewMode === 'financial_year' ? 'end_date' : viewMode === 'product' ? 'product_code' : 'city']: e.target.value })}
+                                                    style={{ height: '28px', fontSize: '11px' }}
+                                                />
+                                            </div>
                                         </th>
-                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)', width: '15%', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Status</th>
-                                        <th style={{ height: '40px', padding: '0 16px', whiteSpace: 'nowrap', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)', width: '15%', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Actions</th>
+                                        <th style={{ padding: '8px 24px' }}>
+                                            <div className="ae-input-group !mb-0">
+                                                <Search className="ae-search-icon" size={12} />
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={columnFilters[viewMode === 'user' ? 'is_active' : 'status'] || ''}
+                                                    onChange={(e) => setColumnFilters({ ...columnFilters, [viewMode === 'user' ? 'is_active' : 'status']: e.target.value })}
+                                                    style={{ height: '28px', fontSize: '11px' }}
+                                                />
+                                            </div>
+                                        </th>
+                                        <th style={{ padding: '8px 24px', textAlign: 'right' }}>
+                                            <button
+                                                onClick={() => { setColumnFilters({}); setSearchTerm(''); }}
+                                                style={{ height: '24px', width: '100px', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
+                                            >
+                                                Clear
+                                            </button>
+                                        </th>
                                     </tr>
-                                    {showFilters && (
-                                        <tr style={{ background: '#F7FAFC' }}>
-                                            <th style={{ padding: '8px 16px', backgroundColor: '#F7FAFC' }}>
-                                                <div className="ae-input-group !mb-0">
-                                                    <Search className="ae-search-icon" size={12} />
-                                                    <input
-                                                        className="ae-input"
-                                                        placeholder="Filter..."
-                                                        value={searchTerm}
-                                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                                        style={{ height: '28px', fontSize: '11px' }}
-                                                    />
+                                )}
+                            </thead>
+                            <tbody>
+                                {viewMode === 'user' ? filteredUsers.map((user) => (
+                                    <tr key={user.id} className="ae-table-row">
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div className="flex items-center">
+                                                <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
+                                                    <UserIcon size={20} />
                                                 </div>
-                                            </th>
-                                            <th style={{ padding: '8px 16px', backgroundColor: '#F7FAFC' }}></th>
-                                            <th style={{ padding: '8px 16px', backgroundColor: '#F7FAFC' }}></th>
-                                            <th style={{ padding: '8px 16px', backgroundColor: '#F7FAFC' }}></th>
-                                            <th style={{ padding: '8px 16px', textAlign: 'right', backgroundColor: '#F7FAFC' }}>
+                                                <div className="ml-4">
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{user.username}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{user.first_name} {user.last_name}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
+                                                <Mail size={14} className="text-gray-400" /> {user.email || '—'}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <span style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '4px 10px',
+                                                borderRadius: '6px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 700,
+                                                textTransform: 'uppercase',
+                                                background: user.role === 'app_admin' ? 'rgba(159, 122, 234, 0.1)' : 'var(--bg-accent)',
+                                                color: user.role === 'app_admin' ? '#9F7AEA' : 'var(--ae-blue)'
+                                            }}>
+                                                <Shield size={12} />
+                                                {user.role === 'app_admin' ? 'Admin' :
+                                                    user.role === 'sales_head' ? 'Sales Head' :
+                                                        user.role === 'pm_head' ? 'PM Head' :
+                                                            user.role === 'salesperson' ? 'Salesperson' :
+                                                                user.role === 'inside_sales_head' ? 'IS Head' : 'User'}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <span style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '4px 10px',
+                                                borderRadius: '6px',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 800,
+                                                textTransform: 'uppercase',
+                                                background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                                                color: user.is_active ? '#00C853' : '#F44336'
+                                            }}>
+                                                {user.is_active ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                {user.is_active ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                 <button
-                                                    onClick={() => setSearchTerm('')}
-                                                    style={{ height: '24px', width: '100px', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
+                                                    onClick={() => handleToggleStatus(user.id, 'user')}
+                                                    style={{ padding: '8px', color: user.is_active ? '#00C853' : '#F44336', border: 'none', background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
+                                                    title={user.is_active ? "Deactivate User" : "Activate User"}
                                                 >
-                                                    Clear
+                                                    <Power size={16} />
                                                 </button>
-                                            </th>
-                                        </tr>
-                                    )}
-                                </thead>
-                                <tbody>
-                                    {viewMode === 'user' ? filteredUsers.map((user) => (
-                                        <tr key={user.id} style={{ borderBottom: '1px solid #F0F4F8' }}>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
-                                                        <UserIcon size={20} />
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{user.username}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{user.first_name} {user.last_name}</div>
-                                                    </div>
+                                                <button
+                                                    onClick={() => handleDeleteUser(user.id)}
+                                                    style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
+                                                    title="Delete User"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )) : viewMode === 'partner' ? filteredPartners.map((p) => (
+                                    <tr key={p.id} className="ae-table-row">
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div className="flex items-center">
+                                                <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
+                                                    <Shield size={20} />
                                                 </div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
-                                                    <Mail size={14} className="text-gray-400" /> {user.email || '—'}
+                                                <div className="ml-4">
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{p.name}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.code}</div>
                                                 </div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <span style={{
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '6px',
-                                                    padding: '4px 10px',
-                                                    borderRadius: '6px',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 700,
-                                                    textTransform: 'uppercase',
-                                                    background: user.role === 'app_admin' ? 'rgba(159, 122, 234, 0.1)' : 'var(--bg-accent)',
-                                                    color: user.role === 'app_admin' ? '#9F7AEA' : 'var(--ae-blue)'
-                                                }}>
-                                                    <Shield size={12} />
-                                                    {user.role === 'app_admin' ? 'Admin' :
-                                                        user.role === 'sales_head' ? 'Sales Head' :
-                                                            user.role === 'pm_head' ? 'PM Head' :
-                                                                user.role === 'salesperson' ? 'Salesperson' :
-                                                                    user.role === 'inside_sales_head' ? 'IS Head' : 'User'}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <span style={{
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '6px',
-                                                    padding: '4px 10px',
-                                                    borderRadius: '6px',
-                                                    fontSize: '0.7rem',
-                                                    fontWeight: 800,
-                                                    textTransform: 'uppercase',
-                                                    background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)',
-                                                    color: user.is_active ? '#00C853' : '#F44336'
-                                                }}>
-                                                    {user.is_active ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                    {user.is_active ? 'Active' : 'Inactive'}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => handleToggleStatus(user.id, 'user')}
-                                                        style={{ padding: '8px', color: user.is_active ? '#00C853' : '#F44336', border: 'none', background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
-                                                        title={user.is_active ? "Deactivate User" : "Activate User"}
-                                                    >
-                                                        <Power size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteUser(user.id)}
-                                                        style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
-                                                        title="Delete User"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{p.email || '—'}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.mobile || '—'}</div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{p.type}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.industry || '—'}</div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: p.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: p.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                                                {p.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                {p.status}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => handleToggleStatus(p.id, 'partner')}
+                                                    style={{ padding: '8px', color: p.status === 'ACTIVE' ? '#00C853' : '#F44336', border: 'none', background: p.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                >
+                                                    <Power size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeletePartner(p.id)}
+                                                    style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                    title="Delete Partner"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setPartnerFormData({ ...p });
+                                                        setEditingId(p.id);
+                                                        setShowForm(true);
+                                                    }}
+                                                    style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )) : viewMode === 'end_customer' ? filteredEndCustomers.map((ec) => (
+                                    <tr key={ec.id} className="ae-table-row">
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div className="flex items-center">
+                                                <div className="h-10 w-10 flex-shrink-0 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
+                                                    <UserIcon size={20} />
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    )) : viewMode === 'partner' ? filteredPartners.map((p) => (
-                                        <tr key={p.id} style={{ borderBottom: '1px solid #F0F4F8' }}>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
-                                                        <Shield size={20} />
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{p.name}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.code}</div>
-                                                    </div>
+                                                <div className="ml-4">
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{ec.name}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.code}</div>
                                                 </div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{p.email || '—'}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.mobile || '—'}</div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{p.type}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.industry || '—'}</div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: p.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: p.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                    {p.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                    {p.status}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => handleToggleStatus(p.id, 'partner')}
-                                                        style={{ padding: '8px', color: p.status === 'ACTIVE' ? '#00C853' : '#F44336', border: 'none', background: p.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    >
-                                                        <Power size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeletePartner(p.id)}
-                                                        style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                        title="Delete Partner"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setPartnerFormData({ ...p });
-                                                            setEditingId(p.id);
-                                                            setShowForm(true);
-                                                        }}
-                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </button>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{ec.email || '—'}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.phone || '—'}</div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{ec.partner_name || '—'}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.location || '—'}</div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                                                {ec.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                {ec.status}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => handleToggleStatus(ec.id, 'end_customer')}
+                                                    style={{ padding: '8px', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336', border: 'none', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                >
+                                                    <Power size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteEndCustomer(ec.id)}
+                                                    style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                    title="Delete End Customer"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setEndCustomerFormData({ ...ec });
+                                                        setEditingId(ec.id);
+                                                        setShowForm(true);
+                                                    }}
+                                                    style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )) : viewMode === 'financial_year' ? financialYears.map((fy) => (
+                                    <tr key={fy.id} className="ae-table-row">
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div className="flex items-center">
+                                                <div className="h-10 w-10 flex-shrink-0 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                                                    <CheckCircle size={20} />
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    )) : viewMode === 'end_customer' ? filteredEndCustomers.map((ec) => (
-                                        <tr key={ec.id} style={{ borderBottom: '1px solid #F0F4F8' }}>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
-                                                        <UserIcon size={20} />
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{ec.name}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.code}</div>
-                                                    </div>
+                                                <div className="ml-4">
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{fy.label}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{fy.code} {fy.is_current_fy && <span style={{ background: '#EBF4FF', color: '#1B66D1', padding: '2px 6px', borderRadius: '4px', fontSize: '0.65rem', marginLeft: '8px' }}>CURRENT</span>}</div>
                                                 </div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{ec.email || '—'}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.phone || '—'}</div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{ec.partner_name || '—'}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.location || '—'}</div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                    {ec.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                    {ec.status}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => handleToggleStatus(ec.id, 'end_customer')}
-                                                        style={{ padding: '8px', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336', border: 'none', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    >
-                                                        <Power size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteEndCustomer(ec.id)}
-                                                        style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                        title="Delete End Customer"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setEndCustomerFormData({ ...ec });
-                                                            setEditingId(ec.id);
-                                                            setShowForm(true);
-                                                        }}
-                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </button>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.start_date}</div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.end_date}</div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: fy.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: fy.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                                                {fy.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                {fy.status}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => {
+                                                        setFyFormData({ ...fy });
+                                                        setEditingId(fy.id);
+                                                        setShowForm(true);
+                                                    }}
+                                                    style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )) : viewMode === 'product' ? products.map((prd) => (
+                                    <tr key={prd.id} className="ae-table-row">
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div className="flex items-center">
+                                                <div className="h-10 w-10 flex-shrink-0 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
+                                                    <Shield size={20} />
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    )) : viewMode === 'financial_year' ? financialYears.map((fy) => (
-                                        <tr key={fy.id} style={{ borderBottom: '1px solid #F0F4F8' }}>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-                                                        <CheckCircle size={20} />
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{fy.label}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{fy.code} {fy.is_current_fy && <span style={{ background: '#EBF4FF', color: '#1B66D1', padding: '2px 6px', borderRadius: '4px', fontSize: '0.65rem', marginLeft: '8px' }}>CURRENT</span>}</div>
-                                                    </div>
+                                                <div className="ml-4">
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{prd.name}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{prd.product_code}</div>
                                                 </div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.start_date}</div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.end_date}</div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: fy.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: fy.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                    {fy.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                    {fy.status}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => {
-                                                            setFyFormData({ ...fy });
-                                                            setEditingId(fy.id);
-                                                            setShowForm(true);
-                                                        }}
-                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </button>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{prd.category}</div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{prd.subcategory || '—'}</div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: prd.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: prd.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                                                {prd.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                {prd.status}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => {
+                                                        setProductFormData({ ...prd });
+                                                        setEditingId(prd.id);
+                                                        setShowForm(true);
+                                                    }}
+                                                    style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )) : filteredCompanies.map((comp) => (
+                                    <tr key={comp.id} className="ae-table-row">
+                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                            <div className="flex items-center">
+                                                <div className="h-10 w-10 flex-shrink-0 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded-full flex items-center justify-center">
+                                                    <Users size={20} />
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    )) : viewMode === 'product' ? products.map((prd) => (
-                                        <tr key={prd.id} style={{ borderBottom: '1px solid #F0F4F8' }}>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
-                                                        <Shield size={20} />
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{prd.name}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{prd.product_code}</div>
-                                                    </div>
+                                                <div className="ml-4">
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{comp.name}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.alias_name || 'No Alias'}</div>
                                                 </div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{prd.category}</div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{prd.subcategory || '—'}</div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: prd.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: prd.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                    {prd.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                    {prd.status}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => {
-                                                            setProductFormData({ ...prd });
-                                                            setEditingId(prd.id);
-                                                            setShowForm(true);
-                                                        }}
-                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )) : filteredCompanies.map((comp) => (
-                                        <tr key={comp.id} style={{ borderBottom: '1px solid #F0F4F8' }}>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded-full flex items-center justify-center">
-                                                        <Users size={20} />
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{comp.name}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.alias_name || 'No Alias'}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
-                                                    <Mail size={14} className="text-gray-400" /> {comp.email || '—'}
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{comp.city || '—'}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.state_name || '—'}</div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: 'rgba(0, 200, 83, 0.1)', color: '#00C853' }}>
-                                                    <CheckCircle size={12} /> Active
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => {
-                                                            setCompanyFormData({ ...comp, logo: null }); // Ensure logo is null or handle properly
-                                                            setEditingId(comp.id); // Set the editing ID
-                                                            setViewMode('company');
-                                                            setShowForm(true);
-                                                        }}
-                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                        title="Edit Customer"
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                                            <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
+                                                <Mail size={14} className="text-gray-400" /> {comp.email || '—'}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{comp.city || '—'}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.state_name || '—'}</div>
+                                        </td>
+                                        <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: 'rgba(0, 200, 83, 0.1)', color: '#00C853' }}>
+                                                <CheckCircle size={12} /> Active
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => {
+                                                        setCompanyFormData({ ...comp, logo: comp.logo || null }); // Ensure logo is preserved
+                                                        setEditingId(comp.id); // Set the editing ID
+                                                        setViewMode('company');
+                                                        setShowForm(true);
+                                                    }}
+                                                    style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                    title="Edit Customer"
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </div>
