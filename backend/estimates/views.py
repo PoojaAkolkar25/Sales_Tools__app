@@ -23,8 +23,16 @@ class EstimateViewSet(viewsets.ModelViewSet):
     serializer_class = EstimateSerializer
 
     def get_queryset(self):
+        user = self.request.user
         queryset = Estimate.objects.all().order_by('-created_at')
         
+        # User-wise data view validation: 
+        # Non-admins (not superuser and not in Sales Head/Finance Manager groups) 
+        # should only see estimates they created.
+        is_admin = user.is_superuser or user.groups.filter(name__in=['Sales Head', 'Finance Manager']).exists()
+        if not is_admin:
+            queryset = queryset.filter(created_by=user)
+
         # Simple filtering
         customer_id = self.request.query_params.get('customer', None)
         status = self.request.query_params.get('status', None)
@@ -200,7 +208,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
             cost_sheet=original_estimate.cost_sheet,
             deal=original_estimate.deal,
             version=original_estimate.version + 1,
-            status=EstimateStatus.PENDING_APPROVAL,
+            status=EstimateStatus.DRAFT,
             estimate_date=timezone.now().date(),
             description_memo=original_estimate.description_memo,
             terms_conditions=original_estimate.terms_conditions,

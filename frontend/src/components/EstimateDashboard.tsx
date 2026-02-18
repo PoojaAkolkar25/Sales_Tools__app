@@ -27,6 +27,7 @@ const ALL_COLUMNS = [
     { key: 'cost_sheet_no', label: 'Cost Sheet No' },
     { key: 'cost_sheet_price', label: 'CS Amount' },
     { key: 'estimate_id', label: 'Est. ID' },
+    { key: 'version', label: 'Version' },
     { key: 'created_at', label: 'Date' },
     { key: 'estimate_date', label: 'Estimate Date' },
     { key: 'customer_name', label: 'Customer' },
@@ -777,6 +778,12 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                     onClick={() => onView(est.id)}
                                                 >
                                                     {est.estimate_id}
+                                                </td>
+                                            )}
+
+                                            {visibleColumns.includes('version') && (
+                                                <td style={{ fontWeight: 600, textAlign: 'center' }}>
+                                                    v{est.version}
                                                 </td>
                                             )}
 

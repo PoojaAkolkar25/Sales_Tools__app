@@ -660,7 +660,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                                 style={{ color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
                                                 onClick={() => onView(so.id)}
                                             >
-                                                {so.so_number || '---'}
+                                                {so.so_number || `DRAFT-${so.id}`}
                                             </span>
                                             {so.status === 'DRAFT' && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800 uppercase tracking-tighter">Draft</span>}
                                         </td>

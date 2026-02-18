@@ -541,6 +541,15 @@ class SalesOrderCreator:
         logger.info(f"  Shipping Address: {extracted_data.get('shipping_address', 'N/A')[:100]}...")
         logger.info(f"  Line Items Count: {len(extracted_data.get('items', []))}")
         
+        # Check for existing PO number (excluding cancelled) to avoid duplicate drafts
+        po_num = extracted_data.get('po_number')
+        if po_num and po_num != 'N/A':
+            existing_so = SalesOrder.objects.filter(po_number__iexact=po_num).exclude(status='CANCELLED').first()
+            if existing_so:
+                logger.info(f"Duplicate PO found: {po_num} in SO {existing_so.id}")
+                # We raise an exception which will be caught in the view
+                raise Exception(f"PO Number {po_num} already exists. Check first PO (ID: {existing_so.id}).")
+        
         # Use extracted customer name directly
         cust_name = extracted_data.get('customer_name', 'Pending Mapping')
         

@@ -294,15 +294,29 @@ class MilestoneViewSet(viewsets.ModelViewSet):
             }]
             
             # Prepare dummy invoice_data for calculation (billing/shipping handles might needed)
+            # Determine Customer State ID for Tax Calculation
+            customer_state_id = None
+            if sales_order.customer:
+                 from finance.models import StateMaster
+                 # Try by Code first (more reliable)
+                 if sales_order.customer.state_code:
+                     state_obj = StateMaster.objects.filter(code=sales_order.customer.state_code).first()
+                     if state_obj:
+                         customer_state_id = state_obj.id
+                 
+                 # Try by Name if not found
+                 if not customer_state_id and sales_order.customer.state:
+                     state_name = sales_order.customer.state
+                     state_obj = StateMaster.objects.filter(name__iexact=state_name).first()
+                     if state_obj:
+                         customer_state_id = state_obj.id
+
+            # Prepare dummy invoice_data for calculation
             invoice_data = {
                 'lead': lead.id if lead else None,
                 'is_gst_applicable': True,
-                'customer_state': lead.state.id if lead and lead.state else None
+                'customer_state': customer_state_id
             }
-            
-            # Use fallback state if lead doesn't have one
-            if not invoice_data['customer_state'] and sales_order.customer and sales_order.customer.state:
-                invoice_data['customer_state'] = sales_order.customer.state.id
 
             calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
             
