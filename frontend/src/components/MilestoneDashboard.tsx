@@ -2,8 +2,8 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Search,
-    Receipt,
     Download,
+    Eye,
     Columns,
     ChevronDown,
     FileSpreadsheet,
@@ -26,9 +26,11 @@ const ALL_COLUMNS = [
 ];
 
 interface MilestoneDashboardProps {
+    onView?: (id: number) => void;
+    onCreate?: () => void;
 }
 
-const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
+const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreate }) => {
     const navigate = useNavigate();
     const [milestones, setMilestones] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -98,17 +100,6 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
         }
     };
 
-    const handleCreateInvoice = async (milestoneId: number) => {
-        if (!window.confirm('Are you sure you want to create an invoice for this milestone?')) return;
-
-        try {
-            await api.post(`/milestones/${milestoneId}/create_invoice/`);
-            showNotification('Invoice created successfully', 'success');
-            fetchMilestones();
-        } catch (error: any) {
-            showNotification(error.response?.data?.error || 'Failed to create invoice', 'error');
-        }
-    };
 
     const getExportQueryParams = () => {
         const params = new URLSearchParams();
@@ -725,32 +716,38 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = () => {
                                             </span>
                                         </td>}
                                         {visibleColumns.includes('invoice_no') && <td style={{ fontWeight: 700, color: '#00C853' }}>{m.invoice_details?.invoice_no || '—'}</td>}
-                                        <td style={{ textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                                            {m.status !== 'INVOICED' ? (
-                                                <button
-                                                    onClick={() => handleCreateInvoice(m.id)}
-                                                    style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '6px',
-                                                        padding: '6px 12px',
-                                                        background: 'var(--ae-blue)',
-                                                        color: 'white',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 600,
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onMouseOver={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
-                                                    onMouseOut={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
-                                                >
-                                                    <Receipt size={14} /> Invoice
-                                                </button>
-                                            ) : (
-                                                <div style={{ color: '#A0AEC0', fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '32px' }}>Invoiced</div>
-                                            )}
+                                        <td style={{ textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                                            <button
+                                                onClick={() => onView && onView(m.id)}
+                                                style={{ padding: '6px', color: 'var(--ae-blue)', background: 'none', border: 'none', cursor: 'pointer' }}
+                                                title="View Milestone"
+                                            >
+                                                <Eye size={18} />
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const response = await api.get(`/milestones/${m.id}/download_pdf/`, {
+                                                            responseType: 'blob'
+                                                        });
+                                                        const url = window.URL.createObjectURL(new Blob([response.data]));
+                                                        const link = document.createElement('a');
+                                                        link.href = url;
+                                                        link.setAttribute('download', `milestone_${m.milestone_no}.pdf`);
+                                                        document.body.appendChild(link);
+                                                        link.click();
+                                                        link.parentNode?.removeChild(link);
+                                                        window.URL.revokeObjectURL(url);
+                                                    } catch (error) {
+                                                        console.error('Error downloading PDF', error);
+                                                        showNotification('Error downloading PDF', 'error');
+                                                    }
+                                                }}
+                                                style={{ padding: '6px', color: 'var(--ae-orange)', background: 'none', border: 'none', cursor: 'pointer' }}
+                                                title="Download Milestone PDF"
+                                            >
+                                                <Download size={18} />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))

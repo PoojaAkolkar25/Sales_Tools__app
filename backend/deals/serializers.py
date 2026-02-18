@@ -10,7 +10,10 @@ class ImplementationPartnerSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = (
+            'id', 'product_code', 'name', 'category', 'subcategory', 'description', 
+            'uom', 'standard_price', 'tax_percentage', 'hsn_sac_code', 'currency', 'status'
+        )
 
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:

@@ -8,12 +8,14 @@ from django.utils import timezone
 from .models import (
     Invoice, InvoiceLineItem, StateMaster, CompanyProfile,
     BankConnection, BankTransaction, ReceiptVoucher, ReceiptAdjustment, 
-    BankTransactionStatus, ReceiptStatus, BankTransactionSource
+    BankTransactionStatus, ReceiptStatus, BankTransactionSource,
+    CustomerPartner, EndCustomer, FinancialYear
 )
 from .serializers import (
     InvoiceSerializer, InvoiceLineItemSerializer, StateMasterSerializer, 
     CompanyProfileSerializer, BankConnectionSerializer, BankTransactionSerializer, 
-    ReceiptVoucherSerializer, ReceiptAdjustmentSerializer
+    ReceiptVoucherSerializer, ReceiptAdjustmentSerializer,
+    CustomerPartnerSerializer, EndCustomerSerializer, FinancialYearSerializer
 )
 from .services import InvoiceService
 import csv
@@ -429,20 +431,66 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
             data = []
             if file_obj.name.endswith('.csv'):
                 decoded_file = file_obj.read().decode('utf-8-sig')
-                io_string = io.StringIO(decoded_file)
+                lines = decoded_file.split('\n')
+                
+                # For BoFA CSV, find the actual header row
+                header_line_idx = 0
+                if bank_type == 'bofa':
+                    for idx, line in enumerate(lines):
+                        if 'Date,Description,Amount,Running Bal' in line:
+                            header_line_idx = idx
+                            break
+                    # Skip to header and parse from there
+                    csv_content = '\n'.join(lines[header_line_idx:])
+                    io_string = io.StringIO(csv_content)
+                else:
+                    io_string = io.StringIO(decoded_file)
+                    
                 reader = csv.DictReader(io_string)
                 data = list(reader)
             else:
                 import pandas as pd
-                # Adjust header based on bank_type
-                header_row = 0
-                if bank_type == 'icici' and file_obj.name.endswith('.xlsx'):
-                    header_row = 16 # ICICI typically has headers at row 17
-                elif bank_type == 'idfc':
-                    header_row = 8 # IDFC headers at row 9 usually
-                elif bank_type == 'bofa':
-                    header_row = 7 # BoA headers at row 8 usually
                 
+                # Detect Header Row Dynamically
+                header_row = 0
+                try:
+                    # Read first 30 rows to scan for headers
+                    if hasattr(file_obj, 'seek'):
+                        file_obj.seek(0)
+                    df_preview = pd.read_excel(file_obj, header=None, nrows=30)
+                    
+                    if bank_type == 'idfc':
+                         for idx, row in df_preview.iterrows():
+                            row_str = ' '.join(row.astype(str)).lower()
+                            # Look for key IDFC columns
+                            if ('trans date' in row_str or 'transaction date' in row_str) and ('debit' in row_str or 'credit' in row_str):
+                                header_row = idx
+                                break
+                    elif bank_type == 'icici':
+                        for idx, row in df_preview.iterrows():
+                            # Row 16 in Excel is index 15. The preview has 0-based index.
+                            row_str = ' '.join(row.astype(str)).lower()
+                            if 'tran. id' in row_str or 'transaction posted date' in row_str:
+                                header_row = idx
+                                break
+                    elif bank_type == 'bofa':
+                         for idx, row in df_preview.iterrows():
+                            row_str = ' '.join(row.astype(str)).lower()
+                            if 'running bal.' in row_str or 'beginning balance' in row_str:
+                                header_row = idx
+                                break
+                                
+                    # Reset file pointer for full read
+                    if hasattr(file_obj, 'seek'):
+                        file_obj.seek(0)
+                        
+                except Exception as e:
+                    print(f"Header detection failed: {e}")
+                    # Fallback to defaults if detection fails
+                    if bank_type == 'icici': header_row = 15
+                    elif bank_type == 'idfc': header_row = 18  # Updated from 17 to 18
+                    elif bank_type == 'bofa': header_row = 7
+
                 df = pd.read_excel(file_obj, header=header_row)
                 df = df.where(pd.notnull(df), None)
                 data = df.to_dict('records')
@@ -463,20 +511,18 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
                     return 0
                     
             def parse_date(date_val, specific_formats=None):
+                from datetime import datetime
                 if not date_val: return None
                 if hasattr(date_val, 'date'): return date_val.date()
+                if hasattr(date_val, 'to_pydatetime'): return date_val.to_pydatetime().date()
                 
                 date_str = str(date_val).strip()
                 if date_str.lower() in ['nan', 'nat', 'none', '']: return None
 
-                # Handle IDFC "DD/MM/YYYY HH:MM:SS" format or similar
+                # Handle IDFC "DD/MM/YYYY HH:MM:SS" format
                 if ' ' in date_str and ':' in date_str:
                     try:
                         return datetime.strptime(date_str.split(' ')[0], '%d/%m/%Y').date()
-                    except:
-                        pass
-                    try:
-                         return datetime.strptime(date_str.split(' ')[0], '%d-%m-%Y').date()
                     except:
                         pass
                 
@@ -494,7 +540,7 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
                     except ValueError:
                         continue
                 
-                # If specific formats failed, try default as fallback
+                # Fallback
                 if specific_formats:
                     for fmt in default_formats:
                         try:
@@ -519,6 +565,7 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
                     if bank_type == 'icici':
                         tx_date = parse_date(row.get('Transaction Date'))
                         val_date = parse_date(row.get('Value Date'))
+                        post_date = parse_date(row.get('Transaction Posted Date'))
                         tx_id = str(row.get('Tran. Id') or '')
                         cheque_ref = str(row.get('Cheque. No./Ref. No.') or '')
                         remarks = str(row.get('Transaction Remarks') or '')
@@ -527,7 +574,7 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
                         balance = parse_decimal(row.get('Balance (INR)'))
                     
                     elif bank_type == 'idfc':
-                        # IDFC: "Trans Date and Time", "Value Date", "Transaction Details", "Ref/Cheque No", "Debit", "Credit", "Balance"
+                        # IDFC Columns: "Trans Date and Time", "Value Date", "Transaction Details", "Ref/Cheque No", "Debit", "Credit", "Balance"
                         tx_date = parse_date(row.get('Trans Date and Time'))
                         val_date = parse_date(row.get('Value Date'))
                         remarks = str(row.get('Transaction Details') or '')
@@ -538,7 +585,6 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
 
                     elif bank_type == 'bofa':
                         # BoA: "Date", "Description", "Amount", "Running Bal."
-                        # Prioritize US Date Format MM/DD/YYYY
                         us_formats = ['%m/%d/%Y', '%m-%d-%Y', '%Y-%m-%d']
                         tx_date = parse_date(row.get('Date'), specific_formats=us_formats)
                         remarks = str(row.get('Description') or '')
@@ -714,3 +760,25 @@ class ReceiptVoucherViewSet(viewsets.ModelViewSet):
                 file=f,
                 filename=f.name
             )
+
+class CustomerPartnerViewSet(viewsets.ModelViewSet):
+    queryset = CustomerPartner.objects.all().order_by('-created_at')
+    serializer_class = CustomerPartnerSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['name', 'code', 'email', 'primary_contact']
+    filterset_fields = ['type', 'status', 'linked_company']
+
+
+class EndCustomerViewSet(viewsets.ModelViewSet):
+    queryset = EndCustomer.objects.all().order_by('-created_at')
+    serializer_class = EndCustomerSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['name', 'code', 'email', 'contact_person']
+    filterset_fields = ['linked_partner', 'status', 'deal_type']
+
+class FinancialYearViewSet(viewsets.ModelViewSet):
+    queryset = FinancialYear.objects.all().order_by('-start_date')
+    serializer_class = FinancialYearSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['code', 'label']
+    filterset_fields = ['status', 'is_current_fy']

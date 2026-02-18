@@ -248,38 +248,40 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
 };
 
 const AppContent: React.FC = () => {
-
-  const [costSheetView, setCostSheetView] = useState<'form' | 'dashboard'>('dashboard');
-  const [dealView, setDealView] = useState<'form' | 'dashboard'>('dashboard');
-  const [estimateView, setEstimateView] = useState<'form' | 'dashboard'>('dashboard');
-  const [salesOrderView, setSalesOrderView] = useState<'form' | 'dashboard'>('dashboard');
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editingDealId, setEditingDealId] = useState<number | null>(null);
-  const [editingEstimateId, setEditingEstimateId] = useState<number | null>(null);
-  const [editingSalesOrderId, setEditingSalesOrderId] = useState<number | null>(null);
-  const [editingLeadId, setEditingLeadId] = useState<number | null>(null);
-  const [leadView, setLeadView] = useState<'form' | 'dashboard'>('dashboard');
-
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
-  const [isExtractingSO, setIsExtractingSO] = useState(false);
-  const [soRefreshTrigger, setSoRefreshTrigger] = useState(0);
-  const [inventoryView, setInventoryView] = useState<'form' | 'dashboard'>('dashboard');
-  const [editingInventoryId, setEditingInventoryId] = useState<number | null>(null);
-  const [invoiceView, setInvoiceView] = useState<'form' | 'dashboard'>('dashboard');
-  const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
-
-  const [milestoneView, setMilestoneView] = useState<'form' | 'dashboard'>('dashboard');
-
-  const [syncingDeal, setSyncingDeal] = useState(false);
-  const [refreshDealTrigger, setRefreshDealTrigger] = useState(0);
   const [theme, setTheme] = useState<string>(localStorage.getItem('app-theme') || 'default');
   const { showNotification } = useNotification();
-
 
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Module Views
+  const [leadView, setLeadView] = useState<'form' | 'dashboard'>('dashboard');
+  const [dealView, setDealView] = useState<'form' | 'dashboard'>('dashboard');
+  const [costSheetView, setCostSheetView] = useState<'form' | 'dashboard'>('dashboard');
+  const [estimateView, setEstimateView] = useState<'form' | 'dashboard'>('dashboard');
+  const [salesOrderView, setSalesOrderView] = useState<'form' | 'dashboard'>('dashboard');
+  const [milestoneView, setMilestoneView] = useState<'form' | 'dashboard'>('dashboard');
+  const [invoiceView, setInvoiceView] = useState<'form' | 'dashboard'>('dashboard');
+  const [inventoryView, setInventoryView] = useState<'form' | 'dashboard'>('dashboard');
+
+  // Editing IDs
+  const [editingLeadId, setEditingLeadId] = useState<number | null>(null);
+  const [editingDealId, setEditingDealId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null); // For Cost Sheet
+  const [editingEstimateId, setEditingEstimateId] = useState<number | null>(null);
+  const [editingSalesOrderId, setEditingSalesOrderId] = useState<number | null>(null);
+  const [editingMilestoneId, setEditingMilestoneId] = useState<number | null>(null);
+  const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
+  const [editingInventoryId, setEditingInventoryId] = useState<number | null>(null);
+
+  // Other UI States
+  const [isExtractingSO, setIsExtractingSO] = useState(false);
+  const [soRefreshTrigger, setSoRefreshTrigger] = useState(0);
+  const [syncingDeal, setSyncingDeal] = useState(false);
+  const [refreshDealTrigger, setRefreshDealTrigger] = useState(0);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -289,7 +291,6 @@ const AppContent: React.FC = () => {
       setAuthLoading(false);
     }
   }, []);
-
 
   useEffect(() => {
     if (!authLoading) {
@@ -303,9 +304,21 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const id = params.get('id');
-    if (id) {
-      const numId = parseInt(id);
+    const action = params.get('action');
+    const idParam = params.get('id');
+
+    if (action === 'create') {
+      if (location.pathname === '/invoice') {
+        setEditingInvoiceId(null);
+        setInvoiceView('form');
+      } else if (location.pathname === '/deal') {
+        handleCreateNewDeal();
+      } else if (location.pathname === '/milestone') {
+        setEditingMilestoneId(null);
+        setMilestoneView('form');
+      }
+    } else if (idParam) {
+      const numId = parseInt(idParam);
       if (location.pathname === '/deal') {
         setEditingDealId(numId);
         setDealView('form');
@@ -318,6 +331,12 @@ const AppContent: React.FC = () => {
       } else if (location.pathname === '/cost-sheet') {
         setEditingId(numId);
         setCostSheetView('form');
+      } else if (location.pathname === '/invoice') {
+        setEditingInvoiceId(numId);
+        setInvoiceView('form');
+      } else if (location.pathname === '/milestone') {
+        setEditingMilestoneId(numId);
+        setMilestoneView('form');
       }
     }
   }, [location.pathname, location.search]);
@@ -831,7 +850,44 @@ const AppContent: React.FC = () => {
 
                   {dealView === 'form' && editingDealId && (
                     <button
-                      type="button"
+                      onClick={() => {
+                        setEditingMilestoneId(null);
+                        setMilestoneView('form');
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: (milestoneView === 'form' && !editingMilestoneId) ? 'var(--theme-primary)' : 'transparent',
+                        color: (milestoneView === 'form' && !editingMilestoneId) ? 'white' : 'var(--text-secondary)',
+                        boxShadow: (milestoneView === 'form' && !editingMilestoneId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (milestoneView !== 'form' || editingMilestoneId) {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (milestoneView !== 'form' || editingMilestoneId) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
+                    >
+                      <PlusCircle size={18} /> Add Milestone
+                    </button>
+                  )}
+                  {dealView === 'form' && editingDealId && (
+                    <button
                       onClick={handleHubSpotSync}
                       disabled={syncingDeal}
                       className="ae-btn-secondary"
@@ -1395,10 +1451,19 @@ const AppContent: React.FC = () => {
 
                 {milestoneView === 'form' ? (
                   <MilestoneForm
+                    id={editingMilestoneId}
                     onBack={() => setMilestoneView('dashboard')}
                   />
                 ) : (
                   <MilestoneDashboard
+                    onView={(id: number) => {
+                      setEditingMilestoneId(id);
+                      setMilestoneView('form');
+                    }}
+                    onCreate={() => {
+                      setEditingMilestoneId(null);
+                      setMilestoneView('form');
+                    }}
                   />
                 )}
               </div>

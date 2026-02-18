@@ -66,8 +66,13 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
 
     // Reset page on filter change
     useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const statusParam = params.get('status');
+        if (statusParam) {
+            setFilters(prev => ({ ...prev, status: statusParam.toUpperCase() }));
+        }
         setCurrentPage(1);
-    }, [filters]);
+    }, [window.location.search]);
 
     const fetchInvoices = async () => {
         setLoading(true);

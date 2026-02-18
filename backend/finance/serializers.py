@@ -1,8 +1,14 @@
 from rest_framework import serializers
 from .models import (
     Invoice, InvoiceLineItem, StateMaster, CompanyProfile,
-    BankConnection, BankTransaction, ReceiptVoucher, ReceiptAdjustment, ReceiptAttachment
+    BankConnection, BankTransaction, ReceiptVoucher, ReceiptAdjustment, ReceiptAttachment,
+    CustomerPartner, EndCustomer, FinancialYear
 )
+
+class FinancialYearSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FinancialYear
+        fields = '__all__'
 
 class StateMasterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -111,5 +117,29 @@ class ReceiptVoucherSerializer(serializers.ModelSerializer):
             
         representation['customer_name'] = customer_name or "Unknown"
         return representation
+
+class CustomerPartnerSerializer(serializers.ModelSerializer):
+    linked_company_name = serializers.CharField(source='linked_company.name', read_only=True)
+    
+    class Meta:
+        model = CustomerPartner
+        fields = '__all__'
+
+    def to_internal_value(self, data):
+        if 'linked_company' in data and data['linked_company'] == '':
+            data['linked_company'] = None
+        return super().to_internal_value(data)
+
+class EndCustomerSerializer(serializers.ModelSerializer):
+    partner_name = serializers.CharField(source='linked_partner.name', read_only=True)
+    
+    class Meta:
+        model = EndCustomer
+        fields = '__all__'
+
+    def to_internal_value(self, data):
+        if 'linked_partner' in data and data['linked_partner'] == '':
+            data['linked_partner'] = None
+        return super().to_internal_value(data)
 
  

@@ -1,0 +1,71 @@
+﻿============================================================
+CUSTOMER DATABASE CHECK
+============================================================
+
+Total customers in database: 12
+
+Customer Names:
+  1. 'Congnizant' (ID: 1)
+  2. 'AplhaBiomet' (ID: 2)
+  3. 'AutomationEdge Technologies' (ID: 3)
+  4. 'Infosys' (ID: 4)
+  5. 'alpha biomet' (ID: 5)
+  6. 'Valuedx Technology' (ID: 6)
+  7. 'Capgemini' (ID: 7)
+  8. 'Harbinger' (ID: 8)
+  9. 'HCL Technology' (ID: 9)
+  10. 'HCL Technologys' (ID: 10)
+  11. 'HDFC Bank' (ID: 11)
+  12. 'HDFC BANK' (ID: 12)
+
+============================================================
+TESTING CUSTOMER MATCHING LOGIC
+============================================================
+
+Testing: 'HDFC BANK'
+python : Traceback 
+(most recent call 
+last):
+At line:1 char:1
++ python backend/check
+_customers.py 2>&1 | 
+Out-File -FilePath 
+customer_ ...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
+    + CategoryInfo    
+          : 
+NotSpecified: (Tra    
+ceback (most recent 
+ca    ll 
+last)::String) [],    
+ RemoteException
+    + 
+FullyQualifiedErrorI  
+  d : 
+NativeCommandError
+ 
+  File "D:\Sales_tools
+_application\Sales_Too
+ls__app\backend\check_
+customers.py", line 
+43, in <module>
+    print(f"  \u2713 
+Exact match: 
+'{exact.name}'")
+  File "C:\Python\Lib\
+encodings\cp1252.py", 
+line 19, in encode
+    return codecs.char
+map_encode(input,self.
+errors,encoding_table)
+[0]
+           ^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 
+'charmap' codec can't 
+encode character 
+'\u2713' in position 
+2: character maps to 
+<undefined>

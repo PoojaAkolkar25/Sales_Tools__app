@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { Plus, Save, AlertCircle, Clock, Trash2 } from 'lucide-react';
 
 interface MilestoneFormProps {
     onBack: () => void;
+    id?: number | null;
 }
 
-const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
+const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
+    const navigate = useNavigate();
     const [customers, setCustomers] = useState<any[]>([]);
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -37,13 +40,19 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
     }, []);
 
     useEffect(() => {
-        if (selectedCustomer) {
+        if (id && customers.length > 0) {
+            fetchMilestoneForEdit(id);
+        }
+    }, [id, customers]);
+
+    useEffect(() => {
+        if (selectedCustomer && !id) {
             fetchSalesOrders(selectedCustomer.id);
-        } else {
+        } else if (!selectedCustomer) {
             setSalesOrders([]);
             setSelectedSO(null);
         }
-    }, [selectedCustomer]);
+    }, [selectedCustomer, id]);
 
     const fetchCustomers = async () => {
         try {
@@ -74,13 +83,67 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
         setMilestones([]);
     };
 
+    const fetchMilestoneForEdit = async (milestoneId: number) => {
+        if (loading) return;
+        setLoading(true);
+        try {
+            const response = await api.get(`/milestones/${milestoneId}/`);
+            const ms = response.data;
+
+            if (ms.sales_order_details) {
+                const customer = customers.find(c => c.id === ms.sales_order_details.customer);
+                setSelectedCustomer(customer || null);
+
+                // Fetch SOs for this customer so the dropdown works
+                if (customer) {
+                    const soResponse = await api.get(`/sales-orders/?customer=${customer.id}&status_filter=SUBMITTED`);
+                    setSalesOrders(soResponse.data);
+
+                    const so = soResponse.data.find((s: any) => s.id === ms.sales_order);
+                    setSelectedSO(so || null);
+
+                    if (so) {
+                        try {
+                            const allMsRes = await api.get(`/milestones/?sales_order=${so.id}`);
+                            const allMs = allMsRes.data.map((m: any) => ({
+                                ...m,
+                                percentage: (parseFloat(m.amount) / parseFloat(so.total_amount) * 100).toFixed(2)
+                            }));
+                            setMilestones(allMs);
+                        } catch (err) {
+                            console.error('Error fetching all milestones', err);
+                            // Fallback to just the current one if bulk fetch fails
+                            setMilestones([{
+                                ...ms,
+                                percentage: ms.sales_order_details.total_amount > 0
+                                    ? (parseFloat(ms.amount) / parseFloat(ms.sales_order_details.total_amount) * 100).toFixed(2)
+                                    : "0.00"
+                            }]);
+                        }
+                    } else {
+                        // Fallback if SO not found in list (shouldn't happen)
+                        setMilestones([{
+                            ...ms,
+                            percentage: ms.sales_order_details.total_amount > 0
+                                ? (parseFloat(ms.amount) / parseFloat(ms.sales_order_details.total_amount) * 100).toFixed(2)
+                                : "0.00"
+                        }]);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching milestone', error);
+            showNotification('Error loading milestone details', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSOChange = async (soId: string) => {
         const so = salesOrders.find(s => s.id.toString() === soId);
         setSelectedSO(so || null);
 
         if (so) {
-            // Always start with a fresh single milestone row for a new SO as requested
-            // This ensures we always have 1 row and 100% by default, ignoring any existing test data.
             setMilestones([{
                 milestone_no: 'M1',
                 period_from: so.order_date,
@@ -101,7 +164,6 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
         const newMilestones = [...milestones];
         newMilestones[index] = { ...newMilestones[index], [field]: value };
 
-        // Auto-calculate amount if rate/qty changes
         if (field === 'amount') {
             if (selectedSO && parseFloat(selectedSO.total_amount) > 0) {
                 newMilestones[index].percentage = ((parseFloat(value) / parseFloat(selectedSO.total_amount)) * 100).toFixed(2);
@@ -132,7 +194,6 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
 
     const handleRemoveMilestone = (index: number) => {
         const filteredMilestones = milestones.filter((_, i) => i !== index);
-        // Re-index to ensure strictly sequential M1, M2, M3...
         const reindexedMilestones = filteredMilestones.map((m, i) => ({
             ...m,
             milestone_no: `M${i + 1}`
@@ -156,6 +217,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
 
         setSaving(true);
         try {
+            let firstMilestoneId = null;
             for (const m of milestones) {
                 // Prepare clean data for the backend (remove UI-only or read-only fields)
                 const data = {
@@ -171,14 +233,43 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                     status: m.status || 'PENDING'
                 };
 
+                let response;
                 if (m.id) {
-                    await api.put(`/milestones/${m.id}/`, data);
+                    response = await api.put(`/milestones/${m.id}/`, data);
                 } else {
-                    await api.post('/milestones/', data);
+                    response = await api.post('/milestones/', data);
+                }
+
+                if (!firstMilestoneId && response.data.id) {
+                    firstMilestoneId = response.data.id;
                 }
             }
+
+            if (firstMilestoneId) {
+                try {
+                    const invResponse = await api.post(`/milestones/${firstMilestoneId}/create_invoice/`);
+                    // Check if we got an invoice back
+                    if (invResponse.data && invResponse.data.invoice_details) {
+                        const invoiceId = invResponse.data.invoice_details.id;
+                        showNotification('Milestones saved and Draft Invoice generated', 'success');
+                        navigate(`/invoice?id=${invoiceId}`);
+                        return; // Exit early to avoid default redirect
+                    } else if (invResponse.data && invResponse.data.invoice) {
+                        // Fallback if serializer structure allows direct access
+                        showNotification('Milestones saved and Draft Invoice generated', 'success');
+                        navigate(`/invoice?id=${invResponse.data.invoice}`);
+                        return;
+                    }
+                } catch (invError) {
+                    console.error('Error creating draft invoice', invError);
+                    showNotification('Milestones saved but failed to generate invoice', 'warning');
+                }
+            }
+
+            let redirectUrl = '/invoice?status=DRAFT';
+            // Only show this if we didn't redirect above
             showNotification('Milestones saved successfully', 'success');
-            onBack();
+            navigate(redirectUrl);
         } catch (error: any) {
             showNotification(error.response?.data?.error || 'Failed to save milestones', 'error');
         } finally {
@@ -196,17 +287,46 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack }) => {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                 padding: '24px'
             }}>
-                {/* Header with Title */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-                    <span style={{
-                        width: '4px',
-                        height: '18px',
-                        background: 'var(--ae-blue)',
-                        borderRadius: '2px'
-                    }}></span>
-                    <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', margin: 0 }}>
-                        Create New Milestone Plan
-                    </h2>
+                {/* Header with Title and Back button */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{
+                            width: '4px',
+                            height: '18px',
+                            background: 'var(--ae-blue)',
+                            borderRadius: '2px'
+                        }}></span>
+                        <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', margin: 0 }}>
+                            {id ? 'View / Edit Milestone Plan' : 'Create New Milestone Plan'}
+                        </h2>
+                    </div>
+                    <button
+                        onClick={() => setShowCancelModal(true)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 12px',
+                            background: '#F8FAFC',
+                            border: '1px solid #E2E8F0',
+                            borderRadius: '8px',
+                            color: '#4A5568',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#EDF2F7';
+                            e.currentTarget.style.borderColor = '#CBD5E0';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#F8FAFC';
+                            e.currentTarget.style.borderColor = '#E2E8F0';
+                        }}
+                    >
+                        Back to List
+                    </button>
                 </div>
 
                 {/* Selection & Summary Section - Side-by-Side */}

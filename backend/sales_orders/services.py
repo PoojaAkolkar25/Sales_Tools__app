@@ -43,15 +43,38 @@ class PDFExtractor:
                     "Input: Text extracted from a customer Purchase Order PDF.\n"
                     "Task: Extract Purchase Order data and return a SINGLE, VALID JSON OBJECT ONLY.\n\n"
                     "STRICT RULES:\n"
-                    "- OUTPUT FORMAT: Return ONLY the raw JSON object. DO NOT include markdown code blocks (like ```json), backticks, or any conversational text.\n"
-                    "- CUSTOMER: Identify the BUYER/ISSUER of the PO. IGNORE 'AutomationEdge Technologies' as the customer (they are the supplier).\n"
-                    "- PO NUMBER: Extract the identifying PO Number. Look for labels like 'PO No', 'Order No', 'Purchase Order #', 'Ref', 'Reference'. Ensure the COMPLETE number is extracted.\n"
-                    "- ADDRESSES: Extract 'billing_address' and 'shipping_address'. \n"
-                    "- LINE ITEMS: This is CRITICAL. \n"
+                    "- OUTPUT FORMAT: Return ONLY the raw JSON object. DO NOT include markdown code blocks (like ```json), backticks, or any conversational text.\n\n"
+                    
+                    "- CUSTOMER IDENTIFICATION:\n"
+                    "  * The CUSTOMER is the BUYER/ISSUER of the Purchase Order (the company PLACING the order).\n"
+                    "  * Look for sections labeled: 'Bill To', 'Sold To', 'Customer', 'Buyer', 'Purchaser', 'Client'.\n"
+                    "  * IGNORE 'AutomationEdge Technologies', 'Automation Edge', or any variations - they are the SUPPLIER/VENDOR, NOT the customer.\n"
+                    "  * If you see 'Vendor: AutomationEdge', the customer is the OTHER party.\n"
+                    "  * Extract the complete company name from the customer section.\n\n"
+                    
+                    "- PO NUMBER EXTRACTION:\n"
+                    "  * Look for labels: 'PO No', 'PO Number', 'Order No', 'Purchase Order #', 'PO Ref', 'Reference No', 'Order Reference'.\n"
+                    "  * Extract the COMPLETE number including all parts, dashes, slashes, and alphanumeric characters.\n"
+                    "  * Examples: 'PO-2024-001', 'MACM/IT/PO/2026/015', 'ORD-12345-REV2'.\n"
+                    "  * Do NOT truncate or abbreviate the PO number.\n\n"
+                    
+                    "- ADDRESS EXTRACTION (CRITICAL):\n"
+                    "  * billing_address: Extract the CUSTOMER's billing address (where they receive invoices).\n"
+                    "    - Look for: 'Bill To', 'Billing Address', 'Invoice To', 'Sold To' sections.\n"
+                    "    - This should be the CUSTOMER's address, NOT the supplier's address.\n"
+                    "    - Include: Company name, street, city, state, postal code, country.\n"
+                    "  * shipping_address: Extract the delivery/shipping address (where goods will be delivered).\n"
+                    "    - Look for: 'Ship To', 'Delivery Address', 'Shipping Location', 'Deliver To' sections.\n"
+                    "    - If shipping address is same as billing, you may copy the billing address.\n"
+                    "    - Include: Location name, street, city, state, postal code, country.\n"
+                    "  * DO NOT extract AutomationEdge's address as the customer's address.\n\n"
+                    
+                    "- LINE ITEMS: This is CRITICAL.\n"
                     "  - Extract every line item with 'description', 'quantity', 'unit_price', and 'line_total'.\n"
                     "  - DESCRIPTION: If a description spans multiple rows in the PDF table, CONCATENATE them into a single string. Do not split one item into multiple JSON entries unless they have different quantities/prices.\n"
-                    "  - DATA TYPES: description (string), quantity (number), unit_price (number), line_total (number).\n"
-                    "- MAPPING: Match the customer in the PO to one of the EXISTING CUSTOMERS listed below if it's a clear match.\n\n"
+                    "  - DATA TYPES: description (string), quantity (number), unit_price (number), line_total (number).\n\n"
+                    
+                    "- CUSTOMER MATCHING: Match the extracted customer name to one of the EXISTING CUSTOMERS listed below if it's a clear match.\n\n"
                     "EXISTING CUSTOMERS:\n"
                     f"- {customers_context}\n\n"
                     "OUTPUT JSON SCHEMA:\n"
@@ -289,41 +312,87 @@ class PDFExtractor:
                             except: continue
                         if data['delivery_date']: break
 
-                # 3. Customer Identification
-                top_lines = [l.strip() for l in full_text.split('\n') if l.strip()][:15]
+                # 3. Customer Identification (Improved)
+                top_lines = [l.strip() for l in full_text.split('\n') if l.strip()][:20]
                 our_keywords = ['AUTOMATIONEDGE', 'AUTOMATION EDGE', 'TECHNOLOGIES']
                 
-                bill_to_match = re.search(r'(?:Bill|Ship|Sold|To)[:\s]*\n?(.*?)(?:\n|,|GSTIN|$)', full_text, re.I | re.S)
-                if bill_to_match:
-                    potential = bill_to_match.group(1).strip().split('\n')[0]
-                    if not any(k in potential.upper() for k in our_keywords):
+                # Try multiple patterns for customer name
+                # Pattern 1: Look for "TO" or "TO," followed by company name
+                to_match = re.search(r'\bTO[,:]?\s*\n\s*([A-Z][A-Z\s&]+(?:BANK|LIMITED|LTD|PVT|PRIVATE|LLC|INC|CORP)?)', full_text, re.M)
+                if to_match:
+                    potential = to_match.group(1).strip()
+                    if not any(k in potential.upper() for k in our_keywords) and len(potential) > 3:
                         data['customer_name'] = potential
                 
+                # Pattern 2: Traditional Bill To / Sold To
+                if data['customer_name'] == 'Pending Mapping':
+                    bill_to_match = re.search(r'(?:Bill|Ship|Sold)\s+(?:To|As Per)[:\s]*\n?([^\n,]+)', full_text, re.I)
+                    if bill_to_match:
+                        potential = bill_to_match.group(1).strip()
+                        if not any(k in potential.upper() for k in our_keywords) and len(potential) > 3:
+                            data['customer_name'] = potential
+                
+                # Pattern 3: Look in top lines for company names (avoiding addresses)
                 if data['customer_name'] == 'Pending Mapping':
                     for line in top_lines:
                         if not any(k in line.upper() for k in our_keywords) and len(line) > 3:
-                            if any(k in line.upper() for k in ['SURVEY', 'FLOOR', 'OFFICE', 'BANER', 'PUNE', 'MUMBAI', 'INDIA', 'DATE']):
+                            # Skip address-like lines
+                            if any(k in line.upper() for k in ['FLOOR', 'OFFICE', 'STREET', 'ROAD', 'BUILDING', 'TOWER', 'PUNE', 'MUMBAI', 'DELHI', 'INDIA', 'DATE', 'PO NO', 'PURCHASE']):
                                 continue
-                            data['customer_name'] = line
-                            break
+                            # Look for company indicators
+                            if any(k in line.upper() for k in ['BANK', 'LIMITED', 'LTD', 'PVT', 'PRIVATE', 'LLC', 'INC', 'CORP', 'CAPITAL', 'ASSET']):
+                                data['customer_name'] = line
+                                break
 
                 # 3b. Customer Code
                 code_match = re.search(r'(?:Customer|Client|Vendor|Party)\s*(?:Code|ID|Ref)[:\s]*([A-Z0-9\-]{3,})', full_text, re.I)
                 if code_match:
                     data['customer_code'] = code_match.group(1).strip()
 
-                # 3c. Billing & Shipping Address
-                bill_addr_match = re.search(r'(?:Bill|Sold|Billing)\s*(?:To|Party|Address|As\s*Per)?(?:\s*GSTIN)?[:\s\n]+(.*?)(?:\n\s*\n|Ship|GSTIN|PAN|Item|$)', full_text, re.I | re.S)
-                if bill_addr_match:
-                    addr = bill_addr_match.group(1).strip()
-                    if not any(k in addr.upper() for k in our_keywords):
-                        data['billing_address'] = addr
+                # 3c. Billing & Shipping Address (Improved)
+                # For BILLING ADDRESS: Look for markers followed by multi-line address
+                bill_patterns = [
+                    r'(?:BILLING\s+ADDRESS|BILL\s+TO)[:\s]*\n([^\n]+(?:\n[^\n]+){1,5}?)(?=\n\s*\n|SHIP|GSTIN|PAN|Item|TRN|Place)',
+                    r'\bTO[,:]?\s*\n([A-Z][^\n]+(?:\n[^\n]+){2,8}?)(?=\n\s*\n|Purchase Order|PO No|Date|TRN)',
+                    r'(?:Bill|Sold)\s+(?:To|As Per)[:\s]*\n([^\n]+(?:\n[^\n]+){2,8}?)(?=\n\s*\n|Ship|GSTIN|PAN)'
+                ]
+                for pattern in bill_patterns:
+                    bill_addr_match = re.search(pattern, full_text, re.I | re.M)
+                    if bill_addr_match:
+                        addr = bill_addr_match.group(1).strip()
+                        # Clean up the address
+                        addr_lines = [l.strip() for l in addr.split('\n') if l.strip()]
+                        # Remove lines that are clearly not address
+                        addr_lines = [l for l in addr_lines if not any(k in l.upper() for k in ['PURCHASE ORDER', 'PO NO', 'DATE:', 'TRN:', 'DETAILS OF'])]
+                        addr = '\n'.join(addr_lines)
+                        if not any(k in addr.upper() for k in our_keywords) and len(addr) > 10:
+                            data['billing_address'] = addr
+                            break
                 
-                ship_addr_match = re.search(r'(?:Ship|Deliver|Shipping)\s*(?:To|Party|Location|Address)?[:\s\n]+(.*?)(?:\n\s*\n|Bill|GSTIN|PAN|Item|$)', full_text, re.I | re.S)
-                if ship_addr_match:
-                    addr = ship_addr_match.group(1).strip()
-                    if not any(k in addr.upper() for k in our_keywords):
-                        data['shipping_address'] = addr
+                # Fallback for Billing: Look for address after "TO," marker if pattern failed
+                if data['billing_address'] == 'Pending Mapping':
+                    to_lines_match = re.search(r'\bTO[,:]\s*\n(.*?)(?=\n\s*\n|PO NO|DATE|SHIP)', full_text, re.S | re.I)
+                    if to_lines_match:
+                        addr_block = to_lines_match.group(1).strip()
+                        lines = [l.strip() for l in addr_block.split('\n') if l.strip()]
+                        if len(lines) > 2:
+                            data['billing_address'] = '\n'.join(lines[1:]) # Skip the first line as it's likely the customer name
+                
+                # For SHIPPING ADDRESS: Look for "Ship To" or "Place of supply"
+                ship_patterns = [
+                    r'(?:SHIPPING\s+ADDRESS|SHIP\s+TO|DELIVER\s+TO|BILL\s+SUBMISSION\s+ADDRESS)[:\s]*\n([^\n]+(?:\n[^\n]+){1,5}?)(?=\n\s*\n|Bill|GSTIN|PAN|Item|TRN)',
+                    r'(?:Place\s+of\s+supply|Location\s+Address)[:\s]*\n?([^\n]+(?:\n[^\n]+){0,5}?)(?=\n\s*\n|Date|Payment|TRN|Sl\.|Description|Details)'
+                ]
+                for pattern in ship_patterns:
+                    ship_addr_match = re.search(pattern, full_text, re.I | re.M)
+                    if ship_addr_match:
+                        addr = ship_addr_match.group(1).strip()
+                        addr_lines = [l.strip() for l in addr.split('\n') if l.strip()]
+                        addr_lines = [l for l in addr_lines if not any(k in l.upper() for k in ['DATE:', 'PAYMENT', 'TRN:', 'PLACE OF', 'LOCATION'])]
+                        addr = '\n'.join(addr_lines)
+                        if not any(k in addr.upper() for k in our_keywords) and len(addr) > 10:
+                            data['shipping_address'] = addr
+                            break
 
                 # 4. Currency
                 if any(c in full_text.upper() for c in ['$', 'USD', 'DOLLAR']):
@@ -345,68 +414,69 @@ class PDFExtractor:
                     idx_amount = next((i for i, h in enumerate(headers) if any(k in h for k in ['amount', 'total', 'charge', 'value', 'price'])), -1)
                     
                     if idx_desc != -1:
-                        for row in table[1:]:
+                        for row_idx, row in enumerate(table[1:]):
                             if not row or not any(row): continue
                             desc = str(row[idx_desc]).strip()
-                            if len(desc) < 3 or any(k in desc.lower() for k in ['total', 'tax', 'gst', 'bank']): continue
+                            if len(desc) < 3 or any(k in desc.lower() for k in ['total', 'tax', 'gst', 'bank', 'rupees']): continue
                             
+                            # Concatenate subsequent rows if they only contain description text (no numbers in other columns)
+                            look_ahead = row_idx + 2
+                            while look_ahead < len(table):
+                                next_row = table[look_ahead]
+                                if not next_row: break
+                                # If next row has something in desc but NO obvious numbers in qty/amount columns
+                                next_desc = str(next_row[idx_desc]).strip()
+                                next_qty = str(next_row[idx_qty]).strip() if idx_qty != -1 else ""
+                                next_amt = str(next_row[idx_amount]).strip() if idx_amount != -1 else ""
+                                
+                                # If desc exists but quantities are missing, it's a continuation
+                                if next_desc and not re.search(r'\d', next_qty) and not re.search(r'\d', next_amt):
+                                    desc += " " + next_desc
+                                    look_ahead += 1
+                                else:
+                                    break
+
                             try:
-                                qty_match = re.search(r'[\d\.]+', re.sub(r'[, ]', '', str(row[idx_qty]))) if idx_qty != -1 else None
-                                qty = float(qty_match.group(0)) if qty_match else 1.0
+                                # Extract numbers cleaning common symbols
+                                def _clean_num(val):
+                                    return re.sub(r'[^0-9\.]', '', str(val))
+
+                                qty_str = _clean_num(row[idx_qty]) if idx_qty != -1 else ""
+                                qty = float(qty_str) if qty_str else 1.0
                                 
-                                amt_match = re.search(r'[\d\.]+', re.sub(r'[, ]', '', str(row[idx_amount]))) if idx_amount != -1 else None
-                                amount = float(amt_match.group(0)) if amt_match else 0.0
+                                amt_str = _clean_num(row[idx_amount]) if idx_amount != -1 else ""
+                                amount = float(amt_str) if amt_str else 0.0
                                 
-                                rate_match = re.search(r'[\d\.]+', re.sub(r'[, ]', '', str(row[idx_rate]))) if idx_rate != -1 else None
-                                rate = float(rate_match.group(0)) if rate_match else (amount / qty if qty > 0 else 0)
+                                rate_str = _clean_num(row[idx_rate]) if idx_rate != -1 else ""
+                                rate = float(rate_str) if rate_str else (amount / qty if qty > 0 else 0)
                                 
                                 # Better Tax/Discount heuristics for tables:
-                                # Look for columns that AREN'T percentages if possible
-                                def _get_best_val(row, indices, headers):
-                                    for idx in indices:
-                                        if idx != -1:
-                                            val_str = re.sub(r'[, ]', '', str(row[idx]))
-                                            match = re.search(r'[\d\.]+', val_str)
-                                            if match:
-                                                val = float(match.group(0))
-                                                if '%' in headers[idx]:
-                                                    return val, True
-                                                return val, False
-                                    return 0.0, False
-
                                 # Redefine tax/disc indices for robustness
-                                tax_indices = [i for i, h in enumerate(headers) if any(k in h for k in ['tax', 'gst', 'vat']) and '%' not in h]
-                                if not tax_indices: tax_indices = [i for i, h in enumerate(headers) if any(k in h for k in ['tax', 'gst', 'vat'])]
-                                
-                                disc_indices = [i for i, h in enumerate(headers) if any(k in h for k in ['disc', 'off', 'less']) and '%' not in h]
-                                if not disc_indices: disc_indices = [i for i, h in enumerate(headers) if any(k in h for k in ['disc', 'off', 'less'])]
+                                tax_val, is_tax_percent = 0.0, False
+                                disc_val, is_disc_percent = 0.0, False
 
-                                tax_val, is_tax_percent = _get_best_val(row, tax_indices, headers)
-                                disc_val, is_disc_percent = _get_best_val(row, disc_indices, headers)
+                                tax_indices = [i for i, h in enumerate(headers) if any(k in h for k in ['tax', 'gst', 'vat'])]
+                                disc_indices = [i for i, h in enumerate(headers) if any(k in h for k in ['disc', 'off', 'less'])]
+
+                                for idx in tax_indices:
+                                    val_s = _clean_num(row[idx])
+                                    if val_s:
+                                        tax_val = float(val_s)
+                                        is_tax_percent = '%' in headers[idx]
+                                        break
+                                
+                                for idx in disc_indices:
+                                    val_s = _clean_num(row[idx])
+                                    if val_s:
+                                        disc_val = float(val_s)
+                                        is_disc_percent = '%' in headers[idx]
+                                        break
 
                                 # Calculate absolute values
                                 initial_total = qty * rate
                                 discount = initial_total * (disc_val / 100.0) if is_disc_percent else disc_val
                                 tax = (initial_total - discount) * (tax_val / 100.0) if is_tax_percent else tax_val
 
-                                # Final verification/inference
-                                if amount > 0:
-                                    # If amount is provided, check if it matches our calculation
-                                    calc_total = initial_total - discount + tax
-                                    if abs(calc_total - amount) > 1.0:
-                                        # If it doesn't match, maybe the amount IS the taxable amount?
-                                        # Or maybe discount/tax needs inference
-                                        if initial_total > amount and discount == 0:
-                                            discount = initial_total - amount + tax
-                                            disc_val = (discount / initial_total * 100) if initial_total > 0 else 0
-                                            is_disc_percent = True
-
-                                # Handle multiline description continuation
-                                # If the next rows have text in idx_desc but NO values in qty/rate/amount, append it
-                                # (But note: the row loop in table[1:] doesn't easily look ahead without index-based loop)
-                                # Let's stick to the current row and hope the LLM handles multiline better than regex.
-                                # However, we can improve the description cleaning.
-                                
                                 items_from_table.append({
                                     'qty': qty,
                                     'description': desc.replace('\n', ' ').strip(),
@@ -463,22 +533,50 @@ class SalesOrderCreator:
         """
         extracted_data = PDFExtractor.extract_from_po(po_file_obj.file.path)
         
+        # Log extraction results for debugging
+        logger.info(f"Extracted Data Summary:")
+        logger.info(f"  Customer Name: {extracted_data.get('customer_name', 'N/A')}")
+        logger.info(f"  PO Number: {extracted_data.get('po_number', 'N/A')}")
+        logger.info(f"  Billing Address: {extracted_data.get('billing_address', 'N/A')[:100]}...")  # First 100 chars
+        logger.info(f"  Shipping Address: {extracted_data.get('shipping_address', 'N/A')[:100]}...")
+        logger.info(f"  Line Items Count: {len(extracted_data.get('items', []))}")
+        
         # Use extracted customer name directly
         cust_name = extracted_data.get('customer_name', 'Pending Mapping')
         
-        # Automated Customer Mapping
+        # Automated Customer Mapping (Improved)
         customer_obj = None
         if cust_name and cust_name != 'Pending Mapping':
-            # Try exact match (case-insensitive)
-            customer_obj = Customer.objects.filter(name__iexact=cust_name.strip()).first()
+            # Normalize the extracted name for better matching
+            normalized_name = cust_name.strip()
             
-            # If not found, try contains match if the name is long enough to be specific
-            if not customer_obj and len(cust_name) > 4 and cust_name != 'Not Customer Match':
-                customer_obj = Customer.objects.filter(name__icontains=cust_name.strip()).first()
+            # Try exact match (case-insensitive)
+            customer_obj = Customer.objects.filter(name__iexact=normalized_name).first()
+            
+            # If not found, try word-by-word matching (handles "HDFC BANK" vs "HDFC Bank")
+            if not customer_obj and len(normalized_name) > 4:
+                # Split into words and try matching each significant word
+                words = [w for w in normalized_name.split() if len(w) > 2]  # Ignore short words like "&", "OF"
+                if words:
+                    # Try matching on the first significant word (e.g., "HDFC" in "HDFC BANK")
+                    customer_obj = Customer.objects.filter(name__icontains=words[0]).first()
+                    
+                    # If multiple matches possible, try to match more words
+                    if not customer_obj and len(words) > 1:
+                        # Try matching first two words
+                        search_term = ' '.join(words[:2])
+                        customer_obj = Customer.objects.filter(name__icontains=search_term).first()
+            
+            # Log the matching attempt
+            if customer_obj:
+                logger.info(f"Customer matching: '{normalized_name}' -> '{customer_obj.name}'")
         
         # BRD Requirement: If no customer match is found, display "Not Customer Match"
         if not customer_obj:
+            logger.info(f"No customer match found for: {cust_name}")
             cust_name = 'Not Customer Match'
+        else:
+            logger.info(f"Matched customer: {customer_obj.name}")
         
         # Create SO Draft
         so = SalesOrder.objects.create(
@@ -493,22 +591,17 @@ class SalesOrderCreator:
             currency=extracted_data['currency'],
             status=SalesOrderStatus.DRAFT,
             po_file=po_file_obj,
-            billing_address=extracted_data['billing_address'] or (customer_obj.address if customer_obj else cust_name),
-            shipping_address=extracted_data['shipping_address'] or (customer_obj.address if customer_obj else '')
+            billing_address=extracted_data.get('billing_address', '') or '',
+            shipping_address=extracted_data.get('shipping_address', '') or ''
         )
         
         total = 0
         for item in extracted_data['items']:
-            product_name = item['description']
-            product = Product.objects.filter(name__icontains=product_name[:50]).first()
-            if product:
-                product_name = product.name # Use official product name if matched
-                
             SalesOrderItem.objects.create(
                 sales_order=so,
-                product=product,
-                product_name=product_name, # Fallback to extracted description
-                description=item['description'],
+                product=None,
+                product_name="", # Empty per user request
+                description="", # Empty per user request
                 qty=item['qty'],
                 rate=item['rate'],
                 tax=item.get('tax', 0),

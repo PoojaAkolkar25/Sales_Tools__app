@@ -274,21 +274,79 @@ class MilestoneViewSet(viewsets.ModelViewSet):
              except Exception as e:
                   return Response({"error": f"Failed to auto-generate Lead for Invoice: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        from finance.services import InvoiceService
+        from finance.models import Invoice, InvoiceLineItem, InvoiceStatus, CompanyProfile
+        import datetime
+        
         # Generate Invoice
-        last_invoice = Invoice.objects.order_by('id').last()
-        last_id = last_invoice.id if last_invoice else 0
-        new_invoice_no = f"INV-M-{last_id + 1:04d}"
+        new_invoice_no = InvoiceService.generate_invoice_number()
         
         try:
+            # Prepare line items for tax calculation
+            line_items_data = [{
+                'type': 'Service',
+                'description': f"{milestone.milestone_no}: {milestone.description}",
+                'hsn_sac': '998311',
+                'quantity': milestone.qty or 1,
+                'rate': milestone.rate or 0,
+                'discount': 0,
+                'gst_rate': 18
+            }]
+            
+            # Prepare dummy invoice_data for calculation (billing/shipping handles might needed)
+            invoice_data = {
+                'lead': lead.id if lead else None,
+                'is_gst_applicable': True,
+                'customer_state': lead.state.id if lead and lead.state else None
+            }
+            
+            # Use fallback state if lead doesn't have one
+            if not invoice_data['customer_state'] and sales_order.customer and sales_order.customer.state:
+                invoice_data['customer_state'] = sales_order.customer.state.id
+
+            calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
+            
             invoice = Invoice.objects.create(
                 invoice_no=new_invoice_no,
                 invoice_date=datetime.date.today(),
-                due_date=milestone.due_date,
+                due_date=milestone.due_date or datetime.date.today(),
                 lead=lead, 
-                total_amount=milestone.amount,
-                open_balance=milestone.amount,
+                billing_address=sales_order.billing_address,
+                shipping_address=sales_order.shipping_address,
+                currency=sales_order.currency,
+                invoice_type=calc_results['invoice_type'],
+                subtotal=calc_results['subtotal'],
+                total_discount=calc_results['total_discount'],
+                taxable_amount=calc_results['taxable_amount'],
+                total_tax=calc_results['total_tax'],
+                sales_tax_rate=calc_results['sales_tax_rate'],
+                sales_tax_amount=calc_results['sales_tax_amount'],
+                round_off=calc_results['round_off'],
+                total_amount=calc_results['total_amount'],
+                open_balance=calc_results['total_amount'],
+                grand_total_words=calc_results['grand_total_words'],
                 status=InvoiceStatus.DRAFT
             )
+            
+            # Create line items
+            for idx, item in enumerate(calc_results['processed_items'], 1):
+                InvoiceLineItem.objects.create(
+                    invoice=invoice,
+                    sr_no=idx,
+                    description=item.get('description'),
+                    hsn_sac=item.get('hsn_sac'),
+                    quantity=item.get('quantity', 1),
+                    rate=item.get('rate', 0),
+                    taxable_value=item.get('taxable_value'),
+                    discount=item.get('discount', 0),
+                    cgst_rate=item.get('cgst_rate', 0),
+                    cgst_amount=item.get('cgst_amount', 0),
+                    sgst_rate=item.get('sgst_rate', 0),
+                    sgst_amount=item.get('sgst_amount', 0),
+                    igst_rate=item.get('igst_rate', 0),
+                    igst_amount=item.get('igst_amount', 0),
+                    total_amount=item.get('total_amount')
+                )
             
             milestone.invoice = invoice
             milestone.status = MilestoneStatus.INVOICED
@@ -297,4 +355,18 @@ class MilestoneViewSet(viewsets.ModelViewSet):
             return Response(MilestoneSerializer(milestone).data)
             
         except Exception as e:
-             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            import traceback
+            with open("debug_invoice_error.txt", "w") as f:
+                f.write(str(e) + "\n" + traceback.format_exc())
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    @action(detail=True, methods=['get'])
+    def download_pdf(self, request, pk=None):
+        from .services import MilestoneService
+        milestone = self.get_object()
+        try:
+            pdf_content = MilestoneService.generate_pdf(milestone)
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="milestone_{milestone.milestone_no}.pdf"'
+            return response
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

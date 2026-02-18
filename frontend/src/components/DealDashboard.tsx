@@ -198,7 +198,16 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
 
             let matchesDate = true;
             if (filters.period) {
-                const dealDate = new Date(deal.deal_date || deal.created_at);
+                const parseLocalDate = (dateStr: string) => {
+                    if (!dateStr) return null;
+                    if (dateStr.includes('T')) return new Date(dateStr);
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    return new Date(year, month - 1, day);
+                };
+
+                const dealDate = parseLocalDate(deal.deal_date || deal.created_at.split('T')[0]);
+                if (!dealDate) return true;
+
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
@@ -210,21 +219,25 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                 } else if (filters.period === 'last_3_months') {
                     const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
                     const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1);
-                    const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+                    const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 2, 1);
                     matchesDate = dealDate >= threeMonthsAgo && dealDate <= lastOfLastMonth;
                 } else if (filters.period === 'last_6_months') {
-                    const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, 1);
-                    matchesDate = dealDate >= sixMonthsAgo && dealDate < new Date(today.getFullYear(), today.getMonth(), 1);
+                    const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+                    const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                    const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1);
+                    matchesDate = dealDate >= sixMonthsAgo && dealDate <= lastOfLastMonth;
                 } else if (filters.period === 'last_year') {
                     const lastYear = today.getFullYear() - 1;
                     const startOfYear = new Date(lastYear, 0, 1);
                     const endOfYear = new Date(lastYear, 11, 31, 23, 59, 59);
                     matchesDate = dealDate >= startOfYear && dealDate <= endOfYear;
                 } else if (filters.period === 'custom' && filters.startDate && filters.endDate) {
-                    const start = new Date(filters.startDate);
-                    const end = new Date(filters.endDate);
-                    end.setHours(23, 59, 59, 999);
-                    matchesDate = dealDate >= start && dealDate <= end;
+                    const start = parseLocalDate(filters.startDate);
+                    const end = parseLocalDate(filters.endDate);
+                    if (start && end) {
+                        end.setHours(23, 59, 59, 999);
+                        matchesDate = dealDate >= start && dealDate <= end;
+                    }
                 }
             }
 

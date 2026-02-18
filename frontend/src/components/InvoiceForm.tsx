@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Save, Trash2, FileText } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -14,6 +15,7 @@ interface LineItem {
 }
 
 const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> = ({ onBack, invoiceId }) => {
+    const location = useLocation();
     const { showNotification } = useNotification();
     const [leads, setLeads] = useState<any[]>([]);
     const [costSheets, setCostSheets] = useState<any[]>([]);
@@ -21,6 +23,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
     const [states, setStates] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [isReadOnly, setIsReadOnly] = useState(false);
+    const [status, setStatus] = useState('DRAFT');
 
     const [formData, setFormData] = useState({
         invoice_no: '',
@@ -73,6 +76,14 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         calculateTotals();
     }, [lineItems, formData.invoice_type, formData.customer_state, formData.is_gst_applicable]);
 
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const mid = params.get('milestone_id');
+        if (mid && leads.length > 0 && !invoiceId) {
+            handleMilestonePopulate(mid);
+        }
+    }, [location.search, leads]);
+
     const fetchInitialData = async () => {
         try {
             const [leadsRes, costSheetsRes, statesRes, proposalsRes] = await Promise.all([
@@ -87,6 +98,41 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
             setProposals(proposalsRes.data);
         } catch (error) {
             console.error('Error fetching initial data', error);
+        }
+    };
+
+    const handleMilestonePopulate = async (mid: string) => {
+        try {
+            setLoading(true);
+            const response = await api.get(`/milestones/${mid}/`);
+            const ms = response.data;
+
+            if (ms.sales_order_details) {
+                const matchingLead = leads.find(l => l.customer_name === ms.sales_order_details.customer_name);
+
+                setFormData(prev => ({
+                    ...prev,
+                    lead: matchingLead ? matchingLead.id : prev.lead,
+                    billing_address: ms.sales_order_details.billing_address || prev.billing_address,
+                    shipping_address: ms.sales_order_details.shipping_address || prev.shipping_address,
+                    currency: ms.sales_order_details.currency || prev.currency,
+                }));
+
+                setLineItems([{
+                    type: 'Service',
+                    description: `${ms.milestone_no}: ${ms.description}`,
+                    hsn_sac: '998311',
+                    quantity: parseFloat(ms.qty) || 1,
+                    rate: parseFloat(ms.rate) || 0,
+                    discount: 0,
+                    gst_rate: 18
+                }]);
+            }
+        } catch (error) {
+            console.error('Error populating from milestone', error);
+            showNotification('Error loading milestone details', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -119,6 +165,29 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 lut_declaration: inv.lut_declaration || ''
             });
 
+            setFormData({
+                invoice_no: inv.invoice_no,
+                lead: inv.lead,
+                cost_sheet: inv.cost_sheet || '',
+                proposal: inv.proposal || '',
+                invoice_date: inv.invoice_date,
+                due_date: inv.due_date,
+                customer_gstin: inv.customer_gstin || '',
+                customer_state: inv.customer_state || '',
+                billing_address: inv.billing_address || '',
+                shipping_address: inv.shipping_address || '',
+                currency: inv.currency,
+                is_gst_applicable: inv.is_gst_applicable,
+                invoice_type: inv.invoice_type,
+                sales_tax_rate: inv.sales_tax_rate || 0,
+                sales_tax_amount: inv.sales_tax_amount || 0,
+                place_of_supply: inv.place_of_supply || '',
+                authorized_signatory: inv.authorized_signatory || '',
+                gst_declaration: inv.gst_declaration || '',
+                lut_declaration: inv.lut_declaration || ''
+            });
+
+            setStatus(inv.status);
             setIsReadOnly(inv.status !== 'DRAFT');
 
             if (inv.line_items && inv.line_items.length > 0) {
@@ -270,16 +339,31 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
             if (signatureFile) data.append('signature_image', signatureFile);
             if (sealFile) data.append('company_seal', sealFile);
 
+            let newInvoiceId = invoiceId;
             if (invoiceId) {
                 await api.put(`/finance/invoices/${invoiceId}/`, data, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 showNotification('Invoice updated successfully', 'success');
             } else {
-                await api.post('/finance/invoices/', data, {
+                const response = await api.post('/finance/invoices/', data, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
+                newInvoiceId = response.data.id;
                 showNotification('Invoice created successfully', 'success');
+
+                const params = new URLSearchParams(location.search);
+                const mid = params.get('milestone_id');
+                if (mid && newInvoiceId) {
+                    try {
+                        await api.patch(`/milestones/${mid}/`, {
+                            invoice: newInvoiceId,
+                            status: 'INVOICED'
+                        });
+                    } catch (err) {
+                        console.error('Error linking milestone to invoice', err);
+                    }
+                }
             }
             onBack();
         } catch (error) {
@@ -298,9 +382,25 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--bg-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <FileText size={20} color="var(--theme-primary)" />
                     </div>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                        {invoiceId ? 'Edit Invoice' : 'Create Detailed Invoice'}
-                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                            {invoiceId ? 'Edit Invoice' : 'Create Detailed Invoice'}
+                        </h2>
+                        {invoiceId && (
+                            <div style={{
+                                padding: '4px 12px',
+                                borderRadius: '20px',
+                                background: status === 'DRAFT' ? 'rgba(187, 77, 0, 0.1)' : 'rgba(66, 153, 225, 0.1)',
+                                color: status === 'DRAFT' ? 'var(--theme-primary)' : '#4299E1',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                            }}>
+                                {status.replace('_', ' ')}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>

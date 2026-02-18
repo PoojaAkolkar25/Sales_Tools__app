@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Milestone Details - {{ milestone.milestone_no }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            border-bottom: 2px solid #FF6B00;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FF6B00;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 10px;
+            color: #0066CC;
+        }
+
+        .grid {
+            display: block;
+            width: 100%;
+        }
+
+        .row {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .label {
+            font-weight: bold;
+            width: 150px;
+            display: inline-block;
+        }
+
+        .value {
+            display: inline-block;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0px;
+            width: 100%;
+            text-align: center;
+            font-size: 10px;
+            color: #777;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #f9fafb;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .total-row {
+            font-weight: bold;
+            font-size: 18px;
+            color: #FF6B00;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <table style="border: none;">
+            <tr style="border: none;">
+                <td style="border: none;">
+                    <div class="company-name">{{ company.name|default:"Antigravity Enterprises" }}</div>
+                    <div>{{ company.address|linebreaksbr|default:"" }}</div>
+                </td>
+                <td style="border: none; text-align: right;">
+                    <div class="title">MILESTONE DETAILS</div>
+                    <div>Date: {{ now|date:"d M Y" }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">PROJECT INFORMATION</div>
+        <div class="row"><span class="label">Sales Order:</span> <span class="value">{{ milestone.sales_order.so_number
+                }}</span></div>
+        <div class="row"><span class="label">Customer:</span> <span class="value">{{
+                milestone.sales_order.customer.name|default:milestone.sales_order.customer_name }}</span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">MILESTONE DETAILS</div>
+        <div class="row"><span class="label">Milestone No:</span> <span class="value">{{ milestone.milestone_no
+                }}</span></div>
+        <div class="row"><span class="label">Status:</span> <span class="value">{{ milestone.get_status_display
+                }}</span></div>
+        <div class="row"><span class="label">Due Date:</span> <span class="value">{{ milestone.due_date|date:"d M Y"
+                }}</span></div>
+        <div class="row"><span class="label">Period:</span> <span class="value">{{ milestone.period_from|date:"d M Y" }}
+                to {{ milestone.period_to|date:"d M Y" }}</span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">DESCRIPTION & AMOUNT</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th style="text-align: right;">Quantity</th>
+                    <th style="text-align: right;">Rate</th>
+                    <th style="text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ milestone.description }}</td>
+                    <td style="text-align: right;">{{ milestone.qty }}</td>
+                    <td style="text-align: right;">{{ currency_symbol }}{{ milestone.rate }}</td>
+                    <td style="text-align: right;">{{ currency_symbol }}{{ milestone.amount }}</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="3" style="text-align: right; border: none;">Total Amount:</td>
+                    <td style="text-align: right; border: none;">{{ currency_symbol }}{{ milestone.amount }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        Generated on {{ now }} | {{ company.name|default:"Antigravity Enterprises" }}
+    </div>
+</body>
+
+</html>

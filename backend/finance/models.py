@@ -1,5 +1,6 @@
 from django.db import models
 from leads.models import Lead
+import re
 
 class StateMaster(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -287,3 +288,125 @@ class ReceiptAttachment(models.Model):
     file = models.FileField(upload_to='receipt_attachments/')
     filename = models.CharField(max_length=255)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+class CustomerPartnerType(models.TextChoices):
+    CUSTOMER = 'CUSTOMER', 'Customer'
+    CHANNEL_PARTNER = 'CHANNEL_PARTNER', 'Channel Partner'
+
+class PaymentTerms(models.TextChoices):
+    NET_30 = 'NET_30', 'Net 30'
+    NET_60 = 'NET_60', 'Net 60'
+    NET_90 = 'NET_90', 'Net 90'
+    DUE_ON_RECEIPT = 'DUE_ON_RECEIPT', 'Due on Receipt'
+
+class EntityStatus(models.TextChoices):
+    ACTIVE = 'ACTIVE', 'Active'
+    INACTIVE = 'INACTIVE', 'Inactive'
+
+class CustomerPartner(models.Model):
+    code = models.CharField(max_length=50, unique=True, blank=True)
+    name = models.CharField(max_length=255)
+    linked_company = models.ForeignKey(CompanyProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='partners')
+    type = models.CharField(max_length=20, choices=CustomerPartnerType.choices, default=CustomerPartnerType.CUSTOMER)
+    industry = models.CharField(max_length=100, blank=True, null=True)
+    primary_contact = models.CharField(max_length=255, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    mobile = models.CharField(max_length=20, blank=True, null=True)
+    credit_limit = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    payment_terms = models.CharField(max_length=20, choices=PaymentTerms.choices, default=PaymentTerms.NET_30)
+    status = models.CharField(max_length=10, choices=EntityStatus.choices, default=EntityStatus.ACTIVE)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            model_class = self.__class__
+            last = model_class.objects.order_by('code').last()
+            if last:
+                match = re.search(r'(\d+)$', last.code)
+                if match:
+                    last_num = int(match.group(1))
+                    self.code = f"CP{last_num + 1:03d}"
+                else:
+                    self.code = "CP001"
+            else:
+                self.code = "CP001"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+class DealType(models.TextChoices):
+    DIRECT = 'DIRECT', 'Direct'
+    INDIRECT = 'INDIRECT', 'Indirect'
+
+class EndCustomer(models.Model):
+    code = models.CharField(max_length=50, unique=True, blank=True)
+    name = models.CharField(max_length=255)
+    linked_partner = models.ForeignKey(CustomerPartner, on_delete=models.CASCADE, related_name='end_customers')
+    industry = models.CharField(max_length=100, blank=True, null=True)
+    location = models.CharField(max_length=255, blank=True, null=True)
+    contact_person = models.CharField(max_length=255, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    deal_type = models.CharField(max_length=10, choices=DealType.choices, default=DealType.DIRECT)
+    status = models.CharField(max_length=10, choices=EntityStatus.choices, default=EntityStatus.ACTIVE)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            model_class = self.__class__
+            last = model_class.objects.order_by('code').last()
+            if last:
+                match = re.search(r'(\d+)$', last.code)
+                if match:
+                    last_num = int(match.group(1))
+                    self.code = f"EC{last_num + 1:03d}"
+                else:
+                    self.code = "EC001"
+            else:
+                self.code = "EC001"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+class FinancialYearStatus(models.TextChoices):
+    ACTIVE = 'ACTIVE', 'Active'
+    CLOSED = 'CLOSED', 'Closed'
+
+class FinancialYear(models.Model):
+    code = models.CharField(max_length=50, unique=True, blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    label = models.CharField(max_length=100)
+    status = models.CharField(max_length=10, choices=FinancialYearStatus.choices, default=FinancialYearStatus.ACTIVE)
+    is_current_fy = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.start_date and self.end_date and self.start_date >= self.end_date:
+            raise ValidationError("End Date must be greater than Start Date")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        if not self.code:
+            # Auto-generate code if empty, e.g., FY2025-26
+            sy = self.start_date.year
+            ey = self.end_date.year
+            self.code = f"FY{sy}-{str(ey)[2:]}"
+        
+        if self.is_current_fy:
+            # Mark all others as not current
+            FinancialYear.objects.filter(is_current_fy=True).exclude(id=self.id).update(is_current_fy=False)
+            
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.label} ({self.code})"

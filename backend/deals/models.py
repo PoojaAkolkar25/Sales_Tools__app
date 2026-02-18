@@ -31,12 +31,48 @@ class ImplementationPartner(models.Model):
     def __str__(self):
         return self.name
 
+
+class ProductCategory(models.TextChoices):
+    SOFTWARE = 'SOFTWARE', 'Software'
+    SERVICE = 'SERVICE', 'Service'
+
+class ProductStatus(models.TextChoices):
+    ACTIVE = 'ACTIVE', 'Active'
+    INACTIVE = 'INACTIVE', 'Inactive'
+
 class Product(models.Model):
+    product_code = models.CharField(max_length=50, unique=True, blank=True)
     name = models.CharField(max_length=255, unique=True)
+    category = models.CharField(max_length=20, choices=ProductCategory.choices, default=ProductCategory.SOFTWARE)
+    subcategory = models.CharField(max_length=100, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    uom = models.CharField(max_length=50, verbose_name="Unit of Measure", blank=True, null=True)
+    standard_price = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    tax_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=18)
+    hsn_sac_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="HSN/SAC Code")
+    currency = models.CharField(max_length=10, choices=Currency.choices, default=Currency.INR)
+    status = models.CharField(max_length=20, choices=ProductStatus.choices, default=ProductStatus.ACTIVE)
+    
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.product_code:
+            import re
+            last = Product.objects.all().order_by('product_code').last()
+            if last:
+                match = re.search(r'(\d+)$', last.product_code)
+                if match:
+                    last_num = int(match.group(1))
+                    self.product_code = f"PRD{last_num + 1:03d}"
+                else:
+                    self.product_code = "PRD001"
+            else:
+                self.product_code = "PRD001"
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.name
+        return f"{self.product_code} - {self.name}"
 
 class CustomerType(models.TextChoices):
     PARTNER = 'PARTNER', 'Partner'
