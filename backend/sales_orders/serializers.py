@@ -13,6 +13,7 @@ class SalesOrderSerializer(serializers.ModelSerializer):
     po_file_url = serializers.SerializerMethodField()
     deal = serializers.SerializerMethodField()
     deal_id = serializers.SerializerMethodField()
+    cost_sheet = serializers.SerializerMethodField()
 
     def get_deal(self, obj):
         first_est = obj.estimates.first()
@@ -21,6 +22,10 @@ class SalesOrderSerializer(serializers.ModelSerializer):
     def get_deal_id(self, obj):
         first_est = obj.estimates.first()
         return first_est.deal.deal_id if first_est and first_est.deal else "N/A"
+
+    def get_cost_sheet(self, obj):
+        first_est = obj.estimates.first()
+        return first_est.cost_sheet.id if first_est and first_est.cost_sheet else None
 
     def get_po_file_name(self, obj):
         return obj.po_file.file.name.split('/')[-1] if obj.po_file and obj.po_file.file else "N/A"
@@ -44,7 +49,7 @@ class SalesOrderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SalesOrder
-        fields = ['id', 'so_number', 'order_date', 'status', 'customer', 'customer_detail', 'customer_name', 'customer_code', 'po_number', 'po_date', 'po_from_date', 'po_to_date', 'delivery_date', 'billing_address', 'shipping_address', 'currency', 'total_amount', 'po_file', 'po_file_name', 'po_file_url', 'assigned_to', 'items', 'estimates', 'deal', 'deal_id']
+        fields = ['id', 'so_number', 'order_date', 'status', 'customer', 'customer_detail', 'customer_name', 'customer_code', 'po_number', 'po_date', 'po_from_date', 'po_to_date', 'delivery_date', 'billing_address', 'shipping_address', 'currency', 'total_amount', 'po_file', 'po_file_name', 'po_file_url', 'assigned_to', 'items', 'estimates', 'deal', 'deal_id', 'cost_sheet']
         extra_kwargs = {
             'estimates': {'required': False},
             'so_number': {'read_only': True},

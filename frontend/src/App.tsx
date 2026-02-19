@@ -1376,6 +1376,7 @@ const AppContent: React.FC = () => {
                     </button>
                     <button
                       onClick={() => {
+                        setEditingMilestoneId(null);
                         setMilestoneView('form');
                       }}
                       style={{

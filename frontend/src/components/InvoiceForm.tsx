@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import { Save, Trash2, FileText } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import SearchableDropdown from './SearchableDropdown';
 
 interface LineItem {
     type: string;
@@ -45,7 +44,11 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         place_of_supply: '',
         authorized_signatory: '',
         gst_declaration: 'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. This invoice is issued under Rule 46 of the CGST Rules, 2017.',
-        lut_declaration: 'Supply meant for export under Letter of Undertaking (LUT) without payment of Integrated Tax as per Section 16(3) of the IGST Act, 2017 and Rule 96A of the CGST Rules, 2017.'
+        lut_declaration: 'Supply meant for export under Letter of Undertaking (LUT) without payment of Integrated Tax as per Section 16(3) of the IGST Act, 2017 and Rule 96A of the CGST Rules, 2017.',
+        irn: '',
+        ack_no: '',
+        ack_date: '',
+        payment_terms_days: 30
     });
 
     const [signatureFile, setSignatureFile] = useState<File | null>(null);
@@ -114,6 +117,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 setFormData(prev => ({
                     ...prev,
                     lead: matchingLead ? matchingLead.id : prev.lead,
+                    cost_sheet: ms.sales_order_details.cost_sheet || prev.cost_sheet,
                     billing_address: ms.sales_order_details.billing_address || prev.billing_address,
                     shipping_address: ms.sales_order_details.shipping_address || prev.shipping_address,
                     currency: ms.sales_order_details.currency || prev.currency,
@@ -163,29 +167,11 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 place_of_supply: inv.place_of_supply || '',
                 authorized_signatory: inv.authorized_signatory || '',
                 gst_declaration: inv.gst_declaration || '',
-                lut_declaration: inv.lut_declaration || ''
-            });
-
-            setFormData({
-                invoice_no: inv.invoice_no,
-                lead: inv.lead,
-                cost_sheet: inv.cost_sheet || '',
-                proposal: inv.proposal || '',
-                invoice_date: inv.invoice_date,
-                due_date: inv.due_date,
-                customer_gstin: inv.customer_gstin || '',
-                customer_state: inv.customer_state || '',
-                billing_address: inv.billing_address || '',
-                shipping_address: inv.shipping_address || '',
-                currency: inv.currency,
-                is_gst_applicable: inv.is_gst_applicable,
-                invoice_type: inv.invoice_type,
-                sales_tax_rate: inv.sales_tax_rate || 0,
-                sales_tax_amount: inv.sales_tax_amount || 0,
-                place_of_supply: inv.place_of_supply || '',
-                authorized_signatory: inv.authorized_signatory || '',
-                gst_declaration: inv.gst_declaration || '',
-                lut_declaration: inv.lut_declaration || ''
+                lut_declaration: inv.lut_declaration || '',
+                irn: inv.irn || '',
+                ack_no: inv.ack_no || '',
+                ack_date: inv.ack_date || '',
+                payment_terms_days: inv.payment_terms_days || 30
             });
 
             setStatus(inv.status);
@@ -385,6 +371,29 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         }
     };
 
+    const handlePreview = async () => {
+        if (!invoiceId) {
+            showNotification('Please save the invoice first to preview', 'info');
+            return;
+        }
+        try {
+            setLoading(true);
+            const response = await api.get(`/finance/invoices/${invoiceId}/download_pdf/`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Invoice_${formData.invoice_no}_Preview.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error previewing PDF', error);
+            showNotification('Error generating preview', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
@@ -398,17 +407,37 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             {invoiceId ? 'Edit Invoice' : 'Create Detailed Invoice'}
                         </h2>
                         {invoiceId && (
-                            <div style={{
-                                padding: '4px 12px',
-                                borderRadius: '20px',
-                                background: status === 'DRAFT' ? 'rgba(187, 77, 0, 0.1)' : 'rgba(66, 153, 225, 0.1)',
-                                color: status === 'DRAFT' ? 'var(--theme-primary)' : '#4299E1',
-                                fontSize: '0.75rem',
-                                fontWeight: 800,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.5px'
-                            }}>
-                                {status.replace('_', ' ')}
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                    onClick={handlePreview}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '4px 12px',
+                                        borderRadius: '8px',
+                                        background: 'var(--bg-secondary)',
+                                        color: 'var(--theme-primary)',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 800,
+                                        border: '1px solid var(--theme-primary)',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Preview PDF
+                                </button>
+                                <div style={{
+                                    padding: '4px 12px',
+                                    borderRadius: '20px',
+                                    background: status === 'DRAFT' ? 'rgba(187, 77, 0, 0.1)' : 'rgba(66, 153, 225, 0.1)',
+                                    color: status === 'DRAFT' ? 'var(--theme-primary)' : '#4299E1',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 800,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px'
+                                }}>
+                                    {status.replace('_', ' ')}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -417,57 +446,52 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Cost Sheet</label>
-                        <SearchableDropdown
-                            options={costSheets.filter(cs => {
-                                if (!formData.lead) return true;
-                                const leadId = parseInt(formData.lead.toString());
-                                if (cs.lead === leadId) return true;
+                        {formData.cost_sheet ? (
+                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
+                                {costSheets.find(cs => cs.id === parseInt(formData.cost_sheet.toString()))?.cost_sheet_no || 'Linked Cost Sheet'}
+                            </div>
+                        ) : (
+                            <select className="ae-input" disabled={isReadOnly} value={formData.cost_sheet} onChange={e => handleCostSheetChange(e.target.value)}>
+                                <option value="">Select Cost Sheet (Optional)</option>
+                                {costSheets.filter(cs => {
+                                    if (!formData.lead) return true;
+                                    const leadId = parseInt(formData.lead);
+                                    if (cs.lead === leadId) return true;
 
-                                // Fallback: Match by customer name
-                                const selectedLead = leads.find(l => l.id === leadId);
-                                if (selectedLead && cs.customer_name && selectedLead.customer_name &&
-                                    cs.customer_name.trim().toLowerCase() === selectedLead.customer_name.trim().toLowerCase()) {
-                                    return true;
-                                }
-                                return false;
-                            }).map(cs => ({
-                                value: cs.id,
-                                label: `${cs.cost_sheet_no} - ${cs.project_name}`
-                            }))}
-                            value={formData.cost_sheet}
-                            onChange={(val) => handleCostSheetChange(val.toString())}
-                            placeholder="Select Cost Sheet"
-                            className="w-full"
-                            disabled={isReadOnly}
-                        />
+                                    // Fallback: Match by customer name
+                                    const selectedLead = leads.find(l => l.id === leadId);
+                                    if (selectedLead && cs.customer_name && selectedLead.customer_name &&
+                                        cs.customer_name.trim().toLowerCase() === selectedLead.customer_name.trim().toLowerCase()) {
+                                        return true;
+                                    }
+                                    return false;
+                                }).map(cs => (
+                                    <option key={cs.id} value={cs.id}>{cs.cost_sheet_no} - {cs.project_name}</option>
+                                ))}
+                            </select>
+                        )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Proposal</label>
-                        <SearchableDropdown
-                            options={proposals.map(p => ({
-                                value: p.id,
-                                label: `${p.filename} v${p.version}`
-                            }))}
-                            value={formData.proposal}
-                            onChange={(val) => handleProposalChange(val.toString())}
-                            placeholder="Select Proposal"
-                            className="w-full"
-                            disabled={isReadOnly}
-                        />
+                        <select className="ae-input" disabled={isReadOnly} value={formData.proposal} onChange={e => handleProposalChange(e.target.value)}>
+                            <option value="">Select Proposal (Optional)</option>
+                            {proposals.map(p => (
+                                <option key={p.id} value={p.id}>{p.filename} v{p.version}</option>
+                            ))}
+                        </select>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer</label>
-                        <SearchableDropdown
-                            options={leads.map(l => ({
-                                value: l.id,
-                                label: l.customer_name
-                            }))}
-                            value={formData.lead}
-                            onChange={(val) => setFormData({ ...formData, lead: val.toString() })}
-                            placeholder="Select Customer"
-                            className="w-full"
-                            disabled={isReadOnly}
-                        />
+                        {formData.lead ? (
+                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
+                                {leads.find(l => l.id === parseInt(formData.lead.toString()))?.customer_name || 'Linked Customer'}
+                            </div>
+                        ) : (
+                            <select className="ae-input" required disabled={isReadOnly} value={formData.lead} onChange={e => setFormData({ ...formData, lead: e.target.value })}>
+                                <option value="">Select Customer</option>
+                                {leads.map(l => <option key={l.id} value={l.id}>{l.customer_name}</option>)}
+                            </select>
+                        )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
@@ -475,17 +499,10 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Place of Supply (State)</label>
-                        <SearchableDropdown
-                            options={states.map(s => ({
-                                value: s.id,
-                                label: `${s.name} (${s.code})`
-                            }))}
-                            value={formData.customer_state}
-                            onChange={(val) => setFormData({ ...formData, customer_state: val.toString() })}
-                            placeholder="Select State"
-                            className="w-full"
-                            disabled={isReadOnly}
-                        />
+                        <select className="ae-input" required disabled={isReadOnly} value={formData.customer_state} onChange={e => setFormData({ ...formData, customer_state: e.target.value })}>
+                            <option value="">Select State</option>
+                            {states.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
+                        </select>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer GSTIN</label>
@@ -502,6 +519,28 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             <input type="number" className="ae-input" disabled={isReadOnly} value={formData.sales_tax_rate} onChange={e => setFormData({ ...formData, sales_tax_rate: parseFloat(e.target.value) || 0 })} />
                         </div>
                     )}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Payment Terms (Days)</label>
+                        <input type="number" className="ae-input" disabled={isReadOnly} value={formData.payment_terms_days} onChange={e => setFormData({ ...formData, payment_terms_days: parseInt(e.target.value) || 0 })} />
+                    </div>
+                </div>
+
+                <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
+                    <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '16px', textTransform: 'uppercase' }}>e-Invoice Details</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>IRN</label>
+                            <input className="ae-input" placeholder="e-Invoice IRN" disabled={isReadOnly} value={formData.irn} onChange={e => setFormData({ ...formData, irn: e.target.value })} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>Ack No.</label>
+                            <input className="ae-input" placeholder="Acknowledgement No." disabled={isReadOnly} value={formData.ack_no} onChange={e => setFormData({ ...formData, ack_no: e.target.value })} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>Ack Date</label>
+                            <input type="date" className="ae-input" disabled={isReadOnly} value={formData.ack_date} onChange={e => setFormData({ ...formData, ack_date: e.target.value })} />
+                        </div>
+                    </div>
                 </div>
 
                 <div style={{ marginBottom: '32px' }}>

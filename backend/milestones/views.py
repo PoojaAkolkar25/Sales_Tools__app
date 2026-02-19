@@ -229,13 +229,17 @@ class MilestoneViewSet(viewsets.ModelViewSet):
             
         sales_order = milestone.sales_order
         
-        # Try to find a Lead to link to the Invoice
+        # Try to find a Lead, Deal, and Cost Sheet to link to the Invoice
         lead = None
+        deal = None
+        cost_sheet = None
         
         # 1. Check if Sales Order has linked Estimates
         estimates = sales_order.estimates.all()
         if estimates.exists():
              estimate = estimates.first()
+             deal = estimate.deal
+             cost_sheet = estimate.cost_sheet
              # Estimates -> CostSheet -> Lead
              if estimate.cost_sheet and estimate.cost_sheet.lead:
                  lead = estimate.cost_sheet.lead
@@ -245,6 +249,8 @@ class MilestoneViewSet(viewsets.ModelViewSet):
              customer_deals = sales_order.customer.deals.all()
              if customer_deals.exists():
                  latest_deal = customer_deals.order_by('-created_at').first()
+                 if not deal:
+                     deal = latest_deal
                  if latest_deal and latest_deal.lead:
                      lead = latest_deal.lead
              
@@ -293,7 +299,6 @@ class MilestoneViewSet(viewsets.ModelViewSet):
                 'gst_rate': 18
             }]
             
-            # Prepare dummy invoice_data for calculation (billing/shipping handles might needed)
             # Determine Customer State ID for Tax Calculation
             customer_state_id = None
             if sales_order.customer:
@@ -314,6 +319,7 @@ class MilestoneViewSet(viewsets.ModelViewSet):
             # Prepare dummy invoice_data for calculation
             invoice_data = {
                 'lead': lead.id if lead else None,
+                'deal': deal.id if deal else None,
                 'is_gst_applicable': True,
                 'customer_state': customer_state_id
             }
@@ -324,7 +330,9 @@ class MilestoneViewSet(viewsets.ModelViewSet):
                 invoice_no=new_invoice_no,
                 invoice_date=datetime.date.today(),
                 due_date=milestone.due_date or datetime.date.today(),
-                lead=lead, 
+                lead=lead,
+                deal=deal,
+                cost_sheet=cost_sheet,
                 billing_address=sales_order.billing_address,
                 shipping_address=sales_order.shipping_address,
                 currency=sales_order.currency,

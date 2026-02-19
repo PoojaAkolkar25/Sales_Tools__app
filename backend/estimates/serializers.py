@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Estimate, Proposal, Renewal, EstimateItem, ApprovalStatus, EmailLog
+from .models import Estimate, Proposal, Renewal, EstimateItem, ApprovalStatus, EmailLog, EstimateStatus
 from cost_sheets.serializers import CostSheetSerializer
 from deals.serializers import DealSerializer
 
@@ -84,12 +84,14 @@ class EstimateSerializer(serializers.ModelSerializer):
                     "items": f"Total Estimate Price (${total_estimate_price:,.2f}) must be greater than or equal to the approved Cost Sheet Price (${cost_sheet_price:,.2f})."
                 })
 
-        # MANDATORY: Check for proposal attachment if updating (creation might not have it yet, 
-        # but the form handles attachment after creation or during update)
-        if self.instance and not self.instance.proposals.exists():
-             raise serializers.ValidationError({
-                "proposals": "A proposal file must be attached to the estimate."
-            })
+        # MANDATORY: Check for proposal attachment if updating and NOT in DRAFT/NEGOTIATION status
+        # This allows saving drafts before the proposal is ready.
+        status = data.get('status') or (self.instance.status if self.instance else EstimateStatus.DRAFT)
+        if self.instance and status not in [EstimateStatus.DRAFT, EstimateStatus.NEGOTIATION]:
+            if not self.instance.proposals.exists():
+                raise serializers.ValidationError({
+                    "proposals": "A proposal file must be attached to the estimate before submission."
+                })
         
         return data
 

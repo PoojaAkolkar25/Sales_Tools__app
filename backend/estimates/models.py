@@ -10,6 +10,7 @@ class EstimateStatus(models.TextChoices):
     NEGOTIATION = 'NEGOTIATION', 'Negotiation'
     APPROVED = 'APPROVED', 'Approved'
     REJECTED = 'REJECTED', 'Rejected'
+    REWOUND = 'REWOUND', 'Rewound'
 
 class ApprovalStatus(models.TextChoices):
     PENDING = 'PENDING', 'Pending'
