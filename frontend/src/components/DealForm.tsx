@@ -658,18 +658,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                     />
                                                 </td>
                                                 <td style={{ padding: '8px' }}>
-                                                    <select
-                                                        name="currency"
-                                                        value={formData.currency}
-                                                        onChange={handleInputChange}
-                                                        className="ae-input"
-                                                        required
-                                                        style={{ height: '36px', padding: '4px 8px', textAlign: 'left' }}
-                                                    >
-                                                        <option value="USD">USD</option>
-                                                        <option value="INR">INR</option>
-                                                        <option value="EURO">EURO</option>
-                                                    </select>
+                                                    <div style={{ height: '36px', padding: '4px 0', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                                                        {formData.currency}
+                                                    </div>
                                                 </td>
                                                 <td style={{ padding: '8px' }}>
                                                     <input

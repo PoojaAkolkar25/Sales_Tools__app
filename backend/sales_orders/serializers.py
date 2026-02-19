@@ -101,25 +101,35 @@ class SalesOrderSerializer(serializers.ModelSerializer):
     def validate(self, data):
         # BRD Requirement: Prevent duplicate PO number for same customer
         customer = data.get('customer')
+        customer_name = data.get('customer_name')
         po_number = data.get('po_number')
         
         # If updating, use instance values if not provided in data
         if self.instance:
-            if not customer: customer = self.instance.customer
-            if not po_number: po_number = self.instance.po_number
+            if customer is None and 'customer' not in data: customer = self.instance.customer
+            if customer_name is None and 'customer_name' not in data: customer_name = self.instance.customer_name
+            if po_number is None and 'po_number' not in data: po_number = self.instance.po_number
             
-        if customer and po_number:
-            # Check for existing SO with same PO Number and Customer, excluding current instance
-            duplicates = SalesOrder.objects.filter(
-                customer=customer, 
-                po_number__iexact=po_number
-            )
+        if po_number:
+            from django.db import models
+            # Build duplicate query similar to view check
+            duplicate_query = models.Q(po_number__iexact=po_number)
+            duplicate_query &= ~models.Q(status='CANCELLED')
+            
+            if customer:
+                duplicate_query &= models.Q(customer=customer)
+            else:
+                duplicate_query &= models.Q(customer_name=customer_name)
+                
+            duplicates = SalesOrder.objects.filter(duplicate_query)
             if self.instance:
                 duplicates = duplicates.exclude(pk=self.instance.pk)
                 
             if duplicates.exists():
+                existing = duplicates.first()
+                status_desc = existing.status
                 raise serializers.ValidationError(
-                    {"po_number": f"A Sales Order with PO Number '{po_number}' already exists for this customer."}
+                    {"po_number": f"PO Number {po_number} already exists for this customer. Check first PO (ID: {existing.id}, Status: {status_desc})."}
                 )
         
         return data

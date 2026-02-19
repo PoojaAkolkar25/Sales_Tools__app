@@ -100,28 +100,21 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                     setSalesOrders(soResponse.data);
 
                     const so = soResponse.data.find((s: any) => s.id === ms.sales_order);
-                    setSelectedSO(so || null);
+                    setSelectedSO(so || ms.sales_order_details); // Use details if not in list
 
-                    if (so) {
-                        try {
-                            const allMsRes = await api.get(`/milestones/?sales_order=${so.id}`);
-                            const allMs = allMsRes.data.map((m: any) => ({
-                                ...m,
-                                percentage: (parseFloat(m.amount) / parseFloat(so.total_amount) * 100).toFixed(2)
-                            }));
-                            setMilestones(allMs);
-                        } catch (err) {
-                            console.error('Error fetching all milestones', err);
-                            // Fallback to just the current one if bulk fetch fails
-                            setMilestones([{
-                                ...ms,
-                                percentage: ms.sales_order_details.total_amount > 0
-                                    ? (parseFloat(ms.amount) / parseFloat(ms.sales_order_details.total_amount) * 100).toFixed(2)
-                                    : "0.00"
-                            }]);
-                        }
-                    } else {
-                        // Fallback if SO not found in list (shouldn't happen)
+                    // Always fetch all milestones for this SO to avoid hidden duplicates
+                    try {
+                        const allMsRes = await api.get(`/milestones/?sales_order=${ms.sales_order}`);
+                        const totalAmt = so ? parseFloat(so.total_amount) : parseFloat(ms.sales_order_details.total_amount);
+
+                        const allMs = allMsRes.data.map((m: any) => ({
+                            ...m,
+                            percentage: totalAmt > 0 ? (parseFloat(m.amount) / totalAmt * 100).toFixed(2) : "0.00"
+                        }));
+                        setMilestones(allMs);
+                    } catch (err) {
+                        console.error('Error fetching all milestones', err);
+                        // Fallback to just the current one if bulk fetch fails
                         setMilestones([{
                             ...ms,
                             percentage: ms.sales_order_details.total_amount > 0
@@ -144,17 +137,48 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
         setSelectedSO(so || null);
 
         if (so) {
-            setMilestones([{
-                milestone_no: 'M1',
-                period_from: so.order_date,
-                period_to: so.delivery_date,
-                due_date: so.delivery_date,
-                description: 'Initial Milestone',
-                percentage: 100,
-                qty: 1,
-                rate: parseFloat(so.total_amount).toFixed(2),
-                amount: parseFloat(so.total_amount).toFixed(2)
-            }]);
+            setLoading(true);
+            try {
+                // Check for existing milestones for this SO
+                const response = await api.get(`/milestones/?sales_order=${so.id}`);
+                if (response.data && response.data.length > 0) {
+                    const existingMilestones = response.data.map((m: any) => ({
+                        ...m,
+                        percentage: (parseFloat(m.amount) / parseFloat(so.total_amount) * 100).toFixed(2)
+                    }));
+                    setMilestones(existingMilestones);
+                    showNotification('Loaded existing milestones for this Sales Order', 'info');
+                } else {
+                    // Initialize with default M1 if no existing milestones
+                    setMilestones([{
+                        milestone_no: 'M1',
+                        period_from: so.order_date,
+                        period_to: so.delivery_date,
+                        due_date: so.delivery_date,
+                        description: 'Initial Milestone',
+                        percentage: 100,
+                        qty: 1,
+                        rate: parseFloat(so.total_amount).toFixed(2),
+                        amount: parseFloat(so.total_amount).toFixed(2)
+                    }]);
+                }
+            } catch (error) {
+                console.error('Error fetching existing milestones', error);
+                // Fallback to default
+                setMilestones([{
+                    milestone_no: 'M1',
+                    period_from: so.order_date,
+                    period_to: so.delivery_date,
+                    due_date: so.delivery_date,
+                    description: 'Initial Milestone',
+                    percentage: 100,
+                    qty: 1,
+                    rate: parseFloat(so.total_amount).toFixed(2),
+                    amount: parseFloat(so.total_amount).toFixed(2)
+                }]);
+            } finally {
+                setLoading(false);
+            }
         } else {
             setMilestones([]);
         }

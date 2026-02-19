@@ -36,13 +36,19 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
             return Response({"error": "Customer is mandatory before submission."}, status=status.HTTP_400_BAD_REQUEST)
         if not sales_order.po_number:
             return Response({"error": "PO Number is mandatory before submission."}, status=status.HTTP_400_BAD_REQUEST)
+        if not sales_order.po_from_date:
+            return Response({"error": "PO Valid From Date is mandatory before submission."}, status=status.HTTP_400_BAD_REQUEST)
+        if not sales_order.po_to_date:
+            return Response({"error": "PO Valid To Date is mandatory before submission."}, status=status.HTTP_400_BAD_REQUEST)
         if not sales_order.order_date:
             return Response({"error": "Order Date is mandatory before submission."}, status=status.HTTP_400_BAD_REQUEST)
         if not sales_order.items.exists():
             return Response({"error": "At least one line item is required."}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Check for duplicate PO numbers
-        duplicate_query = models.Q(po_number=sales_order.po_number, status='SUBMITTED')
+        # Check for duplicate PO numbers (any non-cancelled SO with same PO number for this customer)
+        duplicate_query = models.Q(po_number__iexact=sales_order.po_number)
+        duplicate_query &= ~models.Q(status='CANCELLED')
+        
         if sales_order.customer:
             duplicate_query &= models.Q(customer=sales_order.customer)
         else:
@@ -51,7 +57,10 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         duplicates = SalesOrder.objects.filter(duplicate_query).exclude(pk=sales_order.pk)
         
         if duplicates.exists():
-            return Response({"error": f"A Sales Order with PO Number {sales_order.po_number} already exists for this customer."}, status=status.HTTP_400_BAD_REQUEST)
+            existing = duplicates.first()
+            status_desc = existing.get_status_display()
+            customer_desc = existing.customer.name if existing.customer else existing.customer_name
+            return Response({"error": f"PO Number {sales_order.po_number} already exists for this customer. Check first PO (ID: {existing.id}, Status: {status_desc})."}, status=status.HTTP_400_BAD_REQUEST)
 
         sales_order.status = 'SUBMITTED'
         sales_order.save() # save method handles SO number generation

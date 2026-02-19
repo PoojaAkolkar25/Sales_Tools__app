@@ -27,6 +27,7 @@ interface EstimateFormProps {
     id: number;
     onBack: () => void;
     onSave?: () => void;
+    user: any;
 }
 
 const getInitialFormData = () => ({
@@ -50,7 +51,7 @@ const getInitialFormData = () => ({
     }
 });
 
-const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
+const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user }) => {
     const { showNotification } = useNotification();
     const [estimate, setEstimate] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -460,6 +461,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
             return;
         }
 
+        if (!formData.subscription_from || !formData.subscription_to) {
+            showNotification('Subscription Period (From and To) is mandatory.', 'error');
+            return;
+        }
+
         setSaving(true);
         // Prepare data for saving
         const payload = {
@@ -500,7 +506,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                 await api.post(`/estimates/${savedId}/request_approval/`);
                 showNotification('Estimate saved and submitted for approval successfully', 'success');
             } else {
-                showNotification(id ? 'Estimate updated successfully' : 'Estimate created successfully', 'success');
+                showNotification(shouldSubmit ? 'Estimate saved and submitted' : 'Estimate draft saved successfully', 'success');
             }
 
             if (onSave) {
@@ -554,7 +560,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
         setLoading(true); // User feedback
         try {
             await api.post(`/estimates/${id}/rewind/`);
-            showNotification('Estimate rewarded (new version created)', 'success');
+            showNotification('Estimate rewound (new version created)', 'success');
             onBack();
         } catch (error: any) {
             showNotification(error.response?.data?.error || 'Failed to rewind estimate', 'error');
@@ -567,6 +573,17 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
 
 
     const handleApprove = async () => {
+        // Validation: Only Sales Head or App Admin (Finance Manager roles in groups) can approve
+        // Based on backend permission: user must be superuser or in 'Sales Head'/'Finance Manager' groups
+        const isSalesHead = user?.role === 'sales_head' || user?.groups?.some((g: any) => g.name === 'Sales Head');
+        const isFinanceManager = user?.role === 'finance_manager' || user?.groups?.some((g: any) => g.name === 'Finance Manager');
+        const isAdmin = user?.role === 'app_admin' || user?.is_superuser;
+
+        if (!isAdmin && !isSalesHead && !isFinanceManager) {
+            showNotification('Only admin approve', 'error');
+            return;
+        }
+
         try {
             await api.post(`/estimates/${id}/approve/`, { notes: 'Approved' });
             showNotification('Estimate approved successfully', 'success');
@@ -577,6 +594,16 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
     };
 
     const handleReject = async () => {
+        // Validation: Only Sales Head or App Admin (Finance Manager roles in groups) can reject
+        const isSalesHead = user?.role === 'sales_head' || user?.groups?.some((g: any) => g.name === 'Sales Head');
+        const isFinanceManager = user?.role === 'finance_manager' || user?.groups?.some((g: any) => g.name === 'Finance Manager');
+        const isAdmin = user?.role === 'app_admin' || user?.is_superuser;
+
+        if (!isAdmin && !isSalesHead && !isFinanceManager) {
+            showNotification('Only admin approve', 'error'); // Using same message as requested
+            return;
+        }
+
         if (!rejectComment) {
             showNotification('Rejection comments are required', 'error');
             return;
@@ -913,7 +940,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                         />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Subscription Period</label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>
+                            Subscription Period <span style={{ color: '#FF6B00' }}>*</span>
+                        </label>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             <input
                                 type="date"
@@ -1540,7 +1569,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave }) => {
                                 onMouseLeave={() => setHoveredBtn(null)}
                             >
                                 <Save size={16} />
-                                <span>Save as Draft</span>
+                                <span>Save Draft</span>
                             </button>
 
                             <button

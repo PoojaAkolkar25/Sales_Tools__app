@@ -35,11 +35,16 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_role(self, obj):
         # Specific check for admin first
-        if obj.is_superuser or obj.groups.filter(name='app_admin').exists():
+        if obj.is_superuser or obj.groups.filter(name__in=['app_admin', 'Admin']).exists():
             return 'app_admin'
         
-        # Check for other granular roles
-        roles = ['sales_head', 'inside_sales_head', 'pm_head', 'salesperson']
+        # Check for other granular roles (matching backend permission groups)
+        if obj.groups.filter(name='Sales Head').exists():
+            return 'sales_head'
+        if obj.groups.filter(name='Finance Manager').exists():
+            return 'finance_manager'
+        
+        roles = ['sales_head', 'finance_manager', 'inside_sales_head', 'pm_head', 'salesperson']
         for r in roles:
             if obj.groups.filter(name=r).exists():
                 return r

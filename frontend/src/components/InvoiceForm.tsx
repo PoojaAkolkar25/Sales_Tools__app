@@ -211,10 +211,20 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
     const handleCostSheetChange = (costSheetId: string) => {
         const cs = costSheets.find(c => c.id === parseInt(costSheetId));
         if (cs) {
+            let leadId = cs.lead;
+
+            // Try to match lead by name if ID is missing
+            if (!leadId && cs.customer_name) {
+                const matchedLead = leads.find(l => l.customer_name.trim().toLowerCase() === cs.customer_name.trim().toLowerCase());
+                if (matchedLead) {
+                    leadId = matchedLead.id;
+                }
+            }
+
             setFormData(prev => ({
                 ...prev,
                 cost_sheet: costSheetId,
-                lead: cs.lead,
+                lead: leadId || prev.lead,
                 billing_address: cs.customer_name // Fallback or logic to get address
             }));
 
@@ -408,7 +418,19 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Cost Sheet</label>
                         <select className="ae-input" disabled={isReadOnly} value={formData.cost_sheet} onChange={e => handleCostSheetChange(e.target.value)}>
                             <option value="">Select Cost Sheet (Optional)</option>
-                            {costSheets.map(cs => (
+                            {costSheets.filter(cs => {
+                                if (!formData.lead) return true;
+                                const leadId = parseInt(formData.lead);
+                                if (cs.lead === leadId) return true;
+
+                                // Fallback: Match by customer name
+                                const selectedLead = leads.find(l => l.id === leadId);
+                                if (selectedLead && cs.customer_name && selectedLead.customer_name &&
+                                    cs.customer_name.trim().toLowerCase() === selectedLead.customer_name.trim().toLowerCase()) {
+                                    return true;
+                                }
+                                return false;
+                            }).map(cs => (
                                 <option key={cs.id} value={cs.id}>{cs.cost_sheet_no} - {cs.project_name}</option>
                             ))}
                         </select>
@@ -585,7 +607,15 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                             </select>
                                         </td>
                                         <td style={{ textAlign: 'right', fontWeight: 800, color: '#1e293b', paddingRight: '24px' }}>
-                                            {formData.currency === 'INR' ? '₹' : '$'}{((item.quantity * item.rate - item.discount) * (1 + (formData.is_gst_applicable ? item.gst_rate : 0) / 100)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            {formData.currency === 'INR' ? '₹' : '$'}
+                                            {(() => {
+                                                const qty = Number(item.quantity) || 0;
+                                                const rate = Number(item.rate) || 0;
+                                                const discount = Number(item.discount) || 0;
+                                                const gst = formData.is_gst_applicable ? (Number(item.gst_rate) || 0) : 0;
+                                                const val = (qty * rate - discount) * (1 + gst / 100);
+                                                return isNaN(val) ? '0.00' : val.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                                            })()}
                                         </td>
                                         <td>
                                             {!isReadOnly && (

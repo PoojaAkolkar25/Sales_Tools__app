@@ -128,6 +128,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
             const payload = {
                 ...salesOrder,
                 po_date: salesOrder.po_date || null,
+                po_from_date: salesOrder.po_from_date || null,
+                po_to_date: salesOrder.po_to_date || null,
                 delivery_date: salesOrder.delivery_date || null,
                 order_date: salesOrder.order_date || new Date().toISOString().split('T')[0],
                 // Remove detail objects that serializer doesn't expect or are read-only
@@ -148,22 +150,78 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
             onSave();
         } catch (error: any) {
             console.error('Save Error:', error);
-            showNotification(error.response?.data?.error || JSON.stringify(error.response?.data) || 'Failed to update Sales Order', 'error');
+            let errorMsg = 'Failed to update Sales Order';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+                else if (typeof data === 'object') {
+                    // Extract first error message from field-specific errors
+                    const firstKey = Object.keys(data)[0];
+                    if (Array.isArray(data[firstKey])) errorMsg = `${firstKey}: ${data[firstKey][0]}`;
+                    else if (typeof data[firstKey] === 'string') errorMsg = data[firstKey];
+                    else errorMsg = JSON.stringify(data);
+                }
+            }
+            showNotification(errorMsg, 'error');
         } finally {
             setSaving(false);
         }
     };
 
     const handleSubmit = async () => {
+        // Validation before submission
+        if (!salesOrder.po_from_date) {
+            showNotification('PO Valid From Date is mandatory.', 'error');
+            return;
+        }
+        if (!salesOrder.po_to_date) {
+            showNotification('PO Valid To Date is mandatory.', 'error');
+            return;
+        }
+
         if (!window.confirm('Are you sure you want to finalize and submit this Sales Order?')) return;
 
         setSaving(true);
         try {
+            // First, save any pending changes (similar to handleSave)
+            const payload = {
+                ...salesOrder,
+                po_date: salesOrder.po_date || null,
+                po_from_date: salesOrder.po_from_date || null,
+                po_to_date: salesOrder.po_to_date || null,
+                delivery_date: salesOrder.delivery_date || null,
+                order_date: salesOrder.order_date || new Date().toISOString().split('T')[0],
+                customer_detail: undefined,
+                items: salesOrder.items.map((item: any) => ({
+                    ...item,
+                    product: item.product || null,
+                    qty: parseFloat(item.qty) || 0,
+                    rate: parseFloat(item.rate) || 0,
+                    tax: parseFloat(item.tax) || 0,
+                    discount: parseFloat(item.discount) || 0,
+                    amount: parseFloat(item.amount) || 0
+                }))
+            };
+
+            await api.patch(`/sales-orders/${id}/`, payload);
+
+            // Then, trigger the submit action
             await api.post(`/sales-orders/${id}/submit/`);
             showNotification('Sales Order submitted successfully', 'success');
             onSave();
         } catch (error: any) {
-            showNotification(error.response?.data?.error || 'Failed to submit Sales Order', 'error');
+            console.error('Submit Error:', error);
+            let errorMsg = 'Failed to submit Sales Order';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+                else if (typeof data === 'object') {
+                    const firstKey = Object.keys(data)[0];
+                    if (Array.isArray(data[firstKey])) errorMsg = `${firstKey}: ${data[firstKey][0]}`;
+                    else if (typeof data[firstKey] === 'string') errorMsg = data[firstKey];
+                }
+            }
+            showNotification(errorMsg, 'error');
         } finally {
             setSaving(false);
         }
@@ -317,7 +375,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Valid From</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Valid From <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
                                 <input
                                     name="po_from_date"
                                     type="date"
@@ -329,7 +387,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Valid To</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Valid To <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
                                 <input
                                     name="po_to_date"
                                     type="date"

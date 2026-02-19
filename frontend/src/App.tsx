@@ -387,9 +387,10 @@ const AppContent: React.FC = () => {
       if (response.data.so_id) {
         handleViewSalesOrderDetails(response.data.so_id);
       }
-    } catch (error) {
+    } catch (error: any) {
       setIsExtractingSO(false);
-      showNotification('Extraction failed, please create manually or try again.', 'error');
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || 'Extraction failed, please create manually or try again.';
+      showNotification(errorMsg, 'error');
     }
   };
 
@@ -851,44 +852,6 @@ const AppContent: React.FC = () => {
 
                   {dealView === 'form' && editingDealId && (
                     <button
-                      onClick={() => {
-                        setEditingMilestoneId(null);
-                        setMilestoneView('form');
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: (milestoneView === 'form' && !editingMilestoneId) ? 'var(--theme-primary)' : 'transparent',
-                        color: (milestoneView === 'form' && !editingMilestoneId) ? 'white' : 'var(--text-secondary)',
-                        boxShadow: (milestoneView === 'form' && !editingMilestoneId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (milestoneView !== 'form' || editingMilestoneId) {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (milestoneView !== 'form' || editingMilestoneId) {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                        }
-                      }}
-                    >
-                      <PlusCircle size={18} /> Add Milestone
-                    </button>
-                  )}
-                  {dealView === 'form' && editingDealId && (
-                    <button
                       onClick={handleHubSpotSync}
                       disabled={syncingDeal}
                       className="ae-btn-secondary"
@@ -1062,6 +1025,7 @@ const AppContent: React.FC = () => {
                     id={editingEstimateId!}
                     onBack={() => setEstimateView('dashboard')}
                     onSave={() => setEstimateView('dashboard')}
+                    user={user}
                   />
                 ) : (
                   <EstimateDashboard
