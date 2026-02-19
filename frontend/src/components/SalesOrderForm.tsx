@@ -105,7 +105,19 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     const handleAddItem = () => {
         setSalesOrder((prev: any) => ({
             ...prev,
-            items: [...prev.items, { product: '', product_name: '', description: '', qty: 1, rate: 0, tax: 0, discount: 0, amount: 0 }]
+            items: [...prev.items, {
+                item_type: 'LICENSE',
+                product: '',
+                product_name: '',
+                description: '',
+                start_date: '',
+                end_date: '',
+                qty: 1,
+                rate: 0,
+                tax: 0,
+                discount: 0,
+                amount: 0
+            }]
         }));
     };
 
@@ -136,7 +148,10 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 customer_detail: undefined,
                 items: salesOrder.items.map((item: any) => ({
                     ...item,
+                    item_type: item.item_type || 'LICENSE',
                     product: item.product || null,
+                    start_date: item.start_date || null,
+                    end_date: item.end_date || null,
                     qty: parseFloat(item.qty) || 0,
                     rate: parseFloat(item.rate) || 0,
                     tax: parseFloat(item.tax) || 0,
@@ -194,7 +209,10 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 customer_detail: undefined,
                 items: salesOrder.items.map((item: any) => ({
                     ...item,
+                    item_type: item.item_type || 'LICENSE',
                     product: item.product || null,
+                    start_date: item.start_date || null,
+                    end_date: item.end_date || null,
                     qty: parseFloat(item.qty) || 0,
                     rate: parseFloat(item.rate) || 0,
                     tax: parseFloat(item.tax) || 0,
@@ -410,11 +428,14 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     <tr style={{ background: '#F8FAFC' }}>
                                         <th style={{ padding: '12px 8px', width: '40px' }}></th>
                                         <th style={{ width: '60px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Sr.No.</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '25%' }}>Product</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '25%' }}>Description</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '8%' }}>Qty</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '12%' }}>Rate</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '10%' }}>Disc%</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '120px' }}>Type</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '20%' }}>Product</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '20%' }}>Description</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '130px' }}>Start Date</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '130px' }}>End Date</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '80px' }}>Qty</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '120px' }}>Rate</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '80px' }}>Disc%</th>
                                         <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Total</th>
                                         {!isSubmitted && <th style={{ padding: '12px 16px', borderBottom: '1px solid #E0E6ED', width: '40px' }}></th>}
                                     </tr>
@@ -446,6 +467,25 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                 )}
                                             </td>
                                             <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{index + 1}</td>
+                                            <td style={{ padding: '8px 16px' }}>
+                                                <select
+                                                    value={item.item_type || 'LICENSE'}
+                                                    onChange={(e) => handleItemChange(index, 'item_type', e.target.value)}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '6px 10px',
+                                                        border: '1px solid #E2E8F0',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.8rem',
+                                                        outline: 'none',
+                                                        fontWeight: 600
+                                                    }}
+                                                    disabled={isSubmitted}
+                                                >
+                                                    <option value="LICENSE">License</option>
+                                                    <option value="SERVICES">Services</option>
+                                                </select>
+                                            </td>
                                             <td style={{ padding: '8px 16px' }}>
                                                 <input
                                                     type="text"
@@ -481,6 +521,40 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                         ...getHighlightStyle(item.description)
                                                     }}
                                                     placeholder="Item Description"
+                                                    disabled={isSubmitted}
+                                                />
+                                            </td>
+                                            <td style={{ padding: '8px 16px' }}>
+                                                <input
+                                                    type="date"
+                                                    value={item.start_date || ''}
+                                                    onChange={(e) => handleItemChange(index, 'start_date', e.target.value)}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '6px 10px',
+                                                        border: '1px solid #E2E8F0',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.8rem',
+                                                        outline: 'none',
+                                                        ...getHighlightStyle(item.start_date)
+                                                    }}
+                                                    disabled={isSubmitted}
+                                                />
+                                            </td>
+                                            <td style={{ padding: '8px 16px' }}>
+                                                <input
+                                                    type="date"
+                                                    value={item.end_date || ''}
+                                                    onChange={(e) => handleItemChange(index, 'end_date', e.target.value)}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '6px 10px',
+                                                        border: '1px solid #E2E8F0',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.8rem',
+                                                        outline: 'none',
+                                                        ...getHighlightStyle(item.end_date)
+                                                    }}
                                                     disabled={isSubmitted}
                                                 />
                                             </td>
@@ -573,7 +647,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 </tbody>
                                 <tfoot>
                                     <tr style={{ background: 'var(--bg-secondary)' }}>
-                                        <td colSpan={7} style={{ padding: '16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Order Value</td>
+                                        <td colSpan={10} style={{ padding: '16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Order Value</td>
                                         <td style={{ padding: '16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
                                             <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{getCurrencySymbol(salesOrder.currency)}</span>
                                             {parseFloat(salesOrder.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}

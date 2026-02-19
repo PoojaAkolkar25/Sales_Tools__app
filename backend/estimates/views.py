@@ -198,8 +198,9 @@ class EstimateViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Mark previous version as not latest
+        # Mark previous version as not latest and set status to REWOUND
         original_estimate.is_latest = False
+        original_estimate.status = EstimateStatus.REWOUND
         original_estimate.save()
 
         # Create new version (reset approval for negotiated version)

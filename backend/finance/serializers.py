@@ -62,7 +62,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'approved_by', 'approved_at', 'line_items', 'customer_name', 
             'project_name', 'deal_no', 'approved_by_name', 'sales_tax_rate', 'sales_tax_amount',
             'gst_declaration', 'lut_declaration', 'authorized_signatory', 
-            'signature_image', 'company_seal'
+            'signature_image', 'company_seal', 'irn', 'ack_no', 'ack_date', 'payment_terms_days'
         ]
 
     def to_internal_value(self, data):
@@ -126,8 +126,9 @@ class CustomerPartnerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def to_internal_value(self, data):
-        if 'linked_company' in data and data['linked_company'] == '':
-            data['linked_company'] = None
+        for field in ['linked_company', 'state']:
+            if field in data and data[field] == '':
+                data[field] = None
         return super().to_internal_value(data)
 
 class EndCustomerSerializer(serializers.ModelSerializer):

@@ -456,8 +456,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
             return;
         }
 
-        if (!estimate?.proposals?.length && !pendingFile) {
-            showNotification('Please attach a proposal file before saving.', 'error');
+        if (shouldSubmit && !estimate?.proposals?.length && !pendingFile) {
+            showNotification('Please attach a proposal file before submitting for approval.', 'error');
             return;
         }
 
@@ -828,36 +828,36 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         const response = await api.get(`/cost-sheets/${csId}/`);
                                         const csData = response.data;
 
-                                        // Map cost categories to estimate items
+                                        // Map cost categories to estimate items (Detailed Breakdown)
                                         const newItems: any[] = [];
                                         let srNo = 1;
 
-                                        const addCategory = (name: string, price: number) => {
-                                            if (price > 0) {
+                                        // Helper to add items
+                                        const addItems = (items: any[], prefix: string) => {
+                                            (items || []).forEach(item => {
+                                                const particulars = `${prefix} - ${item.name || item.category || item.description || 'Item'}`;
+                                                const description = item.remark || item.type || '';
+                                                const amount = parseFloat(item.estimated_price) || 0;
+                                                const qty = parseFloat(item.qty) || parseFloat(item.num_days) || 1;
+                                                const rate = qty > 0 ? amount / qty : amount;
+
                                                 newItems.push({
                                                     id: Date.now() + srNo,
                                                     sr_no: srNo++,
-                                                    particulars: name,
-                                                    description: `${name} as per Cost Sheet ${csData.cost_sheet_no}`,
-                                                    qty: 1,
-                                                    rate: price,
-                                                    amount: price
+                                                    particulars,
+                                                    description,
+                                                    qty,
+                                                    rate,
+                                                    amount
                                                 });
-                                            }
+                                            });
                                         };
 
-                                        // Summarize by category
-                                        const licPrice = (csData.license_items || []).reduce((sum: number, i: any) => sum + parseFloat(i.estimated_price), 0);
-                                        const implPrice = (csData.implementation_items || []).reduce((sum: number, i: any) => sum + parseFloat(i.estimated_price), 0);
-                                        const suppPrice = (csData.support_items || []).reduce((sum: number, i: any) => sum + parseFloat(i.estimated_price), 0);
-                                        const infraPrice = (csData.infra_items || []).reduce((sum: number, i: any) => sum + parseFloat(i.estimated_price), 0);
-                                        const otherPrice = (csData.other_items || []).reduce((sum: number, i: any) => sum + parseFloat(i.estimated_price), 0);
-
-                                        addCategory('License Cost', licPrice);
-                                        addCategory('Implementation Services', implPrice);
-                                        addCategory('Support Services', suppPrice);
-                                        addCategory('Infrastructure Cost', infraPrice);
-                                        addCategory('Other Costs', otherPrice);
+                                        addItems(csData.license_items, 'License');
+                                        addItems(csData.implementation_items, 'Implementation');
+                                        addItems(csData.support_items, 'Support');
+                                        addItems(csData.infra_items, 'Infra');
+                                        addItems(csData.other_items, 'Other');
 
                                         if (newItems.length === 0) {
                                             newItems.push({ id: Date.now(), sr_no: 1, particulars: '', description: '', qty: 0, rate: 0, amount: 0 });
@@ -1678,6 +1678,22 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                             </button>
                         )}
                     </div>
+                )}
+                {estimate?.status === 'REWOUND' && (
+                    <span style={{
+                        padding: '6px 16px',
+                        borderRadius: '8px',
+                        background: '#F1F5F9',
+                        color: '#64748B',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        border: '1px solid #CBD5E1',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <History size={18} /> Rewound
+                    </span>
                 )}
             </div>
 

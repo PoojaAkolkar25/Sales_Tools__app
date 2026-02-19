@@ -202,7 +202,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                         filters.status === 'PENDING_APPROVAL' ? est.status === 'PENDING_APPROVAL' :
                             filters.status === 'DRAFT' ? ((est.status === 'DRAFT' || est.status === 'NEGOTIATION') && est.approval_status === 'PENDING') :
                                 est.status === filters.status;
-            const matchesLatest = !filters.showOnlyLatest || est.is_latest;
+            const matchesLatest = filters.status === 'REWOUND' ? true : (!filters.showOnlyLatest || est.is_latest);
             const matchesPrice = (est.total_price || '').toString().includes(filters.total_price);
             // const matchesSubFrom = (est.subscription_from || '').includes(filters.subscription_from || '');
             // const matchesSubTo = (est.subscription_to || '').includes(filters.subscription_to || '');
@@ -379,6 +379,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                     ? { bg: 'rgba(56, 161, 105, 0.1)', text: '#38A169', label: 'Approved' }
                     : { bg: 'var(--bg-secondary)', text: 'var(--text-secondary)', label: 'Draft' };
             case 'SUBMITTED': return { bg: 'rgba(49, 130, 206, 0.1)', text: '#3182CE', label: 'Submitted to Customer' };
+            case 'REWOUND': return { bg: 'rgba(113, 128, 150, 0.1)', text: '#718096', label: 'Rewound' };
             case 'NEGOTIATION': return { bg: 'rgba(187, 77, 0, 0.1)', text: 'var(--theme-primary)', label: 'Negotiation' };
             case 'APPROVED': return { bg: 'rgba(56, 161, 105, 0.1)', text: '#38A169', label: 'Approved' };
             case 'REJECTED': return { bg: 'rgba(229, 62, 62, 0.1)', text: '#E53E3E', label: 'Rejected' };
@@ -395,7 +396,8 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
             submitted: latestEstimates.filter(e => e.status === 'SUBMITTED').length,
             pending: latestEstimates.filter(e => e.status === 'PENDING_APPROVAL').length,
             approved: latestEstimates.filter(e => e.approval_status === 'APPROVED' && e.status !== 'SUBMITTED').length,
-            rejected: latestEstimates.filter(e => e.approval_status === 'REJECTED').length
+            rejected: latestEstimates.filter(e => e.approval_status === 'REJECTED').length,
+            rewound: estimates.filter(e => e.status === 'REWOUND').length
         };
     }, [estimates]);
 
@@ -405,6 +407,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
         { label: `Pending Approval (${counts.pending})`, value: 'PENDING_APPROVAL', color: 'var(--ae-navy)' },
         { label: `Approved (${counts.approved})`, value: 'APPROVED', color: 'var(--ae-green)' },
         { label: `Rejected (${counts.rejected})`, value: 'REJECTED', color: '#E53E3E' },
+        { label: `Rewound (${counts.rewound})`, value: 'REWOUND', color: '#718096' },
         { label: `All (${counts.all})`, value: '', color: 'var(--text-secondary)' }
     ];
 

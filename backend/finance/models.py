@@ -143,6 +143,14 @@ class Invoice(models.Model):
     signature_image = models.ImageField(upload_to='invoices/signatures/', blank=True, null=True)
     company_seal = models.ImageField(upload_to='invoices/seals/', blank=True, null=True)
 
+    # e-Invoice Details (as per image)
+    irn = models.CharField(max_length=255, blank=True, null=True, verbose_name="IRN")
+    ack_no = models.CharField(max_length=100, blank=True, null=True, verbose_name="Ack No.")
+    ack_date = models.DateField(blank=True, null=True, verbose_name="Ack Date")
+    
+    # Payment Terms Details
+    payment_terms_days = models.IntegerField(default=30, verbose_name="Payment Terms (Days)")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -306,14 +314,46 @@ class EntityStatus(models.TextChoices):
 class CustomerPartner(models.Model):
     code = models.CharField(max_length=50, unique=True, blank=True)
     name = models.CharField(max_length=255)
+    logo = models.ImageField(upload_to='partners/logos/', blank=True, null=True)
+    
+    # Address Details
+    address_line_1 = models.TextField(blank=True, null=True)
+    address_line_2 = models.TextField(blank=True, null=True)
+    country = models.CharField(max_length=100, default='India')
+    state = models.ForeignKey(StateMaster, on_delete=models.SET_NULL, null=True, blank=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    pincode = models.CharField(max_length=6, blank=True, null=True)
+    
+    # Contact Details
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    mobile = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    website_url = models.URLField(blank=True, null=True)
+    primary_contact = models.CharField(max_length=255, blank=True, null=True)
+
+    # Business Details
     linked_company = models.ForeignKey(CompanyProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='partners')
     type = models.CharField(max_length=20, choices=CustomerPartnerType.choices, default=CustomerPartnerType.CUSTOMER)
     industry = models.CharField(max_length=100, blank=True, null=True)
-    primary_contact = models.CharField(max_length=255, blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)
-    mobile = models.CharField(max_length=20, blank=True, null=True)
     credit_limit = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     payment_terms = models.CharField(max_length=20, choices=PaymentTerms.choices, default=PaymentTerms.NET_30)
+    
+    # Financial Configuration
+    financial_year_begins = models.CharField(max_length=20, default='01-Apr')
+    base_currency = models.CharField(max_length=10, default='INR')
+    currency_symbol = models.CharField(max_length=10, default='₹ / INR')
+    decimal_places = models.IntegerField(default=2)
+    
+    # Statutory & Taxation Details
+    is_gst_applicable = models.BooleanField(default=True)
+    gstin = models.CharField(max_length=15, blank=True, null=True)
+    state_code = models.CharField(max_length=5, blank=True, null=True)
+    msme_registered = models.BooleanField(default=False)
+    msme_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="MSME Number")
+    pan = models.CharField(max_length=10, blank=True, null=True)
+    tan = models.CharField(max_length=10, blank=True, null=True)
+    cin = models.CharField(max_length=21, blank=True, null=True, verbose_name="CIN")
+
     status = models.CharField(max_length=10, choices=EntityStatus.choices, default=EntityStatus.ACTIVE)
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -332,6 +372,15 @@ class CustomerPartner(models.Model):
                     self.code = "CP001"
             else:
                 self.code = "CP001"
+        
+        # Auto-derive state_code from GSTIN if present
+        if self.gstin and len(self.gstin) >= 2:
+            self.state_code = self.gstin[:2]
+            if not self.state:
+                state_match = StateMaster.objects.filter(code=self.state_code).first()
+                if state_match:
+                    self.state = state_match
+                    
         super().save(*args, **kwargs)
 
     def __str__(self):

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { Plus, Save, AlertCircle, Clock, Trash2 } from 'lucide-react';
@@ -10,7 +9,6 @@ interface MilestoneFormProps {
 }
 
 const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
-    const navigate = useNavigate();
     const [customers, setCustomers] = useState<any[]>([]);
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -45,14 +43,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
         }
     }, [id, customers]);
 
-    useEffect(() => {
-        if (selectedCustomer && !id) {
-            fetchSalesOrders(selectedCustomer.id);
-        } else if (!selectedCustomer) {
-            setSalesOrders([]);
-            setSelectedSO(null);
-        }
-    }, [selectedCustomer, id]);
+
 
     const fetchCustomers = async () => {
         try {
@@ -66,8 +57,8 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
     const fetchSalesOrders = async (customerId: number) => {
         setLoading(true);
         try {
-            // Only fetch Submitted (Active) Sales Orders
-            const response = await api.get(`/sales-orders/?customer=${customerId}&status_filter=SUBMITTED`);
+            // Fetch Sales Orders for this customer (any status)
+            const response = await api.get(`/sales-orders/?customer=${customerId}`);
             setSalesOrders(response.data);
         } catch (error) {
             console.error('Error fetching sales orders', error);
@@ -81,6 +72,11 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
         setSelectedCustomer(customer || null);
         setSelectedSO(null);
         setMilestones([]);
+        if (customer) {
+            fetchSalesOrders(customer.id);
+        } else {
+            setSalesOrders([]);
+        }
     };
 
     const fetchMilestoneForEdit = async (milestoneId: number) => {
@@ -96,7 +92,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
 
                 // Fetch SOs for this customer so the dropdown works
                 if (customer) {
-                    const soResponse = await api.get(`/sales-orders/?customer=${customer.id}&status_filter=SUBMITTED`);
+                    const soResponse = await api.get(`/sales-orders/?customer=${customer.id}`);
                     setSalesOrders(soResponse.data);
 
                     const so = soResponse.data.find((s: any) => s.id === ms.sales_order);
@@ -241,9 +237,9 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
 
         setSaving(true);
         try {
-            let firstMilestoneId = null;
+            const savedMilestones = [];
             for (const m of milestones) {
-                // Prepare clean data for the backend (remove UI-only or read-only fields)
+                // Prepare clean data
                 const data = {
                     sales_order: selectedSO.id,
                     milestone_no: m.milestone_no,
@@ -263,37 +259,30 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                 } else {
                     response = await api.post('/milestones/', data);
                 }
-
-                if (!firstMilestoneId && response.data.id) {
-                    firstMilestoneId = response.data.id;
-                }
+                savedMilestones.push(response.data);
             }
 
-            if (firstMilestoneId) {
-                try {
-                    const invResponse = await api.post(`/milestones/${firstMilestoneId}/create_invoice/`);
-                    // Check if we got an invoice back
-                    if (invResponse.data && invResponse.data.invoice_details) {
-                        const invoiceId = invResponse.data.invoice_details.id;
-                        showNotification('Milestones saved and Draft Invoice generated', 'success');
-                        navigate(`/invoice?id=${invoiceId}`);
-                        return; // Exit early to avoid default redirect
-                    } else if (invResponse.data && invResponse.data.invoice) {
-                        // Fallback if serializer structure allows direct access
-                        showNotification('Milestones saved and Draft Invoice generated', 'success');
-                        navigate(`/invoice?id=${invResponse.data.invoice}`);
-                        return;
+            // Create invoices for all PENDING milestones in the saved list
+            let invoiceCount = 0;
+            for (const sm of savedMilestones) {
+                if (sm.status === 'PENDING') {
+                    try {
+                        await api.post(`/milestones/${sm.id}/create_invoice/`);
+                        invoiceCount++;
+                    } catch (invError) {
+                        console.error(`Error creating invoice for ${sm.milestone_no}:`, invError);
                     }
-                } catch (invError) {
-                    console.error('Error creating draft invoice', invError);
-                    showNotification('Milestones saved but failed to generate invoice', 'warning');
                 }
             }
 
-            let redirectUrl = '/invoice?status=DRAFT';
-            // Only show this if we didn't redirect above
-            showNotification('Milestones saved successfully', 'success');
-            navigate(redirectUrl);
+            if (invoiceCount > 0) {
+                showNotification(`Milestones saved and ${invoiceCount} invoice(s) generated`, 'success');
+            } else {
+                showNotification('Milestones saved successfully', 'success');
+            }
+
+            // Navigate back to Milestone Dashboard
+            onBack();
         } catch (error: any) {
             showNotification(error.response?.data?.error || 'Failed to save milestones', 'error');
         } finally {
@@ -424,7 +413,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                                 <option value="">{loading ? 'Loading...' : 'Select Sales Order...'}</option>
                                 {salesOrders.map(so => (
                                     <option key={so.id} value={so.id}>
-                                        {so.so_number} - {getCurrencySymbol(so.currency)} {parseFloat(so.total_amount).toLocaleString()}
+                                        {so.so_number || `DRAFT-${so.id} (${so.po_number || 'No PO'})`} - {getCurrencySymbol(so.currency)} {parseFloat(so.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </option>
                                 ))}
                             </select>
@@ -448,7 +437,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#718096' }}>Total Amount:</span>
                                 <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36' }}>
-                                    {getCurrencySymbol(selectedSO.currency)} {parseFloat(selectedSO.total_amount).toLocaleString()}
+                                    {getCurrencySymbol(selectedSO.currency)} {parseFloat(selectedSO.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </span>
                             </div>
 

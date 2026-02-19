@@ -8,6 +8,10 @@ class SalesOrderStatus(models.TextChoices):
     SUBMITTED = 'SUBMITTED', 'Submitted'
     CANCELLED = 'CANCELLED', 'Cancelled'
 
+class ItemType(models.TextChoices):
+    LICENSE = 'LICENSE', 'License'
+    SERVICES = 'SERVICES', 'Services'
+
 class IncomingEmail(models.Model):
     sender = models.EmailField()
     subject = models.CharField(max_length=255)
@@ -69,9 +73,12 @@ class SalesOrder(models.Model):
 
 class SalesOrderItem(models.Model):
     sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='items')
+    item_type = models.CharField(max_length=20, choices=ItemType.choices, default=ItemType.LICENSE)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     product_name = models.CharField(max_length=255, blank=True, default='') # Manual text entry support
     description = models.TextField(blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
     qty = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     rate = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)

@@ -11,10 +11,10 @@ class UserSerializer(serializers.ModelSerializer):
         allow_null=True
     )
     state_name = serializers.CharField(source='profile.state.name', read_only=True)
-    employee_id = serializers.CharField(source='profile.employee_id', read_only=True)
-    mobile = serializers.CharField(source='profile.mobile', required=False)
-    department = serializers.CharField(source='profile.department', required=False)
-    region = serializers.CharField(source='profile.region', required=False)
+    employee_id = serializers.CharField(source='profile.employee_id', required=False, allow_blank=True)
+    mobile = serializers.CharField(source='profile.mobile', required=False, allow_blank=True)
+    department = serializers.CharField(source='profile.department', required=False, allow_blank=True)
+    region = serializers.CharField(source='profile.region', required=False, allow_blank=True)
     status_label = serializers.CharField(source='profile.status', read_only=True)
     reporting_to = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
@@ -32,6 +32,12 @@ class UserSerializer(serializers.ModelSerializer):
             'status_label', 'reporting_to', 'reporting_to_name'
         )
         extra_kwargs = {'password': {'write_only': True}}
+
+    def validate_reporting_to(self, value):
+        """Convert empty string to None for PrimaryKeyRelatedField."""
+        if value == '' or value is None:
+            return None
+        return value
 
     def get_role(self, obj):
         # Specific check for admin first

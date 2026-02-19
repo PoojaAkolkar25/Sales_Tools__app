@@ -69,10 +69,12 @@ class PDFExtractor:
                     "    - Include: Location name, street, city, state, postal code, country.\n"
                     "  * DO NOT extract AutomationEdge's address as the customer's address.\n\n"
                     
-                    "- LINE ITEMS: This is CRITICAL.\n"
-                    "  - Extract every line item with 'description', 'quantity', 'unit_price', and 'line_total'.\n"
-                    "  - DESCRIPTION: If a description spans multiple rows in the PDF table, CONCATENATE them into a single string. Do not split one item into multiple JSON entries unless they have different quantities/prices.\n"
-                    "  - DATA TYPES: description (string), quantity (number), unit_price (number), line_total (number).\n\n"
+                                        "- LINE ITEMS: This is CRITICAL.\n"
+                    "  - Extract every line item with 'item_type', 'description', 'start_date', 'end_date', 'quantity', 'unit_price', and 'line_total'.\n"
+                    "  - ITEM_TYPE: Determine if the item is a 'LICENSE' or 'SERVICES'. If it mentions subscription, license, software, use 'LICENSE'. If it mentions implementation, support, consulting, man-days, use 'SERVICES'.\n"
+                    "  - DATES: Look for service start and end dates or subscription periods related to the item.\n"
+                    "  - DESCRIPTION: Extract the full item name and its particulars. If the PDF has 'Particulars' or 'Item Name' or 'Service' column, use that as the description. If a description spans multiple rows in the PDF table, CONCATENATE them into a single string. Do not split one item into multiple JSON entries unless they have different quantities/prices.\n"
+                    "  - DATA TYPES: item_type (string: LICENSE or SERVICES), description (string), start_date (YYYY-MM-DD), end_date (YYYY-MM-DD), quantity (number), unit_price (number), line_total (number).\n\n"
                     
                     "- CUSTOMER MATCHING: Match the extracted customer name to one of the EXISTING CUSTOMERS listed below if it's a clear match.\n\n"
                     "EXISTING CUSTOMERS:\n"
@@ -92,8 +94,11 @@ class PDFExtractor:
                     "  \"line_items\": [\n"
                     "    {\n"
                     "      \"line_number\": number,\n"
+                    "      \"item_type\": {\"value\": string, \"confidence\": number, \"note\": \"Must be either LICENSE or SERVICES\"},\n"
                     "      \"item_code\": {\"value\": string, \"confidence\": number},\n"
                     "      \"description\": {\"value\": string, \"confidence\": number},\n"
+                    "      \"start_date\": {\"value\": \"YYYY-MM-DD\", \"confidence\": number},\n"
+                    "      \"end_date\": {\"value\": \"YYYY-MM-DD\", \"confidence\": number},\n"
                     "      \"quantity\": {\"value\": number, \"confidence\": number},\n"
                     "      \"unit_price\": {\"value\": number, \"confidence\": number},\n"
                     "      \"discount\": {\"value\": number, \"confidence\": number, \"note\": \"Return the ABSOLUTE AMOUNT of discount, not the percentage. If 40% of 7500, return 3000.\"},\n"
@@ -185,9 +190,17 @@ class PDFExtractor:
                             for li in line_items:
                                 try:
                                     if not isinstance(li, dict): continue
+                                    description = str(_get_val(li, 'description', ''))
+                                    if not description:
+                                        # Fallback to item_code or item_name if description is uniquely missing
+                                        description = str(_get_val(li, 'item_name', '') or _get_val(li, 'item_code', ''))
+                                        
                                     item_data = {
+                                        'item_type': str(_get_val(li, 'item_type', 'LICENSE')).upper(),
                                         'qty': float(_get_val(li, 'quantity', 1)),
-                                        'description': str(_get_val(li, 'description', '')),
+                                        'description': description,
+                                        'start_date': _parse_date(_get_val(li, 'start_date', '')),
+                                        'end_date': _parse_date(_get_val(li, 'end_date', '')),
                                         'rate': float(_get_val(li, 'unit_price', 0)),
                                         'tax': float(_get_val(li, 'tax', 0)),
                                         'tax_percent': 0.0,
@@ -608,9 +621,12 @@ class SalesOrderCreator:
         for item in extracted_data['items']:
             SalesOrderItem.objects.create(
                 sales_order=so,
+                item_type=item.get('item_type', 'LICENSE'),
                 product=None,
                 product_name="", # Empty per user request
-                description="", # Empty per user request
+                description=item.get('description', ""), # Populate from item description
+                start_date=item.get('start_date'),
+                end_date=item.get('end_date'),
                 qty=item['qty'],
                 rate=item['rate'],
                 tax=item.get('tax', 0),

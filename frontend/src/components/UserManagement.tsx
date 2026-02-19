@@ -26,7 +26,8 @@ const UserManagement: React.FC = () => {
         mobile: '',
         department: '',
         region: '',
-        reporting_to: ''
+        reporting_to: '',
+        employee_id: ''
     });
     const [error, setError] = useState('');
     const [companyError, setCompanyError] = useState('');
@@ -40,7 +41,6 @@ const UserManagement: React.FC = () => {
         name: '',
         logo: null as File | string | null,
         address_line_1: '',
-        address_line_2: '',
         country: 'India',
         state: '',
         city: '',
@@ -49,6 +49,12 @@ const UserManagement: React.FC = () => {
         mobile_number: '',
         email: '',
         website_url: '',
+        linked_company_profile: '',
+        industry: '',
+        type: 'CUSTOMER',
+        credit_limit: 0,
+        payment_terms: 'NET_30',
+        status: 'ACTIVE',
         financial_year_begins: '01-Apr',
         base_currency: 'INR',
         currency_symbol: '₹ / INR',
@@ -64,18 +70,34 @@ const UserManagement: React.FC = () => {
     });
     const [partnerFormData, setPartnerFormData] = useState({
         name: '',
-        linked_company: '',
-        type: 'CUSTOMER',
-        industry: '',
-        primary_contact: '',
-        email: '',
+        logo: null as File | string | null,
+        address_line_1: '',
+        country: 'India',
+        state: '',
+        city: '',
+        pincode: '',
+        phone_number: '',
         mobile: '',
-        credit_limit: 0,
-        payment_terms: 'NET_30',
+        email: '',
+        website_url: '',
+        primary_contact: '',
+        financial_year_begins: '01-Apr',
+        base_currency: 'INR',
+        currency_symbol: '₹ / INR',
+        decimal_places: 2 as any,
+        is_gst_applicable: true,
+        gstin: '',
+        state_code: '',
+        msme_registered: false,
+        msme_number: '',
+        pan: '',
+        tan: '',
+        cin: '',
         status: 'ACTIVE'
     });
 
     const [endCustomerFormData, setEndCustomerFormData] = useState({
+        end_customer_code: '',
         name: '',
         linked_partner: '',
         industry: '',
@@ -83,7 +105,6 @@ const UserManagement: React.FC = () => {
         contact_person: '',
         email: '',
         phone: '',
-        deal_type: 'DIRECT',
         status: 'ACTIVE'
     });
 
@@ -208,17 +229,24 @@ const UserManagement: React.FC = () => {
         e.preventDefault();
         setError('');
         try {
-            await api.post('auth/users/', formData);
+            const { employee_id, ...submitData } = formData as any;
+            const cleanedData = {
+                ...submitData,
+                reporting_to: submitData.reporting_to || null
+            };
+            await api.post('auth/users/', cleanedData);
             showNotification('User created successfully', 'success');
             setFormData({
                 username: '', email: '', password: '',
                 first_name: '', last_name: '', role: 'app_user',
-                mobile: '', department: '', region: '', reporting_to: ''
+                mobile: '', department: '', region: '', reporting_to: '', employee_id: ''
             });
             fetchUsers();
             setShowForm(false);
         } catch (err: any) {
-            setError(err.response?.data?.username?.[0] || err.response?.data?.email?.[0] || 'Error creating user');
+            const errData = err.response?.data;
+            const msg = errData?.username?.[0] || errData?.email?.[0] || errData?.mobile?.[0] || errData?.department?.[0] || errData?.region?.[0] || errData?.reporting_to?.[0] || (typeof errData === 'string' ? errData : JSON.stringify(errData)) || 'Error creating user';
+            setError(msg);
         }
     };
 
@@ -246,7 +274,7 @@ const UserManagement: React.FC = () => {
             });
 
             if (editingId) {
-                await api.patch(`finance / company - profile / ${editingId}/`, formData, {
+                await api.patch(`finance/company-profile/${editingId}/`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 showNotification('Customer updated successfully', 'success');
@@ -258,9 +286,12 @@ const UserManagement: React.FC = () => {
             }
 
             setCompanyFormData({
-                name: '', logo: null, address_line_1: '', address_line_2: '',
+                name: '', logo: null, address_line_1: '',
                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
-                mobile_number: '', email: '', website_url: '', financial_year_begins: '01-Apr',
+                mobile_number: '', email: '', website_url: '',
+                linked_company_profile: '', industry: '', type: 'CUSTOMER', credit_limit: 0,
+                payment_terms: 'NET_30', status: 'ACTIVE',
+                financial_year_begins: '01-Apr',
                 base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
                 is_gst_applicable: true, gstin: '', state_code: '',
                 msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
@@ -285,24 +316,48 @@ const UserManagement: React.FC = () => {
     const handleCreatePartner = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const formData = new FormData();
+            Object.entries(partnerFormData).forEach(([key, value]) => {
+                if (value !== null && value !== undefined) {
+                    if (key === 'logo') {
+                        if (value instanceof File) {
+                            formData.append(key, value);
+                        }
+                    } else {
+                        formData.append(key, value as any);
+                    }
+                }
+            });
+
             if (editingId) {
-                await api.patch(`finance/customer-partners/${editingId}/`, partnerFormData);
-                showNotification('Customer/Partner updated successfully', 'success');
+                await api.patch(`finance/customer-partners/${editingId}/`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                showNotification('Company updated successfully', 'success');
             } else {
-                await api.post('finance/customer-partners/', partnerFormData);
-                showNotification('Customer/Partner created successfully', 'success');
+                await api.post('finance/customer-partners/', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                showNotification('Company created successfully', 'success');
             }
+
             setPartnerFormData({
-                name: '', linked_company: '', type: 'CUSTOMER', industry: '',
-                primary_contact: '', email: '', mobile: '', credit_limit: 0,
-                payment_terms: 'NET_30', status: 'ACTIVE'
+                name: '', logo: null, address_line_1: '',
+                country: 'India', state: '', city: '', pincode: '',
+                phone_number: '', mobile: '', email: '', website_url: '',
+                primary_contact: '',
+                financial_year_begins: '01-Apr', base_currency: 'INR',
+                currency_symbol: '₹ / INR', decimal_places: 2,
+                is_gst_applicable: true, gstin: '', state_code: '',
+                msme_registered: false, msme_number: '', pan: '',
+                tan: '', cin: '', status: 'ACTIVE'
             });
             setEditingId(null);
             fetchPartners();
             setShowForm(false);
         } catch (err: any) {
-            console.error('Error saving partner', err);
-            showNotification('Error saving Customer/Partner', 'error');
+            console.error('Error saving company', err);
+            showNotification('Error saving Company', 'error');
         }
     };
 
@@ -317,8 +372,9 @@ const UserManagement: React.FC = () => {
                 showNotification('End Customer created successfully', 'success');
             }
             setEndCustomerFormData({
+                end_customer_code: '',
                 name: '', linked_partner: '', industry: '', location: '',
-                contact_person: '', email: '', phone: '', deal_type: 'DIRECT',
+                contact_person: '', email: '', phone: '',
                 status: 'ACTIVE'
             });
             setEditingId(null);
@@ -486,11 +542,19 @@ const UserManagement: React.FC = () => {
             case 'EURO': symbol = '€ / EURO'; break;
         }
 
-        setCompanyFormData({
-            ...companyFormData,
-            base_currency: val,
-            currency_symbol: symbol
-        });
+        if (viewMode === 'partner') {
+            setPartnerFormData({
+                ...partnerFormData,
+                base_currency: val,
+                currency_symbol: symbol
+            });
+        } else {
+            setCompanyFormData({
+                ...companyFormData,
+                base_currency: val,
+                currency_symbol: symbol
+            });
+        }
     };
 
     const handleGSTINChange = (val: string) => {
@@ -508,12 +572,21 @@ const UserManagement: React.FC = () => {
             }
         }
 
-        setCompanyFormData({
-            ...companyFormData,
-            gstin,
-            state_code: stateCode,
-            state: stateId || companyFormData.state
-        });
+        if (viewMode === 'partner') {
+            setPartnerFormData({
+                ...partnerFormData,
+                gstin,
+                state_code: stateCode,
+                state: stateId || partnerFormData.state
+            });
+        } else {
+            setCompanyFormData({
+                ...companyFormData,
+                gstin,
+                state_code: stateCode,
+                state: stateId || companyFormData.state
+            });
+        }
     };
 
     const filteredUsers = useMemo(() => {
@@ -646,11 +719,11 @@ const UserManagement: React.FC = () => {
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                         {showForm ? `${editingId ? 'Edit' : 'Create New'} ${viewMode === 'user' ? 'User' :
-                            viewMode === 'partner' ? 'Partner' :
+                            viewMode === 'partner' ? 'Company' :
                                 viewMode === 'end_customer' ? 'End Customer' : 'Customer'
                             }` : (
                             viewMode === 'user' ? 'User Management' :
-                                viewMode === 'partner' ? 'Partner Management' :
+                                viewMode === 'partner' ? 'Company Management' :
                                     viewMode === 'end_customer' ? 'End Customer Management' :
                                         viewMode === 'company' ? 'Customer Management' :
                                             viewMode === 'financial_year' ? 'Financial Year Management' :
@@ -704,22 +777,32 @@ const UserManagement: React.FC = () => {
                             setFormData({
                                 username: '', email: '', password: '',
                                 first_name: '', last_name: '', role: 'app_user',
-                                mobile: '', department: '', region: '', reporting_to: ''
+                                mobile: '', department: '', region: '', reporting_to: '', employee_id: ''
                             });
                             setPartnerFormData({
-                                name: '', linked_company: '', type: 'CUSTOMER', industry: '',
-                                primary_contact: '', email: '', mobile: '', credit_limit: 0,
-                                payment_terms: 'NET_30', status: 'ACTIVE'
+                                name: '', logo: null, address_line_1: '',
+                                country: 'India', state: '', city: '', pincode: '',
+                                phone_number: '', mobile: '', email: '', website_url: '',
+                                primary_contact: '',
+                                financial_year_begins: '01-Apr', base_currency: 'INR',
+                                currency_symbol: '₹ / INR', decimal_places: 2,
+                                is_gst_applicable: true, gstin: '', state_code: '',
+                                msme_registered: false, msme_number: '', pan: '',
+                                tan: '', cin: '', status: 'ACTIVE'
                             });
                             setEndCustomerFormData({
+                                end_customer_code: '',
                                 name: '', linked_partner: '', industry: '', location: '',
-                                contact_person: '', email: '', phone: '', deal_type: 'DIRECT',
+                                contact_person: '', email: '', phone: '',
                                 status: 'ACTIVE'
                             });
                             setCompanyFormData({
-                                name: '', logo: null, address_line_1: '', address_line_2: '',
+                                name: '', logo: null, address_line_1: '',
                                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
-                                mobile_number: '', email: '', website_url: '', financial_year_begins: '01-Apr',
+                                mobile_number: '', email: '', website_url: '',
+                                linked_company_profile: '', industry: '', type: 'CUSTOMER', credit_limit: 0,
+                                payment_terms: 'NET_30', status: 'ACTIVE',
+                                financial_year_begins: '01-Apr',
                                 base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
                                 is_gst_applicable: true, gstin: '', state_code: '',
                                 msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
@@ -803,7 +886,7 @@ const UserManagement: React.FC = () => {
                                     gap: '8px'
                                 }}
                             >
-                                <Shield size={14} /> Partner
+                                <Shield size={14} /> Company
                             </button>
                             <button
                                 onClick={() => { setViewMode('end_customer'); setColumnFilters({}); }}
@@ -1062,109 +1145,432 @@ const UserManagement: React.FC = () => {
                                             {users.map(u => <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>)}
                                         </select>
                                     </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                            Employee ID <span style={{ fontSize: '0.7rem', color: '#A0AEC0', fontWeight: 500 }}>(Auto)</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Auto-generated"
+                                            value={formData.employee_id}
+                                            readOnly
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#F7F8FA', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#718096', outline: 'none', cursor: 'not-allowed' }}
+                                        />
+                                    </div>
                                 </div>
                             ) : viewMode === 'partner' ? (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Partner Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Partner Name"
-                                            value={partnerFormData.name}
-                                            onChange={(e) => setPartnerFormData({ ...partnerFormData, name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                            required
-                                        />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                                    <div className="section">
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
+                                            Company Basic Details
+                                        </h4>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Company Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Company Name"
+                                                    value={partnerFormData.name}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, name: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Company Logo
+                                                </label>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ position: 'relative', flex: 1 }}>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) setPartnerFormData({ ...partnerFormData, logo: file });
+                                                            }}
+                                                            style={{ display: 'none' }}
+                                                            id="company-logo-upload-partner"
+                                                        />
+                                                        <label
+                                                            htmlFor="company-logo-upload-partner"
+                                                            style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '8px',
+                                                                padding: '6px 12px',
+                                                                background: 'white',
+                                                                border: '1px solid var(--border-primary)',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.8rem',
+                                                                fontWeight: 600,
+                                                                color: 'var(--text-secondary)',
+                                                                cursor: 'pointer',
+                                                                height: '34px',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                        >
+                                                            <Paperclip size={14} /> {partnerFormData.logo ? 'Change Logo' : 'Upload Logo'}
+                                                        </label>
+                                                    </div>
+                                                    {partnerFormData.logo && (
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+                                                            {partnerFormData.logo instanceof File ? (
+                                                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                    {partnerFormData.logo.name}
+                                                                </span>
+                                                            ) : (
+                                                                <img src={partnerFormData.logo as string} alt="Logo" style={{ height: '30px', borderRadius: '4px' }} />
+                                                            )}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setPartnerFormData({ ...partnerFormData, logo: null })}
+                                                                style={{ background: 'none', border: 'none', color: '#E53E3E', cursor: 'pointer', padding: '4px' }}
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Primary Contact Name
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Primary Contact Name"
+                                                    value={partnerFormData.primary_contact}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, primary_contact: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Email Address
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    placeholder="Email Address"
+                                                    value={partnerFormData.email}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, email: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Phone Number
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Phone Number"
+                                                    value={partnerFormData.phone_number}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, phone_number: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Mobile Number
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Mobile Number"
+                                                    value={partnerFormData.mobile}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, mobile: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Website URL
+                                                </label>
+                                                <input
+                                                    type="url"
+                                                    placeholder="Website URL"
+                                                    value={partnerFormData.website_url}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, website_url: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Linked Company
-                                        </label>
-                                        <select
-                                            value={partnerFormData.linked_company}
-                                            onChange={(e) => setPartnerFormData({ ...partnerFormData, linked_company: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        >
-                                            <option value="">Select Company</option>
-                                            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                        </select>
+
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
+                                            Address Details
+                                        </h4>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                            <div style={{ gridColumn: 'span 3' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Address Line 1
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Address Line 1"
+                                                    value={partnerFormData.address_line_1}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, address_line_1: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Country
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Country"
+                                                    value={partnerFormData.country}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, country: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    State
+                                                </label>
+                                                <select
+                                                    value={partnerFormData.state}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, state: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                >
+                                                    <option value="">Select State</option>
+                                                    {states.map(state => (
+                                                        <option key={state.id} value={state.id}>{state.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    City
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="City"
+                                                    value={partnerFormData.city}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, city: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Pincode
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Pincode"
+                                                    value={partnerFormData.pincode}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, pincode: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Type
-                                        </label>
-                                        <select
-                                            value={partnerFormData.type}
-                                            onChange={(e) => setPartnerFormData({ ...partnerFormData, type: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        >
-                                            <option value="CUSTOMER">Customer</option>
-                                            <option value="CHANNEL_PARTNER">Channel Partner</option>
-                                        </select>
+
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
+                                            Business & Financial Settings
+                                        </h4>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Financial Year Begins
+                                                </label>
+                                                <select
+                                                    value={partnerFormData.financial_year_begins}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, financial_year_begins: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                >
+                                                    <option value="01-Apr">01-Apr</option>
+                                                    <option value="01-Jan">01-Jan</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Base Currency <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                </label>
+                                                <select
+                                                    value={partnerFormData.base_currency}
+                                                    onChange={(e) => handleCurrencyChange(e.target.value)}
+                                                    required
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                >
+                                                    <option value="INR">INR</option>
+                                                    <option value="USD">USD</option>
+                                                    <option value="EURO">EURO</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Symbol <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="INR"
+                                                    required
+                                                    value={partnerFormData.currency_symbol}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, currency_symbol: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Decimal Places <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="2"
+                                                    min="0"
+                                                    max="4"
+                                                    required
+                                                    value={partnerFormData.decimal_places}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, decimal_places: e.target.value === '' ? '' : parseInt(e.target.value) })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Industry
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Industry"
-                                            value={partnerFormData.industry}
-                                            onChange={(e) => setPartnerFormData({ ...partnerFormData, industry: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        />
+
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
+                                            Tax Registration Details
+                                        </h4>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 3', marginBottom: '8px' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    id="is_gst_applicable_partner"
+                                                    checked={partnerFormData.is_gst_applicable}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, is_gst_applicable: e.target.checked })}
+                                                />
+                                                <label htmlFor="is_gst_applicable_partner" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black' }}>GST Applicable</label>
+                                            </div>
+                                            {partnerFormData.is_gst_applicable && (
+                                                <>
+                                                    <div>
+                                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                            GSTIN
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="GSTIN"
+                                                            value={partnerFormData.gstin}
+                                                            onChange={(e) => handleGSTINChange(e.target.value)}
+                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                            State Code
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={partnerFormData.state_code}
+                                                            readOnly
+                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#f7fafc', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', outline: 'none' }}
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    PAN
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="PAN"
+                                                    value={partnerFormData.pan}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, pan: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    TAN
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="TAN"
+                                                    value={partnerFormData.tan}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, tan: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    CIN
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="CIN"
+                                                    value={partnerFormData.cin}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, cin: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Primary Contact Name
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Primary Contact Name"
-                                            value={partnerFormData.primary_contact}
-                                            onChange={(e) => setPartnerFormData({ ...partnerFormData, primary_contact: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Email Address
-                                        </label>
-                                        <input
-                                            type="email"
-                                            placeholder="Email Address"
-                                            value={partnerFormData.email}
-                                            onChange={(e) => setPartnerFormData({ ...partnerFormData, email: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Payment Terms
-                                        </label>
-                                        <select
-                                            value={partnerFormData.payment_terms}
-                                            onChange={(e) => setPartnerFormData({ ...partnerFormData, payment_terms: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        >
-                                            <option value="NET_30">Net 30</option>
-                                            <option value="NET_60">Net 60</option>
-                                            <option value="NET_90">Net 90</option>
-                                            <option value="DUE_ON_RECEIPT">Due on Receipt</option>
-                                        </select>
+
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
+                                            MSME Details
+                                        </h4>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 3', marginBottom: '8px' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    id="msme_registered_partner"
+                                                    checked={partnerFormData.msme_registered}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, msme_registered: e.target.checked })}
+                                                />
+                                                <label htmlFor="msme_registered_partner" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black' }}>MSME Registered</label>
+                                            </div>
+                                            {partnerFormData.msme_registered && (
+                                                <div>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                        MSME Number
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="MSME Number"
+                                                        value={partnerFormData.msme_number}
+                                                        onChange={(e) => setPartnerFormData({ ...partnerFormData, msme_number: e.target.value })}
+                                                        style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ) : viewMode === 'end_customer' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Customer Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            End Customer Code <span style={{ fontSize: '0.7rem', color: '#A0AEC0', fontWeight: 500 }}>(Auto)</span>
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Customer Name"
+                                            placeholder="Auto-generated"
+                                            value={endCustomerFormData.end_customer_code}
+                                            readOnly
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#F7F8FA', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#718096', outline: 'none', cursor: 'not-allowed' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                            End Customer Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="End Customer Name"
                                             value={endCustomerFormData.name}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, name: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
@@ -1187,20 +1593,31 @@ const UserManagement: React.FC = () => {
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Deal Type
+                                            Industry <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <select
-                                            value={endCustomerFormData.deal_type}
-                                            onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, deal_type: e.target.value })}
+                                            value={endCustomerFormData.industry}
+                                            onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, industry: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
                                         >
-                                            <option value="DIRECT">Direct</option>
-                                            <option value="INDIRECT">Indirect</option>
+                                            <option value="">Select Industry</option>
+                                            <option value="IT">IT</option>
+                                            <option value="BFSI">BFSI</option>
+                                            <option value="Manufacturing">Manufacturing</option>
+                                            <option value="Healthcare">Healthcare</option>
+                                            <option value="Retail">Retail</option>
+                                            <option value="Telecom">Telecom</option>
+                                            <option value="Education">Education</option>
+                                            <option value="Government">Government</option>
+                                            <option value="Automotive">Automotive</option>
+                                            <option value="FMCG">FMCG</option>
+                                            <option value="Other">Other</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Location
+                                            Location <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -1208,11 +1625,12 @@ const UserManagement: React.FC = () => {
                                             value={endCustomerFormData.location}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, location: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
                                         />
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Contact Person
+                                            Contact Person <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -1220,19 +1638,48 @@ const UserManagement: React.FC = () => {
                                             value={endCustomerFormData.contact_person}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, contact_person: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
                                         />
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Email Address
+                                            Email <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="email"
-                                            placeholder="Email Address"
+                                            placeholder="Email"
                                             value={endCustomerFormData.email}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, email: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
                                         />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                            Phone <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            placeholder="Phone"
+                                            value={endCustomerFormData.phone}
+                                            onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, phone: e.target.value })}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                            Status <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                        </label>
+                                        <select
+                                            value={endCustomerFormData.status}
+                                            onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, status: e.target.value })}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
+                                        >
+                                            <option value="ACTIVE">Active</option>
+                                            <option value="INACTIVE">Inactive</option>
+                                        </select>
                                     </div>
                                 </div>
                             ) : viewMode === 'financial_year' ? (
@@ -1288,11 +1735,23 @@ const UserManagement: React.FC = () => {
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Product Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            Product Code <span style={{ fontSize: '0.7rem', color: '#A0AEC0', fontWeight: 500 }}>(Auto)</span>
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Product Name"
+                                            placeholder="Auto-generated"
+                                            value={productFormData.product_code}
+                                            readOnly
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#F7F8FA', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#718096', outline: 'none', cursor: 'not-allowed' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                            Product/Service Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Product/Service Name"
                                             value={productFormData.name}
                                             onChange={(e) => setProductFormData({ ...productFormData, name: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
@@ -1301,32 +1760,80 @@ const UserManagement: React.FC = () => {
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Category
+                                            Category <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <select
                                             value={productFormData.category}
                                             onChange={(e) => setProductFormData({ ...productFormData, category: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
                                         >
+                                            <option value="">Select Category</option>
                                             <option value="SOFTWARE">Software</option>
                                             <option value="SERVICE">Service</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Subcategory
+                                            Subcategory <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Subcategory"
+                                        <select
                                             value={productFormData.subcategory}
                                             onChange={(e) => setProductFormData({ ...productFormData, subcategory: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
+                                        >
+                                            <option value="">Select Subcategory</option>
+                                            <option value="Automation">Automation</option>
+                                            <option value="Analytics">Analytics</option>
+                                            <option value="Cloud">Cloud</option>
+                                            <option value="Consulting">Consulting</option>
+                                            <option value="Implementation">Implementation</option>
+                                            <option value="Integration">Integration</option>
+                                            <option value="Licensing">Licensing</option>
+                                            <option value="Maintenance">Maintenance</option>
+                                            <option value="Support">Support</option>
+                                            <option value="Training">Training</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div style={{ gridColumn: 'span 2' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                            Description <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                        </label>
+                                        <textarea
+                                            placeholder="Description"
+                                            value={productFormData.description}
+                                            onChange={(e) => setProductFormData({ ...productFormData, description: e.target.value })}
+                                            style={{ width: '100%', height: '60px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', resize: 'vertical' }}
+                                            required
                                         />
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Standard Price
+                                            Unit of Measure <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                        </label>
+                                        <select
+                                            value={productFormData.uom}
+                                            onChange={(e) => setProductFormData({ ...productFormData, uom: e.target.value })}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
+                                        >
+                                            <option value="">Select UOM</option>
+                                            <option value="License">License</option>
+                                            <option value="Hour">Hour</option>
+                                            <option value="Day">Day</option>
+                                            <option value="Month">Month</option>
+                                            <option value="Year">Year</option>
+                                            <option value="Unit">Unit</option>
+                                            <option value="Project">Project</option>
+                                            <option value="User">User</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                            Standard Price <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="number"
@@ -1334,11 +1841,12 @@ const UserManagement: React.FC = () => {
                                             value={productFormData.standard_price}
                                             onChange={(e) => setProductFormData({ ...productFormData, standard_price: e.target.value === '' ? '' : Number(e.target.value) })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
                                         />
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Tax Percentage (%)
+                                            Tax Percentage <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="number"
@@ -1346,19 +1854,50 @@ const UserManagement: React.FC = () => {
                                             value={productFormData.tax_percentage}
                                             onChange={(e) => setProductFormData({ ...productFormData, tax_percentage: e.target.value === '' ? '' : Number(e.target.value) })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
                                         />
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            UOM
+                                            HSN/SAC Code <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="UOM"
-                                            value={productFormData.uom}
-                                            onChange={(e) => setProductFormData({ ...productFormData, uom: e.target.value })}
+                                            placeholder="HSN/SAC Code"
+                                            value={productFormData.hsn_sac_code}
+                                            onChange={(e) => setProductFormData({ ...productFormData, hsn_sac_code: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
                                         />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                            Currency <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                        </label>
+                                        <select
+                                            value={productFormData.currency}
+                                            onChange={(e) => setProductFormData({ ...productFormData, currency: e.target.value })}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
+                                        >
+                                            <option value="INR">INR</option>
+                                            <option value="USD">USD</option>
+                                            <option value="EURO">EURO</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                            Status <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                        </label>
+                                        <select
+                                            value={productFormData.status}
+                                            onChange={(e) => setProductFormData({ ...productFormData, status: e.target.value })}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            required
+                                        >
+                                            <option value="ACTIVE">Active</option>
+                                            <option value="INACTIVE">Inactive</option>
+                                        </select>
                                     </div>
                                 </div>
                             ) : (
@@ -1578,6 +2117,44 @@ const UserManagement: React.FC = () => {
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Linked Company Profile
+                                                </label>
+                                                <select
+                                                    value={companyFormData.linked_company_profile}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, linked_company_profile: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                >
+                                                    <option value="">Select Company</option>
+                                                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Type
+                                                </label>
+                                                <select
+                                                    value={companyFormData.type}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, type: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                >
+                                                    <option value="CUSTOMER">Customer</option>
+                                                    <option value="CHANNEL_PARTNER">Channel Partner</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Industry
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Industry"
+                                                    value={companyFormData.industry}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, industry: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
@@ -1587,7 +2164,7 @@ const UserManagement: React.FC = () => {
                                             Address Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                                            <div style={{ gridColumn: 'span 2' }}>
+                                            <div style={{ gridColumn: 'span 3' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Address Line 1
                                                 </label>
@@ -1596,18 +2173,6 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Address Line 1"
                                                     value={companyFormData.address_line_1}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, address_line_1: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Address Line 2
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Address Line 2"
-                                                    value={companyFormData.address_line_2}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, address_line_2: e.target.value })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
@@ -1686,11 +2251,12 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Base Currency
+                                                    Base Currency <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <select
                                                     value={companyFormData.base_currency}
                                                     onChange={(e) => handleCurrencyChange(e.target.value)}
+                                                    required
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 >
                                                     <option value="INR">INR</option>
@@ -1700,15 +2266,73 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Decimal Places
+                                                    Symbol <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="INR"
+                                                    required
+                                                    value={companyFormData.currency_symbol}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, currency_symbol: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Decimal Places <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="number"
                                                     placeholder="2"
+                                                    min="0"
+                                                    max="4"
+                                                    required
                                                     value={companyFormData.decimal_places}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, decimal_places: e.target.value === '' ? '' : parseInt(e.target.value) })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Credit Limit
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="0"
+                                                    value={companyFormData.credit_limit}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, credit_limit: Number(e.target.value) })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Payment Terms <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                </label>
+                                                <select
+                                                    value={companyFormData.payment_terms}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, payment_terms: e.target.value })}
+                                                    required
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                >
+                                                    <option value="NET_30">30 Days</option>
+                                                    <option value="NET_45">45 Days</option>
+                                                    <option value="NET_60">60 Days</option>
+                                                    <option value="DUE_ON_RECEIPT">Due on Receipt</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Status <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                </label>
+                                                <select
+                                                    value={companyFormData.status}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, status: e.target.value })}
+                                                    required
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                >
+                                                    <option value="ACTIVE">Active</option>
+                                                    <option value="INACTIVE">Inactive</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
@@ -1857,7 +2481,7 @@ const UserManagement: React.FC = () => {
                             >
                                 <CheckCircle size={16} /> {
                                     viewMode === 'user' ? (editingId ? 'UPDATE USER' : 'CREATE USER') :
-                                        viewMode === 'partner' ? (editingId ? 'UPDATE PARTNER' : 'SAVE PARTNER RECORD') :
+                                        viewMode === 'partner' ? (editingId ? 'UPDATE COMPANY' : 'SAVE COMPANY RECORD') :
                                             viewMode === 'end_customer' ? (editingId ? 'UPDATE END CUSTOMER' : 'SAVE END CUSTOMER RECORD') :
                                                 viewMode === 'financial_year' ? (editingId ? 'UPDATE FY' : 'SAVE FY RECORD') :
                                                     viewMode === 'product' ? (editingId ? 'UPDATE PRODUCT' : 'SAVE PRODUCT RECORD') :
@@ -1894,13 +2518,13 @@ const UserManagement: React.FC = () => {
                             <thead>
                                 <tr style={{ background: 'var(--bg-secondary)' }}>
                                     <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        {viewMode === 'user' ? 'User' : viewMode === 'partner' ? 'Partner' : viewMode === 'end_customer' ? 'End Customer' : viewMode === 'financial_year' ? 'Financial Year' : viewMode === 'product' ? 'Product / Service' : 'Customer'}
+                                        {viewMode === 'user' ? 'User' : viewMode === 'partner' ? 'Company' : viewMode === 'end_customer' ? 'End Customer' : viewMode === 'financial_year' ? 'Financial Year' : viewMode === 'product' ? 'Product / Service' : 'Customer'}
                                     </th>
                                     <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         {viewMode === 'financial_year' ? 'Start Date' : viewMode === 'product' ? 'Category' : 'Email'}
                                     </th>
                                     <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        {viewMode === 'user' ? 'Role' : viewMode === 'partner' ? 'Type / Industry' : viewMode === 'end_customer' ? 'Partner / Location' : viewMode === 'financial_year' ? 'End Date' : viewMode === 'product' ? 'Code / Sub' : 'City / State'}
+                                        {viewMode === 'user' ? 'Role' : viewMode === 'partner' ? 'Type / Industry' : viewMode === 'end_customer' ? 'Company / Location' : viewMode === 'financial_year' ? 'End Date' : viewMode === 'product' ? 'Code / Sub' : 'City / State'}
                                     </th>
                                     <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
                                     <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
@@ -1976,7 +2600,7 @@ const UserManagement: React.FC = () => {
                                                 </div>
                                                 <div className="ml-4">
                                                     <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{user.username}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{user.first_name} {user.last_name}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{user.first_name} {user.last_name}{user.employee_id ? ` · ${user.employee_id}` : ''}</div>
                                                 </div>
                                             </div>
                                         </td>
@@ -2080,13 +2704,39 @@ const UserManagement: React.FC = () => {
                                                 <button
                                                     onClick={() => handleDeletePartner(p.id)}
                                                     style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    title="Delete Partner"
+                                                    title="Delete Company"
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
                                                 <button
                                                     onClick={() => {
-                                                        setPartnerFormData({ ...p });
+                                                        setPartnerFormData({
+                                                            name: p.name || '',
+                                                            logo: p.logo || null,
+                                                            address_line_1: p.address_line_1 || '',
+                                                            country: p.country || 'India',
+                                                            state: p.state || '',
+                                                            city: p.city || '',
+                                                            pincode: p.pincode || '',
+                                                            phone_number: p.phone_number || '',
+                                                            mobile: p.mobile || '',
+                                                            email: p.email || '',
+                                                            website_url: p.website_url || '',
+                                                            primary_contact: p.primary_contact || '',
+                                                            financial_year_begins: p.financial_year_begins || '01-Apr',
+                                                            base_currency: p.base_currency || 'INR',
+                                                            currency_symbol: p.currency_symbol || '₹ / INR',
+                                                            decimal_places: p.decimal_places || 2,
+                                                            is_gst_applicable: p.is_gst_applicable ?? true,
+                                                            gstin: p.gstin || '',
+                                                            state_code: p.state_code || '',
+                                                            msme_registered: p.msme_registered ?? false,
+                                                            msme_number: p.msme_number || '',
+                                                            pan: p.pan || '',
+                                                            tan: p.tan || '',
+                                                            cin: p.cin || '',
+                                                            status: p.status || 'ACTIVE'
+                                                        });
                                                         setEditingId(p.id);
                                                         setShowForm(true);
                                                     }}
@@ -2263,8 +2913,38 @@ const UserManagement: React.FC = () => {
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                 <button
                                                     onClick={() => {
-                                                        setCompanyFormData({ ...comp, logo: comp.logo || null }); // Ensure logo is preserved
-                                                        setEditingId(comp.id); // Set the editing ID
+                                                        setCompanyFormData({
+                                                            name: comp.name || '',
+                                                            logo: comp.logo || null,
+                                                            address_line_1: comp.address_line_1 || '',
+                                                            country: comp.country || 'India',
+                                                            state: comp.state || '',
+                                                            city: comp.city || '',
+                                                            pincode: comp.pincode || '',
+                                                            phone_number: comp.phone_number || '',
+                                                            mobile_number: comp.mobile_number || '',
+                                                            email: comp.email || '',
+                                                            website_url: comp.website_url || '',
+                                                            linked_company_profile: comp.linked_company_profile || '',
+                                                            industry: comp.industry || '',
+                                                            type: comp.type || 'CUSTOMER',
+                                                            credit_limit: comp.credit_limit || 0,
+                                                            payment_terms: comp.payment_terms || 'NET_30',
+                                                            status: comp.status || 'ACTIVE',
+                                                            financial_year_begins: comp.financial_year_begins || '01-Apr',
+                                                            base_currency: comp.base_currency || 'INR',
+                                                            currency_symbol: comp.currency_symbol || '₹ / INR',
+                                                            decimal_places: comp.decimal_places || 2,
+                                                            is_gst_applicable: comp.is_gst_applicable ?? true,
+                                                            gstin: comp.gstin || '',
+                                                            state_code: comp.state_code || '',
+                                                            msme_registered: comp.msme_registered ?? false,
+                                                            msme_number: comp.msme_number || '',
+                                                            pan: comp.pan || '',
+                                                            tan: comp.tan || '',
+                                                            cin: comp.cin || ''
+                                                        });
+                                                        setEditingId(comp.id);
                                                         setViewMode('company');
                                                         setShowForm(true);
                                                     }}

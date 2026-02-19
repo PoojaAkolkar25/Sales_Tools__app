@@ -989,7 +989,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         <SectionHeader title="License" />
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
-                                <TableHeader isReadOnly={isReadOnly} columns={['License Name', 'License Type', 'Rate', 'Qty', 'Period', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
+                                <TableHeader isReadOnly={isReadOnly} columns={['License Name', 'License Type', 'Rate/Month', 'Qty', 'Month', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {licenseItems.map((item, idx) => {
                                         const periodMultiplier = isNaN(parseFloat(item.period)) ? 1 : parseFloat(item.period);
