@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, ArrowLeft, Eye } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import SearchableDropdown from './SearchableDropdown';
 
 interface Lead {
     id: number;
@@ -853,16 +854,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             <div>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Name</label>
                                 {!isReadOnly ? (
-                                    <select
-                                        className="ae-input"
+                                    <SearchableDropdown
+                                        options={uniqueCustomers.map(name => ({ value: name, label: name }))}
                                         value={selectedCustomerName}
-                                        onChange={e => handleCustomerChange(e.target.value)}
-                                    >
-                                        <option value="">Select Customer</option>
-                                        {uniqueCustomers.map(name => (
-                                            <option key={name} value={name}>{name}</option>
-                                        ))}
-                                    </select>
+                                        onChange={(val) => handleCustomerChange(val as string)}
+                                        placeholder="Select Customer"
+                                        className="w-full"
+                                    />
                                 ) : (
                                     <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', padding: '6px 0' }}>{selectedCustomerName || '—'}</div>
                                 )}
@@ -872,16 +870,16 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             <div>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead No.</label>
                                 {!isReadOnly ? (
-                                    <select
-                                        className="ae-input"
+                                    <SearchableDropdown
+                                        options={(selectedCustomerName ? leads.filter(l => l.customer_name === selectedCustomerName) : leads).map(l => ({
+                                            value: l.id,
+                                            label: `${l.lead_no} (${l.project_name})`
+                                        }))}
                                         value={lead?.id || ''}
-                                        onChange={e => handleLeadChange(e.target.value)}
-                                    >
-                                        <option value="">Select Lead No.</option>
-                                        {(selectedCustomerName ? leads.filter(l => l.customer_name === selectedCustomerName) : leads).map(l => (
-                                            <option key={l.id} value={l.id}>{l.lead_no} ({l.project_name})</option>
-                                        ))}
-                                    </select>
+                                        onChange={(val) => handleLeadChange(val as string)}
+                                        placeholder="Select Lead No."
+                                        className="w-full"
+                                    />
                                 ) : (
                                     <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', padding: '6px 0' }}>
                                         {lead?.lead_no ? `${lead.lead_no} (${lead.project_name || 'No Project Name'})` : '—'}
@@ -893,16 +891,16 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             <div>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal No.</label>
                                 {!isReadOnly ? (
-                                    <select
-                                        className="ae-input"
+                                    <SearchableDropdown
+                                        options={(selectedCustomerName ? deals.filter(d => d.customer_name === selectedCustomerName) : deals).map(d => ({
+                                            value: d.id,
+                                            label: `${d.deal_id} (${d.deal_name})`
+                                        }))}
                                         value={dealId || ''}
-                                        onChange={e => handleDealChange(e.target.value)}
-                                    >
-                                        <option value="">Select Deal No.</option>
-                                        {(selectedCustomerName ? deals.filter(d => d.customer_name === selectedCustomerName) : deals).map(d => (
-                                            <option key={d.id} value={d.id}>{d.deal_id} ({d.deal_name})</option>
-                                        ))}
-                                    </select>
+                                        onChange={(val) => handleDealChange(val as string)}
+                                        placeholder="Select Deal No."
+                                        className="w-full"
+                                    />
                                 ) : (
                                     <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', padding: '6px 0' }}>
                                         {dealId ? (() => {

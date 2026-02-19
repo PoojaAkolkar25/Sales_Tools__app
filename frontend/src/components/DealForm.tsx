@@ -496,10 +496,16 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         <div className="ae-grid-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Company Name *</label>
-                                <select name="company" value={formData.company} onChange={handleInputChange} className="ae-input" required>
-                                    <option value="AE IND">AE IND</option>
-                                    <option value="AE USA">AE USA</option>
-                                </select>
+                                <SearchableDropdown
+                                    options={[
+                                        { value: 'AE IND', label: 'AE IND' },
+                                        { value: 'AE USA', label: 'AE USA' }
+                                    ]}
+                                    value={formData.company}
+                                    onChange={(val) => handleInputChange({ target: { name: 'company', value: val } } as any)}
+                                    placeholder="Select Company"
+                                    className="w-full"
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead Date</label>
@@ -635,17 +641,16 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                 </td>
                                                 <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{index + 1}</td>
                                                 <td style={{ padding: '8px' }}>
-                                                    <select
+                                                    <SearchableDropdown
+                                                        options={[
+                                                            { value: 'LICENSE', label: 'License' },
+                                                            { value: 'SERVICES', label: 'Services' }
+                                                        ]}
                                                         value={item.type}
-                                                        onChange={(e) => handleDealTypeChange(index, 'type', e.target.value)}
-                                                        className="ae-input"
-                                                        required
-                                                        style={{ height: '36px', padding: '4px 8px', width: '100%' }}
-                                                    >
-                                                        <option value="">Select Type</option>
-                                                        <option value="LICENSE">License</option>
-                                                        <option value="SERVICES">Services</option>
-                                                    </select>
+                                                        onChange={(val) => handleDealTypeChange(index, 'type', val.toString())}
+                                                        placeholder="Select Type"
+                                                        className="w-full"
+                                                    />
                                                 </td>
                                                 <td style={{ padding: '8px' }}>
                                                     <input
@@ -730,22 +735,33 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         <div className="ae-grid-4 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Stage *</label>
-                                <select name="stage" value={formData.stage} onChange={handleInputChange} className="ae-input" required>
-                                    <option value="DEAL_CREATED">Deal created</option>
-                                    <option value="COST_SHEET">Cost Sheet</option>
-                                    <option value="ESTIMATES">Estimates</option>
-                                    <option value="SALES_ORDER">Sales Order</option>
-                                    <option value="INVOICE">Invoice</option>
-                                    <option value="PAYMENT">Payment</option>
-                                </select>
+                                <SearchableDropdown
+                                    options={[
+                                        { value: 'DEAL_CREATED', label: 'Deal created' },
+                                        { value: 'COST_SHEET', label: 'Cost Sheet' },
+                                        { value: 'ESTIMATES', label: 'Estimates' },
+                                        { value: 'SALES_ORDER', label: 'Sales Order' },
+                                        { value: 'INVOICE', label: 'Invoice' },
+                                        { value: 'PAYMENT', label: 'Payment' }
+                                    ]}
+                                    value={formData.stage}
+                                    onChange={(val) => handleInputChange({ target: { name: 'stage', value: val } } as any)}
+                                    placeholder="Select Stage"
+                                    className="w-full"
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Client Type</label>
-                                <select name="client_type" value={formData.client_type} onChange={handleInputChange} className="ae-input">
-                                    <option value="">Select Type</option>
-                                    <option value="NEW">New</option>
-                                    <option value="EXISTING">Existing</option>
-                                </select>
+                                <SearchableDropdown
+                                    options={[
+                                        { value: 'NEW', label: 'New' },
+                                        { value: 'EXISTING', label: 'Existing' }
+                                    ]}
+                                    value={formData.client_type}
+                                    onChange={(val) => handleInputChange({ target: { name: 'client_type', value: val } } as any)}
+                                    placeholder="Select Type"
+                                    className="w-full"
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Expected Close Date</label>
@@ -1083,14 +1099,16 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>State</label>
-                                    <select
-                                        className="ae-input"
+                                    <SearchableDropdown
+                                        options={states.map(s => ({
+                                            value: s.id,
+                                            label: s.name
+                                        }))}
                                         value={newCompanyData.state}
-                                        onChange={(e) => setNewCompanyData({ ...newCompanyData, state: e.target.value })}
-                                    >
-                                        <option value="">Select State</option>
-                                        {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                    </select>
+                                        onChange={(val) => setNewCompanyData({ ...newCompanyData, state: val.toString() })}
+                                        placeholder="Select State"
+                                        className="w-full"
+                                    />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>City</label>

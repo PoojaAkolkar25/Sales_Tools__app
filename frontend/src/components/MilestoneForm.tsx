@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { Plus, Save, AlertCircle, Clock, Trash2 } from 'lucide-react';
+import SearchableDropdown from './SearchableDropdown';
 
 interface MilestoneFormProps {
     onBack: () => void;
@@ -379,55 +380,33 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
                                 Select Customer <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
-                            <select
-                                style={{
-                                    width: '100%',
-                                    padding: '6px 10px',
-                                    background: 'white',
-                                    border: '1px solid #E2E8F0',
-                                    borderRadius: '6px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 500,
-                                    color: '#1a1f36',
-                                    outline: 'none',
-                                    height: '34px'
-                                }}
-                                onChange={(e) => handleCustomerChange(e.target.value)}
+                            <SearchableDropdown
+                                options={customers.map(c => ({
+                                    value: c.id,
+                                    label: c.name
+                                }))}
                                 value={selectedCustomer?.id || ''}
-                            >
-                                <option value="">Select Customer...</option>
-                                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
+                                onChange={(val) => handleCustomerChange(val.toString())}
+                                placeholder="Select Customer..."
+                                className="w-full"
+                            />
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
                                 Select Sales Order <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
-                            <select
-                                style={{
-                                    width: '100%',
-                                    padding: '6px 10px',
-                                    background: 'white',
-                                    border: '1px solid #E2E8F0',
-                                    borderRadius: '6px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 500,
-                                    color: '#1a1f36',
-                                    outline: 'none',
-                                    height: '34px'
-                                }}
-                                onChange={(e) => handleSOChange(e.target.value)}
+                            <SearchableDropdown
+                                options={salesOrders.map(so => ({
+                                    value: so.id,
+                                    label: `${so.so_number} - ${getCurrencySymbol(so.currency)} ${parseFloat(so.total_amount).toLocaleString()}`
+                                }))}
                                 value={selectedSO?.id || ''}
+                                onChange={(val) => handleSOChange(val.toString())}
+                                placeholder={loading ? 'Loading...' : 'Select Sales Order...'}
+                                className="w-full"
                                 disabled={!selectedCustomer || loading}
-                            >
-                                <option value="">{loading ? 'Loading...' : 'Select Sales Order...'}</option>
-                                {salesOrders.map(so => (
-                                    <option key={so.id} value={so.id}>
-                                        {so.so_number} - {getCurrencySymbol(so.currency)} {parseFloat(so.total_amount).toLocaleString()}
-                                    </option>
-                                ))}
-                            </select>
+                            />
                         </div>
                     </div>
 

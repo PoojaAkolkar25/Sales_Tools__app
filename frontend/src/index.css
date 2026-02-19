@@ -2714,6 +2714,7 @@ option {
 .ae-table-row:hover td {
   background-color: var(--bg-hover);
 }
+
 /* --- Searchable Dropdown Styles --- */
 .ae-searchable-dropdown {
   position: relative;
@@ -2742,6 +2743,13 @@ option {
 .ae-searchable-dropdown-trigger.active {
   border-color: var(--theme-primary);
   box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.2);
+}
+
+.ae-searchable-dropdown-trigger.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f8fafc;
+  border-color: #e2e8f0;
 }
 
 .ae-searchable-dropdown-label {
@@ -2774,8 +2782,15 @@ option {
 }
 
 @keyframes ae-slide-down {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .ae-searchable-dropdown-search-wrapper {

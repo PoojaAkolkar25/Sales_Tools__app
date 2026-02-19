@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, Calendar, DollarSign, Paperclip, File as FileIcon, Download, Trash2 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import SearchableDropdown from './SearchableDropdown';
 
 interface ReceiptVoucherFormProps {
     id: number | null;
@@ -361,16 +362,16 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Name</label>
-                            <select
-                                style={{ width: '100%', padding: '6px 12px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
+                            <SearchableDropdown
+                                options={uniqueCustomers.map(name => ({
+                                    value: name,
+                                    label: name
+                                }))}
                                 value={formData.customer_name}
-                                onChange={e => setFormData({ ...formData, customer_name: e.target.value })}
-                            >
-                                <option value="">Select Customer</option>
-                                {uniqueCustomers.map(name => (
-                                    <option key={name} value={name}>{name}</option>
-                                ))}
-                            </select>
+                                onChange={(val) => setFormData({ ...formData, customer_name: val.toString() })}
+                                placeholder="Select Customer"
+                                className="w-full"
+                            />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Payment Date</label>
@@ -408,14 +409,16 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deposit To (Bank)</label>
-                            <select
-                                style={{ width: '100%', padding: '6px 12px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
+                            <SearchableDropdown
+                                options={bankConnections.map(b => ({
+                                    value: b.id,
+                                    label: `${b.bank_name} - ${b.account_number}`
+                                }))}
                                 value={formData.deposit_to}
-                                onChange={e => setFormData({ ...formData, deposit_to: e.target.value })}
-                            >
-                                <option value="">Select Bank Account</option>
-                                {bankConnections.map(b => <option key={b.id} value={b.id}>{b.bank_name} - {b.account_number}</option>)}
-                            </select>
+                                onChange={(val) => setFormData({ ...formData, deposit_to: val.toString() })}
+                                placeholder="Select Bank Account"
+                                className="w-full"
+                            />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Amount Received</label>

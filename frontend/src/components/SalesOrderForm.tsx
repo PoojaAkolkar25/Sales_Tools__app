@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import SearchableDropdown from './SearchableDropdown';
 
 interface SalesOrderFormProps {
     id: number | null;
@@ -591,17 +592,17 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                         <div className="ae-grid-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Currency</label>
-                                <select
-                                    name="currency"
+                                <SearchableDropdown
+                                    options={[
+                                        { value: 'INR', label: 'INR - Indian Rupee' },
+                                        { value: 'USD', label: 'USD - US Dollar' }
+                                    ]}
                                     value={salesOrder.currency}
-                                    onChange={handleInputChange}
-                                    className="ae-input"
+                                    onChange={(val) => handleInputChange({ target: { name: 'currency', value: val } } as any)}
+                                    placeholder="Select Currency"
+                                    className="w-full"
                                     disabled={isSubmitted}
-                                    style={{ ...getHighlightStyle(salesOrder.currency) }}
-                                >
-                                    <option value="INR">INR - Indian Rupee</option>
-                                    <option value="USD">USD - US Dollar</option>
-                                </select>
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Order Date</label>

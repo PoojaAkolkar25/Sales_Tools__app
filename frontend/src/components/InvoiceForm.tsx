@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Save, Trash2, FileText } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import SearchableDropdown from './SearchableDropdown';
 
 interface LineItem {
     type: string;
@@ -416,11 +417,10 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Cost Sheet</label>
-                        <select className="ae-input" disabled={isReadOnly} value={formData.cost_sheet} onChange={e => handleCostSheetChange(e.target.value)}>
-                            <option value="">Select Cost Sheet (Optional)</option>
-                            {costSheets.filter(cs => {
+                        <SearchableDropdown
+                            options={costSheets.filter(cs => {
                                 if (!formData.lead) return true;
-                                const leadId = parseInt(formData.lead);
+                                const leadId = parseInt(formData.lead.toString());
                                 if (cs.lead === leadId) return true;
 
                                 // Fallback: Match by customer name
@@ -430,26 +430,44 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                     return true;
                                 }
                                 return false;
-                            }).map(cs => (
-                                <option key={cs.id} value={cs.id}>{cs.cost_sheet_no} - {cs.project_name}</option>
-                            ))}
-                        </select>
+                            }).map(cs => ({
+                                value: cs.id,
+                                label: `${cs.cost_sheet_no} - ${cs.project_name}`
+                            }))}
+                            value={formData.cost_sheet}
+                            onChange={(val) => handleCostSheetChange(val.toString())}
+                            placeholder="Select Cost Sheet"
+                            className="w-full"
+                            disabled={isReadOnly}
+                        />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Proposal</label>
-                        <select className="ae-input" disabled={isReadOnly} value={formData.proposal} onChange={e => handleProposalChange(e.target.value)}>
-                            <option value="">Select Proposal (Optional)</option>
-                            {proposals.map(p => (
-                                <option key={p.id} value={p.id}>{p.filename} v{p.version}</option>
-                            ))}
-                        </select>
+                        <SearchableDropdown
+                            options={proposals.map(p => ({
+                                value: p.id,
+                                label: `${p.filename} v${p.version}`
+                            }))}
+                            value={formData.proposal}
+                            onChange={(val) => handleProposalChange(val.toString())}
+                            placeholder="Select Proposal"
+                            className="w-full"
+                            disabled={isReadOnly}
+                        />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer</label>
-                        <select className="ae-input" required disabled={isReadOnly} value={formData.lead} onChange={e => setFormData({ ...formData, lead: e.target.value })}>
-                            <option value="">Select Customer</option>
-                            {leads.map(l => <option key={l.id} value={l.id}>{l.customer_name}</option>)}
-                        </select>
+                        <SearchableDropdown
+                            options={leads.map(l => ({
+                                value: l.id,
+                                label: l.customer_name
+                            }))}
+                            value={formData.lead}
+                            onChange={(val) => setFormData({ ...formData, lead: val.toString() })}
+                            placeholder="Select Customer"
+                            className="w-full"
+                            disabled={isReadOnly}
+                        />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
@@ -457,10 +475,17 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Place of Supply (State)</label>
-                        <select className="ae-input" required disabled={isReadOnly} value={formData.customer_state} onChange={e => setFormData({ ...formData, customer_state: e.target.value })}>
-                            <option value="">Select State</option>
-                            {states.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
-                        </select>
+                        <SearchableDropdown
+                            options={states.map(s => ({
+                                value: s.id,
+                                label: `${s.name} (${s.code})`
+                            }))}
+                            value={formData.customer_state}
+                            onChange={(val) => setFormData({ ...formData, customer_state: val.toString() })}
+                            placeholder="Select State"
+                            className="w-full"
+                            disabled={isReadOnly}
+                        />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer GSTIN</label>

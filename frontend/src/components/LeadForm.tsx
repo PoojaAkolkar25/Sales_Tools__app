@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import SearchableDropdown from './SearchableDropdown';
 
 interface LeadFormProps {
     id?: number | null;
@@ -121,27 +122,16 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                 Company Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
-                            <select
-                                name="company"
+                            <SearchableDropdown
+                                options={[
+                                    { value: 'AE IND', label: 'AE IND' },
+                                    { value: 'AE USA', label: 'AE USA' }
+                                ]}
                                 value={formData.company}
-                                onChange={handleInputChange}
-                                style={{
-                                    width: '100%',
-                                    padding: '6px 10px',
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-primary)',
-                                    borderRadius: '6px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 500,
-                                    color: 'var(--text-primary)',
-                                    outline: 'none',
-                                    height: '34px'
-                                }}
-                                required
-                            >
-                                <option value="AE IND">AE IND</option>
-                                <option value="AE USA">AE USA</option>
-                            </select>
+                                onChange={(value) => setFormData(prev => ({ ...prev, company: value as string }))}
+                                placeholder="Select Company"
+                                className="w-full"
+                            />
                             <p style={{ fontSize: '0.65rem', color: '#A0AEC0', marginTop: '4px', fontWeight: 500 }}>INDLD or USALD suffix</p>
                         </div>
 

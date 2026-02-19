@@ -15,6 +15,7 @@ interface SearchableDropdownProps {
     onAddNew?: () => void;
     addNewLabel?: string;
     className?: string;
+    disabled?: boolean;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -25,7 +26,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     label,
     onAddNew,
     addNewLabel = 'Add New',
-    className = ''
+    className = '',
+    disabled = false
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -73,8 +75,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             )}
 
             <div
-                className={`ae-searchable-dropdown-trigger ${isOpen ? 'active' : ''}`}
-                onClick={() => setIsOpen(!isOpen)}
+                className={`ae-searchable-dropdown-trigger ${isOpen ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
+                onClick={() => !disabled && setIsOpen(!isOpen)}
             >
                 <div className={`ae-searchable-dropdown-label ${!selectedOption ? 'placeholder' : ''}`}>
                     {selectedOption ? selectedOption.label : placeholder}
