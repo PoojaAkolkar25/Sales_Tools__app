@@ -5,13 +5,13 @@ from deals.serializers import DealSerializer
 
 class ProposalSerializer(serializers.ModelSerializer):
     uploaded_by_name = serializers.ReadOnlyField(source='uploaded_by.username')
-    file = serializers.SerializerMethodField()
+    file_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Proposal
-        fields = '__all__'
+        fields = ['id', 'estimate', 'file', 'file_url', 'filename', 'version', 'uploaded_by', 'uploaded_by_name', 'uploaded_at']
 
-    def get_file(self, obj):
+    def get_file_url(self, obj):
         request = self.context.get('request')
         if obj.file and request:
             return request.build_absolute_uri(obj.file.url)

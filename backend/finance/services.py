@@ -54,8 +54,17 @@ class InvoiceService:
             if deal_id:
                 from deals.models import Deal
                 deal = Deal.objects.filter(id=deal_id).first()
-                if deal and deal.country:
-                    country_name = deal.country.name
+                if deal:
+                    # Try getting country from deal attribute if it exists
+                    deal_country = getattr(deal, 'country', None)
+                    if deal_country:
+                        if hasattr(deal_country, 'name'):
+                            country_name = deal_country.name
+                        else:
+                            country_name = str(deal_country)
+                    # Fallback to company field logic
+                    elif getattr(deal, 'company', '') == 'AE USA':
+                        country_name = 'USA'
             
             if country_name.lower() == 'usa':
                 invoice_type = InvoiceType.USA

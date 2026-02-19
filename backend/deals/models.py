@@ -162,6 +162,15 @@ class Deal(models.Model):
         
         super().save(*args, **kwargs)
 
+    @property
+    def currency_symbol(self):
+        symbols = {
+            'INR': '₹',
+            'USD': '$',
+            'EURO': '€'
+        }
+        return symbols.get(self.currency, self.currency)
+
     def __str__(self):
         return f"{self.deal_id} - {self.deal_name}"
     

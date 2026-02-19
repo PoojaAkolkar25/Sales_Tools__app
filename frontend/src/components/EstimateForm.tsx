@@ -416,7 +416,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
     const handleDownload = async (prop: any) => {
         try {
-            const fileUrl = getFileUrl(prop.file);
+            const fileUrl = prop.file_url || getFileUrl(prop.file);
             setUploadFeedback({ type: 'success', message: `Downloading ${prop.filename}...` });
 
             const response = await api.get(fileUrl, { responseType: 'blob' });
@@ -442,8 +442,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     };
 
     const handleView = (prop: any) => {
-        if (!prop?.file) return;
-        const fileUrl = getFileUrl(prop.file);
+        const fileUrl = prop.file_url || getFileUrl(prop.file);
+        if (!fileUrl) return;
         window.open(fileUrl, '_blank');
     };
 

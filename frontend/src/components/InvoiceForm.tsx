@@ -88,6 +88,25 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         }
     }, [location.search, leads]);
 
+    const handleSubmitForApproval = async () => {
+        if (!invoiceId) {
+            showNotification('Please save the invoice as draft first', 'warning');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await api.post(`/finance/invoices/${invoiceId}/submit_for_approval/`);
+            showNotification('Invoice submitted for approval', 'success');
+            fetchInvoiceDetails();
+        } catch (error) {
+            console.error('Error submitting for approval', error);
+            showNotification('Error submitting for approval', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const fetchInitialData = async () => {
         try {
             const [leadsRes, costSheetsRes, statesRes, proposalsRes] = await Promise.all([
@@ -195,40 +214,45 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         }
     };
 
-    const handleCostSheetChange = (costSheetId: string) => {
-        const cs = costSheets.find(c => c.id === parseInt(costSheetId));
-        if (cs) {
-            let leadId = cs.lead;
-
-            // Try to match lead by name if ID is missing
-            if (!leadId && cs.customer_name) {
-                const matchedLead = leads.find(l => l.customer_name.trim().toLowerCase() === cs.customer_name.trim().toLowerCase());
-                if (matchedLead) {
-                    leadId = matchedLead.id;
-                }
-            }
-
+    const handleLeadChange = (leadId: string) => {
+        const lead = leads.find(l => l.id === parseInt(leadId));
+        if (lead) {
             setFormData(prev => ({
                 ...prev,
-                cost_sheet: costSheetId,
-                lead: leadId || prev.lead,
-                billing_address: cs.customer_name // Fallback or logic to get address
+                lead: leadId,
+                currency: lead.currency || 'INR',
+                customer_gstin: lead.gstin || prev.customer_gstin,
+                cost_sheet: lead.cost_sheet_id?.toString() || ''
             }));
 
-            // Map items from cost sheet if available
-            if (cs.total_estimated_price) {
-                setLineItems([{
-                    type: 'Service',
-                    description: `Project: ${cs.project_name}`,
-                    hsn_sac: '998311',
-                    quantity: 1,
-                    rate: cs.total_estimated_price,
-                    discount: 0,
-                    gst_rate: 18
-                }]);
+            // Auto-populate line items if cost sheet is found
+            const csId = lead.cost_sheet_id;
+            if (csId) {
+                const cs = costSheets.find(c => c.id === csId);
+                // If not in costSheets (maybe not approved yet?), we still have the ID from lead
+                if (cs && cs.total_estimated_price) {
+                    setLineItems([{
+                        type: 'Product',
+                        description: `Linked to Cost Sheet: ${cs.cost_sheet_no}`,
+                        hsn_sac: '998311',
+                        quantity: 1,
+                        rate: parseFloat(cs.total_estimated_price) || 0,
+                        discount: 0,
+                        gst_rate: 18
+                    }]);
+                }
             }
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                lead: '',
+                cost_sheet: '',
+                currency: 'INR',
+                customer_gstin: ''
+            }));
         }
     };
+
 
     const handleProposalChange = async (proposalId: string) => {
         const p = proposals.find(prop => prop.id === parseInt(proposalId));
@@ -407,8 +431,30 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             {invoiceId ? 'Edit Invoice' : 'Create Detailed Invoice'}
                         </h2>
                         {invoiceId && (
-                            <div style={{ display: 'flex', gap: '8px' }}>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                {status === 'DRAFT' && (
+                                    <button
+                                        type="button"
+                                        onClick={handleSubmitForApproval}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '4px 12px',
+                                            borderRadius: '8px',
+                                            background: 'var(--theme-primary)',
+                                            color: 'white',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 800,
+                                            border: 'none',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        Submit for Approval
+                                    </button>
+                                )}
                                 <button
+                                    type="button"
                                     onClick={handlePreview}
                                     style={{
                                         display: 'flex',
@@ -429,8 +475,10 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 <div style={{
                                     padding: '4px 12px',
                                     borderRadius: '20px',
-                                    background: status === 'DRAFT' ? 'rgba(187, 77, 0, 0.1)' : 'rgba(66, 153, 225, 0.1)',
-                                    color: status === 'DRAFT' ? 'var(--theme-primary)' : '#4299E1',
+                                    background: status === 'APPROVED' ? 'rgba(72, 187, 120, 0.1)' :
+                                        status === 'DRAFT' ? 'rgba(187, 77, 0, 0.1)' : 'rgba(66, 153, 225, 0.1)',
+                                    color: status === 'APPROVED' ? '#48BB78' :
+                                        status === 'DRAFT' ? 'var(--theme-primary)' : '#4299E1',
                                     fontSize: '0.75rem',
                                     fontWeight: 800,
                                     textTransform: 'uppercase',
@@ -442,428 +490,401 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                         )}
                     </div>
                 </div>
+            </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Cost Sheet</label>
-                        {formData.cost_sheet ? (
-                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
-                                {costSheets.find(cs => cs.id === parseInt(formData.cost_sheet.toString()))?.cost_sheet_no || 'Linked Cost Sheet'}
-                            </div>
-                        ) : (
-                            <select className="ae-input" disabled={isReadOnly} value={formData.cost_sheet} onChange={e => handleCostSheetChange(e.target.value)}>
-                                <option value="">Select Cost Sheet (Optional)</option>
-                                {costSheets.filter(cs => {
-                                    if (!formData.lead) return true;
-                                    const leadId = parseInt(formData.lead);
-                                    if (cs.lead === leadId) return true;
-
-                                    // Fallback: Match by customer name
-                                    const selectedLead = leads.find(l => l.id === leadId);
-                                    if (selectedLead && cs.customer_name && selectedLead.customer_name &&
-                                        cs.customer_name.trim().toLowerCase() === selectedLead.customer_name.trim().toLowerCase()) {
-                                        return true;
-                                    }
-                                    return false;
-                                }).map(cs => (
-                                    <option key={cs.id} value={cs.id}>{cs.cost_sheet_no} - {cs.project_name}</option>
-                                ))}
-                            </select>
-                        )}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Proposal</label>
-                        <select className="ae-input" disabled={isReadOnly} value={formData.proposal} onChange={e => handleProposalChange(e.target.value)}>
-                            <option value="">Select Proposal (Optional)</option>
-                            {proposals.map(p => (
-                                <option key={p.id} value={p.id}>{p.filename} v{p.version}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer</label>
-                        {formData.lead ? (
-                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
-                                {leads.find(l => l.id === parseInt(formData.lead.toString()))?.customer_name || 'Linked Customer'}
-                            </div>
-                        ) : (
-                            <select className="ae-input" required disabled={isReadOnly} value={formData.lead} onChange={e => setFormData({ ...formData, lead: e.target.value })}>
-                                <option value="">Select Customer</option>
-                                {leads.map(l => <option key={l.id} value={l.id}>{l.customer_name}</option>)}
-                            </select>
-                        )}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
-                        <input type="date" className="ae-input" required disabled={isReadOnly} value={formData.invoice_date} onChange={e => setFormData({ ...formData, invoice_date: e.target.value })} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Place of Supply (State)</label>
-                        <select className="ae-input" required disabled={isReadOnly} value={formData.customer_state} onChange={e => setFormData({ ...formData, customer_state: e.target.value })}>
-                            <option value="">Select State</option>
-                            {states.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
-                        </select>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer GSTIN</label>
-                        <input className="ae-input" placeholder="27XXXXX..." disabled={isReadOnly} value={formData.customer_gstin} onChange={e => setFormData({ ...formData, customer_gstin: e.target.value })} />
-                    </div>
-                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center', paddingTop: '30px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-                            <input type="checkbox" disabled={isReadOnly} checked={formData.is_gst_applicable} onChange={e => setFormData({ ...formData, is_gst_applicable: e.target.checked })} /> GST Applicable
-                        </label>
-                    </div>
-                    {formData.invoice_type === 'USA' && (
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Tax %</label>
-                            <input type="number" className="ae-input" disabled={isReadOnly} value={formData.sales_tax_rate} onChange={e => setFormData({ ...formData, sales_tax_rate: parseFloat(e.target.value) || 0 })} />
-                        </div>
-                    )}
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Payment Terms (Days)</label>
-                        <input type="number" className="ae-input" disabled={isReadOnly} value={formData.payment_terms_days} onChange={e => setFormData({ ...formData, payment_terms_days: parseInt(e.target.value) || 0 })} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Cost Sheet</label>
+                    <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
+                        {(() => {
+                            const cs = costSheets.find(c => c.id === parseInt(formData.cost_sheet.toString()));
+                            if (cs) return cs.cost_sheet_no;
+                            const selectedLead = leads.find(l => l.id.toString() === formData.lead.toString());
+                            if (selectedLead && selectedLead.cost_sheet_no) return selectedLead.cost_sheet_no;
+                            return 'None Linked';
+                        })()}
                     </div>
                 </div>
-
-                <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
-                    <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '16px', textTransform: 'uppercase' }}>e-Invoice Details</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>IRN</label>
-                            <input className="ae-input" placeholder="e-Invoice IRN" disabled={isReadOnly} value={formData.irn} onChange={e => setFormData({ ...formData, irn: e.target.value })} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>Ack No.</label>
-                            <input className="ae-input" placeholder="Acknowledgement No." disabled={isReadOnly} value={formData.ack_no} onChange={e => setFormData({ ...formData, ack_no: e.target.value })} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>Ack Date</label>
-                            <input type="date" className="ae-input" disabled={isReadOnly} value={formData.ack_date} onChange={e => setFormData({ ...formData, ack_date: e.target.value })} />
-                        </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Proposal</label>
+                    <select className="ae-input" disabled={isReadOnly} value={formData.proposal} onChange={e => handleProposalChange(e.target.value)}>
+                        <option value="">Select Proposal (Optional)</option>
+                        {proposals.map(p => (
+                            <option key={p.id} value={p.id}>{p.filename} v{p.version}</option>
+                        ))}
+                    </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer</label>
+                    <select className="ae-input" required disabled={isReadOnly} value={formData.lead} onChange={e => handleLeadChange(e.target.value)}>
+                        <option value="">Select Customer</option>
+                        {leads.map(l => <option key={l.id} value={l.id}>{l.customer_name}</option>)}
+                    </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
+                    <input type="date" className="ae-input" required disabled={isReadOnly} value={formData.invoice_date} onChange={e => setFormData({ ...formData, invoice_date: e.target.value })} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Place of Supply (State)</label>
+                    <select className="ae-input" required disabled={isReadOnly} value={formData.customer_state} onChange={e => setFormData({ ...formData, customer_state: e.target.value })}>
+                        <option value="">Select State</option>
+                        {states.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
+                    </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer GSTIN</label>
+                    <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
+                        {formData.customer_gstin || 'Not Provided'}
                     </div>
                 </div>
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', paddingTop: '30px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+                        <input type="checkbox" disabled={isReadOnly} checked={formData.is_gst_applicable} onChange={e => setFormData({ ...formData, is_gst_applicable: e.target.checked })} /> GST Applicable
+                    </label>
+                </div>
+                {formData.invoice_type === 'USA' && (
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Tax %</label>
+                        <input type="number" className="ae-input" disabled={isReadOnly} value={formData.sales_tax_rate} onChange={e => setFormData({ ...formData, sales_tax_rate: parseFloat(e.target.value) || 0 })} />
+                    </div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Payment Terms (Days)</label>
+                    <input type="number" className="ae-input" disabled={isReadOnly} value={formData.payment_terms_days} onChange={e => setFormData({ ...formData, payment_terms_days: parseInt(e.target.value) || 0 })} />
+                </div>
+            </div>
 
-                <div style={{ marginBottom: '32px' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--ae-orange)', borderLeft: '3px solid var(--ae-orange)', paddingLeft: '12px', marginBottom: '16px' }}>Invoice Items</h3>
-                    <div className="ae-table-container" style={{ borderRadius: '12px', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
-                        <table className="ae-table">
-                            <thead style={{ background: '#f8fafc' }}>
-                                <tr>
-                                    <th style={{ width: '60px', textAlign: 'center' }}>Sr.No.</th>
-                                    <th style={{ width: '150px' }}>Type *</th>
-                                    <th style={{ width: '30%' }}>Description</th>
-                                    <th>Currency</th>
-                                    <th style={{ textAlign: 'center' }}>Qty</th>
-                                    <th style={{ textAlign: 'center' }}>Rate</th>
-                                    <th style={{ textAlign: 'center' }}>GST %</th>
-                                    <th style={{ textAlign: 'right', paddingRight: '24px' }}>Amount</th>
-                                    <th style={{ width: '50px' }}></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {lineItems.map((item, index) => (
-                                    <tr key={index}>
-                                        <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                                {!isReadOnly && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={addLineItem}
-                                                        style={{
-                                                            width: '20px',
-                                                            height: '20px',
-                                                            borderRadius: '50%',
-                                                            background: '#e0f2fe',
-                                                            color: '#0ea5e9',
-                                                            border: 'none',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            cursor: 'pointer',
-                                                            fontSize: '14px',
-                                                            fontWeight: 800
-                                                        }}
-                                                    >
-                                                        +
-                                                    </button>
-                                                )}
-                                                <span style={{ color: '#64748b', fontWeight: 600 }}>{index + 1}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <select
-                                                className="ae-input"
-                                                disabled={isReadOnly}
-                                                style={{ border: '1px solid #e2e8f0', background: 'white', height: '36px', borderRadius: '8px' }}
-                                                value={item.type}
-                                                onChange={e => updateLineItem(index, 'type', e.target.value)}
-                                            >
-                                                <option value="Service">Service</option>
-                                                <option value="Product">Product</option>
-                                                <option value="Other">Other</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <input
-                                                className="ae-input"
-                                                disabled={isReadOnly}
-                                                placeholder="Description"
-                                                style={{ border: '1px solid #f1f5f9', background: 'transparent' }}
-                                                value={item.description}
-                                                onChange={e => updateLineItem(index, 'description', e.target.value)}
-                                            />
-                                        </td>
-                                        <td>
-                                            <select
-                                                className="ae-input"
-                                                disabled={isReadOnly}
-                                                style={{ border: '1px solid #f1f5f9', background: 'transparent' }}
-                                                value={formData.currency}
-                                                onChange={e => setFormData({ ...formData, currency: e.target.value })}
-                                            >
-                                                <option value="INR">INR</option>
-                                                <option value="USD">USD</option>
-                                            </select>
-                                        </td>
-                                        <td style={{ textAlign: 'center' }}>
+            <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
+                <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '16px', textTransform: 'uppercase' }}>e-Invoice Details</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>IRN</label>
+                        <input className="ae-input" placeholder="e-Invoice IRN" disabled={isReadOnly} value={formData.irn} onChange={e => setFormData({ ...formData, irn: e.target.value })} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>Ack No.</label>
+                        <input className="ae-input" placeholder="Acknowledgement No." disabled={isReadOnly} value={formData.ack_no} onChange={e => setFormData({ ...formData, ack_no: e.target.value })} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>Ack Date</label>
+                        <input type="date" className="ae-input" disabled={isReadOnly} value={formData.ack_date} onChange={e => setFormData({ ...formData, ack_date: e.target.value })} />
+                    </div>
+                </div>
+            </div>
+
+            <div style={{ marginBottom: '32px' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--ae-orange)', borderLeft: '3px solid var(--ae-orange)', paddingLeft: '12px', marginBottom: '16px' }}>Invoice Items</h3>
+                <div className="ae-table-container" style={{ borderRadius: '12px', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
+                    <table className="ae-table">
+                        <thead style={{ background: '#f8fafc' }}>
+                            <tr>
+                                <th style={{ width: '60px', textAlign: 'center' }}>Sr.No.</th>
+                                <th style={{ width: '150px' }}>Type *</th>
+                                <th style={{ width: '30%' }}>Description</th>
+                                <th>Currency</th>
+                                <th style={{ textAlign: 'center' }}>Qty</th>
+                                <th style={{ textAlign: 'center' }}>Rate</th>
+                                <th style={{ textAlign: 'center' }}>GST %</th>
+                                <th style={{ textAlign: 'right', paddingRight: '24px' }}>Amount</th>
+                                <th style={{ width: '50px' }}></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {lineItems.map((item, index) => (
+                                <tr key={index}>
+                                    <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                            {!isReadOnly && (
+                                                <button
+                                                    type="button"
+                                                    onClick={addLineItem}
+                                                    style={{
+                                                        width: '20px',
+                                                        height: '20px',
+                                                        borderRadius: '50%',
+                                                        background: '#e0f2fe',
+                                                        color: '#0ea5e9',
+                                                        border: 'none',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        fontSize: '14px',
+                                                        fontWeight: 800
+                                                    }}
+                                                >
+                                                    +
+                                                </button>
+                                            )}
+                                            <span style={{ color: '#64748b', fontWeight: 600 }}>{index + 1}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <select
+                                            className="ae-input"
+                                            disabled={isReadOnly}
+                                            style={{ border: '1px solid #e2e8f0', background: 'white', height: '36px', borderRadius: '8px' }}
+                                            value={item.type}
+                                            onChange={e => updateLineItem(index, 'type', e.target.value)}
+                                        >
+                                            <option value="Service">Service</option>
+                                            <option value="Product">Product</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input
+                                            className="ae-input"
+                                            disabled={isReadOnly}
+                                            placeholder="Description"
+                                            style={{ border: '1px solid #f1f5f9', background: 'transparent' }}
+                                            value={item.description}
+                                            onChange={e => updateLineItem(index, 'description', e.target.value)}
+                                        />
+                                    </td>
+                                    <td style={{ verticalAlign: 'middle', textAlign: 'center' }}>
+                                        <span style={{ fontWeight: 700, color: '#475569' }}>{formData.currency}</span>
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <input
+                                            type="number"
+                                            disabled={isReadOnly}
+                                            className="ae-input"
+                                            style={{ border: '1px solid #f1f5f9', background: 'transparent', width: '60px', textAlign: 'center' }}
+                                            value={item.quantity === 0 ? '' : item.quantity}
+                                            placeholder="0"
+                                            onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                        />
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                            <span style={{ color: '#64748b' }}>{formData.currency === 'INR' ? '₹' : '$'}</span>
                                             <input
                                                 type="number"
                                                 disabled={isReadOnly}
                                                 className="ae-input"
-                                                style={{ border: '1px solid #f1f5f9', background: 'transparent', width: '60px', textAlign: 'center' }}
-                                                value={item.quantity === 0 ? '' : item.quantity}
+                                                style={{ border: '1px solid #f1f5f9', background: 'transparent', width: '80px' }}
+                                                value={item.rate === 0 ? '' : item.rate}
                                                 placeholder="0"
-                                                onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                                onChange={e => updateLineItem(index, 'rate', parseFloat(e.target.value) || 0)}
                                             />
-                                        </td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                                                <span style={{ color: '#64748b' }}>{formData.currency === 'INR' ? '₹' : '$'}</span>
-                                                <input
-                                                    type="number"
-                                                    disabled={isReadOnly}
-                                                    className="ae-input"
-                                                    style={{ border: '1px solid #f1f5f9', background: 'transparent', width: '80px' }}
-                                                    value={item.rate === 0 ? '' : item.rate}
-                                                    placeholder="0"
-                                                    onChange={e => updateLineItem(index, 'rate', parseFloat(e.target.value) || 0)}
-                                                />
-                                            </div>
-                                        </td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <select
-                                                className="ae-input"
-                                                disabled={isReadOnly}
-                                                style={{ border: '1px solid #f1f5f9', background: 'transparent', width: '70px', textAlign: 'center' }}
-                                                value={item.gst_rate}
-                                                onChange={e => updateLineItem(index, 'gst_rate', parseInt(e.target.value))}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Tab' && index === lineItems.length - 1 && !e.shiftKey) {
-                                                        addLineItem();
-                                                    }
-                                                }}
-                                            >
-                                                <option value="0">0%</option>
-                                                <option value="5">5%</option>
-                                                <option value="12">12%</option>
-                                                <option value="18">18%</option>
-                                                <option value="28">28%</option>
-                                            </select>
-                                        </td>
-                                        <td style={{ textAlign: 'right', fontWeight: 800, color: '#1e293b', paddingRight: '24px' }}>
-                                            {formData.currency === 'INR' ? '₹' : '$'}
-                                            {(() => {
-                                                const qty = Number(item.quantity) || 0;
-                                                const rate = Number(item.rate) || 0;
-                                                const discount = Number(item.discount) || 0;
-                                                const gst = formData.is_gst_applicable ? (Number(item.gst_rate) || 0) : 0;
-                                                const val = (qty * rate - discount) * (1 + gst / 100);
-                                                return isNaN(val) ? '0.00' : val.toLocaleString(undefined, { minimumFractionDigits: 2 });
-                                            })()}
-                                        </td>
-                                        <td>
-                                            {!isReadOnly && (
-                                                <button type="button" onClick={() => removeLineItem(index)} style={{ color: '#ef4444', border: 'none', background: 'none', cursor: 'pointer', padding: '4px' }}>
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        <div style={{ background: '#f8fafc', padding: '12px 24px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', borderTop: '1px solid #f1f5f9' }}>
-                            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#475569' }}>Total Invoice Value:</span>
-                            <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--ae-orange)' }}>
-                                {formData.currency === 'INR' ? '₹' : '$'}{totals.grand_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                            </span>
-                        </div>
+                                        </div>
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <select
+                                            className="ae-input"
+                                            disabled={isReadOnly}
+                                            style={{ border: '1px solid #f1f5f9', background: 'transparent', width: '70px', textAlign: 'center' }}
+                                            value={item.gst_rate}
+                                            onChange={e => updateLineItem(index, 'gst_rate', parseInt(e.target.value))}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Tab' && index === lineItems.length - 1 && !e.shiftKey) {
+                                                    addLineItem();
+                                                }
+                                            }}
+                                        >
+                                            <option value="0">0%</option>
+                                            <option value="5">5%</option>
+                                            <option value="12">12%</option>
+                                            <option value="18">18%</option>
+                                            <option value="28">28%</option>
+                                        </select>
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontWeight: 800, color: '#1e293b', paddingRight: '24px' }}>
+                                        {formData.currency === 'INR' ? '₹' : '$'}
+                                        {(() => {
+                                            const qty = Number(item.quantity) || 0;
+                                            const rate = Number(item.rate) || 0;
+                                            const discount = Number(item.discount) || 0;
+                                            const gst = formData.is_gst_applicable ? (Number(item.gst_rate) || 0) : 0;
+                                            const val = (qty * rate - discount) * (1 + gst / 100);
+                                            return isNaN(val) ? '0.00' : val.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                                        })()}
+                                    </td>
+                                    <td>
+                                        {!isReadOnly && (
+                                            <button type="button" onClick={() => removeLineItem(index)} style={{ color: '#ef4444', border: 'none', background: 'none', cursor: 'pointer', padding: '4px' }}>
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    <div style={{ background: '#f8fafc', padding: '12px 24px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', borderTop: '1px solid #f1f5f9' }}>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#475569' }}>Total Invoice Value:</span>
+                        <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--ae-orange)' }}>
+                            {formData.currency === 'INR' ? '₹' : '$'}{totals.grand_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
                     </div>
                 </div>
+            </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '40px', marginTop: '32px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Billing Address</label>
-                            <textarea
-                                className="ae-input"
-                                rows={3}
-                                disabled={isReadOnly}
-                                value={formData.billing_address}
-                                onChange={e => setFormData({ ...formData, billing_address: e.target.value })}
-                                placeholder="Billing Address"
-                            />
-                        </div>
-
-                        <div style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
-                            <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--theme-primary)', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                Compliance & Signatory
-                            </h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Authorized Signatory</label>
-                                    <input className="ae-input" placeholder="Authorized Signatory" disabled={isReadOnly} value={formData.authorized_signatory} onChange={e => setFormData({ ...formData, authorized_signatory: e.target.value })} />
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Signature & Seal</label>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                        <label style={{ flex: 1, padding: '8px', border: '1px dashed #E0E6ED', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontSize: '0.7rem' }}>
-                                            {signatureFile ? 'Signature selected' : 'Upload Signature'}
-                                            <input type="file" hidden accept="image/*" onChange={e => setSignatureFile(e.target.files?.[0] || null)} />
-                                        </label>
-                                        <label style={{ flex: 1, padding: '8px', border: '1px dashed #E0E6ED', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontSize: '0.7rem' }}>
-                                            {sealFile ? 'Seal selected' : 'Upload Seal'}
-                                            <input type="file" hidden accept="image/*" onChange={e => setSealFile(e.target.files?.[0] || null)} />
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {formData.invoice_type === 'EXPORT' ? (
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>LUT Declaration (Export)</label>
-                                    <textarea
-                                        className="ae-input"
-                                        rows={3}
-                                        disabled={isReadOnly}
-                                        value={formData.lut_declaration}
-                                        onChange={e => setFormData({ ...formData, lut_declaration: e.target.value })}
-                                    />
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>GST Declaration (India)</label>
-                                    <textarea
-                                        className="ae-input"
-                                        rows={3}
-                                        disabled={isReadOnly}
-                                        style={{ resize: 'none', lineHeight: '1.5' }}
-                                        value={formData.gst_declaration}
-                                        onChange={e => setFormData({ ...formData, gst_declaration: e.target.value })}
-                                    />
-                                </div>
-                            )}
-                        </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '40px', marginTop: '32px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Billing Address</label>
+                        <textarea
+                            className="ae-input"
+                            rows={3}
+                            disabled={isReadOnly}
+                            value={formData.billing_address}
+                            onChange={e => setFormData({ ...formData, billing_address: e.target.value })}
+                            placeholder="Billing Address"
+                        />
                     </div>
 
                     <div style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
-                            <span style={{ fontWeight: 600 }}>{formData.currency} {totals.subtotal.toLocaleString()}</span>
+                        <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--theme-primary)', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            Compliance & Signatory
+                        </h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Authorized Signatory</label>
+                                <input className="ae-input" placeholder="Authorized Signatory" disabled={isReadOnly} value={formData.authorized_signatory} onChange={e => setFormData({ ...formData, authorized_signatory: e.target.value })} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Signature & Seal</label>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <label style={{ flex: 1, padding: '8px', border: '1px dashed #E0E6ED', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontSize: '0.7rem' }}>
+                                        {signatureFile ? 'Signature selected' : 'Upload Signature'}
+                                        <input type="file" hidden accept="image/*" onChange={e => setSignatureFile(e.target.files?.[0] || null)} />
+                                    </label>
+                                    <label style={{ flex: 1, padding: '8px', border: '1px dashed #E0E6ED', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontSize: '0.7rem' }}>
+                                        {sealFile ? 'Seal selected' : 'Upload Seal'}
+                                        <input type="file" hidden accept="image/*" onChange={e => setSealFile(e.target.files?.[0] || null)} />
+                                    </label>
+                                </div>
+                            </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ color: 'var(--text-secondary)' }}>Discount</span>
-                            <span style={{ color: '#EF4444' }}>-{totals.total_discount.toLocaleString()}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ color: 'var(--text-secondary)' }}>Taxable Amount</span>
-                            <span style={{ fontWeight: 600 }}>{totals.taxable_amount.toLocaleString()}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ color: 'var(--text-secondary)' }}>Total Tax</span>
-                            <span>{totals.total_tax.toLocaleString()}</span>
-                        </div>
-                        {formData.invoice_type === 'USA' && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--border-primary)' }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Sales Tax ({formData.sales_tax_rate}%)</span>
-                                <span>{formData.sales_tax_amount.toLocaleString()}</span>
+
+                        {formData.invoice_type === 'EXPORT' ? (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>LUT Declaration (Export)</label>
+                                <textarea
+                                    className="ae-input"
+                                    rows={3}
+                                    disabled={isReadOnly}
+                                    value={formData.lut_declaration}
+                                    onChange={e => setFormData({ ...formData, lut_declaration: e.target.value })}
+                                />
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>GST Declaration (India)</label>
+                                <textarea
+                                    className="ae-input"
+                                    rows={3}
+                                    disabled={isReadOnly}
+                                    style={{ resize: 'none', lineHeight: '1.5' }}
+                                    value={formData.gst_declaration}
+                                    onChange={e => setFormData({ ...formData, gst_declaration: e.target.value })}
+                                />
                             </div>
                         )}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px' }}>
-                            <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>Grand Total</span>
-                            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--theme-primary)' }}>{formData.currency} {totals.grand_total.toLocaleString()}</span>
-                        </div>
                     </div>
+                </div>
 
-                    {/* Footer Actions */}
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        gap: '12px',
-                        marginTop: '32px',
-                        paddingTop: '24px',
-                        borderTop: '1px solid var(--border-primary)'
-                    }}>
-                        {!isReadOnly && (
-                            <button
-                                type="button"
-                                onClick={handleSubmit}
-                                disabled={loading}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '10px 28px',
-                                    borderRadius: '12px',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 800,
-                                    background: 'var(--theme-primary)',
-                                    color: 'white',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: '0 4px 12px rgba(187, 77, 0, 0.2)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    setHoveredBtn('save');
-                                    e.currentTarget.style.transform = 'translateY(-1px)';
-                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(187, 77, 0, 0.3)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    setHoveredBtn(null);
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(187, 77, 0, 0.2)';
-                                }}
-                            >
-                                <Save size={18} />
-                                {loading ? 'Saving...' : 'Save Invoice'}
-                            </button>
-                        )}
+                <div style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
+                        <span style={{ fontWeight: 600 }}>{formData.currency} {totals.subtotal.toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Discount</span>
+                        <span style={{ color: '#EF4444' }}>-{totals.total_discount.toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Taxable Amount</span>
+                        <span style={{ fontWeight: 600 }}>{totals.taxable_amount.toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Total Tax</span>
+                        <span>{totals.total_tax.toLocaleString()}</span>
+                    </div>
+                    {formData.invoice_type === 'USA' && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--border-primary)' }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>Sales Tax ({formData.sales_tax_rate}%)</span>
+                            <span>{formData.sales_tax_amount.toLocaleString()}</span>
+                        </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px' }}>
+                        <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>Grand Total</span>
+                        <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--theme-primary)' }}>{formData.currency} {totals.grand_total.toLocaleString()}</span>
+                    </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: '12px',
+                    marginTop: '32px',
+                    paddingTop: '24px',
+                    borderTop: '1px solid var(--border-primary)'
+                }}>
+                    {!isReadOnly && (
                         <button
                             type="button"
-                            onClick={() => setShowCancelModal(true)}
+                            onClick={handleSubmit}
+                            disabled={loading}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                padding: '10px 24px',
+                                padding: '10px 28px',
                                 borderRadius: '12px',
                                 fontSize: '0.9rem',
-                                fontWeight: 700,
-                                background: hoveredBtn === 'cancel' ? '#f1f5f9' : 'transparent',
-                                color: 'var(--text-secondary)',
-                                border: '1px solid var(--border-primary)',
+                                fontWeight: 800,
+                                background: 'var(--theme-primary)',
+                                color: 'white',
+                                border: 'none',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                boxShadow: '0 4px 12px rgba(187, 77, 0, 0.2)'
                             }}
-                            onMouseEnter={() => setHoveredBtn('cancel')}
-                            onMouseLeave={() => setHoveredBtn(null)}
+                            onMouseEnter={(e) => {
+                                setHoveredBtn('save');
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(187, 77, 0, 0.3)';
+                            }}
+                            onMouseLeave={(e) => {
+                                setHoveredBtn(null);
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(187, 77, 0, 0.2)';
+                            }}
                         >
-                            Cancel
+                            <Save size={18} />
+                            {loading ? 'Saving...' : 'Save Invoice'}
                         </button>
-                    </div>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => setShowCancelModal(true)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 24px',
+                            borderRadius: '12px',
+                            fontSize: '0.9rem',
+                            fontWeight: 700,
+                            background: hoveredBtn === 'cancel' ? '#f1f5f9' : 'transparent',
+                            color: 'var(--text-secondary)',
+                            border: '1px solid var(--border-primary)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={() => setHoveredBtn('cancel')}
+                        onMouseLeave={() => setHoveredBtn(null)}
+                    >
+                        Cancel
+                    </button>
                 </div>
             </div>
+
             {/* Cancel Confirmation Modal */}
             {showCancelModal && (
                 <div style={{
@@ -885,33 +906,23 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
                         border: '1px solid #E2E8F0',
                         overflow: 'hidden',
-                        animation: 'modalScale 0.2s ease-out'
+                        animation: 'modalSlideIn 0.3s ease-out'
                     }}>
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '10px',
-                                    background: '#FFF5F5',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
-                                        Leave this page?
-                                    </h3>
-                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                                        If you leave, your unsaved changes will be discarded.
-                                    </p>
-                                </div>
+                        <div style={{ padding: '24px', textAlign: 'center' }}>
+                            <div style={{
+                                width: '56px',
+                                height: '56px',
+                                background: '#FEE2E2',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 16px'
+                            }}>
+                                <Trash2 size={24} color="#EF4444" />
                             </div>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', marginBottom: '8px' }}>Discard Changes?</h3>
+                            <p style={{ color: '#64748b', fontSize: '0.95rem' }}>Are you sure you want to leave? Any unsaved changes will be lost forever.</p>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
                                 <button
@@ -958,7 +969,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     </div>
                 </div>
             )}
-        </div>
+        </div >
     );
 };
 

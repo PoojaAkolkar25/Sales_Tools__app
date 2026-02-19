@@ -1,6 +1,9 @@
-'Lead' object has no attribute 'state'
+'Deal' object has no attribute 'country'
 Traceback (most recent call last):
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\milestones\views.py", line 300, in create_invoice
-    'customer_state': lead.state.id if lead and lead.state else None
-                                                ^^^^^^^^^^
-AttributeError: 'Lead' object has no attribute 'state'. Did you mean: '_state'?
+  File "D:\Sales_tools_application\Sales_Tools__app\backend\milestones\views.py", line 327, in create_invoice
+    calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\services.py", line 57, in calculate_taxes
+    if deal and deal.country:
+                ^^^^^^^^^^^^
+AttributeError: 'Deal' object has no attribute 'country'

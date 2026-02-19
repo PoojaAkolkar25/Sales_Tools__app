@@ -22,9 +22,14 @@ class CompanyProfileSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def to_internal_value(self, data):
-        # Handle empty strings for foreign keys from frontend
-        if 'state' in data and data['state'] == '':
-            data['state'] = None
+        # Handle empty strings from frontend
+        data = data.copy()
+        for field in ['state', 'decimal_places']:
+            if field in data and data[field] == '':
+                if field == 'state':
+                    data[field] = None
+                else:
+                    data.pop(field)
         return super().to_internal_value(data)
 
 class InvoiceLineItemSerializer(serializers.ModelSerializer):
@@ -126,9 +131,13 @@ class CustomerPartnerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def to_internal_value(self, data):
-        for field in ['linked_company', 'state']:
+        data = data.copy()
+        for field in ['linked_company', 'state', 'decimal_places', 'credit_limit']:
             if field in data and data[field] == '':
-                data[field] = None
+                if field in ['linked_company', 'state']:
+                    data[field] = None
+                else:
+                    data.pop(field)
         return super().to_internal_value(data)
 
 class EndCustomerSerializer(serializers.ModelSerializer):

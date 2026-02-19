@@ -302,8 +302,8 @@
                     <div style="font-size: 7.5pt; color: #555;">{{ item.description|linebreaksbr }}</div>
                 </td>
                 <td class="text-center">{{ item.qty }} {{ item.unit|default:"" }}</td>
-                <td class="text-right">{{ estimate.deal.currency_symbol|default:"$" }}{{ item.rate }}</td>
-                <td class="text-right bold">{{ estimate.deal.currency_symbol|default:"$" }}{{ item.amount }}</td>
+                <td class="text-right">{{ estimate.deal.currency_symbol }} {{ item.rate }}</td>
+                <td class="text-right bold">{{ estimate.deal.currency_symbol }} {{ item.amount }}</td>
             </tr>
             {% endfor %}
             <tr class="total-row">
@@ -311,7 +311,7 @@
                 <td class="text-center">{{ estimate.total_qty }}</td>
                 <td class="text-right"></td>
                 <td class="text-right bold" style="padding-right: 4px; white-space: nowrap;">{{
-                    estimate.deal.currency_symbol|default:"$" }}{{ estimate.total_price }}</td>
+                    estimate.deal.currency_symbol }} {{ estimate.total_price }}</td>
             </tr>
         </tbody>
     </table>
@@ -319,7 +319,8 @@
     <!-- Amount in Words -->
     <div class="amount-words">
         <div>Amount Chargeable (in words)</div>
-        <div class="bold">{{ estimate.deal.currency|default:"INR" }} {{ estimate.total_price }} Only</div>
+        <div class="bold">{{ estimate.deal.get_currency_display|default:estimate.deal.currency }} {{
+            estimate.total_price }} Only</div>
     </div>
 
     <!-- Footer -->

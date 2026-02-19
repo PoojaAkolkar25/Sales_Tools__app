@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db import transaction
 from django.db.models import Sum
 from .models import Milestone, MilestoneStatus
 from .serializers import MilestoneSerializer
@@ -220,32 +221,164 @@ class MilestoneViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": f"Internal Server Error during update: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=['post'])
-    def create_invoice(self, request, pk=None):
-        milestone = self.get_object()
+    @transaction.atomic
+    @action(detail=False, methods=['post'])
+    def bulk_save(self, request):
+        sales_order_id = request.data.get('sales_order')
+        milestones_data = request.data.get('milestones', [])
+
+        if not sales_order_id:
+            return Response({"error": "Sales Order ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            sales_order = SalesOrder.objects.get(pk=sales_order_id)
+        except SalesOrder.DoesNotExist:
+            return Response({"error": "Sales Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # 1. Validate total amount
+        total_amount = sum(Decimal(str(m.get('amount', 0))) for m in milestones_data)
+        if abs(total_amount - Decimal(str(sales_order.total_amount))) > Decimal('0.01'):
+            return Response({
+                "error": f"Total milestone amount ({total_amount}) must equal Sales Order value ({sales_order.total_amount})"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Track existing milestones to delete ones not in payload
+        existing_ids = list(Milestone.objects.filter(sales_order=sales_order).values_list('id', flat=True))
+        incoming_ids = [m.get('id') for m in milestones_data if m.get('id')]
         
-        if milestone.status == MilestoneStatus.INVOICED:
-            return Response({"error": "Invoice already created for this milestone"}, status=status.HTTP_400_BAD_REQUEST)
+        to_delete = [mid for mid in existing_ids if mid not in incoming_ids]
+        Milestone.objects.filter(id__in=to_delete).delete()
+
+        saved_milestones = []
+        for m_data in milestones_data:
+            milestone_id = m_data.get('id')
             
+            # Prepare internal data structure
+            payload = {
+                'sales_order': sales_order,
+                'milestone_no': m_data.get('milestone_no'),
+                'period_from': m_data.get('period_from'),
+                'period_to': m_data.get('period_to'),
+                'due_date': m_data.get('due_date'),
+                'description': m_data.get('description'),
+                'qty': m_data.get('qty', 1),
+                'rate': m_data.get('rate', 0),
+                'amount': m_data.get('amount', 0),
+                'status': m_data.get('status', MilestoneStatus.PENDING)
+            }
+
+            if milestone_id:
+                Milestone.objects.filter(id=milestone_id).update(**payload)
+                milestone = Milestone.objects.get(id=milestone_id)
+            else:
+                milestone = Milestone.objects.create(**payload)
+
+            # 3. Create invoice if pending and not already invoiced
+            if milestone.status == MilestoneStatus.PENDING and not milestone.invoice:
+                self._internal_create_invoice(milestone)
+            
+            saved_milestones.append(milestone)
+
+        return Response(MilestoneSerializer(saved_milestones, many=True).data)
+
+    def _internal_create_invoice(self, milestone):
+        """
+        Internal helper to create a draft invoice for a milestone.
+        """
         sales_order = milestone.sales_order
         
-        # Try to find a Lead, Deal, and Cost Sheet to link to the Invoice
+        # Logic to find or create Lead/Deal (Shared with create_invoice action)
+        lead, deal, cost_sheet = self._find_context_for_invoice(sales_order)
+
+        from finance.services import InvoiceService
+        from finance.models import Invoice, InvoiceLineItem, InvoiceStatus
+        import datetime
+        
+        new_invoice_no = InvoiceService.generate_invoice_number()
+        
+        line_items_data = [{
+            'type': 'Service',
+            'description': f"{milestone.milestone_no}: {milestone.description}",
+            'hsn_sac': '998311',
+            'quantity': milestone.qty or 1,
+            'rate': milestone.rate or 0,
+            'discount': 0,
+            'gst_rate': 18
+        }]
+        
+        customer_state_id = self._get_customer_state_id(sales_order)
+
+        invoice_data = {
+            'lead': lead.id if lead else None,
+            'deal': deal.id if deal else None,
+            'is_gst_applicable': True,
+            'customer_state': customer_state_id
+        }
+
+        calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
+        
+        invoice = Invoice.objects.create(
+            invoice_no=new_invoice_no,
+            invoice_date=datetime.date.today(),
+            due_date=milestone.due_date or datetime.date.today(),
+            lead=lead,
+            deal=deal,
+            cost_sheet=cost_sheet,
+            billing_address=sales_order.billing_address,
+            shipping_address=sales_order.shipping_address,
+            currency=sales_order.currency,
+            invoice_type=calc_results['invoice_type'],
+            subtotal=calc_results['subtotal'],
+            total_discount=calc_results['total_discount'],
+            taxable_amount=calc_results['taxable_amount'],
+            total_tax=calc_results['total_tax'],
+            sales_tax_rate=calc_results['sales_tax_rate'],
+            sales_tax_amount=calc_results['sales_tax_amount'],
+            round_off=calc_results['round_off'],
+            total_amount=calc_results['total_amount'],
+            open_balance=calc_results['total_amount'],
+            grand_total_words=calc_results['grand_total_words'],
+            status=InvoiceStatus.DRAFT
+        )
+        
+        for idx, item in enumerate(calc_results['processed_items'], 1):
+            InvoiceLineItem.objects.create(
+                invoice=invoice,
+                sr_no=idx,
+                description=item.get('description'),
+                hsn_sac=item.get('hsn_sac'),
+                quantity=item.get('quantity', 1),
+                rate=item.get('rate', 0),
+                taxable_value=item.get('taxable_value'),
+                discount=item.get('discount', 0),
+                cgst_rate=item.get('cgst_rate', 0),
+                cgst_amount=item.get('cgst_amount', 0),
+                sgst_rate=item.get('sgst_rate', 0),
+                sgst_amount=item.get('sgst_amount', 0),
+                igst_rate=item.get('igst_rate', 0),
+                igst_amount=item.get('igst_amount', 0),
+                total_amount=item.get('total_amount')
+            )
+        
+        milestone.invoice = invoice
+        milestone.status = MilestoneStatus.INVOICED
+        milestone.save()
+        return invoice
+
+    def _find_context_for_invoice(self, sales_order):
         lead = None
         deal = None
         cost_sheet = None
         
-        # 1. Check if Sales Order has linked Estimates
         estimates = sales_order.estimates.all()
         if estimates.exists():
              estimate = estimates.first()
              deal = estimate.deal
              cost_sheet = estimate.cost_sheet
-             # Estimates -> CostSheet -> Lead
              if estimate.cost_sheet and estimate.cost_sheet.lead:
                  lead = estimate.cost_sheet.lead
         
         if not lead and sales_order.customer:
-             # 2. Try to find Lead via Deals associated with this Customer
              customer_deals = sales_order.customer.deals.all()
              if customer_deals.exists():
                  latest_deal = customer_deals.order_by('-created_at').first()
@@ -255,21 +388,17 @@ class MilestoneViewSet(viewsets.ModelViewSet):
                      lead = latest_deal.lead
              
              if not lead:
-                 # 3. Try to find Lead by Customer Name as fallback
                  from leads.models import Lead
                  lead = Lead.objects.filter(customer_name__iexact=sales_order.customer.name).first()
 
         if not lead:
-             # 4. Auto-create Lead if missing (Final Fallback)
              try:
                  from leads.models import Lead
                  import time
                  timestamp = int(time.time())
                  new_lead_no = f"L-AUTO-{timestamp}"
-                 
                  customer_name = sales_order.customer.name if sales_order.customer else sales_order.customer_name
-                 if not customer_name:
-                     customer_name = "Unknown Customer"
+                 if not customer_name: customer_name = "Unknown Customer"
 
                  lead = Lead.objects.create(
                     lead_no=new_lead_no,
@@ -277,109 +406,32 @@ class MilestoneViewSet(viewsets.ModelViewSet):
                     project_name=f"Generated from SO {sales_order.so_number}",
                     sales_person=sales_order.assigned_to.username if sales_order.assigned_to else 'System'
                  )
-             except Exception as e:
-                  return Response({"error": f"Failed to auto-generate Lead for Invoice: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+             except: pass
+        
+        return lead, deal, cost_sheet
 
-        from finance.services import InvoiceService
-        from finance.models import Invoice, InvoiceLineItem, InvoiceStatus, CompanyProfile
-        import datetime
-        
-        # Generate Invoice
-        new_invoice_no = InvoiceService.generate_invoice_number()
-        
+    def _get_customer_state_id(self, sales_order):
+        if not sales_order.customer:
+            return None
+        from finance.models import StateMaster
+        state_id = None
+        if sales_order.customer.state_code:
+            state_obj = StateMaster.objects.filter(code=sales_order.customer.state_code).first()
+            if state_obj: state_id = state_obj.id
+        if not state_id and sales_order.customer.state:
+            state_obj = StateMaster.objects.filter(name__iexact=sales_order.customer.state).first()
+            if state_obj: state_id = state_obj.id
+        return state_id
+
+    @action(detail=True, methods=['post'])
+    def create_invoice(self, request, pk=None):
+        milestone = self.get_object()
+        if milestone.status == MilestoneStatus.INVOICED:
+            return Response({"error": "Invoice already created for this milestone"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            # Prepare line items for tax calculation
-            line_items_data = [{
-                'type': 'Service',
-                'description': f"{milestone.milestone_no}: {milestone.description}",
-                'hsn_sac': '998311',
-                'quantity': milestone.qty or 1,
-                'rate': milestone.rate or 0,
-                'discount': 0,
-                'gst_rate': 18
-            }]
-            
-            # Determine Customer State ID for Tax Calculation
-            customer_state_id = None
-            if sales_order.customer:
-                 from finance.models import StateMaster
-                 # Try by Code first (more reliable)
-                 if sales_order.customer.state_code:
-                     state_obj = StateMaster.objects.filter(code=sales_order.customer.state_code).first()
-                     if state_obj:
-                         customer_state_id = state_obj.id
-                 
-                 # Try by Name if not found
-                 if not customer_state_id and sales_order.customer.state:
-                     state_name = sales_order.customer.state
-                     state_obj = StateMaster.objects.filter(name__iexact=state_name).first()
-                     if state_obj:
-                         customer_state_id = state_obj.id
-
-            # Prepare dummy invoice_data for calculation
-            invoice_data = {
-                'lead': lead.id if lead else None,
-                'deal': deal.id if deal else None,
-                'is_gst_applicable': True,
-                'customer_state': customer_state_id
-            }
-
-            calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
-            
-            invoice = Invoice.objects.create(
-                invoice_no=new_invoice_no,
-                invoice_date=datetime.date.today(),
-                due_date=milestone.due_date or datetime.date.today(),
-                lead=lead,
-                deal=deal,
-                cost_sheet=cost_sheet,
-                billing_address=sales_order.billing_address,
-                shipping_address=sales_order.shipping_address,
-                currency=sales_order.currency,
-                invoice_type=calc_results['invoice_type'],
-                subtotal=calc_results['subtotal'],
-                total_discount=calc_results['total_discount'],
-                taxable_amount=calc_results['taxable_amount'],
-                total_tax=calc_results['total_tax'],
-                sales_tax_rate=calc_results['sales_tax_rate'],
-                sales_tax_amount=calc_results['sales_tax_amount'],
-                round_off=calc_results['round_off'],
-                total_amount=calc_results['total_amount'],
-                open_balance=calc_results['total_amount'],
-                grand_total_words=calc_results['grand_total_words'],
-                status=InvoiceStatus.DRAFT
-            )
-            
-            # Create line items
-            for idx, item in enumerate(calc_results['processed_items'], 1):
-                InvoiceLineItem.objects.create(
-                    invoice=invoice,
-                    sr_no=idx,
-                    description=item.get('description'),
-                    hsn_sac=item.get('hsn_sac'),
-                    quantity=item.get('quantity', 1),
-                    rate=item.get('rate', 0),
-                    taxable_value=item.get('taxable_value'),
-                    discount=item.get('discount', 0),
-                    cgst_rate=item.get('cgst_rate', 0),
-                    cgst_amount=item.get('cgst_amount', 0),
-                    sgst_rate=item.get('sgst_rate', 0),
-                    sgst_amount=item.get('sgst_amount', 0),
-                    igst_rate=item.get('igst_rate', 0),
-                    igst_amount=item.get('igst_amount', 0),
-                    total_amount=item.get('total_amount')
-                )
-            
-            milestone.invoice = invoice
-            milestone.status = MilestoneStatus.INVOICED
-            milestone.save()
-            
+            self._internal_create_invoice(milestone)
             return Response(MilestoneSerializer(milestone).data)
-            
         except Exception as e:
-            import traceback
-            with open("debug_invoice_error.txt", "w") as f:
-                f.write(str(e) + "\n" + traceback.format_exc())
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     @action(detail=True, methods=['get'])
     def download_pdf(self, request, pk=None):

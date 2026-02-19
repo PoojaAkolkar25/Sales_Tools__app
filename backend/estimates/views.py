@@ -29,9 +29,11 @@ class EstimateViewSet(viewsets.ModelViewSet):
         # User-wise data view validation: 
         # Non-admins (not superuser and not in Sales Head/Finance Manager groups) 
         # should only see estimates they created.
-        is_admin = user.is_superuser or user.groups.filter(name__in=['Sales Head', 'Finance Manager']).exists()
-        if not is_admin:
-            queryset = queryset.filter(created_by=user)
+        if user.is_authenticated:
+            is_admin = user.is_superuser or user.groups.filter(name__in=['Sales Head', 'Finance Manager']).exists()
+            if not is_admin:
+                queryset = queryset.filter(created_by=user)
+        # For anonymous users (like preview_pdf/download_pdf permissions), we don't filter by created_by
 
         # Simple filtering
         customer_id = self.request.query_params.get('customer', None)
@@ -364,9 +366,9 @@ class EstimateViewSet(viewsets.ModelViewSet):
 
         # Get Latest Proposal Attachment
         proposal = estimate.proposals.order_by('-version').first()
-        if not proposal:
+        if not proposal or not proposal.file:
             return Response(
-                {"error": "No proposal file attached to this estimate."},
+                {"error": "No proposal file attached to this estimate or the file is missing."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -393,29 +395,12 @@ class EstimateViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 return Response({'error': f"Failed to generate Estimate PDF: {str(e)}"}, status=500)
 
-            # 2. Merge with Proposal PDF (if valid PDF)
-            try:
-                is_pdf = proposal.filename.lower().endswith('.pdf')
-                merged_pdf_bytes = None
-                
-                if is_pdf:
-                    try:
-                        proposal_path = proposal.file.path
-                        merged_pdf_bytes = merge_pdfs(estimate_pdf_bytes, proposal_path)
-                        filename = f"Estimate_{estimate.estimate_id}_Proposal.pdf"
-                        email.attach(filename, merged_pdf_bytes, 'application/pdf')
-                    except Exception as merge_err:
-                         logger.warning(f"Merge failed for {proposal.filename}: {merge_err}. Attaching separately.")
-                         email.attach(f"Estimate_{estimate.estimate_id}.pdf", estimate_pdf_bytes, 'application/pdf')
-                         with proposal.file.open('rb') as f:
-                             email.attach(proposal.filename, f.read(), 'application/octet-stream')
-                else:
-                    email.attach(f"Estimate_{estimate.estimate_id}.pdf", estimate_pdf_bytes, 'application/pdf')
-                    with proposal.file.open('rb') as f:
-                        email.attach(proposal.filename, f.read(), 'application/octet-stream')
-            except Exception as outer_err:
-                 logger.error(f"Error handling attachments: {outer_err}")
-                 return Response({'error': f"Failed to process attachments: {str(outer_err)}"}, status=500)
+            # 2. Attach Both Files (Separate) as requested
+            email.attach(f"Estimate_{estimate.estimate_id}.pdf", estimate_pdf_bytes, 'application/pdf')
+            
+            if proposal and proposal.file:
+                with proposal.file.open('rb') as f:
+                    email.attach(proposal.filename, f.read(), 'application/octet-stream')
 
             email.send()
             
@@ -448,7 +433,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
         
         try:
             est_pdf = generate_estimate_pdf(estimate)
-            if proposal and proposal.filename.lower().endswith('.pdf'):
+            if proposal and proposal.file and proposal.filename.lower().endswith('.pdf'):
                 try:
                     merged = merge_pdfs(est_pdf, proposal.file.path)
                     response = HttpResponse(merged, content_type='application/pdf')
@@ -471,7 +456,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
             est_pdf = generate_estimate_pdf(estimate)
             filename = f"Estimate_{estimate.estimate_id}.pdf"
             
-            if proposal and proposal.filename.lower().endswith('.pdf'):
+            if proposal and proposal.file and proposal.filename.lower().endswith('.pdf'):
                 try:
                     est_pdf = merge_pdfs(est_pdf, proposal.file.path)
                     filename = f"Estimate_{estimate.estimate_id}_Combined.pdf"

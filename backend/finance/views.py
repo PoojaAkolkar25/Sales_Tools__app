@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from .filters import InvoiceFilter
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from .models import (
     Invoice, InvoiceLineItem, StateMaster, CompanyProfile,
     BankConnection, BankTransaction, ReceiptVoucher, ReceiptAdjustment, 

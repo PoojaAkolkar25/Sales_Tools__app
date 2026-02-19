@@ -229,19 +229,17 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
         if (!selectedSO) return;
 
         const total = calculateTotal();
-        // Use a small epsilon for floating point comparison if needed, but rounding to 2 decimals should be enough
         if (Math.abs(total - parseFloat(selectedSO.total_amount)) > 0.01) {
-            showNotification(`Total milestone amount (${total}) must equal Sales Order value (${selectedSO.total_amount})`, 'error');
+            showNotification(`Total milestone amount (${total.toFixed(2)}) must equal Sales Order value (${selectedSO.total_amount})`, 'error');
             return;
         }
 
         setSaving(true);
         try {
-            const savedMilestones = [];
-            for (const m of milestones) {
-                // Prepare clean data
-                const data = {
-                    sales_order: selectedSO.id,
+            const payload = {
+                sales_order: selectedSO.id,
+                milestones: milestones.map(m => ({
+                    id: m.id,
                     milestone_no: m.milestone_no,
                     period_from: m.period_from || null,
                     period_to: m.period_to || null,
@@ -251,37 +249,12 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                     rate: m.rate || 0,
                     amount: m.amount || 0,
                     status: m.status || 'PENDING'
-                };
+                }))
+            };
 
-                let response;
-                if (m.id) {
-                    response = await api.put(`/milestones/${m.id}/`, data);
-                } else {
-                    response = await api.post('/milestones/', data);
-                }
-                savedMilestones.push(response.data);
-            }
+            const response = await api.post('/milestones/bulk_save/', payload);
 
-            // Create invoices for all PENDING milestones in the saved list
-            let invoiceCount = 0;
-            for (const sm of savedMilestones) {
-                if (sm.status === 'PENDING') {
-                    try {
-                        await api.post(`/milestones/${sm.id}/create_invoice/`);
-                        invoiceCount++;
-                    } catch (invError) {
-                        console.error(`Error creating invoice for ${sm.milestone_no}:`, invError);
-                    }
-                }
-            }
-
-            if (invoiceCount > 0) {
-                showNotification(`Milestones saved and ${invoiceCount} invoice(s) generated`, 'success');
-            } else {
-                showNotification('Milestones saved successfully', 'success');
-            }
-
-            // Navigate back to Milestone Dashboard
+            showNotification('Milestones saved and draft invoices generated successfully', 'success');
             onBack();
         } catch (error: any) {
             showNotification(error.response?.data?.error || 'Failed to save milestones', 'error');
