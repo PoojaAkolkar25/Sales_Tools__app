@@ -5,8 +5,7 @@ import {
     FileText,
     ChevronDown,
     Download,
-    Columns,
-    Filter
+    Columns
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -81,7 +80,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
     const ITEMS_PER_PAGE = 20;
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
-    const [showFilters, setShowFilters] = useState(false);
+    const [showFilters] = useState(true);
     const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
         const saved = localStorage.getItem('dealDashboard_visibleColumns');
         return saved ? JSON.parse(saved) : ALL_COLUMNS.map(col => col.key);
@@ -394,17 +393,17 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                             <Download size={16} /> Export <ChevronDown size={14} />
                         </button>
                         {showExportMenu && (
-                            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-primary)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                 <button
                                     onClick={() => { exportToExcel(); setShowExportMenu(false); }}
-                                    style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                    style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                     className="hover:bg-gray-50"
                                 >
                                     <FileSpreadsheet size={16} className="text-green-600" /> Excel Report
                                 </button>
                                 <button
                                     onClick={() => { exportToPDF(); setShowExportMenu(false); }}
-                                    style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#4A5568', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                    style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                     className="hover:bg-gray-50"
                                 >
                                     <FileText size={16} className="text-red-600" /> PDF Report
@@ -413,25 +412,6 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                         )}
                     </div>
 
-                    <div style={{ position: 'relative' }}>
-                        <button
-                            className="ae-btn-secondary"
-                            onClick={() => setShowFilters(!showFilters)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '6px 14px',
-                                fontSize: '0.8rem',
-                                background: showFilters ? 'var(--bg-secondary)' : 'white',
-                                color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
-                                borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)'
-                            }}
-                            title={showFilters ? "Hide Filters" : "Show Filters"}
-                        >
-                            <Filter size={16} /> Filters
-                        </button>
-                    </div>
 
                     <div style={{ position: 'relative' }} ref={columnMenuRef}>
                         <button
@@ -447,10 +427,10 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                 top: '100%',
                                 right: 0,
                                 marginTop: '8px',
-                                background: 'white',
+                                background: 'var(--bg-primary)',
                                 borderRadius: '8px',
                                 boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
-                                border: '1px solid #E2E8F0',
+                                border: '1px solid var(--border-primary)',
                                 zIndex: 100,
                                 minWidth: '220px',
                                 maxHeight: '450px',
@@ -469,7 +449,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                         style={{
                                             background: 'none',
                                             border: 'none',
-                                            color: '#0066CC',
+                                            color: 'var(--ae-blue)',
                                             fontSize: '0.75rem',
                                             fontWeight: 700,
                                             cursor: 'pointer',
@@ -477,7 +457,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                             borderRadius: '4px',
                                             transition: 'background 0.2s'
                                         }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#EBF5FF'}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                     >
                                         Select All
@@ -487,7 +467,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                         style={{
                                             background: 'none',
                                             border: 'none',
-                                            color: '#718096',
+                                            color: 'var(--text-secondary)',
                                             fontSize: '0.75rem',
                                             fontWeight: 700,
                                             cursor: 'pointer',
@@ -495,7 +475,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                             borderRadius: '4px',
                                             transition: 'background 0.2s'
                                         }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                     >
                                         Clear All
@@ -508,14 +488,14 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                         gap: '12px',
                                         padding: '10px 16px',
                                         fontSize: '0.85rem',
-                                        color: '#2D3748',
+                                        color: 'var(--text-primary)',
                                         cursor: 'pointer',
                                         userSelect: 'none',
                                         transition: 'background 0.2s',
                                         borderBottom: '1px solid var(--border-primary)'
                                     }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#FFF5EB'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-primary)'}
                                     >
                                         <input
                                             type="checkbox"
@@ -547,7 +527,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
             <div style={{
                 display: 'flex',
                 gap: '8px',
-                background: 'white',
+                background: 'var(--bg-primary)',
                 padding: '4px',
                 borderRadius: '12px',
                 border: '1px solid var(--border-primary)',
@@ -574,25 +554,26 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                 ))}
             </div>
 
-            <div style={{ overflowX: 'auto', background: 'white', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
+            <div style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
                 <table className="ae-table" style={{ minWidth: visibleColumns.length > 8 ? '2000px' : '100%' }}>
                     <thead>
                         <tr>
-                            {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
-                                <th key={col.key} style={{ backgroundColor: 'var(--bg-secondary)', zIndex: 12 }}>{col.label}</th>
-                            ))}
+                            {visibleColumns.map(key => {
+                                const col = ALL_COLUMNS.find(c => c.key === key);
+                                return <th key={key} style={{ backgroundColor: 'var(--bg-secondary)', zIndex: 12 }}>{col?.label}</th>;
+                            })}
                             <th style={{ backgroundColor: 'var(--bg-secondary)', zIndex: 12, textAlign: 'center' }}>Actions</th>
                         </tr>
                         {showFilters && (
-                            <tr style={{ background: '#F7FAFC' }}>
-                                {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
-                                    <th key={col.key} style={{ backgroundColor: '#F7FAFC' }}>
+                            <tr style={{ background: 'var(--bg-secondary)' }}>
+                                {visibleColumns.map(key => (
+                                    <th key={key} style={{ backgroundColor: 'var(--bg-secondary)' }}>
                                         <div className="ae-input-group" style={{ margin: 0 }}>
                                             <input
                                                 className="ae-input"
                                                 placeholder="Filter..."
-                                                value={(filters as any)[col.key]}
-                                                onChange={e => setFilters({ ...filters, [col.key]: e.target.value })}
+                                                value={(filters as any)[key]}
+                                                onChange={e => setFilters({ ...filters, [key]: e.target.value })}
                                                 style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
                                             />
                                         </div>
@@ -611,7 +592,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                             hubspot_id: '', last_synced_at: '',
                                             period: '', startDate: '', endDate: ''
                                         })}
-                                        style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                        style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                     >
                                         Clear
                                     </button>
@@ -623,52 +604,56 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                         {loading ? (
                             <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
                         ) : paginatedDeals.length === 0 ? (
-                            <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No projects found.</td></tr>
+                            <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>No projects found.</td></tr>
                         ) : (
                             paginatedDeals.map((deal: Deal) => {
                                 const stageStyle = getStageColor(deal.stage);
                                 return (
                                     <tr key={deal.id}>
-                                        {visibleColumns.includes('deal_id') && (
-                                            <td
-                                                style={{ fontWeight: 600, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
-                                                onClick={() => onView(deal.id)}
-                                            >
-                                                {deal.deal_id}
-                                            </td>
-                                        )}
-                                        {visibleColumns.includes('deal_date') && <td>{formatToAppDate(deal.deal_date)}</td>}
-                                        {visibleColumns.includes('deal_name') && <td style={{ fontWeight: 700 }}>{deal.deal_name}</td>}
-                                        {visibleColumns.includes('company') && <td>{deal.company}</td>}
-                                        {visibleColumns.includes('lead_no') && <td>{(deal as any).lead_no || '—'}</td>}
-                                        {visibleColumns.includes('stage') && (
-                                            <td>
-                                                <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: stageStyle.bg, color: stageStyle.text }}>
-                                                    {deal.stage.replace('_', ' ')}
-                                                </span>
-                                            </td>
-                                        )}
-                                        {visibleColumns.includes('currency') && <td>{deal.currency}</td>}
-                                        {visibleColumns.includes('deal_amount') && (
-                                            <td style={{ fontWeight: 700 }}>
-                                                {deal.currency === 'INR' ? '₹' : deal.currency === 'USD' ? '$' : deal.currency === 'EURO' ? '€' : ''}
-                                                {parseFloat(deal.deal_amount).toLocaleString()}
-                                            </td>
-                                        )}
-                                        {visibleColumns.includes('deal_type') && <td>{(deal as any).deal_type || '—'}</td>}
-                                        {visibleColumns.includes('customer_name') && <td>{(deal as any).customer_name || '—'}</td>}
-                                        {visibleColumns.includes('customer_email') && <td>{(deal as any).customer_email || '—'}</td>}
-                                        {visibleColumns.includes('end_customer') && <td>{(deal as any).end_customer || '—'}</td>}
-                                        {visibleColumns.includes('client_type') && <td>{(deal as any).client_type || '—'}</td>}
-                                        {visibleColumns.includes('inside_salesperson') && <td>{(deal as any).inside_salesperson || '—'}</td>}
-                                        {visibleColumns.includes('inside_sales_head') && <td>{(deal as any).inside_sales_head || '—'}</td>}
-                                        {visibleColumns.includes('salesperson_name') && <td>{(deal as any).salesperson_name || '—'}</td>}
-                                        {visibleColumns.includes('sales_head') && <td>{(deal as any).sales_head || '—'}</td>}
-                                        {visibleColumns.includes('project_manager') && <td>{(deal as any).project_manager || '—'}</td>}
-                                        {visibleColumns.includes('project_manager_head') && <td>{(deal as any).project_manager_head || '—'}</td>}
-                                        {visibleColumns.includes('expected_close_date') && <td>{formatToAppDate((deal as any).expected_close_date)}</td>}
-                                        {visibleColumns.includes('hubspot_id') && <td>{(deal as any).hubspot_id || '—'}</td>}
-                                        {visibleColumns.includes('last_synced_at') && <td>{deal.last_synced_at ? new Date(deal.last_synced_at).toLocaleString() : '—'}</td>}
+                                        {visibleColumns.map(key => {
+                                            switch (key) {
+                                                case 'deal_id':
+                                                    return (
+                                                        <td key={key}
+                                                            style={{ fontWeight: 600, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
+                                                            onClick={() => onView(deal.id)}
+                                                        >
+                                                            {deal.deal_id}
+                                                        </td>
+                                                    );
+                                                case 'deal_date':
+                                                    return <td key={key}>{formatToAppDate(deal.deal_date)}</td>;
+                                                case 'deal_name':
+                                                    return <td key={key} style={{ fontWeight: 700 }}>{deal.deal_name}</td>;
+                                                case 'company':
+                                                    return <td key={key}>{deal.company}</td>;
+                                                case 'lead_no':
+                                                    return <td key={key}>{(deal as any).lead_no || '—'}</td>;
+                                                case 'stage':
+                                                    return (
+                                                        <td key={key}>
+                                                            <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: stageStyle.bg, color: stageStyle.text }}>
+                                                                {deal.stage.replace('_', ' ')}
+                                                            </span>
+                                                        </td>
+                                                    );
+                                                case 'currency':
+                                                    return <td key={key}>{deal.currency}</td>;
+                                                case 'deal_amount':
+                                                    return (
+                                                        <td key={key} style={{ fontWeight: 700 }}>
+                                                            {deal.currency === 'INR' ? '₹' : deal.currency === 'USD' ? '$' : deal.currency === 'EURO' ? '€' : ''}
+                                                            {parseFloat(deal.deal_amount).toLocaleString()}
+                                                        </td>
+                                                    );
+                                                case 'expected_close_date':
+                                                    return <td key={key}>{formatToAppDate((deal as any).expected_close_date)}</td>;
+                                                case 'last_synced_at':
+                                                    return <td key={key}>{deal.last_synced_at ? new Date(deal.last_synced_at).toLocaleString() : '—'}</td>;
+                                                default:
+                                                    return <td key={key}>{(deal as any)[key] || '—'}</td>;
+                                            }
+                                        })}
                                         <td style={{ textAlign: 'center' }}>
                                             <button onClick={() => onView(deal.id)} className="ae-btn-secondary" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>
                                                 View

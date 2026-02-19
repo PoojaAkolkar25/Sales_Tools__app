@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Download, CheckCircle, XCircle, Mail, BarChart3, Eye, Pencil, Send, Filter, ChevronDown, FileText, FileSpreadsheet, Columns } from 'lucide-react';
+import { Download, CheckCircle, XCircle, Mail, BarChart3, Eye, Pencil, Send, ChevronDown, FileText, FileSpreadsheet, Columns } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -25,7 +25,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
     const { showNotification } = useNotification();
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showFilters, setShowFilters] = useState(false);
+    const [showFilters] = useState(true);
     const [showReports, setShowReports] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
@@ -44,7 +44,14 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
         { key: 'status', label: 'Status' }
     ];
 
-    const [visibleColumns, setVisibleColumns] = useState(ALL_COLUMNS.map(c => c.key));
+    const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+        const saved = localStorage.getItem('invoiceDashboard_visibleColumns');
+        return saved ? JSON.parse(saved) : ALL_COLUMNS.map(c => c.key);
+    });
+
+    useEffect(() => {
+        localStorage.setItem('invoiceDashboard_visibleColumns', JSON.stringify(visibleColumns));
+    }, [visibleColumns]);
 
     // Filters State
     const [filters, setFilters] = useState({
@@ -297,7 +304,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                         <div style={{
                             display: 'flex',
                             gap: '4px',
-                            background: 'white',
+                            background: 'var(--bg-primary)',
                             padding: '6px',
                             borderRadius: '12px',
                             border: '1px solid var(--border-primary)',
@@ -357,7 +364,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                         fontSize: '0.8rem',
                                         height: '32px',
                                         borderRadius: '8px',
-                                        background: 'white',
+                                        background: 'var(--bg-primary)',
                                         color: 'var(--text-secondary)',
                                         fontWeight: 700,
                                         cursor: 'pointer'
@@ -366,7 +373,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     <Download size={16} /> Export <ChevronDown size={14} />
                                 </button>
                                 {showExportMenu && (
-                                    <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
+                                    <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-primary)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                         <button
                                             disabled={isDownloading}
                                             onClick={() => { exportToExcel(); setShowExportMenu(false); }}
@@ -389,29 +396,6 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                 )}
                             </div>
 
-                            <div style={{ position: 'relative' }}>
-                                <button
-                                    className="ae-btn-secondary"
-                                    onClick={() => setShowFilters(!showFilters)}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        padding: '6px 14px',
-                                        fontSize: '0.8rem',
-                                        height: '32px',
-                                        borderRadius: '8px',
-                                        background: showFilters ? 'var(--bg-secondary)' : 'white',
-                                        color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
-                                        borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)',
-                                        fontWeight: 700,
-                                        cursor: 'pointer'
-                                    }}
-                                    title={showFilters ? "Hide Filters" : "Show Filters"}
-                                >
-                                    <Filter size={16} /> Filters
-                                </button>
-                            </div>
 
                             <div style={{ position: 'relative' }}>
                                 <button
@@ -425,7 +409,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                         fontSize: '0.8rem',
                                         height: '32px',
                                         borderRadius: '8px',
-                                        background: 'white',
+                                        background: 'var(--bg-primary)',
                                         color: 'var(--text-secondary)',
                                         fontWeight: 700,
                                         cursor: 'pointer'
@@ -439,7 +423,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                         top: '100%',
                                         right: 0,
                                         marginTop: '8px',
-                                        background: 'white',
+                                        background: 'var(--bg-primary)',
                                         borderRadius: '8px',
                                         boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
                                         border: '1px solid var(--border-primary)',
@@ -507,7 +491,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                 borderBottom: '1px solid var(--border-primary)'
                                             }}
                                                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
-                                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-primary)'}
                                             >
                                                 <input
                                                     type="checkbox"
@@ -549,7 +533,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     fontSize: '0.8rem',
                                     height: '32px',
                                     borderRadius: '8px',
-                                    background: showReports ? 'var(--bg-secondary)' : 'white',
+                                    background: showReports ? 'var(--bg-secondary)' : 'var(--bg-primary)',
                                     color: showReports ? 'var(--theme-primary)' : 'var(--text-secondary)',
                                     borderColor: showReports ? 'var(--theme-primary)' : 'var(--border-primary)',
                                     fontWeight: 700,
@@ -564,7 +548,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     top: '100%',
                                     right: 0,
                                     marginTop: '4px',
-                                    background: 'white',
+                                    background: 'var(--bg-primary)',
                                     borderRadius: '8px',
                                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                                     border: '1px solid var(--border-primary)',
@@ -582,13 +566,13 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                             fontSize: '0.8rem',
                                             width: '100%',
                                             border: 'none',
-                                            background: 'white',
+                                            background: 'none',
                                             color: 'var(--text-primary)',
                                             cursor: 'pointer',
                                             textAlign: 'left'
                                         }}
                                         onMouseOver={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                                        onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+                                        onMouseOut={(e) => e.currentTarget.style.background = 'none'}
                                     >
                                         Register
                                     </button>
@@ -602,13 +586,13 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                             fontSize: '0.8rem',
                                             width: '100%',
                                             border: 'none',
-                                            background: 'white',
+                                            background: 'none',
                                             color: 'var(--text-primary)',
                                             cursor: 'pointer',
                                             textAlign: 'left'
                                         }}
                                         onMouseOver={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                                        onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+                                        onMouseOut={(e) => e.currentTarget.style.background = 'none'}
                                     >
                                         Tax Summary
                                     </button>
@@ -622,13 +606,13 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                             fontSize: '0.8rem',
                                             width: '100%',
                                             border: 'none',
-                                            background: 'white',
+                                            background: 'none',
                                             color: 'var(--text-primary)',
                                             cursor: 'pointer',
                                             textAlign: 'left'
                                         }}
                                         onMouseOver={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                                        onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+                                        onMouseOut={(e) => e.currentTarget.style.background = 'none'}
                                     >
                                         Billing
                                     </button>
@@ -643,112 +627,119 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                     <table className="ae-table" style={{ width: '100%' }}>
                         <thead>
                             <tr>
-                                {visibleColumns.includes('invoice_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Invoice No</th>}
-                                {visibleColumns.includes('deal_no') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Deal ID</th>}
-                                {visibleColumns.includes('customer') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Customer</th>}
-                                {visibleColumns.includes('date') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Date</th>}
-                                {visibleColumns.includes('amount') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Amount</th>}
-                                {visibleColumns.includes('type') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Type</th>}
-                                {visibleColumns.includes('status') && <th style={{ height: '40px', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)' }}>Status</th>}
+                                {visibleColumns.map(key => {
+                                    const col = ALL_COLUMNS.find(c => c.key === key);
+                                    if (!col) return null;
+                                    return (
+                                        <th key={key} style={{
+                                            height: '40px',
+                                            top: 0,
+                                            whiteSpace: 'nowrap',
+                                            zIndex: 12,
+                                            backgroundColor: 'var(--bg-secondary)',
+                                            textAlign: (key === 'amount') ? 'right' : 'left'
+                                        }}>
+                                            {col.label}
+                                        </th>
+                                    );
+                                })}
                                 <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)', minWidth: '100px' }}>Actions</th>
                             </tr>
                             {showFilters && (
                                 <tr>
-                                    {visibleColumns.includes('invoice_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
-                                        <div className="ae-input-group" style={{ margin: 0 }}>
-                                            <input
-                                                className="ae-input"
-                                                placeholder="Filter..."
-                                                value={filters.invoice_no}
-                                                onChange={e => setFilters({ ...filters, invoice_no: e.target.value })}
-                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                            />
-                                        </div>
-                                    </th>}
-                                    {visibleColumns.includes('deal_no') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                        <div className="ae-input-group" style={{ margin: 0 }}>
-                                            <input
-                                                className="ae-input"
-                                                placeholder="Filter..."
-                                                value={filters.deal_no}
-                                                onChange={e => setFilters({ ...filters, deal_no: e.target.value })}
-                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                            />
-                                        </div>
-                                    </th>}
-                                    {visibleColumns.includes('customer') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                        <div className="ae-input-group" style={{ margin: 0 }}>
-                                            <input
-                                                className="ae-input"
-                                                placeholder="Filter..."
-                                                value={filters.customer_name}
-                                                onChange={e => setFilters({ ...filters, customer_name: e.target.value })}
-                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                            />
-                                        </div>
-                                    </th>}
-                                    {visibleColumns.includes('date') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                        <div className="ae-input-group" style={{ margin: 0 }}>
-                                            <input
-                                                className="ae-input"
-                                                placeholder="Filter..."
-                                                value={filters.date_input}
-                                                onChange={e => setFilters({ ...filters, date_input: e.target.value })}
-                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                            />
-                                        </div>
-                                    </th>}
-                                    {visibleColumns.includes('amount') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                        <div className="ae-input-group" style={{ margin: 0 }}>
-                                            <input
-                                                className="ae-input"
-                                                placeholder="Filter..."
-                                                value={filters.amount_input}
-                                                onChange={e => setFilters({ ...filters, amount_input: e.target.value })}
-                                                style={{ height: '24px', fontSize: '11px', width: '80px', paddingTop: 0, paddingBottom: 0 }}
-                                            />
-                                        </div>
-                                    </th>}
-                                    {visibleColumns.includes('type') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                        <div className="ae-input-group" style={{ margin: 0 }}>
-                                            <select
-                                                className="ae-input"
-                                                value={filters.type}
-                                                onChange={e => setFilters({ ...filters, type: e.target.value })}
-                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                            >
-                                                <option value="">All</option>
-                                                <option value="Standard">Standard</option>
-                                                <option value="Proforma">Proforma</option>
-                                                <option value="Export">Export</option>
-                                                <option value="Service">Service</option>
-                                            </select>
-                                        </div>
-                                    </th>}
-                                    {visibleColumns.includes('status') && <th style={{ top: '40px', zIndex: 11, backgroundColor: '#F7FAFC' }}>
-                                        <div className="ae-input-group" style={{ margin: 0 }}>
-                                            <select
-                                                className="ae-input"
-                                                value={filters.status_input}
-                                                onChange={e => setFilters({ ...filters, status_input: e.target.value })}
-                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                            >
-                                                <option value="">All</option>
-                                                <option value="DRAFT">Draft</option>
-                                                <option value="PENDING_APPROVAL">Pending</option>
-                                                <option value="APPROVED">Approved</option>
-                                                <option value="SENT">Sent</option>
-                                                <option value="PAID">Paid</option>
-                                            </select>
-                                        </div>
-                                    </th>}
-                                    <th style={{ textAlign: 'center', top: '40px', position: 'sticky', backgroundColor: '#F7FAFC', zIndex: 11, minWidth: '100px' }}>
+                                    {visibleColumns.map(key => {
+                                        const col = ALL_COLUMNS.find(c => c.key === key);
+                                        if (!col) return null;
+
+                                        const renderFilter = () => {
+                                            switch (key) {
+                                                case 'invoice_no':
+                                                    return <input
+                                                        className="ae-input"
+                                                        placeholder="Filter..."
+                                                        value={filters.invoice_no}
+                                                        onChange={e => setFilters({ ...filters, invoice_no: e.target.value })}
+                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                    />;
+                                                case 'deal_no':
+                                                    return <input
+                                                        className="ae-input"
+                                                        placeholder="Filter..."
+                                                        value={filters.deal_no}
+                                                        onChange={e => setFilters({ ...filters, deal_no: e.target.value })}
+                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                    />;
+                                                case 'customer':
+                                                    return <input
+                                                        className="ae-input"
+                                                        placeholder="Filter..."
+                                                        value={filters.customer_name}
+                                                        onChange={e => setFilters({ ...filters, customer_name: e.target.value })}
+                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                    />;
+                                                case 'date':
+                                                    return <input
+                                                        className="ae-input"
+                                                        placeholder="Filter..."
+                                                        value={filters.date_input}
+                                                        onChange={e => setFilters({ ...filters, date_input: e.target.value })}
+                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                    />;
+                                                case 'amount':
+                                                    return <input
+                                                        className="ae-input"
+                                                        placeholder="Filter..."
+                                                        value={filters.amount_input}
+                                                        onChange={e => setFilters({ ...filters, amount_input: e.target.value })}
+                                                        style={{ height: '24px', fontSize: '11px', width: '80px', paddingTop: 0, paddingBottom: 0 }}
+                                                    />;
+                                                case 'type':
+                                                    return <select
+                                                        className="ae-input"
+                                                        value={filters.type}
+                                                        onChange={e => setFilters({ ...filters, type: e.target.value })}
+                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                    >
+                                                        <option value="">All</option>
+                                                        <option value="Standard">Standard</option>
+                                                        <option value="Proforma">Proforma</option>
+                                                        <option value="Export">Export</option>
+                                                        <option value="Service">Service</option>
+                                                    </select>;
+                                                case 'status':
+                                                    return <select
+                                                        className="ae-input"
+                                                        value={filters.status_input}
+                                                        onChange={e => setFilters({ ...filters, status_input: e.target.value })}
+                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                    >
+                                                        <option value="">All</option>
+                                                        <option value="DRAFT">Draft</option>
+                                                        <option value="PENDING_APPROVAL">Pending</option>
+                                                        <option value="APPROVED">Approved</option>
+                                                        <option value="SENT">Sent</option>
+                                                        <option value="PAID">Paid</option>
+                                                    </select>;
+                                                default:
+                                                    return null;
+                                            }
+                                        };
+
+                                        return (
+                                            <th key={key} style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
+                                                <div className="ae-input-group" style={{ margin: 0 }}>
+                                                    {renderFilter()}
+                                                </div>
+                                            </th>
+                                        );
+                                    })}
+                                    <th style={{ textAlign: 'center', top: '40px', position: 'sticky', backgroundColor: 'var(--bg-secondary)', zIndex: 11, minWidth: '100px' }}>
                                         <button
                                             onClick={() => setFilters({
                                                 status: 'DRAFT', invoice_no: '', deal_no: '', customer_name: '',
                                                 type: '', date_range: '', period: '', date_input: '', amount_input: '', status_input: ''
                                             })}
-                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                         >
                                             Clear
                                         </button>
@@ -760,38 +751,51 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                             {loading ? (
                                 <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>Loading...</td></tr>
                             ) : paginatedInvoices.length === 0 ? (
-                                <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No invoices found.</td></tr>
+                                <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>No invoices found.</td></tr>
                             ) : (
                                 paginatedInvoices.map((inv: Invoice) => (
                                     <tr key={inv.id}>
-                                        {visibleColumns.includes('invoice_no') && <td style={{ fontWeight: 700, color: 'var(--theme-primary)' }}>{inv.invoice_no}</td>}
-                                        {visibleColumns.includes('deal_no') && <td
-                                            style={{ fontWeight: 700, color: 'var(--ae-blue)', cursor: 'pointer', textDecoration: 'underline' }}
-                                            onClick={() => navigate(`/deal?id=${inv.deal}`)}
-                                        >
-                                            {inv.deal_no}
-                                        </td>}
-                                        {visibleColumns.includes('customer') && <td>{inv.customer_name}</td>}
-                                        {visibleColumns.includes('date') && <td>{new Date(inv.invoice_date).toLocaleDateString()}</td>}
-                                        {visibleColumns.includes('amount') && <td style={{ fontWeight: 600 }}>{inv.currency} {inv.total_amount.toLocaleString()}</td>}
-                                        {visibleColumns.includes('type') && <td>
-                                            <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
-                                                {inv.invoice_type}
-                                            </span>
-                                        </td>}
-                                        {visibleColumns.includes('status') && <td>
-                                            <span style={{
-                                                fontSize: '0.7rem',
-                                                padding: '4px 10px',
-                                                borderRadius: '20px',
-                                                fontWeight: 800,
-                                                letterSpacing: '0.5px',
-                                                textTransform: 'uppercase',
-                                                ...getStatusStyle(inv.status)
-                                            }}>
-                                                {inv.status.replace('_', ' ')}
-                                            </span>
-                                        </td>}
+                                        {visibleColumns.map(key => {
+                                            switch (key) {
+                                                case 'invoice_no':
+                                                    return <td key={key} style={{ fontWeight: 700, color: 'var(--theme-primary)' }}>{inv.invoice_no}</td>;
+                                                case 'deal_no':
+                                                    return <td key={key}
+                                                        style={{ fontWeight: 700, color: 'var(--ae-blue)', cursor: 'pointer', textDecoration: 'underline' }}
+                                                        onClick={() => navigate(`/deal?id=${inv.deal}`)}
+                                                    >
+                                                        {inv.deal_no}
+                                                    </td>;
+                                                case 'customer':
+                                                    return <td key={key}>{inv.customer_name}</td>;
+                                                case 'date':
+                                                    return <td key={key}>{new Date(inv.invoice_date).toLocaleDateString()}</td>;
+                                                case 'amount':
+                                                    return <td key={key} style={{ fontWeight: 600, textAlign: 'right' }}>{inv.currency} {inv.total_amount.toLocaleString()}</td>;
+                                                case 'type':
+                                                    return <td key={key}>
+                                                        <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
+                                                            {inv.invoice_type}
+                                                        </span>
+                                                    </td>;
+                                                case 'status':
+                                                    return <td key={key}>
+                                                        <span style={{
+                                                            fontSize: '0.7rem',
+                                                            padding: '4px 10px',
+                                                            borderRadius: '20px',
+                                                            fontWeight: 800,
+                                                            letterSpacing: '0.5px',
+                                                            textTransform: 'uppercase',
+                                                            ...getStatusStyle(inv.status)
+                                                        }}>
+                                                            {inv.status.replace('_', ' ')}
+                                                        </span>
+                                                    </td>;
+                                                default:
+                                                    return null;
+                                            }
+                                        })}
                                         <td>
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                                                 <button onClick={() => handleDownload(inv.id, inv.invoice_no)} title="Download PDF" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>

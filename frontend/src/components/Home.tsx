@@ -58,13 +58,13 @@ const Home: React.FC<HomeProps> = ({ user }) => {
 
             {/* Main Content Area */}
             <div style={{
-                background: 'white',
+                background: 'var(--bg-primary)',
                 border: '1px solid var(--border-primary)',
                 borderRadius: '12px',
                 padding: '20px',
                 width: '95%',
                 margin: '0 auto',
-                boxShadow: 'var(--shadow-card)',
+                boxShadow: 'var(--shadow-md)',
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
@@ -156,7 +156,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                                 <span style={{ color: 'var(--theme-primary)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>Monthly Goal</span>
                                 <span style={{ color: 'var(--theme-primary)', fontSize: '0.7rem', fontWeight: 700 }}>75%</span>
                             </div>
-                            <div style={{ width: '100%', background: '#E2E8F0', height: '4px', borderRadius: '99px' }}>
+                            <div style={{ width: '100%', background: 'var(--bg-secondary)', height: '4px', borderRadius: '99px' }}>
                                 <div style={{ width: '75%', background: 'var(--theme-primary)', height: '100%', borderRadius: '99px' }}></div>
                             </div>
                         </div>

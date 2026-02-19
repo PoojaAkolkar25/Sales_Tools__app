@@ -5,7 +5,6 @@ import {
     TrendingUp,
     Users,
     Loader2,
-    Filter,
     Search
 } from 'lucide-react';
 
@@ -47,7 +46,7 @@ const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView }) => {
         ind_leads: 0
     });
     const [currentPage, setCurrentPage] = useState(1);
-    const [showFilters, setShowFilters] = useState(false);
+    const [showFilters] = useState(true);
     const [filters, setFilters] = useState({
         lead_no: '',
         company: '',
@@ -145,29 +144,6 @@ const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView }) => {
             </div>
 
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', alignItems: 'center', marginBottom: '-20px', position: 'relative', zIndex: 10 }}>
-                <button
-                    className="ae-btn-secondary"
-                    onClick={() => setShowFilters(!showFilters)}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 14px',
-                        fontSize: '0.8rem',
-                        height: '32px',
-                        borderRadius: '8px',
-                        background: showFilters ? 'var(--bg-accent)' : 'white',
-                        color: showFilters ? 'var(--theme-primary)' : 'var(--ae-gray-800)',
-                        borderColor: showFilters ? 'var(--theme-primary)' : 'var(--ae-gray-100)',
-                        fontWeight: 700,
-                        cursor: 'pointer'
-                    }}
-                    title={showFilters ? "Hide Filters" : "Show Filters"}
-                >
-                    <Filter size={16} /> Filters
-                </button>
-            </div>
 
             <div className="ae-table-container" style={{
                 marginTop: '32px',
@@ -180,17 +156,17 @@ const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView }) => {
                 <table className="ae-table">
                     <thead>
                         <tr>
-                            <th style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>Lead ID</th>
-                            <th style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>Deal Link</th>
-                            <th style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>Company</th>
-                            <th style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>Customer Name</th>
-                            <th style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>Project Name</th>
-                            <th style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>Sales Person</th>
-                            <th style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>Created Date</th>
-                            <th style={{ textAlign: 'right', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>Actions</th>
+                            <th>Lead ID</th>
+                            <th>Deal Link</th>
+                            <th>Company</th>
+                            <th>Customer Name</th>
+                            <th>Project Name</th>
+                            <th>Sales Person</th>
+                            <th>Created Date</th>
+                            <th style={{ textAlign: 'right' }}>Actions</th>
                         </tr>
                         {showFilters && (
-                            <tr style={{ background: '#F7FAFC' }}>
+                            <tr style={{ background: 'var(--bg-secondary)' }}>
                                 <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
                                     <div className="ae-input-group">
                                         <Search className="ae-search-icon" size={12} />
@@ -258,7 +234,7 @@ const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView }) => {
                                         onClick={() => setFilters({
                                             lead_no: '', company: '', customer_name: '', project_name: '', sales_person: ''
                                         })}
-                                        style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                        style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                     >
                                         Clear
                                     </button>
@@ -302,7 +278,7 @@ const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView }) => {
                                         )}
                                     </td>
                                     <td>
-                                        <span style={{ fontSize: '0.7rem', fontWeight: 600, background: '#EDF2F7', padding: '2px 6px', borderRadius: '4px' }}>
+                                        <span style={{ fontSize: '0.7rem', fontWeight: 600, background: 'var(--bg-secondary)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-secondary)' }}>
                                             {lead.company}
                                         </span>
                                     </td>

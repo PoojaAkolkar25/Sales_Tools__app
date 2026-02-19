@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import SearchableDropdown from './SearchableDropdown';
 
 interface ResourceRequestFormProps {
     id: number | null;
@@ -409,26 +410,38 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Department</label>
-                                <select name="department" value={formData.department} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                    <option value="">Select Department</option>
-                                    <option value="Engineering">Engineering</option>
-                                    <option value="Product">Product</option>
-                                    <option value="IT">IT</option>
-                                    <option value="Sales">Sales</option>
-                                    <option value="HR">HR</option>
-                                </select>
+                                <SearchableDropdown
+                                    options={[
+                                        { value: 'Engineering', label: 'Engineering' },
+                                        { value: 'Product', label: 'Product' },
+                                        { value: 'IT', label: 'IT' },
+                                        { value: 'Sales', label: 'Sales' },
+                                        { value: 'HR', label: 'HR' }
+                                    ]}
+                                    value={formData.department}
+                                    onChange={(val) => handleInputChange({ target: { name: 'department', value: val } } as any)}
+                                    placeholder="Select Department"
+                                    className="w-full"
+                                    disabled={isReadOnly}
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Designation</label>
-                                <select name="designation" value={formData.designation} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                    <option value="">Select Designation</option>
-                                    <option value="Project Manager">Project Manager</option>
-                                    <option value="Senior Developer">Senior Developer</option>
-                                    <option value="Developer">Developer</option>
-                                    <option value="QA Engineer">QA Engineer</option>
-                                    <option value="DevOps Engineer">DevOps Engineer</option>
-                                    <option value="Solution Architect">Solution Architect</option>
-                                </select>
+                                <SearchableDropdown
+                                    options={[
+                                        { value: 'Project Manager', label: 'Project Manager' },
+                                        { value: 'Senior Developer', label: 'Senior Developer' },
+                                        { value: 'Developer', label: 'Developer' },
+                                        { value: 'QA Engineer', label: 'QA Engineer' },
+                                        { value: 'DevOps Engineer', label: 'DevOps Engineer' },
+                                        { value: 'Solution Architect', label: 'Solution Architect' }
+                                    ]}
+                                    value={formData.designation}
+                                    onChange={(val) => handleInputChange({ target: { name: 'designation', value: val } } as any)}
+                                    placeholder="Select Designation"
+                                    className="w-full"
+                                    disabled={isReadOnly}
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Email ID</label>
@@ -446,10 +459,17 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         <div className="grid grid-cols-2 gap-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Name</label>
-                                <select name="project_name" value={formData.project_name} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                    <option value="">Select Project</option>
-                                    {deals.map(d => <option key={d.id} value={d.deal_name}>{d.deal_name}</option>)}
-                                </select>
+                                <SearchableDropdown
+                                    options={deals.map(d => ({
+                                        value: d.deal_name,
+                                        label: d.deal_name
+                                    }))}
+                                    value={formData.project_name}
+                                    onChange={(val) => handleInputChange({ target: { name: 'project_name', value: val } } as any)}
+                                    placeholder="Select Project"
+                                    className="w-full"
+                                    disabled={isReadOnly}
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Code</label>
@@ -457,21 +477,34 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Client Name</label>
-                                <select name="client_name" value={formData.client_name} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                    <option value="">Select Client</option>
-                                    <option value="ABC Corp">ABC Corp</option>
-                                    <option value="XYZ Ltd">XYZ Ltd</option>
-                                    <option value="Global Tech">Global Tech</option>
-                                    <option value="Innovate Inc">Innovate Inc</option>
-                                </select>
+                                <SearchableDropdown
+                                    options={[
+                                        { value: 'ABC Corp', label: 'ABC Corp' },
+                                        { value: 'XYZ Ltd', label: 'XYZ Ltd' },
+                                        { value: 'Global Tech', label: 'Global Tech' },
+                                        { value: 'Innovate Inc', label: 'Innovate Inc' }
+                                    ]}
+                                    value={formData.client_name}
+                                    onChange={(val) => handleInputChange({ target: { name: 'client_name', value: val } } as any)}
+                                    placeholder="Select Client"
+                                    className="w-full"
+                                    disabled={isReadOnly}
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Environment</label>
-                                <select name="environment" value={formData.environment} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                    <option value="DEVELOPMENT">Development</option>
-                                    <option value="QA">QA</option>
-                                    <option value="PRODUCTION">Production</option>
-                                </select>
+                                <SearchableDropdown
+                                    options={[
+                                        { value: 'DEVELOPMENT', label: 'Development' },
+                                        { value: 'QA', label: 'QA' },
+                                        { value: 'PRODUCTION', label: 'Production' }
+                                    ]}
+                                    value={formData.environment}
+                                    onChange={(val) => handleInputChange({ target: { name: 'environment', value: val } } as any)}
+                                    placeholder="Select Environment"
+                                    className="w-full"
+                                    disabled={isReadOnly}
+                                />
                             </div>
                         </div>
                     </section>
@@ -488,71 +521,116 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         <div className="space-y-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Resource Type</label>
-                                <select name="resource_type_requested" value={formData.resource_type_requested} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                    <option value="Server">Server</option>
-                                    <option value="Database">Database</option>
-                                    <option value="Storage">Storage</option>
-                                </select>
+                                <SearchableDropdown
+                                    options={[
+                                        { value: 'Server', label: 'Server' },
+                                        { value: 'Database', label: 'Database' },
+                                        { value: 'Storage', label: 'Storage' }
+                                    ]}
+                                    value={formData.resource_type_requested}
+                                    onChange={(val) => handleInputChange({ target: { name: 'resource_type_requested', value: val } } as any)}
+                                    placeholder="Select Resource Type"
+                                    className="w-full"
+                                    disabled={isReadOnly}
+                                />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Server Type</label>
-                                    <select name="server_type" value={formData.server_type} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                        <option value="EC2">EC2</option>
-                                        <option value="Physical">Physical Server</option>
-                                        <option value="Virtual Machine">Virtual Machine</option>
-                                    </select>
+                                    <SearchableDropdown
+                                        options={[
+                                            { value: 'EC2', label: 'EC2' },
+                                            { value: 'Physical', label: 'Physical Server' },
+                                            { value: 'Virtual Machine', label: 'Virtual Machine' }
+                                        ]}
+                                        value={formData.server_type}
+                                        onChange={(val) => handleInputChange({ target: { name: 'server_type', value: val } } as any)}
+                                        placeholder="Select Server Type"
+                                        className="w-full"
+                                        disabled={isReadOnly}
+                                    />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Server Category</label>
-                                    <select name="server_category" value={formData.server_category} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                        <option value="Virtual">Virtual</option>
-                                        <option value="Physical">Physical</option>
-                                        <option value="Hybrid">Hybrid</option>
-                                    </select>
+                                    <SearchableDropdown
+                                        options={[
+                                            { value: 'Virtual', label: 'Virtual' },
+                                            { value: 'Physical', label: 'Physical' },
+                                            { value: 'Hybrid', label: 'Hybrid' }
+                                        ]}
+                                        value={formData.server_category}
+                                        onChange={(val) => handleInputChange({ target: { name: 'server_category', value: val } } as any)}
+                                        placeholder="Select Category"
+                                        className="w-full"
+                                        disabled={isReadOnly}
+                                    />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cloud Provider</label>
-                                    <select name="cloud_provider" value={formData.cloud_provider} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                        <option value="">Select Provider</option>
-                                        <option value="AWS">AWS</option>
-                                        <option value="Azure">Azure</option>
-                                        <option value="GCP">GCP</option>
-                                        <option value="On-Premise">On-Premise</option>
-                                    </select>
+                                    <SearchableDropdown
+                                        options={[
+                                            { value: 'AWS', label: 'AWS' },
+                                            { value: 'Azure', label: 'Azure' },
+                                            { value: 'GCP', label: 'GCP' },
+                                            { value: 'On-Premise', label: 'On-Premise' }
+                                        ]}
+                                        value={formData.cloud_provider}
+                                        onChange={(val) => handleInputChange({ target: { name: 'cloud_provider', value: val } } as any)}
+                                        placeholder="Select Provider"
+                                        className="w-full"
+                                        disabled={isReadOnly}
+                                    />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Region</label>
-                                    <select name="region" value={formData.region} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                        <option value="">Select Region</option>
-                                        <option value="ap-south-1">ap-south-1 (Mumbai)</option>
-                                        <option value="us-east-1">us-east-1 (N. Virginia)</option>
-                                        <option value="eu-west-1">eu-west-1 (Ireland)</option>
-                                    </select>
+                                    <SearchableDropdown
+                                        options={[
+                                            { value: 'ap-south-1', label: 'ap-south-1 (Mumbai)' },
+                                            { value: 'us-east-1', label: 'us-east-1 (N. Virginia)' },
+                                            { value: 'eu-west-1', label: 'eu-west-1 (Ireland)' }
+                                        ]}
+                                        value={formData.region}
+                                        onChange={(val) => handleInputChange({ target: { name: 'region', value: val } } as any)}
+                                        placeholder="Select Region"
+                                        className="w-full"
+                                        disabled={isReadOnly}
+                                    />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Instance Type</label>
-                                    <select name="instance_type" value={formData.instance_type} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                        <option value="">Select Instance</option>
-                                        <option value="t3a.2xlarge">t3a.2xlarge</option>
-                                        <option value="t3.medium">t3.medium</option>
-                                        <option value="m5.large">m5.large</option>
-                                        <option value="c5.xlarge">c5.xlarge</option>
-                                    </select>
+                                    <SearchableDropdown
+                                        options={[
+                                            { value: 't3a.2xlarge', label: 't3a.2xlarge' },
+                                            { value: 't3.medium', label: 't3.medium' },
+                                            { value: 'm5.large', label: 'm5.large' },
+                                            { value: 'c5.xlarge', label: 'c5.xlarge' }
+                                        ]}
+                                        value={formData.instance_type}
+                                        onChange={(val) => handleInputChange({ target: { name: 'instance_type', value: val } } as any)}
+                                        placeholder="Select Instance"
+                                        className="w-full"
+                                        disabled={isReadOnly}
+                                    />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Operating System</label>
-                                    <select name="os" value={formData.os} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                        <option value="">Select OS</option>
-                                        <option value="Amazon Linux 2">Amazon Linux 2</option>
-                                        <option value="Ubuntu 20.04">Ubuntu 20.04</option>
-                                        <option value="Windows Server 2019">Windows Server 2019</option>
-                                        <option value="RHEL 8">RHEL 8</option>
-                                    </select>
+                                    <SearchableDropdown
+                                        options={[
+                                            { value: 'Amazon Linux 2', label: 'Amazon Linux 2' },
+                                            { value: 'Ubuntu 20.04', label: 'Ubuntu 20.04' },
+                                            { value: 'Windows Server 2019', label: 'Windows Server 2019' },
+                                            { value: 'RHEL 8', label: 'RHEL 8' }
+                                        ]}
+                                        value={formData.os}
+                                        onChange={(val) => handleInputChange({ target: { name: 'os', value: val } } as any)}
+                                        placeholder="Select OS"
+                                        className="w-full"
+                                        disabled={isReadOnly}
+                                    />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -568,11 +646,18 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                             <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Storage Type</label>
-                                    <select name="storage_type" value={formData.storage_type} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                        <option value="SSD">SSD</option>
-                                        <option value="HDD">HDD</option>
-                                        <option value="NVMe">NVMe</option>
-                                    </select>
+                                    <SearchableDropdown
+                                        options={[
+                                            { value: 'SSD', label: 'SSD' },
+                                            { value: 'HDD', label: 'HDD' },
+                                            { value: 'NVMe', label: 'NVMe' }
+                                        ]}
+                                        value={formData.storage_type}
+                                        onChange={(val) => handleInputChange({ target: { name: 'storage_type', value: val } } as any)}
+                                        placeholder="Select Type"
+                                        className="w-full"
+                                        disabled={isReadOnly}
+                                    />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Storage Size (GB)</label>
@@ -606,21 +691,33 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     <div className="grid grid-cols-2 gap-4">
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>RDS Type</label>
-                                            <select name="rds_type" value={formData.rds_type} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                                <option value="">Select Type</option>
-                                                <option value="db.t3.small">db.t3.small</option>
-                                                <option value="db.t3.medium">db.t3.medium</option>
-                                                <option value="db.m5.large">db.m5.large</option>
-                                            </select>
+                                            <SearchableDropdown
+                                                options={[
+                                                    { value: 'db.t3.small', label: 'db.t3.small' },
+                                                    { value: 'db.t3.medium', label: 'db.t3.medium' },
+                                                    { value: 'db.m5.large', label: 'db.m5.large' }
+                                                ]}
+                                                value={formData.rds_type}
+                                                onChange={(val) => handleInputChange({ target: { name: 'rds_type', value: val } } as any)}
+                                                placeholder="Select Type"
+                                                className="w-full"
+                                                disabled={isReadOnly}
+                                            />
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Database Engine</label>
-                                            <select name="database_engine" value={formData.database_engine} onChange={handleInputChange} className="ae-input" disabled={isReadOnly}>
-                                                <option value="">Select Engine</option>
-                                                <option value="MySQL">MySQL</option>
-                                                <option value="PostgreSQL">PostgreSQL</option>
-                                                <option value="SQL Server">SQL Server</option>
-                                            </select>
+                                            <SearchableDropdown
+                                                options={[
+                                                    { value: 'MySQL', label: 'MySQL' },
+                                                    { value: 'PostgreSQL', label: 'PostgreSQL' },
+                                                    { value: 'SQL Server', label: 'SQL Server' }
+                                                ]}
+                                                value={formData.database_engine}
+                                                onChange={(val) => handleInputChange({ target: { name: 'database_engine', value: val } } as any)}
+                                                placeholder="Select Engine"
+                                                className="w-full"
+                                                disabled={isReadOnly}
+                                            />
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">

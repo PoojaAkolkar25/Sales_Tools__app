@@ -37,6 +37,7 @@ import InvoiceForm from './components/InvoiceForm';
 import api from './api';
 import './index.css';
 import { NotificationProvider, useNotification } from './context/NotificationContext';
+import { useTheme } from './context/ThemeContext';
 import DealDashboard from './components/DealDashboard';
 import DealForm from './components/DealForm';
 import EstimateDashboard from './components/EstimateDashboard';
@@ -132,7 +133,7 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
   const navItems = getNavItems(user);
 
   return (
-    <div className={`app-container ${theme === 'autumn' ? 'theme-autumn' : ''}`}>
+    <div className={`app-container ${theme && theme !== 'default' ? `theme-${theme}` : ''}`}>
       {/* Left Sidebar */}
       <aside className={`sidebar flex flex-col ${isSidebarExpanded ? 'expanded' : '!w-20'} overflow-hidden transition-all duration-300`}>
         <div className={`sidebar-logo !px-0 flex items-center ${isSidebarExpanded ? 'justify-start px-6' : 'justify-center'}`}>
@@ -185,7 +186,7 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
                           className={`sidebar-item !px-0 expanded w-full`}
                           style={{
                             background: isChildActive ? 'var(--bg-accent)' : 'transparent',
-                            color: isChildActive ? 'var(--accent-primary)' : 'var(--text-tertiary)',
+                            color: isChildActive ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.7)',
                             borderLeft: isChildActive ? '3px solid var(--border-accent)' : '3px solid transparent',
                             marginBottom: '2px',
                             transition: 'all 0.2s ease'
@@ -199,7 +200,7 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
                           onMouseLeave={(e) => {
                             if (!isChildActive) {
                               e.currentTarget.style.background = 'transparent';
-                              e.currentTarget.style.color = 'var(--text-tertiary)';
+                              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
                             }
                           }}
                         >
@@ -249,7 +250,7 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
 
 const AppContent: React.FC = () => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
-  const [theme, setTheme] = useState<string>(localStorage.getItem('app-theme') || 'default');
+  const { theme, setTheme } = useTheme();
   const { showNotification } = useNotification();
 
   const [user, setUser] = useState<any>(null);
@@ -485,7 +486,7 @@ const AppContent: React.FC = () => {
       <Route path="/cost-sheet" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+            <div className="main-route-container">
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -512,7 +513,7 @@ const AppContent: React.FC = () => {
                     display: 'flex',
                     gap: '4px',
                     alignItems: 'center',
-                    background: 'white',
+                    background: 'var(--bg-primary)',
                     padding: '6px',
                     borderRadius: '12px',
                     border: '1px solid #E0E6ED',
@@ -609,7 +610,7 @@ const AppContent: React.FC = () => {
       <Route path="/user-management" element={
         user && user.role === 'app_admin' ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div style={{ background: 'var(--bg-primary)', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+            <div className="main-route-container">
               <UserManagement />
             </div>
           </ModuleWrapper>
@@ -625,7 +626,7 @@ const AppContent: React.FC = () => {
       <Route path="/lead" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+            <div className="main-route-container">
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -652,7 +653,7 @@ const AppContent: React.FC = () => {
                     display: 'flex',
                     gap: '4px',
                     alignItems: 'center',
-                    background: 'white',
+                    background: 'var(--bg-primary)',
                     padding: '6px',
                     borderRadius: '12px',
                     border: '1px solid #E0E6ED',
@@ -749,7 +750,7 @@ const AppContent: React.FC = () => {
       <Route path="/deal" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+            <div className="main-route-container">
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -776,7 +777,7 @@ const AppContent: React.FC = () => {
                     display: 'flex',
                     gap: '4px',
                     alignItems: 'center',
-                    background: 'white',
+                    background: 'var(--bg-primary)',
                     padding: '6px',
                     borderRadius: '12px',
                     border: '1px solid #E0E6ED',
@@ -882,7 +883,7 @@ const AppContent: React.FC = () => {
       <Route path="/estimates" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+            <div className="main-route-container">
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -909,7 +910,7 @@ const AppContent: React.FC = () => {
                     display: 'flex',
                     gap: '4px',
                     alignItems: 'center',
-                    background: 'white',
+                    background: 'var(--bg-primary)',
                     padding: '6px',
                     borderRadius: '12px',
                     border: '1px solid var(--border-primary)',
@@ -1039,7 +1040,7 @@ const AppContent: React.FC = () => {
       < Route path="/sales-order" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+            <div className="main-route-container">
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -1066,7 +1067,7 @@ const AppContent: React.FC = () => {
                     display: 'flex',
                     gap: '4px',
                     alignItems: 'center',
-                    background: 'white',
+                    background: 'var(--bg-primary)',
                     padding: '6px',
                     borderRadius: '12px',
                     border: '1px solid var(--border-primary)',
@@ -1122,7 +1123,7 @@ const AppContent: React.FC = () => {
                     }}
                       onMouseEnter={(e) => {
                         if (!isExtractingSO) {
-                          e.currentTarget.style.background = '#f8fafc';
+                          e.currentTarget.style.background = 'var(--bg-hover)';
                         }
                       }}
                       onMouseLeave={(e) => {
@@ -1160,7 +1161,7 @@ const AppContent: React.FC = () => {
       < Route path="/invoice" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+            <div className="main-route-container">
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -1187,7 +1188,7 @@ const AppContent: React.FC = () => {
                     display: 'flex',
                     gap: '4px',
                     alignItems: 'center',
-                    background: 'white',
+                    background: 'var(--bg-primary)',
                     padding: '6px',
                     borderRadius: '12px',
                     border: '1px solid var(--border-primary)',
@@ -1285,7 +1286,7 @@ const AppContent: React.FC = () => {
       < Route path="/payment" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+            <div className="main-route-container">
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -1308,7 +1309,7 @@ const AppContent: React.FC = () => {
       < Route path="/milestone" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+            <div className="main-route-container">
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -1335,7 +1336,7 @@ const AppContent: React.FC = () => {
                     display: 'flex',
                     gap: '4px',
                     alignItems: 'center',
-                    background: 'white',
+                    background: 'var(--bg-primary)',
                     padding: '6px',
                     borderRadius: '12px',
                     border: '1px solid var(--border-primary)',
@@ -1447,7 +1448,7 @@ const AppContent: React.FC = () => {
       < Route path="/inventory" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div style={{ background: 'white', minHeight: 'calc(100vh - 64px)', padding: '24px 41px' }}>
+            <div className="main-route-container">
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
