@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search, LayoutDashboard, PlusCircle, Paperclip, FileText, Eye } from 'lucide-react';
+import { Mail, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Search, LayoutDashboard, PlusCircle, Paperclip, Eye } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const UserManagement: React.FC = () => {
@@ -34,7 +34,7 @@ const UserManagement: React.FC = () => {
     // Column Filters State
     const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
     const [searchTerm, setSearchTerm] = useState('');
-    const [showFilters, setShowFilters] = useState(false);
+    const [showFilters] = useState(true);
 
     const [companyFormData, setCompanyFormData] = useState({
         name: '',
@@ -673,11 +673,11 @@ const UserManagement: React.FC = () => {
                     display: 'flex',
                     gap: '4px',
                     alignItems: 'center',
-                    background: 'white',
+                    background: 'var(--bg-primary)',
                     padding: '6px',
                     borderRadius: '12px',
-                    border: '1px solid #E0E6ED',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    border: '1px solid var(--border-primary)',
+                    boxShadow: 'var(--shadow-sm)'
                 }}>
                     <button
                         onClick={() => setShowForm(false)}
@@ -759,7 +759,7 @@ const UserManagement: React.FC = () => {
                             display: 'flex',
                             gap: '4px',
                             alignItems: 'center',
-                            background: 'white',
+                            background: 'var(--bg-primary)',
                             padding: '6px',
                             borderRadius: '12px',
                             border: '1px solid var(--border-primary)',
@@ -885,30 +885,6 @@ const UserManagement: React.FC = () => {
 
 
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <button
-                                className="ae-btn-secondary"
-                                onClick={() => setShowFilters(!showFilters)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '6px 14px',
-                                    fontSize: '0.8rem',
-                                    height: '40px',
-                                    borderRadius: '10px',
-                                    background: showFilters ? 'var(--bg-accent)' : 'white',
-                                    color: showFilters ? 'var(--theme-primary)' : 'var(--ae-gray-800)',
-                                    borderColor: showFilters ? 'var(--theme-primary)' : 'var(--ae-gray-100)',
-                                    border: '1px solid',
-                                    fontWeight: 700,
-                                    cursor: 'pointer'
-                                }}
-                                title={showFilters ? "Hide Filters" : "Show Filters"}
-                            >
-                                <Filter size={16} /> Filters
-                            </button>
-                        </div>
                     </div>
                 )
             }
@@ -924,7 +900,7 @@ const UserManagement: React.FC = () => {
                                             handleCreateCompany
                     } style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         <div style={{
-                            background: 'white',
+                            background: 'var(--bg-primary)',
                             borderRadius: '12px',
                             padding: '24px',
                             border: '1px solid var(--border-primary)'
@@ -940,7 +916,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Username"
                                             value={formData.username}
                                             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                             autoComplete="off"
                                         />
@@ -954,7 +930,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="First Name"
                                             value={formData.first_name}
                                             onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -966,7 +942,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Last Name"
                                             value={formData.last_name}
                                             onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -978,7 +954,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Email Address"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -991,7 +967,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Password"
                                             value={formData.password}
                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                             autoComplete="new-password"
                                         />
@@ -1003,7 +979,7 @@ const UserManagement: React.FC = () => {
                                         <select
                                             value={formData.role}
                                             onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         >
                                             <option value="app_user">User</option>
                                             <option value="app_admin">Admin</option>
@@ -1022,7 +998,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Mobile Number"
                                             value={formData.mobile}
                                             onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -1034,7 +1010,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Department"
                                             value={formData.department}
                                             onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -1046,7 +1022,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Region"
                                             value={formData.region}
                                             onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -1056,7 +1032,7 @@ const UserManagement: React.FC = () => {
                                         <select
                                             value={formData.reporting_to}
                                             onChange={(e) => setFormData({ ...formData, reporting_to: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         >
                                             <option value="">Select Manager</option>
                                             {users.map(u => <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>)}
@@ -1074,7 +1050,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Partner Name"
                                             value={partnerFormData.name}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -1085,7 +1061,7 @@ const UserManagement: React.FC = () => {
                                         <select
                                             value={partnerFormData.linked_company}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, linked_company: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         >
                                             <option value="">Select Company</option>
                                             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1098,7 +1074,7 @@ const UserManagement: React.FC = () => {
                                         <select
                                             value={partnerFormData.type}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, type: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         >
                                             <option value="CUSTOMER">Customer</option>
                                             <option value="CHANNEL_PARTNER">Channel Partner</option>
@@ -1113,7 +1089,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Industry"
                                             value={partnerFormData.industry}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, industry: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -1125,7 +1101,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Primary Contact Name"
                                             value={partnerFormData.primary_contact}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, primary_contact: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -1137,7 +1113,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Email Address"
                                             value={partnerFormData.email}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, email: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -1147,7 +1123,7 @@ const UserManagement: React.FC = () => {
                                         <select
                                             value={partnerFormData.payment_terms}
                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, payment_terms: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         >
                                             <option value="NET_30">Net 30</option>
                                             <option value="NET_60">Net 60</option>
@@ -1167,7 +1143,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Customer Name"
                                             value={endCustomerFormData.name}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -1178,7 +1154,7 @@ const UserManagement: React.FC = () => {
                                         <select
                                             value={endCustomerFormData.linked_partner}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, linked_partner: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                         >
                                             <option value="">Select Partner</option>
@@ -1192,7 +1168,7 @@ const UserManagement: React.FC = () => {
                                         <select
                                             value={endCustomerFormData.deal_type}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, deal_type: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         >
                                             <option value="DIRECT">Direct</option>
                                             <option value="INDIRECT">Indirect</option>
@@ -1207,7 +1183,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Location"
                                             value={endCustomerFormData.location}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, location: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -1219,7 +1195,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Contact Person"
                                             value={endCustomerFormData.contact_person}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, contact_person: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -1231,7 +1207,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Email Address"
                                             value={endCustomerFormData.email}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, email: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                 </div>
@@ -1246,7 +1222,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Label"
                                             value={fyFormData.label}
                                             onChange={(e) => setFyFormData({ ...fyFormData, label: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -1258,7 +1234,7 @@ const UserManagement: React.FC = () => {
                                             type="date"
                                             value={fyFormData.start_date}
                                             onChange={(e) => setFyFormData({ ...fyFormData, start_date: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -1270,7 +1246,7 @@ const UserManagement: React.FC = () => {
                                             type="date"
                                             value={fyFormData.end_date}
                                             onChange={(e) => setFyFormData({ ...fyFormData, end_date: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -1281,7 +1257,7 @@ const UserManagement: React.FC = () => {
                                             checked={fyFormData.is_current_fy}
                                             onChange={(e) => setFyFormData({ ...fyFormData, is_current_fy: e.target.checked })}
                                         />
-                                        <label htmlFor="is_current_fy" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black' }}>Current Financial Year</label>
+                                        <label htmlFor="msme_registered" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>MSME Registered</label>
                                     </div>
                                 </div>
                             ) : viewMode === 'product' ? (
@@ -1295,7 +1271,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Product Name"
                                             value={productFormData.name}
                                             onChange={(e) => setProductFormData({ ...productFormData, name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -1306,7 +1282,7 @@ const UserManagement: React.FC = () => {
                                         <select
                                             value={productFormData.category}
                                             onChange={(e) => setProductFormData({ ...productFormData, category: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         >
                                             <option value="SOFTWARE">Software</option>
                                             <option value="SERVICE">Service</option>
@@ -1321,7 +1297,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Subcategory"
                                             value={productFormData.subcategory}
                                             onChange={(e) => setProductFormData({ ...productFormData, subcategory: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -1333,7 +1309,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="0"
                                             value={productFormData.standard_price}
                                             onChange={(e) => setProductFormData({ ...productFormData, standard_price: e.target.value === '' ? '' : Number(e.target.value) })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -1345,7 +1321,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="18"
                                             value={productFormData.tax_percentage}
                                             onChange={(e) => setProductFormData({ ...productFormData, tax_percentage: e.target.value === '' ? '' : Number(e.target.value) })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                     <div>
@@ -1357,7 +1333,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="UOM"
                                             value={productFormData.uom}
                                             onChange={(e) => setProductFormData({ ...productFormData, uom: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                     </div>
                                 </div>
@@ -1385,7 +1361,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Customer Name"
                                                     value={companyFormData.name}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -1398,7 +1374,7 @@ const UserManagement: React.FC = () => {
                                                     alignItems: 'center',
                                                     gap: '10px',
                                                     padding: '6px 10px', // Match text input padding
-                                                    background: 'white', // Match text input background
+                                                    background: 'var(--bg-primary)', // Match text input background
                                                     borderRadius: '6px', // Match text input border radius
                                                     border: '1px solid var(--border-primary)', // Match text input border
                                                     height: '34px', // Match text input height
@@ -1418,9 +1394,9 @@ const UserManagement: React.FC = () => {
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             gap: '8px',
-                                                            background: 'white',
-                                                            color: '#1a1f36',
-                                                            border: '1px solid #E0E6ED',
+                                                            background: 'var(--bg-primary)',
+                                                            color: 'var(--text-primary)',
+                                                            border: '1px solid var(--border-primary)',
                                                             height: '24px', // Reduced height to fit inside the input-like container
                                                             padding: '0 8px',
                                                             borderRadius: '4px', // Slightly smaller radius
@@ -1523,7 +1499,7 @@ const UserManagement: React.FC = () => {
                                                         )}
 
                                                         {!companyFormData.logo && (
-                                                            <span style={{ fontSize: '0.9rem', color: '#A0AEC0', fontStyle: 'italic', marginLeft: '10px' }}>
+                                                            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontStyle: 'italic', marginLeft: '10px' }}>
                                                                 No logo uploaded
                                                             </span>
                                                         )}
@@ -1539,7 +1515,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Email Address"
                                                     value={companyFormData.email}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -1551,7 +1527,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Phone Number"
                                                     value={companyFormData.phone_number}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, phone_number: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -1563,7 +1539,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Mobile Number"
                                                     value={companyFormData.mobile_number}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, mobile_number: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -1575,16 +1551,16 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Website URL"
                                                     value={companyFormData.website_url}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, website_url: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
+                                    <div className="section" style={{ borderTop: '1px solid var(--border-primary)', paddingTop: '32px' }}>
                                         <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Address Details
+                                            {viewMode === 'company' ? 'Address Details' : viewMode === 'product' ? 'Pricing Details' : 'Additional Details'}
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div style={{ gridColumn: 'span 2' }}>
@@ -1596,7 +1572,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Address Line 1"
                                                     value={companyFormData.address_line_1}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, address_line_1: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -1608,7 +1584,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Address Line 2"
                                                     value={companyFormData.address_line_2}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, address_line_2: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -1620,7 +1596,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Country"
                                                     value={companyFormData.country}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, country: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -1630,7 +1606,7 @@ const UserManagement: React.FC = () => {
                                                 <select
                                                     value={companyFormData.state}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, state: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 >
                                                     <option value="">Select State</option>
                                                     {states.map(state => (
@@ -1647,7 +1623,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="City"
                                                     value={companyFormData.city}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, city: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -1659,7 +1635,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Pincode"
                                                     value={companyFormData.pincode}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, pincode: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
@@ -1678,7 +1654,7 @@ const UserManagement: React.FC = () => {
                                                 <select
                                                     value={companyFormData.financial_year_begins}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, financial_year_begins: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 >
                                                     <option value="01-Apr">01-Apr</option>
                                                     <option value="01-Jan">01-Jan</option>
@@ -1691,7 +1667,7 @@ const UserManagement: React.FC = () => {
                                                 <select
                                                     value={companyFormData.base_currency}
                                                     onChange={(e) => handleCurrencyChange(e.target.value)}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 >
                                                     <option value="INR">INR</option>
                                                     <option value="USD">USD</option>
@@ -1707,7 +1683,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="2"
                                                     value={companyFormData.decimal_places}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, decimal_places: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
@@ -1726,7 +1702,7 @@ const UserManagement: React.FC = () => {
                                                     checked={companyFormData.is_gst_applicable}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, is_gst_applicable: e.target.checked })}
                                                 />
-                                                <label htmlFor="is_gst_applicable" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black' }}>GST Applicable</label>
+                                                <label htmlFor="is_gst_applicable" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>GST Applicable</label>
                                             </div>
                                             {companyFormData.is_gst_applicable && (
                                                 <>
@@ -1739,7 +1715,7 @@ const UserManagement: React.FC = () => {
                                                             placeholder="GSTIN"
                                                             value={companyFormData.gstin}
                                                             onChange={(e) => handleGSTINChange(e.target.value)}
-                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                         />
                                                     </div>
                                                     <div>
@@ -1750,7 +1726,7 @@ const UserManagement: React.FC = () => {
                                                             type="text"
                                                             value={companyFormData.state_code}
                                                             readOnly
-                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#f7fafc', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', outline: 'none' }}
+                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', outline: 'none' }}
                                                         />
                                                     </div>
                                                 </>
@@ -1764,7 +1740,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="PAN"
                                                     value={companyFormData.pan}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, pan: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -1776,7 +1752,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="TAN"
                                                     value={companyFormData.tan}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, tan: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -1788,7 +1764,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="CIN"
                                                     value={companyFormData.cin}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, cin: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
@@ -1807,7 +1783,7 @@ const UserManagement: React.FC = () => {
                                                     checked={companyFormData.msme_registered}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, msme_registered: e.target.checked })}
                                                 />
-                                                <label htmlFor="msme_registered" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black' }}>MSME Registered</label>
+                                                <label htmlFor="msme_registered" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>MSME Registered</label>
                                             </div>
                                             {companyFormData.msme_registered && (
                                                 <div>
@@ -1819,7 +1795,7 @@ const UserManagement: React.FC = () => {
                                                         placeholder="MSME Number"
                                                         value={companyFormData.msme_number}
                                                         onChange={(e) => setCompanyFormData({ ...companyFormData, msme_number: e.target.value })}
-                                                        style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                        style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', outline: 'none' }}
                                                     />
                                                 </div>
                                             )}
@@ -1832,11 +1808,11 @@ const UserManagement: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '4px',
-                            background: 'white',
+                            background: 'var(--bg-primary)',
                             padding: '6px',
                             borderRadius: '12px',
-                            border: '1px solid #E0E6ED',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                            border: '1px solid var(--border-primary)',
+                            boxShadow: 'var(--shadow-sm)',
                             width: 'fit-content'
                         }}>
                             <button
@@ -1878,7 +1854,7 @@ const UserManagement: React.FC = () => {
                                     borderRadius: '8px',
                                     fontSize: '0.85rem',
                                     background: 'transparent',
-                                    color: '#718096',
+                                    color: 'var(--text-secondary)',
                                     border: 'none',
                                     fontWeight: 700,
                                     cursor: 'pointer'
@@ -1958,7 +1934,7 @@ const UserManagement: React.FC = () => {
                                         <th style={{ padding: '8px 24px', textAlign: 'right' }}>
                                             <button
                                                 onClick={() => { setColumnFilters({}); setSearchTerm(''); }}
-                                                style={{ height: '24px', width: '100px', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
+                                                style={{ height: '24px', width: '100px', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                             >
                                                 Clear
                                             </button>
@@ -1975,13 +1951,13 @@ const UserManagement: React.FC = () => {
                                                     <UserIcon size={20} />
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{user.username}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{user.first_name} {user.last_name}</div>
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>{user.username}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{user.first_name} {user.last_name}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
+                                            <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                                                 <Mail size={14} className="text-gray-400" /> {user.email || '—'}
                                             </div>
                                         </td>
@@ -2050,18 +2026,18 @@ const UserManagement: React.FC = () => {
                                                     <Shield size={20} />
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{p.name}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.code}</div>
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>{p.name}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{p.code}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{p.email || '—'}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.mobile || '—'}</div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{p.email || '—'}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{p.mobile || '—'}</div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{p.type}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.industry || '—'}</div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{p.type}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{p.industry || '—'}</div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
                                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: p.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: p.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
@@ -2105,18 +2081,18 @@ const UserManagement: React.FC = () => {
                                                     <UserIcon size={20} />
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{ec.name}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.code}</div>
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>{ec.name}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{ec.code}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{ec.email || '—'}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.phone || '—'}</div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{ec.email || '—'}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{ec.phone || '—'}</div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{ec.partner_name || '—'}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.location || '—'}</div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{ec.partner_name || '—'}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{ec.location || '—'}</div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
                                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
@@ -2152,7 +2128,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                         </td>
                                     </tr>
-                                )) : viewMode === 'financial_year' ? financialYears.map((fy) => (
+                                )) : viewMode === 'financial_year' ? filteredFinancialYears.map((fy) => (
                                     <tr key={fy.id} className="ae-table-row">
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
                                             <div className="flex items-center">
@@ -2160,16 +2136,16 @@ const UserManagement: React.FC = () => {
                                                     <CheckCircle size={20} />
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{fy.label}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{fy.code} {fy.is_current_fy && <span style={{ background: '#EBF4FF', color: '#1B66D1', padding: '2px 6px', borderRadius: '4px', fontSize: '0.65rem', marginLeft: '8px' }}>CURRENT</span>}</div>
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>{fy.label}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{fy.code} {fy.is_current_fy && <span style={{ background: '#EBF4FF', color: '#1B66D1', padding: '2px 6px', borderRadius: '4px', fontSize: '0.65rem', marginLeft: '8px' }}>CURRENT</span>}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.start_date}</div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{fy.start_date}</div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.end_date}</div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{fy.end_date}</div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
                                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: fy.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: fy.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
@@ -2192,7 +2168,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                         </td>
                                     </tr>
-                                )) : viewMode === 'product' ? products.map((prd) => (
+                                )) : viewMode === 'product' ? filteredProducts.map((prd) => (
                                     <tr key={prd.id} className="ae-table-row">
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
                                             <div className="flex items-center">
@@ -2200,16 +2176,16 @@ const UserManagement: React.FC = () => {
                                                     <Shield size={20} />
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{prd.name}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{prd.product_code}</div>
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>{prd.name}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{prd.product_code}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{prd.category}</div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{prd.category}</div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{prd.subcategory || '—'}</div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{prd.subcategory || '—'}</div>
                                         </td>
                                         <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
                                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: prd.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: prd.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
@@ -2240,19 +2216,19 @@ const UserManagement: React.FC = () => {
                                                     <Users size={20} />
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{comp.name}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.alias_name || 'No Alias'}</div>
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>{comp.name}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{comp.alias_name || 'No Alias'}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                            <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
+                                            <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                                                 <Mail size={14} className="text-gray-400" /> {comp.email || '—'}
                                             </div>
                                         </td>
                                         <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{comp.city || '—'}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.state_name || '—'}</div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{comp.city || '—'}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{comp.state_name || '—'}</div>
                                         </td>
                                         <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: 'rgba(0, 200, 83, 0.1)', color: '#00C853' }}>

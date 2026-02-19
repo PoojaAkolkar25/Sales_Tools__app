@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Check, Sun, Moon, Palette } from 'lucide-react';
+import { Check, Sun, Moon } from 'lucide-react';
 
 interface SettingsProps {
     theme: string;
-    setTheme: (theme: string) => void;
+    setTheme: (theme: any) => void;
 }
 
 const Settings: React.FC<SettingsProps> = ({ theme: currentTheme, setTheme }) => {
@@ -33,6 +33,69 @@ const Settings: React.FC<SettingsProps> = ({ theme: currentTheme, setTheme }) =>
                 primary: '#BB4D00',
                 secondary: '#FFF9F2',
                 accent: '#D97706'
+            }
+        },
+        {
+            id: 'birla',
+            name: 'Birla Theme',
+            description: 'Elegant Red & Light Gray',
+            colors: {
+                primary: '#D71920',
+                secondary: '#F2F2F2',
+                accent: '#F5EFEF'
+            }
+        },
+        {
+            id: 'rustic',
+            name: 'Rustic Earthy Tones',
+            description: 'Warm Browns & Muted Olives',
+            colors: {
+                primary: '#7F5539',
+                secondary: '#EDE0D4',
+                accent: '#656D4A'
+            }
+        },
+        {
+            id: 'warm-earth',
+            name: 'Warm Earth Tones',
+            description: 'Espresso, Terracotta & Wheat',
+            colors: {
+                primary: '#F2542D',
+                secondary: '#F5DFBB',
+                accent: '#0E9594'
+            }
+        },
+        {
+            id: 'rustic-charm',
+            name: 'Rustic Charm',
+            description: 'Ebony, Fawn & Saddle Brown',
+            colors: {
+                primary: '#7A4419',
+                secondary: '#D7BE82',
+                accent: '#755C1B'
+            }
+        },
+        {
+            id: 'ocean-delight',
+            name: 'Ocean Pearl Delight',
+            description: 'Refreshing Aquatic Vibes',
+            colors: {
+                primary: '#E29578',
+                secondary: '#EDF6F9',
+                accent: '#83C5BE'
+            }
+        }
+    ];
+
+    const darkThemes = [
+        {
+            id: 'electric-city',
+            name: 'Electric City Lights',
+            description: 'Neon Blues & Deep Grays',
+            colors: {
+                primary: '#0085ff',
+                secondary: '#1E1E1E',
+                accent: '#006fff'
             }
         }
     ];
@@ -215,32 +278,101 @@ const Settings: React.FC<SettingsProps> = ({ theme: currentTheme, setTheme }) =>
                             </div>
                         </>
                     ) : (
-                        <div style={{
-                            padding: '48px',
-                            textAlign: 'center',
-                            background: 'white',
-                            borderRadius: '16px',
-                            border: '2px dashed var(--border-primary)',
-                            maxWidth: '900px'
-                        }}>
+                        <>
+                            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>Available Dark Themes</h2>
                             <div style={{
-                                width: '64px',
-                                height: '64px',
-                                background: 'rgba(0, 0, 0, 0.05)',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                margin: '0 auto 16px auto',
-                                color: 'var(--text-tertiary)'
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                                gap: '20px',
+                                maxWidth: '900px'
                             }}>
-                                <Moon size={32} />
+                                {darkThemes.map((themeOption) => {
+                                    const isSelected = currentTheme === themeOption.id;
+                                    return (
+                                        <div
+                                            key={themeOption.id}
+                                            onClick={() => handleThemeChange(themeOption.id)}
+                                            style={{
+                                                background: 'white',
+                                                border: isSelected ? '2px solid var(--border-accent)' : '2px solid var(--border-primary)',
+                                                borderRadius: '16px',
+                                                padding: '20px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                position: 'relative',
+                                                boxShadow: isSelected ? 'var(--shadow-md)' : 'var(--shadow-sm)'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (!isSelected) {
+                                                    e.currentTarget.style.borderColor = 'var(--border-accent)';
+                                                    e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (!isSelected) {
+                                                    e.currentTarget.style.borderColor = 'var(--border-primary)';
+                                                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                                                }
+                                            }}
+                                        >
+                                            {/* Selected Indicator */}
+                                            {isSelected && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '12px',
+                                                    right: '12px',
+                                                    background: 'var(--theme-primary)',
+                                                    borderRadius: '50%',
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: 'white',
+                                                    zIndex: 2
+                                                }}>
+                                                    <Check size={14} strokeWidth={4} />
+                                                </div>
+                                            )}
+
+                                            {/* Theme Preview Colors */}
+                                            <div style={{
+                                                display: 'flex',
+                                                gap: '8px',
+                                                marginBottom: '16px',
+                                                height: '70px',
+                                                borderRadius: '10px',
+                                                overflow: 'hidden',
+                                                border: '1px solid var(--border-primary)'
+                                            }}>
+                                                <div style={{ flex: 2, background: themeOption.colors.primary }}></div>
+                                                <div style={{ flex: 1, background: themeOption.colors.secondary }}></div>
+                                                <div style={{ flex: 1, background: themeOption.colors.accent }}></div>
+                                            </div>
+
+                                            {/* Theme Info */}
+                                            <div>
+                                                <h3 style={{
+                                                    fontSize: '1rem',
+                                                    fontWeight: 800,
+                                                    color: 'var(--text-primary)',
+                                                    margin: '0 0 4px 0'
+                                                }}>
+                                                    {themeOption.name}
+                                                </h3>
+                                                <p style={{
+                                                    fontSize: '0.85rem',
+                                                    color: 'var(--text-secondary)',
+                                                    margin: 0
+                                                }}>
+                                                    {themeOption.description}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>Dark Mode Coming Soon</h3>
-                            <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>
-                                We are currently working on a suite of dark themes to enhance your late-night workflow.
-                            </p>
-                        </div>
+                        </>
                     )}
                 </div>
             </div>

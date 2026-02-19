@@ -95,11 +95,11 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
         <div className="space-y-6" style={{ padding: '4px' }}>
             <form id="lead-form" onSubmit={handleSubmit} className="space-y-6">
                 <div style={{
-                    background: 'white',
-                    border: '1px solid #E0E6ED',
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border-primary)',
                     borderRadius: '12px',
                     width: '100%',
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                    boxShadow: 'var(--shadow-md)',
                     padding: '24px',
                     display: 'flex',
                     flexDirection: 'column'
@@ -128,12 +128,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 style={{
                                     width: '100%',
                                     padding: '6px 10px',
-                                    background: 'white',
+                                    background: 'var(--bg-primary)',
                                     border: '1px solid var(--border-primary)',
                                     borderRadius: '6px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
-                                    color: '#1a1f36',
+                                    color: 'var(--text-primary)',
                                     outline: 'none',
                                     height: '34px'
                                 }}
@@ -159,12 +159,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                     style={{
                                         width: '100%',
                                         padding: '6px 10px',
-                                        background: 'white',
+                                        background: 'var(--bg-primary)',
                                         border: '1px solid var(--border-primary)',
                                         borderRadius: '6px',
                                         fontSize: '0.85rem',
                                         fontWeight: 500,
-                                        color: '#1a1f36',
+                                        color: 'var(--text-primary)',
                                         outline: 'none',
                                         height: '34px'
                                     }}
@@ -177,9 +177,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                         right: '10px',
                                         top: '50%',
                                         transform: 'translateY(-50%)',
-                                        color: '#718096',
+                                        color: 'var(--text-secondary)',
                                         pointerEvents: 'none',
-                                        background: 'white'
+                                        background: 'transparent'
                                     }}
                                 />
                             </div>
@@ -199,12 +199,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 style={{
                                     width: '100%',
                                     padding: '6px 10px',
-                                    background: 'white',
+                                    background: 'var(--bg-primary)',
                                     border: '1px solid var(--border-primary)',
                                     borderRadius: '6px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
-                                    color: '#1a1f36',
+                                    color: 'var(--text-primary)',
                                     outline: 'none',
                                     height: '34px'
                                 }}
@@ -226,12 +226,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 style={{
                                     width: '100%',
                                     padding: '6px 10px',
-                                    background: 'white',
+                                    background: 'var(--bg-primary)',
                                     border: '1px solid var(--border-primary)',
                                     borderRadius: '6px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
-                                    color: '#1a1f36',
+                                    color: 'var(--text-primary)',
                                     outline: 'none',
                                     height: '34px'
                                 }}
@@ -253,12 +253,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 style={{
                                     width: '100%',
                                     padding: '6px 10px',
-                                    background: 'white',
+                                    background: 'var(--bg-primary)',
                                     border: '1px solid var(--border-primary)',
                                     borderRadius: '6px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
-                                    color: '#1a1f36',
+                                    color: 'var(--text-primary)',
                                     outline: 'none',
                                     height: '34px'
                                 }}
@@ -279,12 +279,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 style={{
                                     width: '100%',
                                     padding: '6px 10px',
-                                    background: 'white',
+                                    background: 'var(--bg-primary)',
                                     border: '1px solid var(--border-primary)',
                                     borderRadius: '6px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
-                                    color: '#1a1f36',
+                                    color: 'var(--text-primary)',
                                     outline: 'none',
                                     height: '34px'
                                 }}
@@ -305,12 +305,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 style={{
                                     width: '100%',
                                     padding: '6px 10px',
-                                    background: 'white',
+                                    background: 'var(--bg-primary)',
                                     border: '1px solid var(--border-primary)',
                                     borderRadius: '6px',
                                     fontSize: '0.85rem',
                                     fontWeight: 500,
-                                    color: '#1a1f36',
+                                    color: 'var(--text-primary)',
                                     outline: 'none',
                                     height: '34px'
                                 }}
@@ -427,12 +427,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                         animation: 'fadeIn 0.2s ease-out'
                     }}>
                         <div style={{
-                            background: 'white',
+                            background: 'var(--bg-primary)',
                             width: '100%',
                             maxWidth: '500px',
                             borderRadius: '12px',
-                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                            border: '1px solid #E2E8F0',
+                            boxShadow: 'var(--shadow-md)',
+                            border: '1px solid var(--border-primary)',
                             overflow: 'hidden',
                             animation: 'modalScale 0.2s ease-out'
                         }}>

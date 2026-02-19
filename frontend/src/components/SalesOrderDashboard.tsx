@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
     Eye,
     Download,
-    Filter,
     Search,
     ChevronDown,
     Columns,
@@ -15,6 +14,19 @@ import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import Pagination from './Pagination';
 
+const ALL_COLUMNS = [
+    { id: 'deal_id', label: 'Deal ID' },
+    { id: 'so_number', label: 'SO Number' },
+    { id: 'order_date', label: 'Order Date' },
+    { id: 'customer', label: 'Customer' },
+    { id: 'cust_code', label: 'Cust Code' },
+    { id: 'po_number', label: 'PO Number' },
+    { id: 'items', label: 'Items (Summary)' },
+    { id: 'status', label: 'Status' },
+    { id: 'amount', label: 'Amount' },
+    { id: 'po_date', label: 'PO Date' }
+];
+
 interface SalesOrderDashboardProps {
     onView: (id: number) => void;
     refreshKey?: number;
@@ -25,7 +37,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [showFilters, setShowFilters] = useState(false);
+    const [showFilters] = useState(true);
     const [filters, setFilters] = useState({
         deal_id: '',
         so_number: '',
@@ -39,29 +51,33 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
         status: ''
     });
 
-    const [visibleColumns, setVisibleColumns] = useState(() => {
+    const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
         const saved = localStorage.getItem('salesOrderDashboard_visibleColumns');
-        return saved ? JSON.parse(saved) : {
-            deal_id: true,
-            so_number: true,
-            order_date: true,
-            customer: true,
-            cust_code: true,
-            po_number: true,
-            items: true,
-            status: true,
-            amount: true,
-            po_date: true,
-            actions: true
-        };
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) return parsed;
+                // Migrate from old object format if necessary
+                return Object.entries(parsed)
+                    .filter(([_, visible]) => visible)
+                    .map(([id]) => id);
+            } catch (e) {
+                console.error('Error parsing visible columns', e);
+            }
+        }
+        return ['deal_id', 'so_number', 'order_date', 'customer', 'cust_code', 'po_number', 'items', 'status', 'amount', 'po_date', 'actions'];
     });
 
     useEffect(() => {
         localStorage.setItem('salesOrderDashboard_visibleColumns', JSON.stringify(visibleColumns));
     }, [visibleColumns]);
 
-    const toggleColumn = (col: keyof typeof visibleColumns) => {
-        setVisibleColumns((prev: any) => ({ ...prev, [col]: !prev[col] }));
+    const toggleColumn = (col: string) => {
+        setVisibleColumns(prev =>
+            prev.includes(col)
+                ? prev.filter(c => c !== col)
+                : [...prev, col]
+        );
     };
     const ITEMS_PER_PAGE = 20;
     const [stats, setStats] = useState({
@@ -285,26 +301,6 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                             )}
                         </div>
 
-                        <button
-                            className="ae-btn-secondary"
-                            onClick={() => setShowFilters(!showFilters)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '6px 14px',
-                                fontSize: '0.8rem',
-                                height: '32px',
-                                borderRadius: '8px',
-                                background: showFilters ? 'var(--bg-secondary)' : 'white',
-                                color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
-                                borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)',
-                                fontWeight: 700,
-                                cursor: 'pointer'
-                            }}
-                        >
-                            <Filter size={16} /> Filters
-                        </button>
 
                         <div style={{ position: 'relative' }}>
                             <button
@@ -351,19 +347,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         background: 'var(--bg-secondary)'
                                     }}>
                                         <button
-                                            onClick={() => setVisibleColumns({
-                                                deal_id: true,
-                                                so_number: true,
-                                                order_date: true,
-                                                customer: true,
-                                                cust_code: true,
-                                                po_number: true,
-                                                items: true,
-                                                status: true,
-                                                amount: true,
-                                                po_date: true,
-                                                actions: true
-                                            })}
+                                            onClick={() => setVisibleColumns(['deal_id', 'so_number', 'order_date', 'customer', 'cust_code', 'po_number', 'items', 'status', 'amount', 'po_date', 'actions'])}
                                             style={{
                                                 background: 'none',
                                                 border: 'none',
@@ -377,19 +361,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                             Select All
                                         </button>
                                         <button
-                                            onClick={() => setVisibleColumns({
-                                                deal_id: false,
-                                                so_number: false,
-                                                order_date: false,
-                                                customer: false,
-                                                cust_code: false,
-                                                po_number: false,
-                                                items: false,
-                                                status: false,
-                                                amount: false,
-                                                po_date: false,
-                                                actions: true
-                                            })}
+                                            onClick={() => setVisibleColumns(['actions'])}
                                             style={{
                                                 background: 'none',
                                                 border: 'none',
@@ -404,19 +376,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         </button>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '8px 12px' }}>
-                                        {Object.entries({
-                                            deal_id: 'Deal ID',
-                                            so_number: 'SO Number',
-                                            order_date: 'Order Date',
-                                            customer: 'Customer',
-                                            cust_code: 'Cust Code',
-                                            po_number: 'PO Number',
-                                            items: 'Items',
-                                            status: 'Status',
-                                            amount: 'Amount',
-                                            po_date: 'PO Date',
-                                            actions: 'Actions'
-                                        }).map(([id, label]) => (
+                                        {[...ALL_COLUMNS, { id: 'actions', label: 'Actions' }].map(({ id, label }) => (
                                             <label
                                                 key={id}
                                                 style={{
@@ -436,8 +396,8 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                             >
                                                 <input
                                                     type="checkbox"
-                                                    checked={visibleColumns[id as keyof typeof visibleColumns]}
-                                                    onChange={() => toggleColumn(id as keyof typeof visibleColumns)}
+                                                    checked={visibleColumns.includes(id)}
+                                                    onChange={() => toggleColumn(id)}
                                                     style={{ width: '16px', height: '16px', borderRadius: '4px', accentColor: 'var(--theme-primary)' }}
                                                 />
                                                 {label}
@@ -455,333 +415,235 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                     <table className="ae-table">
                         <thead>
                             <tr>
-                                {visibleColumns.deal_id && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Deal ID</th>}
-                                {visibleColumns.so_number && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>SO Number</th>}
-                                {visibleColumns.order_date && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Order Date</th>}
-                                {visibleColumns.customer && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Customer</th>}
-                                {visibleColumns.cust_code && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Cust Code</th>}
-                                {visibleColumns.po_number && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>PO Number</th>}
-                                {visibleColumns.items && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Items (Summary)</th>}
-                                {visibleColumns.status && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Status</th>}
-                                {visibleColumns.amount && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Amount</th>}
-                                {visibleColumns.po_date && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>PO Date</th>}
-                                {visibleColumns.actions && <th style={{ backgroundColor: 'var(--bg-secondary)', textAlign: 'center', textTransform: 'uppercase' }}>Actions</th>}
+                                {visibleColumns.map(key => {
+                                    if (key === 'actions') return <th key={key} style={{ backgroundColor: 'var(--bg-secondary)', textAlign: 'center', textTransform: 'uppercase' }}>Actions</th>;
+                                    const col = ALL_COLUMNS.find(c => c.id === key);
+                                    return <th key={key} style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>{col?.label}</th>;
+                                })}
                             </tr>
                             {showFilters && (
                                 <tr style={{ background: 'var(--bg-secondary)' }}>
-                                    {visibleColumns.deal_id && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.deal_id}
-                                                    onChange={e => setFilters({ ...filters, deal_id: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.so_number && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.so_number}
-                                                    onChange={e => setFilters({ ...filters, so_number: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.order_date && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.order_date}
-                                                    onChange={e => setFilters({ ...filters, order_date: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.customer && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.customer_name}
-                                                    onChange={e => setFilters({ ...filters, customer_name: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.cust_code && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.customer_code}
-                                                    onChange={e => setFilters({ ...filters, customer_code: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.po_number && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.po_number}
-                                                    onChange={e => setFilters({ ...filters, po_number: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.items && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.items_summary}
-                                                    onChange={e => setFilters({ ...filters, items_summary: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.status && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.status}
-                                                    onChange={e => setFilters({ ...filters, status: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.amount && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.amount}
-                                                    onChange={e => setFilters({ ...filters, amount: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.po_date && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.po_date}
-                                                    onChange={e => setFilters({ ...filters, po_date: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.actions && (
-                                        <th style={{ textAlign: 'center', backgroundColor: 'var(--bg-secondary)' }}>
-                                            <button
-                                                onClick={() => setFilters({
-                                                    deal_id: '',
-                                                    so_number: '',
-                                                    order_date: '',
-                                                    customer_name: '',
-                                                    customer_code: '',
-                                                    po_number: '',
-                                                    items_summary: '',
-                                                    amount: '',
-                                                    po_date: '',
-                                                    status: ''
-                                                })}
-                                                style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
-                                            >
-                                                Clear
-                                            </button>
-                                        </th>
-                                    )}
+                                    {visibleColumns.map(key => {
+                                        if (key === 'actions') {
+                                            return (
+                                                <th key={key} style={{ textAlign: 'center', backgroundColor: 'var(--bg-secondary)' }}>
+                                                    <button
+                                                        onClick={() => setFilters({
+                                                            deal_id: '',
+                                                            so_number: '',
+                                                            order_date: '',
+                                                            customer_name: '',
+                                                            customer_code: '',
+                                                            po_number: '',
+                                                            items_summary: '',
+                                                            amount: '',
+                                                            po_date: '',
+                                                            status: ''
+                                                        })}
+                                                        style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                                    >
+                                                        Clear
+                                                    </button>
+                                                </th>
+                                            );
+                                        }
+                                        const filterKeyMap: Record<string, keyof typeof filters> = {
+                                            deal_id: 'deal_id',
+                                            so_number: 'so_number',
+                                            order_date: 'order_date',
+                                            customer: 'customer_name',
+                                            cust_code: 'customer_code',
+                                            po_number: 'po_number',
+                                            items: 'items_summary',
+                                            status: 'status',
+                                            amount: 'amount',
+                                            po_date: 'po_date'
+                                        };
+                                        const filterKey = filterKeyMap[key];
+                                        return (
+                                            <th key={key} style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                                <div className="ae-input-group">
+                                                    <Search className="ae-search-icon" size={12} />
+                                                    <input
+                                                        className="ae-input"
+                                                        placeholder="Filter..."
+                                                        value={filters[filterKey]}
+                                                        onChange={e => setFilters({ ...filters, [filterKey]: e.target.value })}
+                                                        style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                    />
+                                                </div>
+                                            </th>
+                                        );
+                                    })}
                                 </tr>
                             )}
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={10} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td>
+                                    <td colSpan={visibleColumns.length} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td>
                                 </tr>
                             ) : paginatedSalesOrders.length === 0 ? (
                                 <tr>
-                                    <td colSpan={Object.values(visibleColumns).filter(Boolean).length} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No Sales Orders found.</td>
+                                    <td colSpan={visibleColumns.length} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No Sales Orders found.</td>
                                 </tr>
                             ) : paginatedSalesOrders.map((so) => (
                                 <tr key={so.id}>
-                                    {visibleColumns.deal_id && (
-                                        <td className="whitespace-nowrap">
-                                            <span
-                                                style={{ color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
-                                                onClick={() => navigate(`/deal?id=${so.deal}`)}
-                                            >
-                                                {so.deal_id || '---'}
-                                            </span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.so_number && (
-                                        <td className="whitespace-nowrap">
-                                            <span
-                                                style={{ color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
-                                                onClick={() => onView(so.id)}
-                                            >
-                                                {so.so_number || '---'}
-                                            </span>
-                                            {so.status === 'DRAFT' && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800 uppercase tracking-tighter">Draft</span>}
-                                        </td>
-                                    )}
-                                    {visibleColumns.order_date && (
-                                        <td className="whitespace-nowrap">
-                                            <span style={{ fontSize: '0.8rem' }}>{so.order_date ? new Date(so.order_date).toLocaleDateString() : '---'}</span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.customer && (
-                                        <td className="whitespace-nowrap">
-                                            <div className="flex flex-col">
-                                                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{so.customer_name || 'N/A'}</span>
-                                            </div>
-                                        </td>
-                                    )}
-                                    {visibleColumns.cust_code && (
-                                        <td className="whitespace-nowrap">
-                                            <span style={{ fontSize: '0.8rem' }}>{so.customer_code || '---'}</span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.po_number && (
-                                        <td className="whitespace-nowrap">
-                                            <span style={{ fontSize: '0.8rem' }}>{so.po_number}</span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.items && (
-                                        <td className="whitespace-nowrap">
-                                            <div className="flex flex-col text-xs">
-                                                {so.items && so.items.length > 0 ? (
-                                                    <>
-                                                        <span className="text-slate-700 truncate max-w-[150px]" title={so.items[0].description || so.items[0].product_name}>
-                                                            {so.items[0].description || (so.items[0].product ? `Product #${so.items[0].product}` : 'Unmapped Item')}
+                                    {visibleColumns.map(key => {
+                                        switch (key) {
+                                            case 'deal_id':
+                                                return (
+                                                    <td key={key} className="whitespace-nowrap">
+                                                        <span
+                                                            style={{ color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                                            onClick={() => navigate(`/deal?id=${so.deal}`)}
+                                                        >
+                                                            {so.deal_id || '---'}
                                                         </span>
-                                                        {so.items.length > 1 && (
-                                                            <span className="text-orange-600 font-semibold" style={{ fontSize: '0.65rem' }}>
-                                                                + {so.items.length - 1} more items
-                                                            </span>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <span className="text-gray-400 italic">No Items</span>
-                                                )}
-                                            </div>
-                                        </td>
-                                    )}
-                                    {visibleColumns.status && (
-                                        <td className="whitespace-nowrap">
-                                            <span style={{
-                                                padding: '4px 10px',
-                                                borderRadius: '6px',
-                                                fontSize: '9px',
-                                                fontWeight: 600,
-                                                textTransform: 'uppercase',
-                                                background: so.status === 'SUBMITTED' ? 'rgba(0, 200, 83, 0.1)' : 'var(--bg-secondary)',
-                                                color: so.status === 'SUBMITTED' ? '#00C853' : 'var(--theme-primary)'
-                                            }}>
-                                                {so.status}
-                                            </span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.amount && (
-                                        <td className="whitespace-nowrap">
-                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{so.currency} {parseFloat(so.total_amount).toLocaleString()}</span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.po_date && (
-                                        <td className="whitespace-nowrap">
-                                            <span style={{ fontSize: '0.75rem' }}>{so.po_date ? new Date(so.po_date).toLocaleDateString() : (so.order_date ? new Date(so.order_date).toLocaleDateString() : '-')}</span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.actions && (
-                                        <td style={{ width: '120px', minWidth: '120px', padding: '8px' }}>
-                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
-                                                <button
-                                                    onClick={() => onView(so.id)}
-                                                    style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        padding: '6px 12px',
-                                                        background: 'var(--ae-blue)',
-                                                        color: 'white',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.75rem',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onMouseOver={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
-                                                    onMouseOut={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
-                                                    title="View Details"
-                                                >
-                                                    <Eye size={14} />
-                                                </button>
+                                                    </td>
+                                                );
+                                            case 'so_number':
+                                                return (
+                                                    <td key={key} className="whitespace-nowrap">
+                                                        <span
+                                                            style={{ color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                                            onClick={() => onView(so.id)}
+                                                        >
+                                                            {so.so_number || '---'}
+                                                        </span>
+                                                        {so.status === 'DRAFT' && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800 uppercase tracking-tighter">Draft</span>}
+                                                    </td>
+                                                );
+                                            case 'order_date':
+                                                return (
+                                                    <td key={key} className="whitespace-nowrap">
+                                                        <span style={{ fontSize: '0.8rem' }}>{so.order_date ? new Date(so.order_date).toLocaleDateString() : '---'}</span>
+                                                    </td>
+                                                );
+                                            case 'customer':
+                                                return (
+                                                    <td key={key} className="whitespace-nowrap">
+                                                        <div className="flex flex-col">
+                                                            <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{so.customer_name || 'N/A'}</span>
+                                                        </div>
+                                                    </td>
+                                                );
+                                            case 'cust_code':
+                                                return (
+                                                    <td key={key} className="whitespace-nowrap">
+                                                        <span style={{ fontSize: '0.8rem' }}>{so.customer_code || '---'}</span>
+                                                    </td>
+                                                );
+                                            case 'po_number':
+                                                return (
+                                                    <td key={key} className="whitespace-nowrap">
+                                                        <span style={{ fontSize: '0.8rem' }}>{so.po_number}</span>
+                                                    </td>
+                                                );
+                                            case 'items':
+                                                return (
+                                                    <td key={key} className="whitespace-nowrap">
+                                                        <div className="flex flex-col text-xs">
+                                                            {so.items && so.items.length > 0 ? (
+                                                                <>
+                                                                    <span className="text-slate-700 truncate max-w-[150px]" title={so.items[0].description || so.items[0].product_name}>
+                                                                        {so.items[0].description || (so.items[0].product ? `Product #${so.items[0].product}` : 'Unmapped Item')}
+                                                                    </span>
+                                                                    {so.items.length > 1 && (
+                                                                        <span className="text-orange-600 font-semibold" style={{ fontSize: '0.65rem' }}>
+                                                                            + {so.items.length - 1} more items
+                                                                        </span>
+                                                                    )}
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-gray-400 italic">No Items</span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                );
+                                            case 'status':
+                                                return (
+                                                    <td key={key} className="whitespace-nowrap">
+                                                        <span style={{
+                                                            padding: '4px 10px',
+                                                            borderRadius: '6px',
+                                                            fontSize: '9px',
+                                                            fontWeight: 600,
+                                                            textTransform: 'uppercase',
+                                                            background: so.status === 'SUBMITTED' ? 'rgba(0, 200, 83, 0.1)' : 'var(--bg-secondary)',
+                                                            color: so.status === 'SUBMITTED' ? '#00C853' : 'var(--theme-primary)'
+                                                        }}>
+                                                            {so.status}
+                                                        </span>
+                                                    </td>
+                                                );
+                                            case 'amount':
+                                                return (
+                                                    <td key={key} className="whitespace-nowrap">
+                                                        <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{so.currency} {parseFloat(so.total_amount).toLocaleString()}</span>
+                                                    </td>
+                                                );
+                                            case 'po_date':
+                                                return (
+                                                    <td key={key} className="whitespace-nowrap">
+                                                        <span style={{ fontSize: '0.75rem' }}>{so.po_date ? new Date(so.po_date).toLocaleDateString() : (so.order_date ? new Date(so.order_date).toLocaleDateString() : '-')}</span>
+                                                    </td>
+                                                );
+                                            case 'actions':
+                                                return (
+                                                    <td key={key} style={{ width: '120px', minWidth: '120px', padding: '8px' }}>
+                                                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                                                            <button
+                                                                onClick={() => onView(so.id)}
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    padding: '6px 12px',
+                                                                    background: 'var(--ae-blue)',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    fontSize: '0.75rem',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseOver={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
+                                                                onMouseOut={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
+                                                                title="View Details"
+                                                            >
+                                                                <Eye size={14} />
+                                                            </button>
 
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDownloadReport(so.id, so.so_number);
-                                                    }}
-                                                    style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        padding: '6px 12px',
-                                                        background: 'var(--theme-primary)',
-                                                        color: 'white',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.75rem',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onMouseOver={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
-                                                    onMouseOut={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
-                                                    title="Download PO"
-                                                >
-                                                    <Download size={14} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    )}
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDownloadReport(so.id, so.so_number);
+                                                                }}
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    padding: '6px 12px',
+                                                                    background: 'var(--theme-primary)',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    fontSize: '0.75rem',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseOver={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
+                                                                onMouseOut={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
+                                                                title="Download PO"
+                                                            >
+                                                                <Download size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                );
+                                            default:
+                                                return <td key={key}>---</td>;
+                                        }
+                                    })}
                                 </tr>
                             ))}
                         </tbody>

@@ -12,6 +12,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import SearchableDropdown from './SearchableDropdown';
 
 interface DealFormProps {
     id: number | null;
@@ -546,15 +547,18 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer/Partner Name</label>
-                                <select name="customer" value={formData.customer} onChange={handleInputChange} className="ae-input">
-                                    <option value="">Select Customer</option>
-                                    {companies.map(c => {
+                                <SearchableDropdown
+                                    label="Customer/Partner Name"
+                                    options={companies.map(c => {
                                         const customerId = customers.find(cust => cust.name === c.name)?.id || '';
-                                        return <option key={c.id} value={customerId}>{c.name}</option>;
-                                    })}
-                                    <option value="ADD_NEW" style={{ fontWeight: 700, color: 'var(--theme-primary)' }}>+ Add New Customer</option>
-                                </select>
+                                        return { value: customerId, label: c.name };
+                                    }).filter(opt => opt.value !== '')}
+                                    value={formData.customer}
+                                    onChange={(val) => handleInputChange({ target: { name: 'customer', value: val } } as any)}
+                                    placeholder="Select Customer"
+                                    onAddNew={() => handleInputChange({ target: { name: 'customer', value: 'ADD_NEW' } } as any)}
+                                    addNewLabel="Add New Customer"
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>End Customer</label>

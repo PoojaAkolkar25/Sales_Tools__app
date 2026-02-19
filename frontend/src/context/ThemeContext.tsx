@@ -2,7 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export type Theme =
     | 'light-1' | 'light-2' | 'light-3' | 'light-4' | 'light-5'
-    | 'dark-1' | 'dark-2' | 'dark-3' | 'dark-4' | 'dark-5';
+    | 'dark-1' | 'dark-2' | 'dark-3' | 'dark-4' | 'dark-5'
+    | 'birla' | 'autumn' | 'default' | 'rustic' | 'warm-earth' | 'rustic-charm' | 'ocean-delight' | 'electric-city';
 
 interface ThemeContextType {
     theme: Theme;
@@ -17,7 +18,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // Validate saved theme or default to light-1
         if (savedTheme && [
             'light-1', 'light-2', 'light-3', 'light-4', 'light-5',
-            'dark-1', 'dark-2', 'dark-3', 'dark-4', 'dark-5'
+            'dark-1', 'dark-2', 'dark-3', 'dark-4', 'dark-5',
+            'birla', 'autumn', 'default', 'rustic', 'warm-earth', 'rustic-charm', 'ocean-delight', 'electric-city'
         ].includes(savedTheme)) {
             return savedTheme as Theme;
         }

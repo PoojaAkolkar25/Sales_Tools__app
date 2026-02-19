@@ -12,8 +12,7 @@ import {
     Columns,
     FileSpreadsheet,
     Loader2,
-    RefreshCcw,
-    Filter
+    RefreshCcw
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -97,7 +96,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
 
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
-    const [showFilters, setShowFilters] = useState(false);
+    const [showFilters] = useState(true);
     const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
         const saved = localStorage.getItem('estimateDashboard_visibleColumns_v3');
         return saved ? JSON.parse(saved) : ALL_COLUMNS.map(col => col.key);
@@ -526,29 +525,6 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                             )}
                         </div>
 
-                        <div style={{ position: 'relative' }}>
-                            <button
-                                className="ae-btn-secondary"
-                                onClick={() => setShowFilters(!showFilters)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '6px 14px',
-                                    fontSize: '0.8rem',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    background: showFilters ? 'var(--bg-secondary)' : 'white',
-                                    color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
-                                    borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)',
-                                    fontWeight: 700,
-                                    cursor: 'pointer'
-                                }}
-                                title={showFilters ? "Hide Filters" : "Show Filters"}
-                            >
-                                <Filter size={16} /> Filters
-                            </button>
-                        </div>
 
                         <div style={{ position: 'relative' }} ref={columnMenuRef}>
                             <button
@@ -677,9 +653,23 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                     <table className="ae-table" style={{ minWidth: visibleColumns.length > 6 ? '1400px' : '100%' }}>
                         <thead>
                             <tr>
-                                {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
-                                    <th key={col.key} style={{ backgroundColor: 'var(--bg-secondary)', zIndex: 12, height: '40px', whiteSpace: 'nowrap', top: 0, color: 'var(--text-secondary)' }}>{col.label}</th>
-                                ))}
+                                {visibleColumns.map(key => {
+                                    const col = ALL_COLUMNS.find(c => c.key === key);
+                                    if (!col) return null;
+                                    return (
+                                        <th key={key} style={{
+                                            backgroundColor: 'var(--bg-secondary)',
+                                            zIndex: 12,
+                                            height: '40px',
+                                            whiteSpace: 'nowrap',
+                                            top: 0,
+                                            color: 'var(--text-secondary)',
+                                            textAlign: (key === 'total_price' || key === 'deal_amount' || key === 'cost_sheet_price') ? 'right' : 'left'
+                                        }}>
+                                            {col.label}
+                                        </th>
+                                    );
+                                })}
                                 <th style={{
                                     backgroundColor: 'var(--bg-secondary)',
                                     zIndex: 12,
@@ -694,20 +684,27 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                             </tr>
                             {showFilters && (
                                 <tr style={{ background: 'var(--bg-secondary)' }}>
-                                    {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
-                                        <th key={col.key} style={{ backgroundColor: 'var(--bg-secondary)', top: '40px', zIndex: 11, height: '50px', padding: '8px', overflow: 'visible', verticalAlign: 'middle' }}>
-                                            <div className="ae-input-group" style={{ margin: 0, display: 'block' }}>
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={(filters as any)[col.key]}
-                                                    onChange={e => setFilters({ ...filters, [col.key]: e.target.value })}
-                                                    style={{ height: '28px', fontSize: '11px', lineHeight: '28px', boxSizing: 'border-box' }}
-                                                />
-                                            </div>
-                                        </th>
-                                    ))}
+                                    {visibleColumns.map(key => {
+                                        const col = ALL_COLUMNS.find(c => c.key === key);
+                                        if (!col) return null;
+                                        const hasFilter = key in filters;
+                                        return (
+                                            <th key={key} style={{ backgroundColor: 'var(--bg-secondary)', top: '40px', zIndex: 11, height: '50px', padding: '8px', overflow: 'visible', verticalAlign: 'middle' }}>
+                                                {hasFilter && (
+                                                    <div className="ae-input-group" style={{ margin: 0, display: 'block' }}>
+                                                        <Search className="ae-search-icon" size={12} />
+                                                        <input
+                                                            className="ae-input"
+                                                            placeholder="Filter..."
+                                                            value={(filters as any)[key]}
+                                                            onChange={e => setFilters({ ...filters, [key]: e.target.value })}
+                                                            style={{ height: '28px', fontSize: '11px', lineHeight: '28px', boxSizing: 'border-box' }}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </th>
+                                        );
+                                    })}
                                     <th style={{
                                         textAlign: 'center',
                                         backgroundColor: 'var(--bg-secondary)',
@@ -725,7 +722,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                 estimate_id: '', version: '', deal_id: '', cost_sheet_no: '', customer_name: '', project_name: '',
                                                 total_price: '', status: '', created_at: '', period: '',
                                                 startDate: '', endDate: '', subscription_from: '', subscription_to: ''
-                                            })}
+                                            } as any)}
                                             style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                         >
                                             Clear
@@ -745,94 +742,95 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                     const hasProposal = (est as any).proposals?.length > 0;
                                     return (
                                         <tr key={est.id}>
-                                            {visibleColumns.includes('deal_id') && (
-                                                <td
-                                                    style={{ fontWeight: 700, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
-                                                    onClick={() => navigate(`/deal?id=${est.deal}`)}
-                                                >
-                                                    {est.deal_id}
-                                                </td>
-                                            )}
-                                            {visibleColumns.includes('deal_amount') && (
-                                                <td style={{ fontWeight: 600 }}>
-                                                    ₹{parseFloat(est.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                </td>
-                                            )}
-                                            {visibleColumns.includes('cost_sheet_no') && (
-                                                <td
-                                                    style={{ fontWeight: 700, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
-                                                    onClick={() => navigate(`/cost-sheet?id=${est.cost_sheet}`)}
-                                                >
-                                                    {est.cost_sheet_no}
-                                                </td>
-                                            )}
-                                            {visibleColumns.includes('cost_sheet_price') && (
-                                                <td style={{ fontWeight: 600 }}>
-                                                    ₹{parseFloat(est.cost_sheet_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                </td>
-                                            )}
-                                            {visibleColumns.includes('estimate_id') && (
-                                                <td
-                                                    style={{ fontWeight: 700, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
-                                                    onClick={() => onView(est.id)}
-                                                >
-                                                    {est.estimate_id}
-                                                </td>
-                                            )}
-
-                                            {visibleColumns.includes('created_at') && (
-                                                <td style={{ fontSize: '0.75rem' }}>
-                                                    {est.created_at ? formatToAppDate(est.created_at) : '-'}
-                                                </td>
-                                            )}
-
-                                            {visibleColumns.includes('estimate_date') && <td style={{ fontSize: '0.75rem' }}>{est.estimate_date ? formatToAppDate(est.estimate_date) : '-'}</td>}
-
-                                            {visibleColumns.includes('customer_name') && <td style={{ fontWeight: 500 }}>{est.customer_name}</td>}
-                                            {visibleColumns.includes('project_name') && <td style={{ fontWeight: 500 }}>{est.project_name}</td>}
-                                            {visibleColumns.includes('total_price') && <td style={{ fontWeight: 700 }}>₹{parseFloat(est.total_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>}
-                                            {visibleColumns.includes('status') && (
-                                                <td>
-                                                    <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: style.bg, color: style.text, whiteSpace: 'nowrap' }}>{style.label}</span>
-                                                </td>
-                                            )}
-                                            {visibleColumns.includes('subscription_from') && <td style={{ fontSize: '0.75rem' }}>{est.subscription_from ? formatToAppDate(est.subscription_from) : '-'}</td>}
-                                            {visibleColumns.includes('subscription_to') && <td style={{ fontSize: '0.75rem' }}>{est.subscription_to ? formatToAppDate(est.subscription_to) : '-'}</td>}
-                                            {visibleColumns.includes('proposal') && (
-                                                <td>
-                                                    {hasProposal ? (
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#38A169', fontSize: '0.75rem', fontWeight: 600 }}><CheckCircle2 size={14} /> Attached</div>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => onView(est.id)}
-                                                            style={{
-                                                                padding: '6px 12px',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.75rem',
-                                                                fontWeight: 700,
-                                                                background: 'var(--bg-secondary)',
-                                                                color: 'var(--theme-primary)',
-                                                                border: '1px solid var(--theme-primary)',
-                                                                cursor: 'pointer',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '6px',
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                            onMouseEnter={(e) => {
-                                                                e.currentTarget.style.background = 'var(--theme-primary)';
-                                                                e.currentTarget.style.color = 'white';
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.currentTarget.style.background = 'var(--bg-secondary)';
-                                                                e.currentTarget.style.color = 'var(--theme-primary)';
-                                                            }}
+                                            {visibleColumns.map(key => {
+                                                switch (key) {
+                                                    case 'deal_id':
+                                                        return <td key={key}
+                                                            style={{ fontWeight: 700, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
+                                                            onClick={() => navigate(`/deal?id=${est.deal}`)}
                                                         >
-                                                            <Upload size={14} /> Attach Proposal
-                                                        </button>
-                                                    )}
-                                                </td>
-                                            )}
+                                                            {est.deal_id}
+                                                        </td>;
+                                                    case 'deal_amount':
+                                                        return <td key={key} style={{ fontWeight: 600 }}>
+                                                            ₹{parseFloat(est.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        </td>;
+                                                    case 'cost_sheet_no':
+                                                        return <td key={key}
+                                                            style={{ fontWeight: 700, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
+                                                            onClick={() => navigate(`/cost-sheet?id=${est.cost_sheet}`)}
+                                                        >
+                                                            {est.cost_sheet_no}
+                                                        </td>;
+                                                    case 'cost_sheet_price':
+                                                        return <td key={key} style={{ fontWeight: 600 }}>
+                                                            ₹{parseFloat(est.cost_sheet_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        </td>;
+                                                    case 'estimate_id':
+                                                        return <td key={key}
+                                                            style={{ fontWeight: 700, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
+                                                            onClick={() => onView(est.id)}
+                                                        >
+                                                            {est.estimate_id}
+                                                        </td>;
+                                                    case 'created_at':
+                                                        return <td key={key} style={{ fontSize: '0.75rem' }}>
+                                                            {est.created_at ? formatToAppDate(est.created_at) : '-'}
+                                                        </td>;
+                                                    case 'estimate_date':
+                                                        return <td key={key} style={{ fontSize: '0.75rem' }}>{est.estimate_date ? formatToAppDate(est.estimate_date) : '-'}</td>;
+                                                    case 'customer_name':
+                                                        return <td key={key} style={{ fontWeight: 500 }}>{est.customer_name}</td>;
+                                                    case 'project_name':
+                                                        return <td key={key} style={{ fontWeight: 500 }}>{est.project_name}</td>;
+                                                    case 'total_price':
+                                                        return <td key={key} style={{ fontWeight: 700 }}>₹{parseFloat(est.total_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
+                                                    case 'status':
+                                                        return <td key={key}>
+                                                            <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: style.bg, color: style.text, whiteSpace: 'nowrap' }}>{style.label}</span>
+                                                        </td>;
+                                                    case 'subscription_from':
+                                                        return <td key={key} style={{ fontSize: '0.75rem' }}>{est.subscription_from ? formatToAppDate(est.subscription_from) : '-'}</td>;
+                                                    case 'subscription_to':
+                                                        return <td key={key} style={{ fontSize: '0.75rem' }}>{est.subscription_to ? formatToAppDate(est.subscription_to) : '-'}</td>;
+                                                    case 'proposal':
+                                                        return <td key={key}>
+                                                            {hasProposal ? (
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#38A169', fontSize: '0.75rem', fontWeight: 600 }}><CheckCircle2 size={14} /> Attached</div>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => onView(est.id)}
+                                                                    style={{
+                                                                        padding: '6px 12px',
+                                                                        borderRadius: '6px',
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: 700,
+                                                                        background: 'var(--bg-secondary)',
+                                                                        color: 'var(--theme-primary)',
+                                                                        border: '1px solid var(--theme-primary)',
+                                                                        cursor: 'pointer',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '6px',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                    onMouseEnter={(e) => {
+                                                                        e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                        e.currentTarget.style.color = 'white';
+                                                                    }}
+                                                                    onMouseLeave={(e) => {
+                                                                        e.currentTarget.style.background = 'var(--bg-secondary)';
+                                                                        e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                    }}
+                                                                >
+                                                                    <Upload size={14} /> Attach Proposal
+                                                                </button>
+                                                            )}
+                                                        </td>;
+                                                    default:
+                                                        return null;
+                                                }
+                                            })}
 
                                             <td style={{
                                                 width: '120px',

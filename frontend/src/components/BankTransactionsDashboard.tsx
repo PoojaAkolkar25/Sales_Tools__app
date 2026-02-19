@@ -1,9 +1,21 @@
 
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, XCircle, RefreshCw, Upload, Cloud, Filter, Search } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, Upload, Cloud, Filter, Search, Columns, ChevronDown } from 'lucide-react';
 import api from '../api';
 import Pagination from './Pagination';
 import { useNotification } from '../context/NotificationContext';
+
+const ALL_COLUMNS = [
+    { key: 'transaction_id', label: 'Trans. Id' },
+    { key: 'value_date', label: 'Value Date' },
+    { key: 'transaction_date', label: 'Trans. Date' },
+    { key: 'posted_date', label: 'Posted Date' },
+    { key: 'cheque_ref_no', label: 'Ref. No.' },
+    { key: 'description', label: 'Transaction Remark' },
+    { key: 'withdrawal_amount', label: 'Withdrawal' },
+    { key: 'deposit_amount', label: 'Deposit/Income' },
+    { key: 'balance', label: 'Balance' }
+];
 
 interface BankTransaction {
     id: number;
@@ -37,6 +49,16 @@ const BankTransactionsDashboard: React.FC = () => {
         customer_name: '',
         amount: ''
     });
+    const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+        const saved = localStorage.getItem('bankTransactionsDashboard_visibleColumns');
+        return saved ? JSON.parse(saved) : ALL_COLUMNS.map(c => c.key);
+    });
+
+    useEffect(() => {
+        localStorage.setItem('bankTransactionsDashboard_visibleColumns', JSON.stringify(visibleColumns));
+    }, [visibleColumns]);
+
     const ITEMS_PER_PAGE = 20;
     const [selectedTransaction, setSelectedTransaction] = useState<BankTransaction | null>(null);
     const [receiptsForMatching, setReceiptsForMatching] = useState<any[]>([]);
@@ -314,6 +336,96 @@ const BankTransactionsDashboard: React.FC = () => {
                         Upload Statement
                     </button>
                     <div style={{ width: '1px', height: '20px', background: 'var(--border-primary)' }}></div>
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            onClick={() => setShowColumnMenu(!showColumnMenu)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 14px',
+                                fontSize: '0.8rem',
+                                height: '32px',
+                                borderRadius: '8px',
+                                background: 'var(--bg-primary)',
+                                color: 'var(--text-secondary)',
+                                border: '1px solid var(--border-primary)',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <Columns size={16} /> Columns <ChevronDown size={14} />
+                        </button>
+                        {showColumnMenu && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                marginTop: '8px',
+                                background: 'var(--bg-primary)',
+                                borderRadius: '12px',
+                                boxShadow: 'var(--shadow-lg)',
+                                border: '1px solid var(--border-primary)',
+                                zIndex: 100,
+                                minWidth: '220px',
+                                overflow: 'hidden'
+                            }}>
+                                <div style={{
+                                    padding: '12px 16px',
+                                    borderBottom: '1px solid var(--border-primary)',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    background: 'var(--bg-secondary)'
+                                }}>
+                                    <button
+                                        onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))}
+                                        style={{ background: 'none', border: 'none', color: 'var(--ae-blue)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                        Select All
+                                    </button>
+                                    <button
+                                        onClick={() => setVisibleColumns([])}
+                                        style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                        Clear All
+                                    </button>
+                                </div>
+                                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                    {ALL_COLUMNS.map(col => (
+                                        <label key={col.key} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '10px 16px',
+                                            fontSize: '0.85rem',
+                                            color: 'var(--text-primary)',
+                                            cursor: 'pointer',
+                                            transition: 'background 0.2s',
+                                            borderBottom: '1px solid var(--border-primary)'
+                                        }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={visibleColumns.includes(col.key)}
+                                                onChange={() => {
+                                                    if (visibleColumns.includes(col.key)) {
+                                                        setVisibleColumns(visibleColumns.filter(c => c !== col.key));
+                                                    } else {
+                                                        setVisibleColumns([...visibleColumns, col.key]);
+                                                    }
+                                                }}
+                                                style={{ cursor: 'pointer', accentColor: 'var(--theme-primary)' }}
+                                            />
+                                            <span style={{ fontWeight: 600 }}>{col.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <button
                         className="ae-btn-secondary"
                         onClick={() => setShowFilters(!showFilters)}
@@ -379,57 +491,57 @@ const BankTransactionsDashboard: React.FC = () => {
                             <thead>
                                 <tr>
                                     <th style={{ width: '50px' }}>#</th>
-                                    <th>Trans. Id</th>
-                                    <th>Value Date</th>
-                                    <th>Trans. Date</th>
-                                    <th>Posted Date</th>
-                                    <th>Ref. No.</th>
-                                    <th>Transaction Remark</th>
-                                    <th style={{ textAlign: 'right' }}>Withdrawal</th>
-                                    <th style={{ backgroundColor: 'var(--bg-secondary)' }}>Balance</th>
+                                    {visibleColumns.map(key => {
+                                        const col = ALL_COLUMNS.find(c => c.key === key);
+                                        if (!col) return null;
+                                        return (
+                                            <th key={key} style={{
+                                                textAlign: (key === 'withdrawal_amount' || key === 'deposit_amount' || key === 'balance') ? 'right' : 'left'
+                                            }}>
+                                                {col.label}
+                                            </th>
+                                        );
+                                    })}
                                     <th style={{ backgroundColor: 'var(--bg-secondary)', textAlign: 'center' }}>Actions</th>
                                 </tr>
                                 {showFilters && (
                                     <tr style={{ background: 'var(--bg-secondary)' }}>
                                         <th style={{ backgroundColor: 'var(--bg-secondary)' }}></th>
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.description}
-                                                    onChange={e => setFilters({ ...filters, description: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.customer_name}
-                                                    onChange={e => setFilters({ ...filters, customer_name: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}></th>
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.amount}
-                                                    onChange={e => setFilters({ ...filters, amount: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}></th>
+                                        {visibleColumns.map(key => {
+                                            const renderFilter = () => {
+                                                switch (key) {
+                                                    case 'description':
+                                                        return <div className="ae-input-group">
+                                                            <Search className="ae-search-icon" size={12} />
+                                                            <input
+                                                                className="ae-input"
+                                                                placeholder="Filter..."
+                                                                value={filters.description}
+                                                                onChange={e => setFilters({ ...filters, description: e.target.value })}
+                                                                style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                            />
+                                                        </div>;
+                                                    case 'deposit_amount':
+                                                        return <div className="ae-input-group">
+                                                            <Search className="ae-search-icon" size={12} />
+                                                            <input
+                                                                className="ae-input"
+                                                                placeholder="Filter..."
+                                                                value={filters.amount}
+                                                                onChange={e => setFilters({ ...filters, amount: e.target.value })}
+                                                                style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                            />
+                                                        </div>;
+                                                    default:
+                                                        return null;
+                                                }
+                                            };
+                                            return (
+                                                <th key={key} style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                                    {renderFilter()}
+                                                </th>
+                                            );
+                                        })}
                                         <th style={{ textAlign: 'center', backgroundColor: 'var(--bg-secondary)' }}>
                                             <button
                                                 onClick={() => setFilters({
@@ -446,13 +558,13 @@ const BankTransactionsDashboard: React.FC = () => {
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={11} style={{ textAlign: 'center', padding: '100px' }}>
+                                        <td colSpan={visibleColumns.length + 2} style={{ textAlign: 'center', padding: '100px' }}>
                                             <RefreshCw className="animate-spin" style={{ margin: '0 auto' }} />
                                         </td>
                                     </tr>
                                 ) : paginatedTransactions.length === 0 ? (
                                     <tr>
-                                        <td colSpan={11} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-tertiary)' }}>
+                                        <td colSpan={visibleColumns.length + 2} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-tertiary)' }}>
                                             No transactions found in this category.
                                         </td>
                                     </tr>
@@ -463,24 +575,39 @@ const BankTransactionsDashboard: React.FC = () => {
                                             transition: 'background 0.2s'
                                         }}>
                                             <td style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
-                                            <td>{t.transaction_id || '—'}</td>
-                                            <td>{t.value_date || '—'}</td>
-                                            <td style={{ fontWeight: 600 }}>{t.transaction_date}</td>
-                                            <td>{t.posted_date || '—'}</td>
-                                            <td>{t.cheque_ref_no || '—'}</td>
-                                            <td style={{ fontSize: '0.75rem', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.transaction_remarks || t.description}>
-                                                {t.transaction_remarks || t.description}
-                                            </td>
-                                            <td style={{ textAlign: 'right', color: '#E53E3E' }}>
-                                                {parseFloat(t.withdrawal_amount || '0') > 0 ?
-                                                    `$${parseFloat(t.withdrawal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
-                                            </td>
-                                            <td style={{ textAlign: 'right', color: '#38A169', fontWeight: 600 }}>
-                                                {parseFloat(t.deposit_amount || t.amount_received).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                            </td>
-                                            <td style={{ textAlign: 'right', fontWeight: 700 }}>
-                                                {t.balance ? `$${parseFloat(t.balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
-                                            </td>
+                                            {visibleColumns.map(key => {
+                                                switch (key) {
+                                                    case 'transaction_id':
+                                                        return <td key={key}>{t.transaction_id || '—'}</td>;
+                                                    case 'value_date':
+                                                        return <td key={key}>{t.value_date || '—'}</td>;
+                                                    case 'transaction_date':
+                                                        return <td key={key} style={{ fontWeight: 600 }}>{t.transaction_date}</td>;
+                                                    case 'posted_date':
+                                                        return <td key={key}>{t.posted_date || '—'}</td>;
+                                                    case 'cheque_ref_no':
+                                                        return <td key={key}>{t.cheque_ref_no || '—'}</td>;
+                                                    case 'description':
+                                                        return <td key={key} style={{ fontSize: '0.75rem', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.transaction_remarks || t.description}>
+                                                            {t.transaction_remarks || t.description}
+                                                        </td>;
+                                                    case 'withdrawal_amount':
+                                                        return <td key={key} style={{ textAlign: 'right', color: '#E53E3E' }}>
+                                                            {parseFloat(t.withdrawal_amount || '0') > 0 ?
+                                                                `$${parseFloat(t.withdrawal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                                                        </td>;
+                                                    case 'deposit_amount':
+                                                        return <td key={key} style={{ textAlign: 'right', color: '#38A169', fontWeight: 600 }}>
+                                                            {parseFloat(t.deposit_amount || t.amount_received).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        </td>;
+                                                    case 'balance':
+                                                        return <td key={key} style={{ textAlign: 'right', fontWeight: 700 }}>
+                                                            {t.balance ? `$${parseFloat(t.balance).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                                                        </td>;
+                                                    default:
+                                                        return null;
+                                                }
+                                            })}
                                             <td style={{ textAlign: 'right', position: 'sticky', right: 0, background: selectedTransaction?.id === t.id ? '#FFF8F2' : 'white', boxShadow: '-2px 0 5px rgba(0,0,0,0.05)' }}>
                                                 {activeTab === 'FOR_REVIEW' && (
                                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>

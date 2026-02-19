@@ -89,8 +89,8 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly,
                 display: 'flex',
                 alignItems: 'center',
                 width: '100%',
-                background: 'white',
-                border: '1px solid #E0E6ED',
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-primary)',
                 borderRadius: '4px',
                 padding: '0 8px',
                 transition: 'border-color 0.2s',
@@ -107,7 +107,7 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly,
                         outline: 'none',
                         fontSize: '0.9rem',
                         fontWeight: 500,
-                        color: '#2D3748',
+                        color: 'var(--text-primary)',
                         background: 'transparent',
                         textAlign: 'left'
                     }}
@@ -716,13 +716,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             <div style={{
                 display: 'flex',
                 gap: '4px',
-                background: 'white',
+                background: 'var(--bg-primary)',
                 padding: '6px',
                 borderRadius: '12px',
-                border: '1px solid #E0E6ED',
+                border: '1px solid var(--border-primary)',
                 width: 'fit-content',
                 margin: '0 auto',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                boxShadow: 'var(--shadow-sm)'
             }}>
                 <button
                     onClick={() => setActiveTab('form')}
@@ -762,11 +762,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
             {activeTab === 'form' ? (
                 <div style={{
-                    background: 'white',
-                    border: '1px solid #E0E6ED',
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border-primary)',
                     borderRadius: '12px',
                     width: '100%',
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                    boxShadow: 'var(--shadow-md)',
                     padding: '24px',
                     display: 'flex',
                     flexDirection: 'column'
@@ -785,11 +785,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 <span style={{ fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rejection Comments</span>
                             </div>
                             <div style={{
-                                background: 'white',
+                                background: 'var(--bg-secondary)',
                                 padding: '10px 16px',
                                 borderRadius: '12px',
-                                border: '1px solid rgba(239, 68, 68, 0.08)',
-                                color: '#1e293b',
+                                border: '1px solid var(--border-primary)',
+                                color: 'var(--text-primary)',
                                 fontSize: '0.85rem',
                                 fontWeight: 500,
                                 lineHeight: 1.4,
@@ -817,11 +817,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 <span style={{ fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reversion Remarks</span>
                             </div>
                             <div style={{
-                                background: 'white',
+                                background: 'var(--bg-secondary)',
                                 padding: '10px 16px',
                                 borderRadius: '12px',
-                                border: '1px solid rgba(255, 107, 0, 0.08)',
-                                color: '#1e293b',
+                                border: '1px solid var(--border-primary)',
+                                color: 'var(--text-primary)',
                                 fontSize: '0.85rem',
                                 fontWeight: 500,
                                 lineHeight: 1.4,
@@ -838,7 +838,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     {status === 'APPROVED' && (
                         <div className="section-panel approved-banner approved-pulse" style={{ marginBottom: '12px' }}>
                             <CheckCircle size={20} className="text-green icon-breathe" strokeWidth={2.5} />
-                            <p style={{ margin: 0, color: '#2D3748', fontSize: '0.9rem', fontWeight: 700 }}>
+                            <p style={{ margin: 0, color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700 }}>
                                 This cost sheet has been approved and is locked for editing.
                             </p>
                         </div>
@@ -883,7 +883,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         ))}
                                     </select>
                                 ) : (
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', padding: '6px 0' }}>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', padding: '6px 0' }}>
                                         {lead?.lead_no ? `${lead.lead_no} (${lead.project_name || 'No Project Name'})` : '—'}
                                     </div>
                                 )}
@@ -904,7 +904,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         ))}
                                     </select>
                                 ) : (
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', padding: '6px 0' }}>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', padding: '6px 0' }}>
                                         {dealId ? (() => {
                                             const d = deals.find(x => x.id === dealId);
                                             return d ? `${d.deal_id} (${d.deal_name})` : '—';
@@ -922,7 +922,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         className="ae-input"
                                         value={costSheetNo || 'Auto-generated'}
                                         disabled
-                                        style={{ background: '#F7FAFC', color: '#718096', cursor: 'default' }}
+                                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'default' }}
                                     />
                                 ) : (
                                     <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FF6B00', padding: '6px 0' }}>
@@ -985,7 +985,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </div>
 
-                    <section className="license-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                    <section style={{ borderTop: '1px solid var(--border-primary)', paddingTop: '32px', marginTop: '32px' }}>
                         <SectionHeader title="License" />
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
@@ -997,7 +997,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
+                                            <tr key={idx} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === licenseItems.length - 1 && (
@@ -1065,7 +1065,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for License */}
-                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
+                                    <tr style={{ background: 'var(--bg-secondary)', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
                                         <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total License:</td>
                                         <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catCost} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
@@ -1092,7 +1092,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
+                                            <tr key={idx} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === implementationItems.length - 1 && (
@@ -1160,7 +1160,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for Implementation */}
-                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
+                                    <tr style={{ background: 'var(--bg-secondary)', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
                                         <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total Implementation:</td>
                                         <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catCost} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
@@ -1187,7 +1187,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
+                                            <tr key={idx} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === supportItems.length - 1 && (
@@ -1255,7 +1255,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for Support */}
-                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
+                                    <tr style={{ background: 'var(--bg-secondary)', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
                                         <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total Support:</td>
                                         <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catCost} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
@@ -1281,7 +1281,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
+                                            <tr key={idx} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === infraItems.length - 1 && (
@@ -1348,7 +1348,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for Infra */}
-                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
+                                    <tr style={{ background: 'var(--bg-secondary)', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
                                         <td colSpan={4} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total Infra:</td>
                                         <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catCost} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
@@ -1492,12 +1492,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             alignItems: 'center',
                             gap: '16px',
                             padding: '4px 12px',
-                            background: '#F8FAFC',
+                            background: 'var(--bg-secondary)',
                             borderRadius: '12px',
-                            border: '1px solid #E0E6ED',
+                            border: '1px solid var(--border-primary)',
                             width: 'fit-content',
                             minWidth: 'fit-content',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                            boxShadow: 'var(--shadow-sm)'
                         }}>
                             {!isReadOnly && (
                                 <>
@@ -1674,11 +1674,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {/* Consolidated Category Breakdown Table */}
                     <div style={{
-                        background: 'white',
+                        background: 'var(--bg-primary)',
                         borderRadius: '20px',
                         padding: '20px',
-                        border: '1px solid #E2E8F0',
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
+                        border: '1px solid var(--border-primary)',
+                        boxShadow: 'var(--shadow-lg)',
                         transition: 'all 0.3s ease'
                     }}
                         onMouseEnter={(e) => {
@@ -1694,7 +1694,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Category Breakdown Summary</h3>
                         </div>
 
-                        <div style={{ overflow: 'hidden', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ overflow: 'hidden', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ background: 'var(--theme-primary)' }}>
@@ -1716,8 +1716,8 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         <tr
                                             key={row.label}
                                             style={{
-                                                background: idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC',
-                                                borderBottom: idx === 4 ? 'none' : '1px solid #E2E8F0',
+                                                background: idx % 2 === 0 ? 'var(--bg-primary)' : 'var(--bg-secondary)',
+                                                borderBottom: idx === 4 ? 'none' : '1px solid var(--border-primary)',
                                                 transition: 'background 0.2s ease'
                                             }}
                                             onMouseEnter={(e) => { e.currentTarget.style.background = '#FFF5EB'; }}
@@ -1741,8 +1741,8 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         </tr>
                                     ))}
                                     {/* Subtotal Row */}
-                                    <tr style={{ background: '#F8FAFC', borderTop: '2px solid #E2E8F0' }}>
-                                        <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: '#1a1f36' }}>Total</td>
+                                    <tr style={{ background: 'var(--bg-secondary)', borderTop: '2px solid var(--border-primary)' }}>
+                                        <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>Total</td>
                                         <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: '#1a1f36', fontFamily: 'monospace', textAlign: 'right' }}>
                                             {currencySymbol}{totals.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
@@ -1769,11 +1769,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: 'white',
+                background: 'var(--bg-primary)',
                 padding: '6px',
                 borderRadius: '12px',
-                border: '1px solid #E0E6ED',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                border: '1px solid var(--border-primary)',
+                boxShadow: 'var(--shadow-sm)',
                 width: 'fit-content',
                 flexShrink: 0,
                 zIndex: 10,
@@ -1973,12 +1973,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     animation: 'fadeIn 0.2s ease-out'
                 }}>
                     <div style={{
-                        background: 'white',
+                        background: 'var(--bg-primary)',
                         width: '100%',
                         maxWidth: '500px',
                         borderRadius: '12px',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                        border: '1px solid #E2E8F0',
+                        boxShadow: 'var(--shadow-xl)',
+                        border: '1px solid var(--border-primary)',
                         overflow: 'hidden',
                         animation: 'modalScale 0.2s ease-out'
                     }}>
@@ -1999,10 +1999,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     </svg>
                                 </div>
                                 <div>
-                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
+                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                                         Leave this page?
                                     </h3>
-                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5 }}>
                                         If you leave, your unsaved changes will be discarded.
                                     </p>
                                 </div>
@@ -2035,9 +2035,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         flex: 1,
                                         padding: '10px 16px',
                                         borderRadius: '8px',
-                                        background: 'white',
-                                        color: '#1a1f36',
-                                        border: '1px solid #E2E8F0',
+                                        background: 'var(--bg-primary)',
+                                        color: 'var(--text-primary)',
+                                        border: '1px solid var(--border-primary)',
                                         fontSize: '0.9rem',
                                         fontWeight: 700,
                                         cursor: 'pointer',
@@ -2194,11 +2194,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 >
                     <div
                         style={{
-                            background: 'white',
+                            background: 'var(--bg-primary)',
                             width: '100%',
                             maxWidth: '400px',
                             borderRadius: '24px',
-                            boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
+                            boxShadow: 'var(--shadow-xl)',
                             overflow: 'hidden',
                             position: 'relative',
                         }}

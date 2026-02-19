@@ -71,7 +71,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                             right: 0,
                             marginTop: '12px',
                             width: '320px',
-                            background: 'white',
+                            background: 'var(--bg-primary)',
                             borderRadius: '12px',
                             boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
                             padding: '16px',
@@ -164,18 +164,21 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                         </span>
                     </div>
 
-                    <div style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.1)',
-                        padding: '2px',
-                        border: '2px solid var(--theme-primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                        <User size={18} color="var(--theme-primary)" />
+                    <div
+                        className="ae-profile-avatar"
+                        style={{
+                            width: '38px',
+                            height: '38px',
+                            borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.1)',
+                            padding: '2px',
+                            border: '2px solid var(--profile-avatar-border)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        <User size={18} color="var(--profile-icon-color)" />
                     </div>
 
                     <ChevronDown size={14} color="rgba(255,255,255,0.4)" style={{ transform: isProfileOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
@@ -188,21 +191,21 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                             right: 0,
                             marginTop: '12px',
                             width: '240px',
-                            background: '#1a1f36',
+                            background: 'var(--profile-dropdown-bg)',
                             borderRadius: '12px',
                             boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
                             padding: '8px',
-                            border: '1px solid rgba(255,255,255,0.1)',
+                            border: '1px solid var(--profile-dropdown-border)',
                             zIndex: 100,
                             overflow: 'hidden'
                         }}>
-                            <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                            <div style={{ padding: '16px', borderBottom: '1px solid var(--profile-dropdown-divider)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <User size={20} color="white" />
+                                    <User size={20} color="var(--profile-dropdown-text)" />
                                 </div>
                                 <div>
-                                    <div style={{ color: 'white', fontWeight: 700, fontSize: '14px' }}>{user?.username}</div>
-                                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>{user?.role === 'app_admin' ? 'Administrator' : 'User'}</div>
+                                    <div style={{ color: 'var(--profile-dropdown-text)', fontWeight: 700, fontSize: '14px' }}>{user?.username}</div>
+                                    <div style={{ color: 'var(--profile-dropdown-subtext)', fontSize: '11px' }}>{user?.role === 'app_admin' ? 'Administrator' : 'User'}</div>
                                 </div>
                             </div>
 
@@ -251,7 +254,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                     backdropFilter: 'blur(4px)'
                 }} onClick={() => setShowHelpModal(false)}>
                     <div style={{
-                        background: 'white',
+                        background: 'var(--bg-primary)',
                         padding: '32px',
                         borderRadius: '20px',
                         maxWidth: '600px',
@@ -273,12 +276,12 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                                 }}>
                                     <HelpCircle size={24} color="#FF6B00" />
                                 </div>
-                                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36' }}>Deal Process Flow</h2>
+                                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>Deal Process Flow</h2>
                             </div>
                             <button
                                 onClick={() => setShowHelpModal(false)}
                                 style={{
-                                    background: '#F1F5F9',
+                                    background: 'var(--bg-secondary)',
                                     border: 'none',
                                     width: '32px',
                                     height: '32px',
@@ -287,11 +290,11 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     cursor: 'pointer',
-                                    color: '#64748B',
+                                    color: 'var(--text-secondary)',
                                     transition: 'all 0.2s'
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#E2E8F0'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = '#F1F5F9'}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
                             >
                                 ×
                             </button>
@@ -311,19 +314,19 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                                     alignItems: 'center',
                                     gap: '16px',
                                     padding: '16px',
-                                    background: '#F8FAFC',
+                                    background: 'var(--bg-secondary)',
                                     borderRadius: '12px',
-                                    border: '1px solid #F1F5F9',
+                                    border: '1px solid var(--border-primary)',
                                     transition: 'transform 0.2s, background 0.2s',
                                     cursor: 'default'
                                 }}
                                     onMouseEnter={(e) => {
                                         e.currentTarget.style.transform = 'translateX(4px)';
-                                        e.currentTarget.style.background = 'white';
+                                        e.currentTarget.style.background = 'var(--bg-primary)';
                                     }}
                                     onMouseLeave={(e) => {
                                         e.currentTarget.style.transform = 'translateX(0)';
-                                        e.currentTarget.style.background = '#F8FAFC';
+                                        e.currentTarget.style.background = 'var(--bg-secondary)';
                                     }}
                                 >
                                     <div style={{
@@ -342,8 +345,8 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                                         {idx + 1}
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 700, color: '#1a1f36', fontSize: '14px', marginBottom: '2px' }}>{item.stage}</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#64748B', lineHeight: '1.4' }}>{item.desc}</div>
+                                        <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '14px', marginBottom: '2px' }}>{item.stage}</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{item.desc}</div>
                                     </div>
                                 </div>
                             ))}
