@@ -12,7 +12,7 @@ interface Notification {
 
 interface ConfirmOptions {
     title: string;
-    message: string;
+    message?: string;
     onConfirm: () => void;
     onCancel?: () => void;
     confirmText?: string;

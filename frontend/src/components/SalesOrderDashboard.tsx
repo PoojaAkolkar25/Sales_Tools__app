@@ -13,6 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import { formatToAppDate } from '../utils/dateUtils';
 import Pagination from './Pagination';
 
 interface SalesOrderDashboardProps {
@@ -111,13 +112,13 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
     const filteredSalesOrders = salesOrders.filter((so: any) => {
         const matchesDealId = (so.deal_id || '').toLowerCase().includes(filters.deal_id.toLowerCase());
         const matchesSONumber = (so.so_number || '').toLowerCase().includes(filters.so_number.toLowerCase());
-        const matchesOrderDate = (so.order_date ? new Date(so.order_date).toLocaleDateString() : '').toLowerCase().includes(filters.order_date.toLowerCase());
+        const matchesOrderDate = (so.order_date ? formatToAppDate(so.order_date) : '').toLowerCase().includes(filters.order_date.toLowerCase());
         const matchesCustomer = (so.customer_name || '').toLowerCase().includes(filters.customer_name.toLowerCase());
         const matchesCustCode = (so.customer_code || '').toLowerCase().includes(filters.customer_code.toLowerCase());
         const matchesPONumber = (so.po_number || '').toLowerCase().includes(filters.po_number.toLowerCase());
         const matchesItems = (so.items && so.items.length > 0 ? so.items[0].description || so.items[0].product_name || '' : '').toLowerCase().includes(filters.items_summary.toLowerCase());
         const matchesAmount = `${so.currency || ''} ${parseFloat(so.total_amount || 0).toLocaleString()}`.toLowerCase().includes(filters.amount.toLowerCase());
-        const matchesPODate = (so.po_date ? new Date(so.po_date).toLocaleDateString() : (so.order_date ? new Date(so.order_date).toLocaleDateString() : '')).toLowerCase().includes(filters.po_date.toLowerCase());
+        const matchesPODate = (so.po_date ? formatToAppDate(so.po_date) : (so.order_date ? formatToAppDate(so.order_date) : '')).toLowerCase().includes(filters.po_date.toLowerCase());
         const matchesStatusFilter = (so.status || '').toLowerCase().includes(filters.status.toLowerCase());
 
         const matchesStatus = selectedStatus === '' ? true :
@@ -193,10 +194,6 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
         }
     };
 
-    const handleReport = (type: string) => {
-        console.log('Report requested:', type);
-        showNotification('Report generation coming soon', 'info');
-    };
 
     return (
         <div className="space-y-6">
@@ -662,7 +659,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         <td className="whitespace-nowrap">
                                             <span
                                                 style={{ color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
-                                                onClick={() => navigate(`/deal?id=${so.deal}`)}
+                                                onClick={() => navigate(`/ deal ? id = ${so.deal} `)}
                                             >
                                                 {so.deal_id || '---'}
                                             </span>
@@ -674,14 +671,14 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                                 style={{ color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
                                                 onClick={() => onView(so.id)}
                                             >
-                                                {so.so_number || `DRAFT-${so.id}`}
+                                                {so.so_number || `DRAFT - ${so.id} `}
                                             </span>
                                             {so.status === 'DRAFT' && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800 uppercase tracking-tighter">Draft</span>}
                                         </td>
                                     )}
                                     {visibleColumns.order_date && (
                                         <td className="whitespace-nowrap">
-                                            <span style={{ fontSize: '0.8rem' }}>{so.order_date ? new Date(so.order_date).toLocaleDateString() : '---'}</span>
+                                            <span style={{ fontSize: '0.8rem' }}>{so.order_date ? formatToAppDate(so.order_date) : '---'}</span>
                                         </td>
                                     )}
                                     {visibleColumns.customer && (
@@ -707,7 +704,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                                 {so.items && so.items.length > 0 ? (
                                                     <>
                                                         <span className="text-slate-700 truncate max-w-[150px]" title={so.items[0].description || so.items[0].product_name}>
-                                                            {so.items[0].description || (so.items[0].product ? `Product #${so.items[0].product}` : 'Unmapped Item')}
+                                                            {so.items[0].description || (so.items[0].product ? `Product #${so.items[0].product} ` : 'Unmapped Item')}
                                                         </span>
                                                         {so.items.length > 1 && (
                                                             <span className="text-orange-600 font-semibold" style={{ fontSize: '0.65rem' }}>
@@ -743,7 +740,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                     )}
                                     {visibleColumns.po_date && (
                                         <td className="whitespace-nowrap">
-                                            <span style={{ fontSize: '0.75rem' }}>{so.po_date ? new Date(so.po_date).toLocaleDateString() : (so.order_date ? new Date(so.order_date).toLocaleDateString() : '-')}</span>
+                                            <span style={{ fontSize: '0.75rem' }}>{so.po_date ? formatToAppDate(so.po_date) : (so.order_date ? formatToAppDate(so.order_date) : '-')}</span>
                                         </td>
                                     )}
                                     {visibleColumns.actions && (

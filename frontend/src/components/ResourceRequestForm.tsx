@@ -8,6 +8,7 @@ import {
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
+import { formatToAppDate } from '../utils/dateUtils';
 
 interface ResourceRequestFormProps {
     id: number | null;
@@ -53,9 +54,9 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
         finance_head_remarks: '',
     });
 
-    const [showCancelModal, setShowCancelModal] = useState(false);
+
     const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
-    const { showNotification } = useNotification();
+    const { showNotification, showConfirm } = useNotification();
 
     useEffect(() => {
         fetchInitialData();
@@ -197,7 +198,12 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                 boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
             }}>
                 <button
-                    onClick={() => setShowCancelModal(true)}
+                    onClick={() => {
+                        showConfirm({
+                            title: 'Are you sure you want to exit?',
+                            onConfirm: () => onBack()
+                        });
+                    }}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -208,10 +214,10 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         fontWeight: 700,
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
-                        color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        background: hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
                         border: 'none',
-                        boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                        boxShadow: hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                     }}
                     onMouseEnter={() => setHoveredBtn('cancel')}
                     onMouseLeave={() => setHoveredBtn(null)}
@@ -227,12 +233,12 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 borderRadius: '8px',
                                 fontSize: '0.85rem',
                                 fontWeight: 800,
-                                background: hoveredBtn === 'submit' && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                color: showCancelModal ? '#CBD5E0' : (hoveredBtn === 'submit' ? 'white' : 'var(--text-secondary)'),
+                                background: hoveredBtn === 'submit' ? 'var(--theme-primary)' : 'transparent',
+                                color: (hoveredBtn === 'submit' ? 'white' : 'var(--text-secondary)'),
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                boxShadow: hoveredBtn === 'submit' && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                                boxShadow: hoveredBtn === 'submit' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                             }}
                             onMouseEnter={() => setHoveredBtn('submit')}
                             onMouseLeave={() => setHoveredBtn(null)}
@@ -249,12 +255,12 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     borderRadius: '8px',
                                     fontSize: '0.85rem',
                                     fontWeight: 800,
-                                    background: hoveredBtn === 'approve_it' && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                    color: showCancelModal ? '#CBD5E0' : (hoveredBtn === 'approve_it' ? 'white' : 'var(--text-secondary)'),
+                                    background: hoveredBtn === 'approve_it' ? 'var(--theme-primary)' : 'transparent',
+                                    color: (hoveredBtn === 'approve_it' ? 'white' : 'var(--text-secondary)'),
                                     border: 'none',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s',
-                                    boxShadow: hoveredBtn === 'approve_it' && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                                    boxShadow: hoveredBtn === 'approve_it' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                                 }}
                                 onMouseEnter={() => setHoveredBtn('approve_it')}
                                 onMouseLeave={() => setHoveredBtn(null)}
@@ -268,12 +274,12 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     borderRadius: '8px',
                                     fontSize: '0.85rem',
                                     fontWeight: 800,
-                                    background: hoveredBtn === 'reject' && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                    color: showCancelModal ? '#CBD5E0' : (hoveredBtn === 'reject' ? 'white' : 'var(--text-secondary)'),
+                                    background: hoveredBtn === 'reject' ? 'var(--theme-primary)' : 'transparent',
+                                    color: (hoveredBtn === 'reject' ? 'white' : 'var(--text-secondary)'),
                                     border: 'none',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s',
-                                    boxShadow: hoveredBtn === 'reject' && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                                    boxShadow: hoveredBtn === 'reject' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                                 }}
                                 onMouseEnter={() => setHoveredBtn('reject')}
                                 onMouseLeave={() => setHoveredBtn(null)}
@@ -291,12 +297,12 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     borderRadius: '8px',
                                     fontSize: '0.85rem',
                                     fontWeight: 800,
-                                    background: hoveredBtn === 'approve_finance' && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                    color: showCancelModal ? '#CBD5E0' : (hoveredBtn === 'approve_finance' ? 'white' : 'var(--text-secondary)'),
+                                    background: hoveredBtn === 'approve_finance' ? 'var(--theme-primary)' : 'transparent',
+                                    color: (hoveredBtn === 'approve_finance' ? 'white' : 'var(--text-secondary)'),
                                     border: 'none',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s',
-                                    boxShadow: hoveredBtn === 'approve_finance' && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                                    boxShadow: hoveredBtn === 'approve_finance' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                                 }}
                                 onMouseEnter={() => setHoveredBtn('approve_finance')}
                                 onMouseLeave={() => setHoveredBtn(null)}
@@ -310,12 +316,12 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     borderRadius: '8px',
                                     fontSize: '0.85rem',
                                     fontWeight: 800,
-                                    background: hoveredBtn === 'reject_finance' && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                    color: showCancelModal ? '#CBD5E0' : (hoveredBtn === 'reject_finance' ? 'white' : 'var(--text-secondary)'),
+                                    background: hoveredBtn === 'reject_finance' ? 'var(--theme-primary)' : 'transparent',
+                                    color: (hoveredBtn === 'reject_finance' ? 'white' : 'var(--text-secondary)'),
                                     border: 'none',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s',
-                                    boxShadow: hoveredBtn === 'reject_finance' && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                                    boxShadow: hoveredBtn === 'reject_finance' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                                 }}
                                 onMouseEnter={() => setHoveredBtn('reject')}
                                 onMouseLeave={() => setHoveredBtn(null)}
@@ -332,12 +338,12 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 borderRadius: '8px',
                                 fontSize: '0.85rem',
                                 fontWeight: 800,
-                                background: hoveredBtn === 'issue' && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                color: showCancelModal ? '#CBD5E0' : (hoveredBtn === 'issue' ? 'white' : 'var(--text-secondary)'),
+                                background: hoveredBtn === 'issue' ? 'var(--theme-primary)' : 'transparent',
+                                color: (hoveredBtn === 'issue' ? 'white' : 'var(--text-secondary)'),
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                boxShadow: hoveredBtn === 'issue' && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                                boxShadow: hoveredBtn === 'issue' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                             }}
                             onMouseEnter={() => setHoveredBtn('issue')}
                             onMouseLeave={() => setHoveredBtn(null)}
@@ -357,12 +363,12 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 borderRadius: '8px',
                                 fontSize: '0.8rem',
                                 fontWeight: 800,
-                                background: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
+                                background: (!hoveredBtn || hoveredBtn === 'save') ? 'var(--theme-primary)' : 'transparent',
+                                color: ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                boxShadow: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                                boxShadow: (!hoveredBtn || hoveredBtn === 'save') ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                             }}
                             onMouseEnter={() => setHoveredBtn('save')}
                             onMouseLeave={() => setHoveredBtn(null)}
@@ -384,7 +390,11 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         <div className="grid grid-cols-2 gap-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Request Date</label>
-                                <input type="date" name="request_date" value={formData.request_date} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
+                                {isReadOnly ? (
+                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formatToAppDate(formData.request_date)}</div>
+                                ) : (
+                                    <input type="date" name="request_date" value={formData.request_date} onChange={handleInputChange} className="ae-input" />
+                                )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Form Number</label>
@@ -758,7 +768,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 </div>
                                 {formData.it_head_approved_at && (
                                     <div className="text-[10px] text-[#718096] font-semibold">
-                                        Approved by: {formData.it_head_approved_by_detail?.full_name} on {new Date(formData.it_head_approved_at).toLocaleString()}
+                                        Approved by: {formData.it_head_approved_by_detail?.full_name} on {formatToAppDate(formData.it_head_approved_at)}
                                     </div>
                                 )}
                             </div>
@@ -785,7 +795,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 </div>
                                 {formData.finance_head_approved_at && (
                                     <div className="text-[10px] text-[#718096] font-semibold">
-                                        Approved by: {formData.finance_head_approved_by_detail?.full_name} on {new Date(formData.finance_head_approved_at).toLocaleString()}
+                                        Approved by: {formData.finance_head_approved_by_detail?.full_name} on {formatToAppDate(formData.finance_head_approved_at)}
                                     </div>
                                 )}
                             </div>
@@ -805,7 +815,11 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Exp. Start Date</label>
-                                <input type="date" name="expected_start_date" value={formData.expected_start_date} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
+                                {isReadOnly ? (
+                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formatToAppDate(formData.expected_start_date)}</div>
+                                ) : (
+                                    <input type="date" name="expected_start_date" value={formData.expected_start_date} onChange={handleInputChange} className="ae-input" />
+                                )}
                             </div>
                         </div>
                     </section>
@@ -813,101 +827,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
             </div>
 
             {/* 8. Issuance Details (Visible only when ISSUED) */}
-            {/* Cancel Confirmation Modal */}
-            {showCancelModal && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(255, 255, 255, 0.4)',
-                    backdropFilter: 'blur(1px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999,
-                    animation: 'fadeIn 0.2s ease-out'
-                }}>
-                    <div style={{
-                        background: 'white',
-                        width: '100%',
-                        maxWidth: '500px',
-                        borderRadius: '12px',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                        border: '1px solid #E2E8F0',
-                        overflow: 'hidden',
-                        animation: 'modalScale 0.2s ease-out'
-                    }}>
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '10px',
-                                    background: '#FFF5F5',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
-                                        Leave this page?
-                                    </h3>
-                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                                        If you leave, your unsaved changes will be discarded.
-                                    </p>
-                                </div>
-                            </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
-                                <button
-                                    onClick={() => setShowCancelModal(false)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: 'var(--theme-primary)',
-                                        color: 'white',
-                                        border: 'none',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px',
-                                        boxShadow: '0 4px 12px rgba(187, 77, 0, 0.2)'
-                                    }}
-                                >
-                                    Stay Here
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowCancelModal(false);
-                                        onBack();
-                                    }}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: 'white',
-                                        color: '#1a1f36',
-                                        border: '1px solid #E2E8F0',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                >
-                                    Leave & Discard Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
             {formData.status === 'ISSUED' && (
                 <section className="section-panel" style={{ padding: '24px', borderLeft: '4px solid var(--ae-blue)' }}>
                     <h3 className="section-title text-[var(--ae-blue)] flex items-center gap-2 mb-4">
@@ -925,12 +845,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Issued Date</label>
-                            <input
-                                type="text"
-                                value={formData.issued_at ? new Date(formData.issued_at).toLocaleDateString() : 'N/A'}
-                                className="ae-input !bg-gray-50"
-                                disabled
-                            />
+                            <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formData.issued_at ? formatToAppDate(formData.issued_at) : 'N/A'}</div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Issued By</label>

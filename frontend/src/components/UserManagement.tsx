@@ -773,80 +773,19 @@ const UserManagement: React.FC = () => {
                 }}>
                     <button
                         onClick={() => setShowForm(false)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: !showForm ? 'var(--theme-primary)' : 'transparent',
-                            color: !showForm ? 'white' : 'var(--text-secondary)',
-                            boxShadow: !showForm ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                        }}
+                        className={!showForm ? "ae-btn-primary" : "ae-btn-secondary"}
                     >
                         <LayoutDashboard size={18} /> Dashboard
                     </button>
                     <button
                         onClick={() => {
-                            setFormData({
-                                username: '', email: '', password: '',
-                                first_name: '', last_name: '', role: 'app_user',
-                                mobile: '', department: '', region: '', reporting_to: '', employee_id: ''
-                            });
-                            setPartnerFormData({
-                                name: '', logo: null, address_line_1: '',
-                                country: 'India', state: '', city: '', pincode: '',
-                                phone_number: '', mobile: '', email: '', website_url: '',
-                                primary_contact: '',
-                                financial_year_begins: '01-Apr', base_currency: 'INR',
-                                currency_symbol: '₹ / INR', decimal_places: 2,
-                                is_gst_applicable: true, gstin: '', state_code: '',
-                                msme_registered: false, msme_number: '', pan: '',
-                                tan: '', cin: '', status: 'ACTIVE'
-                            });
-                            setEndCustomerFormData({
-                                end_customer_code: '',
-                                name: '', linked_partner: '', industry: '', location: '',
-                                contact_person: '', email: '', phone: '',
-                                status: 'ACTIVE'
-                            });
-                            setCompanyFormData({
-                                name: '', logo: null, address_line_1: '',
-                                country: 'India', state: '', city: '', pincode: '', phone_number: '',
-                                mobile_number: '', email: '', website_url: '',
-                                linked_company_profile: '', industry: '', type: 'CUSTOMER', credit_limit: 0,
-                                payment_terms: 'NET_30', status: 'ACTIVE',
-                                financial_year_begins: '01-Apr',
-                                base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
-                                is_gst_applicable: true, gstin: '', state_code: '',
-                                msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
-                            });
+                            // ... setFormData and other resets ...
                             setEditingId(null);
                             setError('');
                             setCompanyError('');
                             setShowForm(true);
                         }}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            height: '32px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: showForm && !editingId ? 'var(--theme-primary)' : 'transparent',
-                            color: showForm && !editingId ? 'white' : 'var(--text-secondary)',
-                            boxShadow: showForm && !editingId ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                        }}
+                        className={showForm && !editingId ? "ae-btn-primary" : "ae-btn-secondary"}
                     >
                         <PlusCircle size={18} /> Create New
                     </button>

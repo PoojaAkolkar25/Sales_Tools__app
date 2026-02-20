@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import { formatToAppDate } from '../utils/dateUtils';
 
 interface EstimateFormProps {
     id: number;
@@ -52,7 +53,7 @@ const getInitialFormData = () => ({
 });
 
 const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user }) => {
-    const { showNotification } = useNotification();
+    const { showNotification, showConfirm } = useNotification();
     const [estimate, setEstimate] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -62,8 +63,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const [costSheets, setCostSheets] = useState<any[]>([]);
     const [companyProfile, setCompanyProfile] = useState<any>(null);
 
-    const [showCancelModal, setShowCancelModal] = useState(false);
-    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+
     const [uploadFeedback, setUploadFeedback] = useState({ type: '', message: '' });
 
     // Email Modal State
@@ -933,10 +933,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Estimate Date</label>
                         <input
-                            type="date"
-                            style={{ height: '34px', padding: '6px 10px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, background: 'white', width: '100%' }}
-                            value={formData.estimate_date}
-                            onChange={(e) => setFormData({ ...formData, estimate_date: e.target.value })}
+                            type="text"
+                            className="ae-input"
+                            disabled
+                            value={formatToAppDate(formData.estimate_date)}
+                            style={{ background: '#f8fafc', fontWeight: 600 }}
                         />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -1531,16 +1532,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                         <button
                             onClick={handlePreview}
                             className="ae-btn-secondary"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '8px 16px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                cursor: 'pointer'
-                            }}
                         >
                             <Eye size={18} /> Preview
                         </button>
@@ -1550,23 +1541,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                             <button
                                 onClick={() => handleSave(false)}
                                 disabled={saving}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '8px 16px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    background: hoveredBtn === 'draft' && !showCancelModal ? 'var(--accent-hover)' : 'transparent',
-                                    color: showCancelModal ? '#CBD5E0' : (hoveredBtn === 'draft' ? 'white' : 'var(--text-secondary)'),
-                                    border: 'none',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: hoveredBtn === 'draft' && !showCancelModal ? 'var(--shadow-md)' : 'none'
-                                }}
-                                onMouseEnter={() => setHoveredBtn('draft')}
-                                onMouseLeave={() => setHoveredBtn(null)}
+                                className="ae-btn-secondary"
+                                style={{ border: 'none' }}
                             >
                                 <Save size={16} />
                                 <span>Save Draft</span>
@@ -1576,47 +1552,19 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 onClick={handleSaveAndSubmit}
                                 disabled={saving}
                                 className="ae-btn-primary"
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '8px 20px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
-                                    background: (!hoveredBtn || hoveredBtn === 'submit') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                    color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'submit') ? 'white' : 'var(--text-secondary)'),
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: (!hoveredBtn || hoveredBtn === 'submit') && !showCancelModal ? 'var(--shadow-md)' : 'none'
-                                }}
-                                onMouseEnter={() => setHoveredBtn('submit')}
-                                onMouseLeave={() => setHoveredBtn(null)}
                             >
                                 <PlusCircle size={18} />
                                 <span>Submit for Approval</span>
                             </button>
 
                             <button
-                                onClick={() => setShowCancelModal(true)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    padding: '8px 12px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
-                                    color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
-                                    border: 'none',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: showCancelModal || hoveredBtn === 'cancel' ? 'var(--shadow-md)' : 'none'
+                                onClick={() => {
+                                    showConfirm({
+                                        title: 'Are you sure you want to exit?',
+                                        onConfirm: () => onBack()
+                                    });
                                 }}
-                                onMouseEnter={() => setHoveredBtn('cancel')}
-                                onMouseLeave={() => setHoveredBtn(null)}
+                                className="ae-btn-secondary"
                             >
                                 <X size={16} />
                                 <span>Cancel</span>
@@ -1986,100 +1934,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                     </div>
                 </div>
             )}
-            {/* Cancel Confirmation Modal */}
-            {showCancelModal && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(255, 255, 255, 0.4)',
-                    backdropFilter: 'blur(1px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999,
-                    animation: 'fadeIn 0.2s ease-out'
-                }}>
-                    <div style={{
-                        background: 'white',
-                        width: '100%',
-                        maxWidth: '500px',
-                        borderRadius: '12px',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                        border: '1px solid #E2E8F0',
-                        overflow: 'hidden',
-                        animation: 'modalScale 0.2s ease-out'
-                    }}>
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '10px',
-                                    background: '#FFF5F5',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
-                                        Leave this page?
-                                    </h3>
-                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                                        If you leave, your unsaved changes will be discarded.
-                                    </p>
-                                </div>
-                            </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
-                                <button
-                                    onClick={() => setShowCancelModal(false)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: '#3B82F6',
-                                        color: 'white',
-                                        border: 'none',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                >
-                                    Stay Here
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowCancelModal(false);
-                                        onBack();
-                                    }}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: 'white',
-                                        color: '#1a1f36',
-                                        border: '1px solid #E2E8F0',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                >
-                                    Leave & Discard Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

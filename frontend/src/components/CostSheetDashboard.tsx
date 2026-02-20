@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Search, FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw } from 'lucide-react';
 import api from '../api';
+import { formatToAppDate } from '../utils/dateUtils';
 import Pagination from './Pagination';
 
 const ALL_COLUMNS = [
@@ -214,7 +215,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                 statusLabel.toLowerCase().includes(filters.status.toLowerCase());
 
             // Text Date Filter
-            const displayDate = cs.cost_sheet_date ? new Date(cs.cost_sheet_date).toLocaleDateString() : new Date(cs.created_at).toLocaleDateString();
+            const displayDate = cs.cost_sheet_date ? formatToAppDate(cs.cost_sheet_date) : formatToAppDate(cs.created_at);
             const matchesDateStr = (displayDate || '').toLowerCase().includes(filters.dateStr.toLowerCase());
 
             // Period Logic (Top-level Period selector)
@@ -682,7 +683,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                         </td>;
                                                     case 'date':
                                                         return <td key={key} style={{ fontWeight: 600 }}>
-                                                            {cs.cost_sheet_date ? new Date(cs.cost_sheet_date).toLocaleDateString() : new Date(cs.created_at).toLocaleDateString()}
+                                                            {cs.cost_sheet_date ? formatToAppDate(cs.cost_sheet_date) : formatToAppDate(cs.created_at)}
                                                         </td>;
                                                     case 'status':
                                                         return <td key={key}>

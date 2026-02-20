@@ -12,6 +12,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import { formatToAppDate } from '../utils/dateUtils';
 import SearchableDropdown from './SearchableDropdown';
 
 interface DealFormProps {
@@ -23,7 +24,7 @@ interface DealFormProps {
 
 const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger }) => {
     const navigate = useNavigate();
-    const { showNotification } = useNotification();
+    const { showNotification, showConfirm } = useNotification();
     const [loading, setLoading] = useState(false);
     const [leads, setLeads] = useState<any[]>([]);
     const [partners, setPartners] = useState<any[]>([]);
@@ -50,8 +51,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
     const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploadFeedback, setUploadFeedback] = useState<{ type: 'success' | 'error' | ''; message: string }>({ type: '', message: '' });
-    const [showCancelModal, setShowCancelModal] = useState(false);
-    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+
     const [localId, setLocalId] = useState<number | null>(id);
 
     // Sync localId when id prop changes (e.g. navigation or parent update)
@@ -530,9 +530,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Date *</label>
                                 <input
-                                    type="date"
+                                    type="text"
                                     name="deal_date"
-                                    value={formData.deal_date}
+                                    value={formatToAppDate(formData.deal_date)}
                                     className="ae-input"
                                     disabled
                                     style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
@@ -1016,48 +1016,20 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         <button
                             type="submit"
                             disabled={loading}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '6px 16px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 800,
-                                border: 'none',
-                                cursor: loading ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s',
-                                background: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
-                                boxShadow: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none',
-                                opacity: loading ? 0.7 : 1
-                            }}
-                            onMouseEnter={() => setHoveredBtn('save')}
-                            onMouseLeave={() => setHoveredBtn(null)}
+                            className="ae-btn-primary"
                         >
                             {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                             {loading ? 'Saving...' : id ? 'Update Deal' : 'Save Deal'}
                         </button>
                         <button
                             type="button"
-                            onClick={() => setShowCancelModal(true)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '6px 16px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
-                                color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
-                                boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                            onClick={() => {
+                                showConfirm({
+                                    title: 'Are you sure you want to exit?',
+                                    onConfirm: () => onBack()
+                                });
                             }}
-                            onMouseEnter={() => setHoveredBtn('cancel')}
-                            onMouseLeave={() => setHoveredBtn(null)}
+                            className="ae-btn-secondary"
                         >
                             <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
                             <span>Cancel</span>
@@ -1211,100 +1183,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                 </div>
             )}
 
-            {/* Cancel Confirmation Modal */}
-            {showCancelModal && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(255, 255, 255, 0.4)',
-                    backdropFilter: 'blur(1px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999,
-                    animation: 'fadeIn 0.2s ease-out'
-                }}>
-                    <div style={{
-                        background: 'white',
-                        width: '100%',
-                        maxWidth: '500px',
-                        borderRadius: '12px',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                        border: '1px solid #E2E8F0',
-                        overflow: 'hidden',
-                        animation: 'modalScale 0.2s ease-out'
-                    }}>
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '10px',
-                                    background: '#FFF5F5',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
-                                        Leave this page?
-                                    </h3>
-                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                                        If you leave, your unsaved changes will be discarded.
-                                    </p>
-                                </div>
-                            </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
-                                <button
-                                    onClick={() => setShowCancelModal(false)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: '#3B82F6',
-                                        color: 'white',
-                                        border: 'none',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                >
-                                    Stay Here
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowCancelModal(false);
-                                        onBack();
-                                    }}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: 'white',
-                                        color: '#1a1f36',
-                                        border: '1px solid #E2E8F0',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                >
-                                    Leave & Discard Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

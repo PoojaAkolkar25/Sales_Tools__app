@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Save, Trash2, FileText, CheckCircle, Eye } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import { formatToAppDate } from '../utils/dateUtils';
 
 interface LineItem {
     type: string;
@@ -16,7 +17,7 @@ interface LineItem {
 
 const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> = ({ onBack, invoiceId }) => {
     const location = useLocation();
-    const { showNotification } = useNotification();
+    const { showNotification, showConfirm } = useNotification();
     const [leads, setLeads] = useState<any[]>([]);
     const [costSheets, setCostSheets] = useState<any[]>([]);
     const [proposals, setProposals] = useState<any[]>([]);
@@ -69,8 +70,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         grand_total: 0
     });
 
-    const [showCancelModal, setShowCancelModal] = useState(false);
-    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+
 
     useEffect(() => {
         fetchInitialData();
@@ -250,44 +250,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         }
     };
 
-    const handleLeadChange = (leadId: string) => {
-        const lead = leads.find(l => l.id === parseInt(leadId));
-        if (lead) {
-            setFormData(prev => ({
-                ...prev,
-                lead: leadId,
-                currency: lead.currency || 'INR',
-                customer_gstin: lead.gstin || prev.customer_gstin,
-                cost_sheet: lead.cost_sheet_id?.toString() || ''
-            }));
 
-            // Auto-populate line items if cost sheet is found
-            const csId = lead.cost_sheet_id;
-            if (csId) {
-                const cs = costSheets.find(c => c.id === csId);
-                // If not in costSheets (maybe not approved yet?), we still have the ID from lead
-                if (cs && cs.total_estimated_price) {
-                    setLineItems([{
-                        type: 'Product',
-                        description: `Linked to Cost Sheet: ${cs.cost_sheet_no}`,
-                        hsn_sac: '998311',
-                        quantity: 1,
-                        rate: parseFloat(cs.total_estimated_price) || 0,
-                        discount: 0,
-                        gst_rate: 18
-                    }]);
-                }
-            }
-        } else {
-            setFormData(prev => ({
-                ...prev,
-                lead: '',
-                cost_sheet: '',
-                currency: 'INR',
-                customer_gstin: ''
-            }));
-        }
-    };
 
 
     const handleProposalChange = async (proposalId: string) => {
@@ -477,19 +440,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                     <button
                                         type="button"
                                         onClick={handleSubmitForApproval}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            padding: '4px 12px',
-                                            borderRadius: '8px',
-                                            background: 'var(--theme-primary)',
-                                            color: 'white',
-                                            fontSize: '0.75rem',
-                                            fontWeight: 800,
-                                            border: 'none',
-                                            cursor: 'pointer'
-                                        }}
+                                        className="ae-btn-primary"
                                     >
                                         Submit for Approval
                                     </button>
@@ -499,38 +450,14 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                         <button
                                             type="button"
                                             onClick={handleApprove}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                padding: '4px 12px',
-                                                borderRadius: '8px',
-                                                background: '#48BB78',
-                                                color: 'white',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 800,
-                                                border: 'none',
-                                                cursor: 'pointer'
-                                            }}
+                                            className="ae-btn-success"
                                         >
                                             <CheckCircle size={14} /> Approve
                                         </button>
                                         <button
                                             type="button"
                                             onClick={handleReject}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                padding: '4px 12px',
-                                                borderRadius: '8px',
-                                                background: '#F56565',
-                                                color: 'white',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 800,
-                                                border: 'none',
-                                                cursor: 'pointer'
-                                            }}
+                                            className="ae-btn-danger"
                                         >
                                             Reject
                                         </button>
@@ -539,19 +466,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 <button
                                     type="button"
                                     onClick={handlePreview}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        padding: '4px 12px',
-                                        borderRadius: '8px',
-                                        background: 'var(--bg-secondary)',
-                                        color: 'var(--theme-primary)',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 800,
-                                        border: '1px solid var(--theme-primary)',
-                                        cursor: 'pointer'
-                                    }}
+                                    className="ae-btn-secondary"
                                 >
                                     Preview PDF
                                 </button>
@@ -605,7 +520,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
-                    <input type="date" className="ae-input" required disabled={isReadOnly} value={formData.invoice_date} onChange={e => setFormData({ ...formData, invoice_date: e.target.value })} />
+                    <input type="text" className="ae-input" disabled value={formatToAppDate(formData.invoice_date)} style={{ background: '#f8fafc', fontWeight: 600 }} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Place of Supply (State)</label>
@@ -637,7 +552,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Due Date</label>
-                    <input type="date" className="ae-input" disabled={isReadOnly} value={formData.due_date} onChange={e => setFormData({ ...formData, due_date: e.target.value })} />
+                    <input type="text" className="ae-input" disabled value={formatToAppDate(formData.due_date)} style={{ background: '#f8fafc', fontWeight: 600 }} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Number</label>
@@ -645,7 +560,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Date</label>
-                    <input type="date" className="ae-input" disabled={isReadOnly} value={formData.po_date} onChange={e => setFormData({ ...formData, po_date: e.target.value })} />
+                    <input type="text" className="ae-input" disabled value={formatToAppDate(formData.po_date)} style={{ background: '#f8fafc', fontWeight: 600 }} />
                 </div>
             </div>
 
@@ -831,11 +746,11 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Ack Date</label>
                         <input
-                            type="date"
+                            type="text"
                             className="ae-input"
-                            disabled={isReadOnly}
-                            value={formData.ack_date}
-                            onChange={e => setFormData({ ...formData, ack_date: e.target.value })}
+                            disabled
+                            value={formatToAppDate(formData.ack_date)}
+                            style={{ background: '#f8fafc', fontWeight: 600 }}
                         />
                     </div>
                 </div>
@@ -947,21 +862,8 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 }}>
                     <button
                         type="button"
-                        onClick={() => handleReport('preview')}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '10px 20px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 700,
-                            background: 'white',
-                            color: 'var(--text-secondary)',
-                            border: '1px solid var(--border-primary)',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
+                        onClick={() => handlePreview()}
+                        className="ae-btn-secondary"
                     >
                         <Eye size={18} /> Preview
                     </button>
@@ -972,20 +874,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 type="button"
                                 onClick={handleSubmit}
                                 disabled={loading}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '10px 20px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    background: 'white',
-                                    color: 'var(--text-secondary)',
-                                    border: '1px solid var(--border-primary)',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
+                                className="ae-btn-secondary"
                             >
                                 <Save size={18} /> {loading ? 'Saving...' : 'Save Draft'}
                             </button>
@@ -994,21 +883,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 type="button"
                                 onClick={handleSubmitForApproval}
                                 disabled={loading}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '10px 28px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
-                                    background: 'var(--theme-primary)',
-                                    color: 'white',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: 'var(--shadow-md)'
-                                }}
+                                className="ae-btn-primary"
                             >
                                 <CheckCircle size={18} /> {loading ? 'Submitting...' : 'Submit for Approval'}
                             </button>
@@ -1018,21 +893,14 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     {status !== 'APPROVED' && status !== 'PAID' && (
                         <button
                             type="button"
-                            onClick={() => setShowCancelModal(true)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '10px 20px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                background: 'transparent',
-                                color: 'var(--text-tertiary)',
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
+                            onClick={() => {
+                                showConfirm({
+                                    title: 'Are you sure you want to exit?',
+                                    onConfirm: () => onBack()
+                                });
                             }}
+                            className="ae-btn-secondary"
+                            style={{ border: 'none' }}
                         >
                             Cancel
                         </button>
@@ -1040,90 +908,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 </div>
             </div>
 
-            {/* Cancel Confirmation Modal */}
-            {showCancelModal && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(255, 255, 255, 0.4)',
-                    backdropFilter: 'blur(1px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999,
-                    animation: 'fadeIn 0.2s ease-out'
-                }}>
-                    <div style={{
-                        background: 'white',
-                        width: '100%',
-                        maxWidth: '500px',
-                        borderRadius: '12px',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                        border: '1px solid #E2E8F0',
-                        overflow: 'hidden',
-                        animation: 'modalSlideIn 0.3s ease-out'
-                    }}>
-                        <div style={{ padding: '24px', textAlign: 'center' }}>
-                            <div style={{
-                                width: '56px',
-                                height: '56px',
-                                background: '#FEE2E2',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                margin: '0 auto 16px'
-                            }}>
-                                <Trash2 size={24} color="#EF4444" />
-                            </div>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', marginBottom: '8px' }}>Discard Changes?</h3>
-                            <p style={{ color: '#64748b', fontSize: '0.95rem' }}>Are you sure you want to leave? Any unsaved changes will be lost forever.</p>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
-                                <button
-                                    onClick={() => setShowCancelModal(false)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: '#3B82F6',
-                                        color: 'white',
-                                        border: 'none',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                >
-                                    Stay Here
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowCancelModal(false);
-                                        onBack();
-                                    }}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: 'white',
-                                        color: '#1a1f36',
-                                        border: '1px solid #E2E8F0',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                >
-                                    Leave & Discard Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div >
     );
 };

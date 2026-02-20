@@ -4,6 +4,7 @@ import { Save, Calendar, DollarSign, Paperclip, File as FileIcon, Download, Tras
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
+import { formatToAppDate } from '../utils/dateUtils';
 
 interface ReceiptVoucherFormProps {
     id: number | null;
@@ -11,12 +12,12 @@ interface ReceiptVoucherFormProps {
 }
 
 const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) => {
-    const { showNotification } = useNotification();
+    const { showNotification, showConfirm } = useNotification();
     const [leads, setLeads] = useState<any[]>([]);
     const [bankConnections, setBankConnections] = useState<any[]>([]);
     const [invoices, setInvoices] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
-    const [showCancelModal, setShowCancelModal] = useState(false);
+
     const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
@@ -534,8 +535,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                     </td>
                                                     <td style={{ fontWeight: 600 }}>{inv.invoice_no}</td>
                                                     <td>{inv.project_name}</td>
-                                                    <td>{inv.invoice_date}</td>
-                                                    <td>{inv.due_date}</td>
+                                                    <td>{formatToAppDate(inv.invoice_date)}</td>
+                                                    <td>{formatToAppDate(inv.due_date)}</td>
                                                     <td style={{ textAlign: 'right' }}>${parseFloat(inv.total_amount).toLocaleString()}</td>
                                                     <td style={{ textAlign: 'right', fontWeight: 700, color: '#E53E3E' }}>${parseFloat(inv.open_balance).toLocaleString()}</td>
                                                     <td>
@@ -796,15 +797,15 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         alignItems: 'center',
                         gap: '8px',
                         padding: '8px 24px',
-                        background: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                        color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
+                        background: (!hoveredBtn || hoveredBtn === 'save') ? 'var(--theme-primary)' : 'transparent',
+                        color: ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
                         border: 'none',
                         borderRadius: '8px',
                         fontSize: '0.9rem',
                         fontWeight: 800,
                         cursor: loading ? 'not-allowed' : 'pointer',
                         transition: 'all 0.2s',
-                        boxShadow: (!hoveredBtn || hoveredBtn === 'save') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                        boxShadow: (!hoveredBtn || hoveredBtn === 'save') ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                     }}
                     onMouseEnter={() => setHoveredBtn('save')}
                     onMouseLeave={() => setHoveredBtn(null)}
@@ -813,21 +814,26 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                     {id ? 'Update Receipt' : 'Save Receipt'}
                 </button>
                 <button
-                    onClick={() => setShowCancelModal(true)}
+                    onClick={() => {
+                        showConfirm({
+                            title: 'Are you sure you want to exit?',
+                            onConfirm: () => onBack()
+                        });
+                    }}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
                         padding: '8px 20px',
-                        background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
-                        color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        background: hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
                         border: 'none',
                         borderRadius: '8px',
                         fontSize: '0.9rem',
                         fontWeight: 700,
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                        boxShadow: hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                     }}
                     onMouseEnter={() => setHoveredBtn('cancel')}
                     onMouseLeave={() => setHoveredBtn(null)}
@@ -837,100 +843,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                 </button>
             </div>
 
-            {/* Cancel Confirmation Modal */}
-            {showCancelModal && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(255, 255, 255, 0.4)',
-                    backdropFilter: 'blur(1px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999,
-                    animation: 'fadeIn 0.2s ease-out'
-                }}>
-                    <div style={{
-                        background: 'white',
-                        width: '100%',
-                        maxWidth: '500px',
-                        borderRadius: '12px',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                        border: '1px solid #E2E8F0',
-                        overflow: 'hidden',
-                        animation: 'modalScale 0.2s ease-out'
-                    }}>
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '10px',
-                                    background: '#FFF5F5',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
-                                        Leave this page?
-                                    </h3>
-                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                                        If you leave, your unsaved changes will be discarded.
-                                    </p>
-                                </div>
-                            </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
-                                <button
-                                    onClick={() => setShowCancelModal(false)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: '#3B82F6',
-                                        color: 'white',
-                                        border: 'none',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                >
-                                    Stay Here
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowCancelModal(false);
-                                        onBack();
-                                    }}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: 'white',
-                                        color: '#1a1f36',
-                                        border: '1px solid #E2E8F0',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                >
-                                    Leave & Discard Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

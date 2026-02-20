@@ -141,7 +141,7 @@ const ReadOnlyCell = ({ value, bold = false, symbol = '', color, fontSize, fontW
 );
 
 const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
-    const { showNotification } = useNotification();
+    const { showNotification, showConfirm } = useNotification();
     const [localId, setLocalId] = useState<number | null>(id || null);
     const [lead, setLead] = useState<Lead | null>(null);
 
@@ -161,8 +161,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const [rejectComment, setRejectComment] = useState('');
     const [revertComment, setRevertComment] = useState('');
     const [showRejectModal, setShowRejectModal] = useState(false);
-    const [showCancelModal, setShowCancelModal] = useState(false);
-    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+
 
     const getCurrencySymbol = (cur: string) => {
         switch (cur) {
@@ -1782,23 +1781,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     <>
                         <button
                             onClick={() => handleSave('PENDING')}
+                            className="ae-btn-secondary"
                             style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '8px 24px',
-                                borderRadius: '8px',
-                                fontSize: '0.9rem',
-                                fontWeight: 700,
-                                background: hoveredBtn === 'draft' && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                color: showCancelModal ? '#CBD5E0' : (hoveredBtn === 'draft' ? 'white' : 'var(--text-secondary)'),
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                boxShadow: hoveredBtn === 'draft' && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                                color: 'var(--text-secondary)',
+                                border: 'none'
                             }}
-                            onMouseEnter={() => setHoveredBtn('draft')}
-                            onMouseLeave={() => setHoveredBtn(null)}
                         >
                             <Save size={16} />
                             <span>Save as Draft</span>
@@ -1806,23 +1793,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                         <button
                             onClick={() => handleSave('SUBMITTED')}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '8px 24px',
-                                borderRadius: '8px',
-                                fontSize: '0.9rem',
-                                fontWeight: 800,
-                                background: (!hoveredBtn || hoveredBtn === 'submit') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'submit') ? 'white' : 'var(--text-secondary)'),
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                boxShadow: (!hoveredBtn || hoveredBtn === 'submit') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
-                            }}
-                            onMouseEnter={() => setHoveredBtn('submit')}
-                            onMouseLeave={() => setHoveredBtn(null)}
+                            className="ae-btn-primary"
                         >
                             <PlusCircle size={18} />
                             <span>Submit for Approval</span>
@@ -1834,31 +1805,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     <>
                         <button
                             onClick={handleApprove}
-                            className="ae-btn-primary"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '8px 20px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 800,
-                                background: showCancelModal ? 'transparent' : '#E8FBF0',
-                                color: showCancelModal ? '#CBD5E0' : '#00C853',
-                                border: showCancelModal ? '1px solid transparent' : '1px solid rgba(0, 200, 83, 0.2)'
-                            }}
-                            onMouseEnter={(e) => {
-                                if (!showCancelModal) {
-                                    e.currentTarget.style.background = '#00C853';
-                                    e.currentTarget.style.color = 'white';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!showCancelModal) {
-                                    e.currentTarget.style.background = '#E8FBF0';
-                                    e.currentTarget.style.color = '#00C853';
-                                }
-                            }}
+                            className="ae-btn-success"
                         >
                             <CheckCircle size={18} />
                             <span>Approve</span>
@@ -1866,31 +1813,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                         <button
                             onClick={() => setShowRevertModal(true)}
+                            className="ae-btn-secondary"
                             style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '8px 20px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                background: showCancelModal ? 'transparent' : '#FFFBEB',
-                                color: showCancelModal ? '#CBD5E0' : '#D89614',
-                                border: showCancelModal ? '1px solid transparent' : '1px solid rgba(216, 150, 20, 0.2)',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => {
-                                if (!showCancelModal) {
-                                    e.currentTarget.style.background = '#D89614';
-                                    e.currentTarget.style.color = 'white';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!showCancelModal) {
-                                    e.currentTarget.style.background = '#FFFBEB';
-                                    e.currentTarget.style.color = '#D89614';
-                                }
+                                background: '#FFFBEB',
+                                color: '#D89614',
+                                borderColor: 'rgba(216, 150, 20, 0.2)'
                             }}
                         >
                             <ArrowLeft size={18} />
@@ -1899,32 +1826,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                         <button
                             onClick={() => setShowRejectModal(true)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '8px 20px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                background: showCancelModal ? 'transparent' : '#FFF5F5',
-                                color: showCancelModal ? '#CBD5E0' : '#EF4444',
-                                border: showCancelModal ? '1px solid transparent' : '1px solid rgba(239, 68, 68, 0.2)',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => {
-                                if (!showCancelModal) {
-                                    e.currentTarget.style.background = '#EF4444';
-                                    e.currentTarget.style.color = 'white';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!showCancelModal) {
-                                    e.currentTarget.style.background = '#FFF5F5';
-                                    e.currentTarget.style.color = '#EF4444';
-                                }
-                            }}
+                            className="ae-btn-danger"
                         >
                             <XCircle size={18} />
                             <span>Reject</span>
@@ -1933,443 +1835,342 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 )}
 
                 <button
-                    onClick={() => setShowCancelModal(true)}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 24px',
-                        borderRadius: '8px',
-                        fontSize: '0.9rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
-                        color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
-                        boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                    onClick={() => {
+                        showConfirm({
+                            title: 'Are you sure you want to exit?',
+                            onConfirm: () => onBack()
+                        });
                     }}
-                    onMouseEnter={() => setHoveredBtn('cancel')}
-                    onMouseLeave={() => setHoveredBtn(null)}
+                    className="ae-btn-secondary"
                 >
-                    <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
                     <span>Cancel</span>
                 </button>
             </div>
 
-            {/* Cancel Confirmation Modal */}
-            {showCancelModal && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(255, 255, 255, 0.4)',
-                    backdropFilter: 'blur(1px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999,
-                    animation: 'fadeIn 0.2s ease-out'
-                }}>
-                    <div style={{
-                        background: 'var(--bg-primary)',
-                        width: '100%',
-                        maxWidth: '500px',
-                        borderRadius: '12px',
-                        boxShadow: 'var(--shadow-xl)',
-                        border: '1px solid var(--border-primary)',
-                        overflow: 'hidden',
-                        animation: 'modalScale 0.2s ease-out'
-                    }}>
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '10px',
-                                    background: '#FFF5F5',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                                        Leave this page?
-                                    </h3>
-                                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                                        If you leave, your unsaved changes will be discarded.
-                                    </p>
-                                </div>
-                            </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '32px' }}>
-                                <button
-                                    onClick={() => setShowCancelModal(false)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: '#3B82F6',
-                                        color: 'white',
-                                        border: 'none',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                >
-                                    Stay Here
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowCancelModal(false);
-                                        onBack();
-                                    }}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: 'var(--bg-primary)',
-                                        color: 'var(--text-primary)',
-                                        border: '1px solid var(--border-primary)',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                >
-                                    Leave & Discard Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Custom Alert Modal */}
-            {customAlert && createPortal(
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.6)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 10000,
-                        animation: 'fadeIn 0.2s ease',
-                        backdropFilter: 'blur(4px)'
-                    }}
-                    onClick={() => setCustomAlert(null)}
-                >
+            {
+                customAlert && createPortal(
                     <div
                         style={{
-                            background: '#1a1f36',
-                            borderRadius: '16px',
-                            padding: '32px',
-                            maxWidth: '500px',
-                            width: '90%',
-                            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-                            animation: 'slideUp 0.3s ease',
-                            border: `2px solid ${customAlert.type === 'success' ? '#00C853' : customAlert.type === 'error' ? '#EF4444' : '#0066CC'}`
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(0, 0, 0, 0.6)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10000,
+                            animation: 'fadeIn 0.2s ease',
+                            backdropFilter: 'blur(4px)'
                         }}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={() => setCustomAlert(null)}
                     >
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                            <div style={{
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '50%',
-                                background: customAlert.type === 'success' ? 'rgba(0, 200, 83, 0.2)' : customAlert.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0, 102, 204, 0.2)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0
-                            }}>
-                                {customAlert.type === 'success' && <CheckCircle size={28} style={{ color: '#00C853' }} />}
-                                {customAlert.type === 'error' && <XCircle size={28} style={{ color: '#EF4444' }} />}
-                                {customAlert.type === 'info' && <Clock size={28} style={{ color: '#0066CC' }} />}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <h3 style={{
-                                    fontSize: '1.25rem',
-                                    fontWeight: 700,
-                                    color: 'white',
-                                    margin: '0 0 8px 0'
-                                }}>
-                                    {customAlert.type === 'success' ? 'Success' : customAlert.type === 'error' ? 'Error' : 'Information'}
-                                </h3>
-                                <p style={{
-                                    fontSize: '0.95rem',
-                                    color: '#E0E6ED',
-                                    margin: 0,
-                                    lineHeight: '1.6',
-                                    whiteSpace: 'pre-line'
-                                }}>
-                                    {customAlert.message}
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setCustomAlert(null)}
-                                style={{
-                                    width: '32px',
-                                    height: '32px',
-                                    borderRadius: '50%',
-                                    border: 'none',
-                                    background: 'rgba(255, 255, 255, 0.1)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    color: 'white',
-                                    flexShrink: 0,
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-                        <button
-                            onClick={() => setCustomAlert(null)}
+                        <div
                             style={{
-                                marginTop: '24px',
-                                width: '100%',
-                                padding: '12px',
-                                borderRadius: '8px',
-                                border: 'none',
-                                background: customAlert.type === 'success' ? '#00C853' : customAlert.type === 'error' ? '#EF4444' : '#0066CC',
-                                color: 'white',
-                                fontWeight: 700,
-                                fontSize: '0.95rem',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
+                                background: '#1a1f36',
+                                borderRadius: '16px',
+                                padding: '32px',
+                                maxWidth: '500px',
+                                width: '90%',
+                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+                                animation: 'slideUp 0.3s ease',
+                                border: `2px solid ${customAlert.type === 'success' ? '#00C853' : customAlert.type === 'error' ? '#EF4444' : '#0066CC'}`
                             }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }}
+                            onClick={(e) => e.stopPropagation()}
                         >
-                            OK
-                        </button>
-                    </div>
-                </div>,
-                document.body
-            )}
-
-            {/* Branded Action Modal (Template Style) */}
-            {(showRejectModal || showRevertModal) && createPortal(
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 10000,
-                        background: 'rgba(0, 0, 0, 0.45)',
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                        padding: '24px',
-                    }}
-                >
-                    <div
-                        style={{
-                            background: 'var(--bg-primary)',
-                            width: '100%',
-                            maxWidth: '400px',
-                            borderRadius: '24px',
-                            boxShadow: 'var(--shadow-xl)',
-                            overflow: 'hidden',
-                            position: 'relative',
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Orange Header Section */}
-                        <div style={{
-                            background: 'var(--theme-primary)',
-                            padding: '28px 24px 24px',
-                            position: 'relative',
-                        }}>
-                            <button
-                                onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
-                                style={{
-                                    position: 'absolute',
-                                    top: '16px',
-                                    right: '16px',
-                                    width: '24px',
-                                    height: '24px',
-                                    borderRadius: '50%',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    color: 'white',
-                                    opacity: 0.7,
-                                    transition: 'all 0.2s',
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'transparent'; }}
-                            >
-                                <X size={16} strokeWidth={3} />
-                            </button>
-
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
                                 <div style={{
-                                    width: '36px',
-                                    height: '36px',
-                                    background: 'rgba(255,255,255,0.2)',
-                                    borderRadius: '10px',
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: '50%',
+                                    background: customAlert.type === 'success' ? 'rgba(0, 200, 83, 0.2)' : customAlert.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0, 102, 204, 0.2)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     flexShrink: 0
                                 }}>
-                                    <Sparkles size={18} color="white" />
+                                    {customAlert.type === 'success' && <CheckCircle size={28} style={{ color: '#00C853' }} />}
+                                    {customAlert.type === 'error' && <XCircle size={28} style={{ color: '#EF4444' }} />}
+                                    {customAlert.type === 'info' && <Clock size={28} style={{ color: '#0066CC' }} />}
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <h3 style={{
                                         fontSize: '1.25rem',
-                                        fontWeight: 800,
+                                        fontWeight: 700,
                                         color: 'white',
-                                        margin: '0 0 4px 0',
-                                        lineHeight: 1.2
+                                        margin: '0 0 8px 0'
                                     }}>
-                                        {showRevertModal ? 'Revert Cost Sheet' : 'Reject Cost Sheet'}
+                                        {customAlert.type === 'success' ? 'Success' : customAlert.type === 'error' ? 'Error' : 'Information'}
                                     </h3>
                                     <p style={{
+                                        fontSize: '0.95rem',
+                                        color: '#E0E6ED',
                                         margin: 0,
-                                        color: 'rgba(255,255,255,0.95)',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 500,
-                                        lineHeight: 1.4
+                                        lineHeight: '1.6',
+                                        whiteSpace: 'pre-line'
                                     }}>
-                                        {showRevertModal
-                                            ? 'Provide a reason for reverting this cost sheet back to the creator.'
-                                            : 'Provide a reason for rejecting this cost sheet for the records.'}
+                                        {customAlert.message}
                                     </p>
                                 </div>
-                            </div>
-                        </div>
-
-                        {/* White Input Section */}
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ marginBottom: '20px' }}>
-                                <label style={{
-                                    display: 'block',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    color: '#1e293b',
-                                    marginBottom: '8px'
-                                }}>
-                                    {showRevertModal ? 'Reversion Reason' : 'Rejection Reason'}
-                                </label>
-                                <textarea
-                                    value={showRevertModal ? revertComment : rejectComment}
-                                    onChange={e => showRevertModal ? setRevertComment(e.target.value) : setRejectComment(e.target.value)}
-                                    placeholder={showRevertModal ? "Type your reason here..." : "Type your reason here..."}
-                                    autoFocus
+                                <button
+                                    onClick={() => setCustomAlert(null)}
                                     style={{
-                                        width: '100%',
-                                        height: '90px',
-                                        background: '#f8fafc',
-                                        border: '1.5px solid #e2e8f0',
-                                        borderRadius: '12px',
-                                        padding: '12px 16px',
-                                        fontSize: '0.9rem',
-                                        color: '#1e293b',
-                                        outline: 'none',
-                                        resize: 'none',
-                                        transition: 'all 0.2s',
-                                        fontWeight: 500
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        background: 'rgba(255, 255, 255, 0.1)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        color: 'white',
+                                        flexShrink: 0,
+                                        transition: 'all 0.2s'
                                     }}
-                                    onFocus={(e) => {
-                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                        e.currentTarget.style.background = 'white';
-                                        e.currentTarget.style.boxShadow = '0 0 0 4px rgba(187, 77, 0, 0.08)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.currentTarget.style.borderColor = '#e2e8f0';
-                                        e.currentTarget.style.background = '#f8fafc';
-                                        e.currentTarget.style.boxShadow = 'none';
-                                    }}
-                                />
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                                >
+                                    <X size={18} />
+                                </button>
                             </div>
+                            <button
+                                onClick={() => setCustomAlert(null)}
+                                style={{
+                                    marginTop: '24px',
+                                    width: '100%',
+                                    padding: '12px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    background: customAlert.type === 'success' ? '#00C853' : customAlert.type === 'error' ? '#EF4444' : '#0066CC',
+                                    color: 'white',
+                                    fontWeight: 700,
+                                    fontSize: '0.95rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                }}
+                            >
+                                OK
+                            </button>
+                        </div>
+                    </div>,
+                    document.body
+                )
+            }
 
+            {/* Branded Action Modal (Template Style) */}
+            {
+                (showRejectModal || showRevertModal) && createPortal(
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10000,
+                            background: 'rgba(0, 0, 0, 0.45)',
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
+                            padding: '24px',
+                        }}
+                    >
+                        <div
+                            style={{
+                                background: 'var(--bg-primary)',
+                                width: '100%',
+                                maxWidth: '400px',
+                                borderRadius: '24px',
+                                boxShadow: 'var(--shadow-xl)',
+                                overflow: 'hidden',
+                                position: 'relative',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Orange Header Section */}
                             <div style={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                gap: '10px'
+                                background: 'var(--theme-primary)',
+                                padding: '28px 24px 24px',
+                                position: 'relative',
                             }}>
                                 <button
                                     onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
                                     style={{
-                                        padding: '10px 20px',
-                                        borderRadius: '12px',
-                                        background: '#f1f5f9',
-                                        color: '#475569',
-                                        fontWeight: 700,
-                                        fontSize: '0.85rem',
+                                        position: 'absolute',
+                                        top: '16px',
+                                        right: '16px',
+                                        width: '24px',
+                                        height: '24px',
+                                        borderRadius: '50%',
+                                        background: 'transparent',
                                         border: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s'
-                                    }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={showRevertModal ? handleRevert : handleReject}
-                                    style={{
-                                        padding: '10px 24px',
-                                        borderRadius: '12px',
-                                        background: 'var(--theme-primary)',
                                         color: 'white',
-                                        fontWeight: 700,
-                                        fontSize: '0.85rem',
-                                        border: 'none',
-                                        cursor: 'pointer',
+                                        opacity: 0.7,
                                         transition: 'all 0.2s',
-                                        boxShadow: '0 4px 12px rgba(187, 77, 0, 0.2)'
                                     }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(-1px)';
-                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(187, 77, 0, 0.3)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(187, 77, 0, 0.2)';
-                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'transparent'; }}
                                 >
-                                    {showRevertModal ? 'Revert' : 'Reject'}
+                                    <X size={16} strokeWidth={3} />
                                 </button>
+
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                    <div style={{
+                                        width: '36px',
+                                        height: '36px',
+                                        background: 'rgba(255,255,255,0.2)',
+                                        borderRadius: '10px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        <Sparkles size={18} color="white" />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <h3 style={{
+                                            fontSize: '1.25rem',
+                                            fontWeight: 800,
+                                            color: 'white',
+                                            margin: '0 0 4px 0',
+                                            lineHeight: 1.2
+                                        }}>
+                                            {showRevertModal ? 'Revert Cost Sheet' : 'Reject Cost Sheet'}
+                                        </h3>
+                                        <p style={{
+                                            margin: 0,
+                                            color: 'rgba(255,255,255,0.95)',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 500,
+                                            lineHeight: 1.4
+                                        }}>
+                                            {showRevertModal
+                                                ? 'Provide a reason for reverting this cost sheet back to the creator.'
+                                                : 'Provide a reason for rejecting this cost sheet for the records.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* White Input Section */}
+                            <div style={{ padding: '24px' }}>
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{
+                                        display: 'block',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 700,
+                                        color: '#1e293b',
+                                        marginBottom: '8px'
+                                    }}>
+                                        {showRevertModal ? 'Reversion Reason' : 'Rejection Reason'}
+                                    </label>
+                                    <textarea
+                                        value={showRevertModal ? revertComment : rejectComment}
+                                        onChange={e => showRevertModal ? setRevertComment(e.target.value) : setRejectComment(e.target.value)}
+                                        placeholder={showRevertModal ? "Type your reason here..." : "Type your reason here..."}
+                                        autoFocus
+                                        style={{
+                                            width: '100%',
+                                            height: '90px',
+                                            background: '#f8fafc',
+                                            border: '1.5px solid #e2e8f0',
+                                            borderRadius: '12px',
+                                            padding: '12px 16px',
+                                            fontSize: '0.9rem',
+                                            color: '#1e293b',
+                                            outline: 'none',
+                                            resize: 'none',
+                                            transition: 'all 0.2s',
+                                            fontWeight: 500
+                                        }}
+                                        onFocus={(e) => {
+                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                            e.currentTarget.style.background = 'white';
+                                            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(187, 77, 0, 0.08)';
+                                        }}
+                                        onBlur={(e) => {
+                                            e.currentTarget.style.borderColor = '#e2e8f0';
+                                            e.currentTarget.style.background = '#f8fafc';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }}
+                                    />
+                                </div>
+
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '10px'
+                                }}>
+                                    <button
+                                        onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
+                                        style={{
+                                            padding: '10px 20px',
+                                            borderRadius: '12px',
+                                            background: '#f1f5f9',
+                                            color: '#475569',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={showRevertModal ? handleRevert : handleReject}
+                                        style={{
+                                            padding: '10px 24px',
+                                            borderRadius: '12px',
+                                            background: 'var(--theme-primary)',
+                                            color: 'white',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 4px 12px rgba(187, 77, 0, 0.2)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(187, 77, 0, 0.3)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(187, 77, 0, 0.2)';
+                                        }}
+                                    >
+                                        {showRevertModal ? 'Revert' : 'Reject'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>,
-                document.body
-            )}
-        </div>
+                    </div>,
+                    document.body
+                )
+            }
+        </div >
     );
 };
 

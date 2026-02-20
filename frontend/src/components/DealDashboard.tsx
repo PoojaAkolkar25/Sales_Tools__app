@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
     Loader2,
     FileSpreadsheet,
@@ -12,30 +12,87 @@ import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
 import Pagination from './Pagination';
 
+
+// Width needed to fit the SHORT label (initial/collapsed state)
+const SHORT_COL_WIDTHS: Record<string, number> = {
+    deal_id: 55,
+    deal_date: 65,
+    deal_name: 80,
+    company: 55,
+    lead_no: 55,
+    stage: 65,
+    currency: 55,
+    deal_amount: 55,
+    deal_type: 55,
+    customer_name: 75,
+    customer_email: 60,
+    end_customer: 75,
+    client_type: 65,
+    inside_salesperson: 75,
+    inside_sales_head: 70,
+    salesperson_name: 65,
+    sales_head: 65,
+    project_manager: 55,
+    project_manager_head: 65,
+    expected_close_date: 65,
+    hubspot_id: 60,
+    last_synced_at: 60,
+};
+
+// Width at which the FULL label becomes visible (snaps to full label text)
+const FULL_LABEL_WIDTHS: Record<string, number> = {
+    deal_id: 55,
+    deal_date: 110,
+    deal_name: 140,
+    company: 100,
+    lead_no: 90,
+    stage: 130,
+    currency: 90,
+    deal_amount: 90,
+    deal_type: 90,
+    customer_name: 190,
+    customer_email: 160,
+    end_customer: 130,
+    client_type: 100,
+    inside_salesperson: 160,
+    inside_sales_head: 160,
+    salesperson_name: 120,
+    sales_head: 110,
+    project_manager: 130,
+    project_manager_head: 100,
+    expected_close_date: 145,
+    hubspot_id: 110,
+    last_synced_at: 120,
+};
+
+// MIN_COL_WIDTHS = smallest allowed (short label width)
+const MIN_COL_WIDTHS = SHORT_COL_WIDTHS;
+
 const ALL_COLUMNS = [
-    { key: 'deal_id', label: 'ID' },
-    { key: 'deal_date', label: 'Deal Date *' },
-    { key: 'deal_name', label: 'Project Name' },
-    { key: 'company', label: 'Company' },
-    { key: 'lead_no', label: 'Lead No.' },
-    { key: 'stage', label: 'Stage' },
-    { key: 'currency', label: 'Currency' },
-    { key: 'deal_amount', label: 'Amount' },
-    { key: 'deal_type', label: 'Type' },
-    { key: 'customer_name', label: 'Customer/Partner Name' },
-    { key: 'customer_email', label: 'Customer Email' },
-    { key: 'end_customer', label: 'End Customer' },
-    { key: 'client_type', label: 'Client Type' },
-    { key: 'inside_salesperson', label: 'Inside Salesperson' },
-    { key: 'inside_sales_head', label: 'Inside Sales Head' },
-    { key: 'salesperson_name', label: 'Salesperson' },
-    { key: 'sales_head', label: 'Sales Head' },
-    { key: 'project_manager', label: 'Proj. Manager' },
-    { key: 'project_manager_head', label: 'PM Head' },
-    { key: 'expected_close_date', label: 'Exp. Close Date' },
-    { key: 'hubspot_id', label: 'HubSpot ID' },
-    { key: 'last_synced_at', label: 'Last Synced' }
+    { key: 'deal_id', label: 'ID', shortLabel: 'ID' },
+    { key: 'deal_date', label: 'Deal Date', shortLabel: 'Date' },
+    { key: 'deal_name', label: 'Project Name', shortLabel: 'Proj.' },
+    { key: 'company', label: 'Company', shortLabel: 'Co.' },
+    { key: 'lead_no', label: 'Lead No.', shortLabel: 'Lead' },
+    { key: 'stage', label: 'Stage', shortLabel: 'Stage' },
+    { key: 'currency', label: 'Currency', shortLabel: 'Curr.' },
+    { key: 'deal_amount', label: 'Amount', shortLabel: 'Amt.' },
+    { key: 'deal_type', label: 'Type', shortLabel: 'Type' },
+    { key: 'customer_name', label: 'Customer/Partner Name', shortLabel: 'Cust.' },
+    { key: 'customer_email', label: 'Customer Email', shortLabel: 'Email' },
+    { key: 'end_customer', label: 'End Customer', shortLabel: 'End C.' },
+    { key: 'client_type', label: 'Client Type', shortLabel: 'Client' },
+    { key: 'inside_salesperson', label: 'Inside Salesperson', shortLabel: 'In. SP' },
+    { key: 'inside_sales_head', label: 'Inside Sales Head', shortLabel: 'IS Hd.' },
+    { key: 'salesperson_name', label: 'Salesperson', shortLabel: 'Sales' },
+    { key: 'sales_head', label: 'Sales Head', shortLabel: 'S.Hd.' },
+    { key: 'project_manager', label: 'Proj. Manager', shortLabel: 'PM' },
+    { key: 'project_manager_head', label: 'PM Head', shortLabel: 'PMHd.' },
+    { key: 'expected_close_date', label: 'Exp. Close Date', shortLabel: 'Close' },
+    { key: 'hubspot_id', label: 'HubSpot ID', shortLabel: 'HS ID' },
+    { key: 'last_synced_at', label: 'Last Synced', shortLabel: 'Syncd.' },
 ];
+
 
 interface Deal {
     id: number;
@@ -88,6 +145,40 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
 
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const columnMenuRef = useRef<HTMLDivElement>(null);
+    const resizingRef = useRef<{ colKey: string; startX: number; startWidth: number } | null>(null);
+
+    const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
+        const saved = localStorage.getItem('dealDashboard_colWidths');
+        return saved ? JSON.parse(saved) : {};
+    });
+
+    const getColWidth = (key: string) => colWidths[key] ?? SHORT_COL_WIDTHS[key] ?? 60;
+
+    const startResize = useCallback((e: React.MouseEvent, key: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resizingRef.current = { colKey: key, startX: e.clientX, startWidth: getColWidth(key) };
+
+        const onMouseMove = (ev: MouseEvent) => {
+            if (!resizingRef.current) return;
+            const delta = ev.clientX - resizingRef.current.startX;
+            const newWidth = Math.max(MIN_COL_WIDTHS[resizingRef.current.colKey] ?? 60, resizingRef.current.startWidth + delta);
+            setColWidths(prev => ({ ...prev, [resizingRef.current!.colKey]: newWidth }));
+        };
+
+        const onMouseUp = () => {
+            resizingRef.current = null;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            setColWidths(prev => {
+                localStorage.setItem('dealDashboard_colWidths', JSON.stringify(prev));
+                return prev;
+            });
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }, [colWidths]);
 
     const [filters, setFilters] = useState(() => {
         const defaults = {
@@ -555,14 +646,52 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
             </div>
 
             <div style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
-                <table className="ae-table" style={{ minWidth: visibleColumns.length > 8 ? '2000px' : '100%' }}>
+                <table className="ae-table" style={{ tableLayout: 'fixed', width: 'max-content', minWidth: '100%' }}>
+                    <colgroup>
+                        {visibleColumns.map(key => (
+                            <col key={key} style={{ width: `${getColWidth(key)}px` }} />
+                        ))}
+                        <col style={{ width: '80px' }} />
+                    </colgroup>
                     <thead>
                         <tr>
                             {visibleColumns.map(key => {
                                 const col = ALL_COLUMNS.find(c => c.key === key);
-                                return <th key={key} style={{ backgroundColor: 'var(--bg-secondary)', zIndex: 12 }}>{col?.label}</th>;
+                                return (
+                                    <th key={key} style={{
+                                        backgroundColor: 'var(--bg-secondary)',
+                                        zIndex: 12,
+                                        position: 'relative',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        userSelect: 'none',
+                                        paddingRight: '20px'
+                                    }}>
+                                        {/* Show short label until dragged to full-label threshold */}
+                                        <span title={col?.label}>
+                                            {getColWidth(key) >= (FULL_LABEL_WIDTHS[key] ?? 999)
+                                                ? col?.label
+                                                : col?.shortLabel ?? col?.label}
+                                        </span>
+                                        {/* Resize handle */}
+                                        <div
+                                            onMouseDown={(e) => startResize(e, key)}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                right: 0,
+                                                width: '6px',
+                                                height: '100%',
+                                                cursor: 'col-resize',
+                                                background: 'transparent',
+                                                zIndex: 20,
+                                            }}
+                                            title="Drag to resize"
+                                        />
+                                    </th>
+                                );
                             })}
-                            <th style={{ backgroundColor: 'var(--bg-secondary)', zIndex: 12, textAlign: 'center' }}>Actions</th>
+                            <th style={{ backgroundColor: 'var(--bg-secondary)', zIndex: 12, textAlign: 'center', whiteSpace: 'nowrap' }}>Actions</th>
                         </tr>
                         {showFilters && (
                             <tr style={{ background: 'var(--bg-secondary)' }}>
@@ -649,7 +778,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                                 case 'expected_close_date':
                                                     return <td key={key}>{formatToAppDate((deal as any).expected_close_date)}</td>;
                                                 case 'last_synced_at':
-                                                    return <td key={key}>{deal.last_synced_at ? new Date(deal.last_synced_at).toLocaleString() : '—'}</td>;
+                                                    return <td key={key}>{deal.last_synced_at ? formatToAppDate(deal.last_synced_at) : '—'}</td>;
                                                 default:
                                                     return <td key={key}>{(deal as any)[key] || '—'}</td>;
                                             }

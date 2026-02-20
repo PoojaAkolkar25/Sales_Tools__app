@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import { formatToAppDate } from '../utils/dateUtils';
 import Pagination from './Pagination';
 
 const ALL_COLUMNS = [
@@ -169,7 +170,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
             const matchesSO = (m.sales_order_details?.so_number || '').toLowerCase().includes(filters.soNumber.toLowerCase());
             const matchesCustomer = (m.sales_order_details?.customer_name || '').toLowerCase().includes(filters.customerName.toLowerCase());
             const matchesDescription = (m.description || '').toLowerCase().includes(filters.description.toLowerCase());
-            const matchesDueDate = (new Date(m.due_date).toLocaleDateString() || '').toLowerCase().includes(filters.dueDateSearch.toLowerCase());
+            const matchesDueDate = (m.due_date ? formatToAppDate(m.due_date) : '').toLowerCase().includes(filters.dueDateSearch.toLowerCase());
             const matchesAmount = (m.amount?.toString() || '').includes(filters.amountSearch);
             const matchesStatusSearch = (m.status || '').toLowerCase().includes(filters.statusSearch.toLowerCase());
             const matchesInvoice = (m.invoice_details?.invoice_no || '').toLowerCase().includes(filters.invoiceNo.toLowerCase());
@@ -613,7 +614,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                 case 'description':
                                                     return <td key={key} style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={m.description || '—'}>{m.description}</td>;
                                                 case 'due_date':
-                                                    return <td key={key} style={{ fontWeight: 600 }}>{new Date(m.due_date).toLocaleDateString()}</td>;
+                                                    return <td key={key} style={{ fontWeight: 600 }}>{m.due_date ? formatToAppDate(m.due_date) : '---'}</td>;
                                                 case 'amount':
                                                     return <td key={key} style={{ textAlign: 'right', fontWeight: 700, color: '#1a1f36' }}>${parseFloat(m.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
                                                 case 'status':

@@ -12,6 +12,7 @@ import {
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
+import { formatToAppDate } from '../utils/dateUtils';
 
 interface SalesOrderFormProps {
     id: number | null;
@@ -26,9 +27,9 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     const [saving, setSaving] = useState(false);
     const [salesOrder, setSalesOrder] = useState<any>(null);
 
-    const [showCancelModal, setShowCancelModal] = useState(false);
+
     const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
-    const { showNotification } = useNotification();
+    const { showNotification, showConfirm } = useNotification();
 
     useEffect(() => {
 
@@ -466,39 +467,48 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Purchase Order Date</label>
-                                <input
-                                    name="po_date"
-                                    type="date"
-                                    value={salesOrder.po_date || ''}
-                                    onChange={handleInputChange}
-                                    className="ae-input"
-                                    disabled={isSubmitted}
-                                    style={{ ...getHighlightStyle(salesOrder.po_date) }}
-                                />
+                                {isSubmitted ? (
+                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', ...getHighlightStyle(salesOrder.po_date) }}>{salesOrder.po_date ? formatToAppDate(salesOrder.po_date) : ''}</div>
+                                ) : (
+                                    <input
+                                        name="po_date"
+                                        type="date"
+                                        value={salesOrder.po_date || ''}
+                                        onChange={handleInputChange}
+                                        className="ae-input"
+                                        style={{ ...getHighlightStyle(salesOrder.po_date) }}
+                                    />
+                                )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Valid From <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
-                                <input
-                                    name="po_from_date"
-                                    type="date"
-                                    value={salesOrder.po_from_date || ''}
-                                    onChange={handleInputChange}
-                                    className="ae-input"
-                                    disabled={isSubmitted}
-                                    style={{ ...getHighlightStyle(salesOrder.po_from_date) }}
-                                />
+                                {isSubmitted ? (
+                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', ...getHighlightStyle(salesOrder.po_from_date) }}>{salesOrder.po_from_date ? formatToAppDate(salesOrder.po_from_date) : ''}</div>
+                                ) : (
+                                    <input
+                                        name="po_from_date"
+                                        type="date"
+                                        value={salesOrder.po_from_date || ''}
+                                        onChange={handleInputChange}
+                                        className="ae-input"
+                                        style={{ ...getHighlightStyle(salesOrder.po_from_date) }}
+                                    />
+                                )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Valid To <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
-                                <input
-                                    name="po_to_date"
-                                    type="date"
-                                    value={salesOrder.po_to_date || ''}
-                                    onChange={handleInputChange}
-                                    className="ae-input"
-                                    disabled={isSubmitted}
-                                    style={{ ...getHighlightStyle(salesOrder.po_to_date) }}
-                                />
+                                {isSubmitted ? (
+                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', ...getHighlightStyle(salesOrder.po_to_date) }}>{salesOrder.po_to_date ? formatToAppDate(salesOrder.po_to_date) : ''}</div>
+                                ) : (
+                                    <input
+                                        name="po_to_date"
+                                        type="date"
+                                        value={salesOrder.po_to_date || ''}
+                                        onChange={handleInputChange}
+                                        className="ae-input"
+                                        style={{ ...getHighlightStyle(salesOrder.po_to_date) }}
+                                    />
+                                )}
                             </div>
                         </div>
                     </section>
@@ -609,38 +619,64 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                 />
                                             </td>
                                             <td style={{ padding: '8px 16px' }}>
-                                                <input
-                                                    type="date"
-                                                    value={item.start_date || ''}
-                                                    onChange={(e) => handleItemChange(index, 'start_date', e.target.value)}
-                                                    style={{
+                                                {isSubmitted ? (
+                                                    <div style={{
                                                         width: '100%',
                                                         padding: '6px 10px',
                                                         border: '1px solid #E2E8F0',
                                                         borderRadius: '6px',
                                                         fontSize: '0.8rem',
-                                                        outline: 'none',
+                                                        fontWeight: 600,
+                                                        background: '#F8FAFC',
+                                                        minHeight: '30px',
                                                         ...getHighlightStyle(item.start_date)
-                                                    }}
-                                                    disabled={isSubmitted}
-                                                />
+                                                    }}>{item.start_date ? formatToAppDate(item.start_date) : ''}</div>
+                                                ) : (
+                                                    <input
+                                                        type="date"
+                                                        value={item.start_date || ''}
+                                                        onChange={(e) => handleItemChange(index, 'start_date', e.target.value)}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '6px 10px',
+                                                            border: '1px solid #E2E8F0',
+                                                            borderRadius: '6px',
+                                                            fontSize: '0.8rem',
+                                                            outline: 'none',
+                                                            ...getHighlightStyle(item.start_date)
+                                                        }}
+                                                    />
+                                                )}
                                             </td>
                                             <td style={{ padding: '8px 16px' }}>
-                                                <input
-                                                    type="date"
-                                                    value={item.end_date || ''}
-                                                    onChange={(e) => handleItemChange(index, 'end_date', e.target.value)}
-                                                    style={{
+                                                {isSubmitted ? (
+                                                    <div style={{
                                                         width: '100%',
                                                         padding: '6px 10px',
                                                         border: '1px solid #E2E8F0',
                                                         borderRadius: '6px',
                                                         fontSize: '0.8rem',
-                                                        outline: 'none',
+                                                        fontWeight: 600,
+                                                        background: '#F8FAFC',
+                                                        minHeight: '30px',
                                                         ...getHighlightStyle(item.end_date)
-                                                    }}
-                                                    disabled={isSubmitted}
-                                                />
+                                                    }}>{item.end_date ? formatToAppDate(item.end_date) : ''}</div>
+                                                ) : (
+                                                    <input
+                                                        type="date"
+                                                        value={item.end_date || ''}
+                                                        onChange={(e) => handleItemChange(index, 'end_date', e.target.value)}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '6px 10px',
+                                                            border: '1px solid #E2E8F0',
+                                                            borderRadius: '6px',
+                                                            fontSize: '0.8rem',
+                                                            outline: 'none',
+                                                            ...getHighlightStyle(item.end_date)
+                                                        }}
+                                                    />
+                                                )}
                                             </td>
                                             <td style={{ padding: '8px 16px' }}>
                                                 <input
@@ -763,15 +799,18 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Order Date</label>
-                                <input
-                                    name="order_date"
-                                    type="date"
-                                    value={salesOrder.order_date || ''}
-                                    onChange={handleInputChange}
-                                    className="ae-input"
-                                    disabled={isSubmitted}
-                                    style={{ ...getHighlightStyle(salesOrder.order_date) }}
-                                />
+                                {isSubmitted ? (
+                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', ...getHighlightStyle(salesOrder.order_date) }}>{salesOrder.order_date ? formatToAppDate(salesOrder.order_date) : ''}</div>
+                                ) : (
+                                    <input
+                                        name="order_date"
+                                        type="date"
+                                        value={salesOrder.order_date || ''}
+                                        onChange={handleInputChange}
+                                        className="ae-input"
+                                        style={{ ...getHighlightStyle(salesOrder.order_date) }}
+                                    />
+                                )}
                             </div>
                             <div className="md:col-span-2" style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Billing Address</label>
@@ -881,13 +920,13 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 borderRadius: '8px',
                                 fontSize: '0.9rem',
                                 height: '40px',
-                                background: hoveredBtn === 'draft' && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                color: showCancelModal ? '#CBD5E0' : (hoveredBtn === 'draft' ? 'white' : 'var(--text-secondary)'),
+                                background: hoveredBtn === 'draft' ? 'var(--theme-primary)' : 'transparent',
+                                color: hoveredBtn === 'draft' ? 'white' : 'var(--text-secondary)',
                                 border: 'none',
                                 fontWeight: 800,
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                boxShadow: hoveredBtn === 'draft' && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                                boxShadow: hoveredBtn === 'draft' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                             }}
                             onMouseEnter={() => setHoveredBtn('draft')}
                             onMouseLeave={() => setHoveredBtn(null)}
@@ -906,12 +945,12 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 borderRadius: '8px',
                                 fontSize: '0.9rem',
                                 height: '40px',
-                                background: (!hoveredBtn || hoveredBtn === 'submit') && !showCancelModal ? 'var(--theme-primary)' : 'transparent',
-                                color: showCancelModal ? '#CBD5E0' : ((!hoveredBtn || hoveredBtn === 'submit') ? 'white' : 'var(--text-secondary)'),
+                                background: (!hoveredBtn || hoveredBtn === 'submit') ? 'var(--theme-primary)' : 'transparent',
+                                color: ((!hoveredBtn || hoveredBtn === 'submit') ? 'white' : 'var(--text-secondary)'),
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                boxShadow: (!hoveredBtn || hoveredBtn === 'submit') && !showCancelModal ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                                boxShadow: (!hoveredBtn || hoveredBtn === 'submit') ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                             }}
                             onMouseEnter={() => setHoveredBtn('submit')}
                             onMouseLeave={() => setHoveredBtn(null)}
@@ -923,7 +962,12 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 )}
 
                 <button
-                    onClick={() => setShowCancelModal(true)}
+                    onClick={() => {
+                        showConfirm({
+                            title: 'Are you sure you want to exit?',
+                            onConfirm: () => onBack()
+                        });
+                    }}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -931,14 +975,14 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                         padding: '8px 20px',
                         borderRadius: '8px',
                         fontSize: '0.9rem',
-                        background: showCancelModal || hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
-                        color: showCancelModal || hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        background: hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
                         border: 'none',
                         fontWeight: 700,
                         cursor: 'pointer',
                         height: '40px',
                         transition: 'all 0.2s',
-                        boxShadow: showCancelModal || hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                        boxShadow: hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                     }}
                     onMouseEnter={() => setHoveredBtn('cancel')}
                     onMouseLeave={() => setHoveredBtn(null)}
@@ -948,102 +992,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 </button>
             </div>
 
-            {/* Cancel Confirmation Modal */}
-            {showCancelModal && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(255, 255, 255, 0.4)',
-                    backdropFilter: 'blur(1px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999,
-                    animation: 'fadeIn 0.2s ease-out'
-                }}>
-                    <div style={{
-                        background: 'white',
-                        width: '100%',
-                        maxWidth: '500px',
-                        borderRadius: '12px',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                        border: '1px solid #E2E8F0',
-                        overflow: 'hidden',
-                        animation: 'modalScale 0.2s ease-out'
-                    }}>
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '10px',
-                                    background: '#FFF5F5',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 9V11M12 15H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0378 2.66667 10.268 4L3.33978 16C2.56998 17.3333 3.53223 19 5.07183 19Z" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.15rem', fontWeight: 800, color: '#1a1f36' }}>
-                                        Leave this page?
-                                    </h3>
-                                    <p style={{ margin: 0, color: '#4A5568', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                                        If you leave, your unsaved changes will be discarded.
-                                    </p>
-                                </div>
-                            </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
-                                <button
-                                    onClick={() => setShowCancelModal(false)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: '#3B82F6',
-                                        color: 'white',
-                                        border: 'none',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                >
-                                    Stay Here
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowCancelModal(false);
-                                        onBack();
-                                    }}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 16px',
-                                        borderRadius: '8px',
-                                        background: 'white',
-                                        color: '#1a1f36',
-                                        border: '1px solid #E2E8F0',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        height: '40px'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                >
-                                    Leave & Discard Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
-
 export default SalesOrderForm;
