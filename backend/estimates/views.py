@@ -355,7 +355,9 @@ class EstimateViewSet(viewsets.ModelViewSet):
         recipient_email = request.data.get('to') or estimate.deal.customer_email or (estimate.deal.customer.email if estimate.deal.customer else None)
         cc_emails = request.data.get('cc', '')
         bcc_emails = request.data.get('bcc', '')
-        subject = request.data.get('subject', f"Proposal / Estimate - {estimate.estimate_id}")
+        customer_alias = estimate.deal.customer.alias_name if estimate.deal and estimate.deal.customer else ""
+        project_name = estimate.deal.deal_name if estimate.deal else ""
+        subject = request.data.get('subject', f"{customer_alias} - {estimate.estimate_id} - {project_name}")
         body = request.data.get('body', "")
         
         if not recipient_email:

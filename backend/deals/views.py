@@ -152,7 +152,7 @@ class DealViewSet(viewsets.ModelViewSet):
             worksheet.write(row, 8, deal.deal_type)
             worksheet.write(row, 9, deal.customer.name if deal.customer else "N/A")
             worksheet.write(row, 10, deal.customer_email)
-            worksheet.write(row, 11, deal.end_customer)
+            worksheet.write(row, 11, deal.end_user_name)
             worksheet.write(row, 12, deal.client_type)
             worksheet.write(row, 13, deal.inside_salesperson)
             worksheet.write(row, 14, deal.inside_sales_head)
@@ -231,7 +231,7 @@ class DealViewSet(viewsets.ModelViewSet):
                 deal.deal_type,
                 deal.customer.name if deal.customer else "N/A",
                 deal.customer_email,
-                deal.end_customer,
+                deal.end_user_name,
                 deal.client_type,
                 deal.inside_salesperson,
                 deal.inside_sales_head,

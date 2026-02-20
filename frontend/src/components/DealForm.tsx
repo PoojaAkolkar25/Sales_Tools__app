@@ -30,6 +30,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
     const [partners, setPartners] = useState<any[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
     const [companies, setCompanies] = useState<any[]>([]);
+    const [endCustomers, setEndCustomers] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
 
     // Modal states for "Add New"
@@ -99,17 +100,19 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
 
     const fetchInitialData = async () => {
         try {
-            const [leadsRes, partnersRes, customersRes, companiesRes, statesRes] = await Promise.all([
+            const [leadsRes, partnersRes, customersRes, companiesRes, endCustomersRes, statesRes] = await Promise.all([
                 api.get('/leads/'),
                 api.get('/partners/'),
                 api.get('/customers/'),
                 api.get('/finance/company-profile/'),
+                api.get('/finance/end-customers/'),
                 api.get('/finance/state-masters/')
             ]);
             setLeads(leadsRes.data);
             setPartners(partnersRes.data);
             setCustomers(customersRes.data);
             setCompanies(companiesRes.data);
+            setEndCustomers(endCustomersRes.data);
             setStates(statesRes.data);
         } catch (error) {
             console.error('Error fetching initial data', error);
@@ -170,21 +173,39 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                 // Auto-select customer if exists in master
                 const matchedCustomer = customers.find(c => c.name === selectedLead.customer_name);
                 if (matchedCustomer) {
-                    setFormData((prev: any) => ({ ...prev, customer: matchedCustomer.id }));
+                    const matchedCompany = companies.find((c: any) => c.name === matchedCustomer.name);
+                    setFormData((prev: any) => ({
+                        ...prev,
+                        customer: matchedCustomer.id,
+                        company: matchedCompany
+                            ? (matchedCompany.entity === 'AE_IND' ? 'AE IND' : matchedCompany.entity === 'AE_USA' ? 'AE USA' : prev.company)
+                            : prev.company
+                    }));
                 }
             }
         }
 
-        // Auto-populate email and currency from customer selection
+        // Auto-populate email, currency, and company name from customer selection
         if (name === 'customer' && value !== '') {
             const selectedCustomer = customers.find(c => c.id === parseInt(value));
             if (selectedCustomer) {
-                // Find matching company profile to get currency
-                const matchingCompany = companies.find(comp => comp.name === selectedCustomer.name);
+                const matchedCompany = companies.find((c: any) => c.name === selectedCustomer.name);
+                const linkedPartnerId = matchedCompany ? matchedCompany.id : selectedCustomer.id;
+
+                // Auto-populate End Customer(s)
+                const associatedEndCustomers = endCustomers
+                    .filter(ec => ec.linked_partner === linkedPartnerId)
+                    .map(ec => ec.name)
+                    .join(', ');
+
                 setFormData((prev: any) => ({
                     ...prev,
                     customer_email: selectedCustomer.email || prev.customer_email,
-                    currency: matchingCompany?.base_currency || selectedCustomer.currency || prev.currency
+                    currency: selectedCustomer.currency || prev.currency,
+                    company: matchedCompany
+                        ? (matchedCompany.entity === 'AE_IND' ? 'AE IND' : matchedCompany.entity === 'AE_USA' ? 'AE USA' : prev.company)
+                        : prev.company,
+                    end_customer: associatedEndCustomers
                 }));
             }
         }
@@ -495,19 +516,6 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         <SectionHeader title="Deal Information" />
                         <div className="ae-grid-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Company Name *</label>
-                                <SearchableDropdown
-                                    options={[
-                                        { value: 'AE IND', label: 'AE IND' },
-                                        { value: 'AE USA', label: 'AE USA' }
-                                    ]}
-                                    value={formData.company}
-                                    onChange={(val) => handleInputChange({ target: { name: 'company', value: val } } as any)}
-                                    placeholder="Select Company"
-                                    className="w-full"
-                                />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead Date</label>
                                 <input
                                     type="date"
@@ -539,9 +547,6 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     required
                                 />
                             </div>
-                        </div>
-
-                        <div className="ae-grid-4 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Number</label>
                                 <input
@@ -552,6 +557,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
                                 />
                             </div>
+                        </div>
+
+                        <div className="ae-grid-4 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
                                     label="Customer/Partner Name"
@@ -567,14 +575,23 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>End Customer</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Company Name *</label>
                                 <input
                                     type="text"
-                                    name="end_customer"
-                                    value={formData.end_customer}
-                                    onChange={handleInputChange}
+                                    value={formData.company}
                                     className="ae-input"
-                                    placeholder="End Customer"
+                                    disabled
+                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>End user Name</label>
+                                <input
+                                    type="text"
+                                    value={formData.end_customer}
+                                    className="ae-input"
+                                    disabled
+                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -735,19 +752,19 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         <div className="ae-grid-4 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Stage *</label>
-                                <SearchableDropdown
-                                    options={[
-                                        { value: 'DEAL_CREATED', label: 'Deal created' },
-                                        { value: 'COST_SHEET', label: 'Cost Sheet' },
-                                        { value: 'ESTIMATES', label: 'Estimates' },
-                                        { value: 'SALES_ORDER', label: 'Sales Order' },
-                                        { value: 'INVOICE', label: 'Invoice' },
-                                        { value: 'PAYMENT', label: 'Payment' }
-                                    ]}
-                                    value={formData.stage}
-                                    onChange={(val) => handleInputChange({ target: { name: 'stage', value: val } } as any)}
-                                    placeholder="Select Stage"
-                                    className="w-full"
+                                <input
+                                    type="text"
+                                    value={
+                                        formData.stage === 'DEAL_CREATED' ? 'Deal created' :
+                                            formData.stage === 'COST_SHEET' ? 'Cost Sheet' :
+                                                formData.stage === 'ESTIMATES' ? 'Estimates' :
+                                                    formData.stage === 'SALES_ORDER' ? 'Sales Order' :
+                                                        formData.stage === 'INVOICE' ? 'Invoice' :
+                                                            formData.stage === 'PAYMENT' ? 'Payment' : formData.stage
+                                    }
+                                    className="ae-input"
+                                    disabled
+                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>

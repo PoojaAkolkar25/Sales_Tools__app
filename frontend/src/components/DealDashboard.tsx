@@ -80,7 +80,7 @@ const ALL_COLUMNS = [
     { key: 'deal_type', label: 'Type', shortLabel: 'Type' },
     { key: 'customer_name', label: 'Customer/Partner Name', shortLabel: 'Cust.' },
     { key: 'customer_email', label: 'Customer Email', shortLabel: 'Email' },
-    { key: 'end_customer', label: 'End Customer', shortLabel: 'End C.' },
+    { key: 'end_customer', label: 'End user Name', shortLabel: 'End User' },
     { key: 'client_type', label: 'Client Type', shortLabel: 'Client' },
     { key: 'inside_salesperson', label: 'Inside Salesperson', shortLabel: 'In. SP' },
     { key: 'inside_sales_head', label: 'Inside Sales Head', shortLabel: 'IS Hd.' },

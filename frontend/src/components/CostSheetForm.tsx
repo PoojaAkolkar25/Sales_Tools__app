@@ -852,7 +852,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             {/* Customer Name */}
                             <div>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Name</label>
-                                {!isReadOnly ? (
+                                {!localId ? (
                                     <SearchableDropdown
                                         options={uniqueCustomers.map(name => ({ value: name, label: name }))}
                                         value={selectedCustomerName}
@@ -868,22 +868,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             {/* Lead No. */}
                             <div>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead No.</label>
-                                {!isReadOnly ? (
-                                    <SearchableDropdown
-                                        options={(selectedCustomerName ? leads.filter(l => l.customer_name === selectedCustomerName) : leads).map(l => ({
-                                            value: l.id,
-                                            label: `${l.lead_no} (${l.project_name})`
-                                        }))}
-                                        value={lead?.id || ''}
-                                        onChange={(val) => handleLeadChange(val as string)}
-                                        placeholder="Select Lead No."
-                                        className="w-full"
-                                    />
-                                ) : (
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', padding: '6px 0' }}>
-                                        {lead?.lead_no ? `${lead.lead_no} (${lead.project_name || 'No Project Name'})` : '—'}
-                                    </div>
-                                )}
+                                <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', padding: '6px 0' }}>
+                                    {lead?.lead_no ? `${lead.lead_no} (${lead.project_name || 'No Project Name'})` : '—'}
+                                </div>
                             </div>
 
                             {/* Deal No. */}

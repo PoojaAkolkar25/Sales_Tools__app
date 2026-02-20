@@ -52,7 +52,6 @@ const UserManagement: React.FC = () => {
         mobile_number: '',
         email: '',
         website_url: '',
-        linked_company_profile: '',
         industry: '',
         type: 'CUSTOMER',
         payment_terms: 'NET_30',
@@ -300,7 +299,7 @@ const UserManagement: React.FC = () => {
                 contact_person: '', alias_name: '', logo: null, address_line_1: '',
                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
                 mobile_number: '', email: '', website_url: '',
-                linked_company_profile: '', industry: '', type: 'CUSTOMER',
+                industry: '', type: 'CUSTOMER',
                 payment_terms: 'NET_30',
                 base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
                 is_gst_applicable: true, gstin: '', state_code: '',
@@ -855,11 +854,11 @@ const UserManagement: React.FC = () => {
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                         {showForm ? `${editingId ? 'Edit' : 'Create New'} ${viewMode === 'user' ? 'User' :
                             viewMode === 'partner' ? 'Company' :
-                                viewMode === 'end_customer' ? 'End Customer' : 'Customer'
+                                viewMode === 'end_customer' ? 'End user Name' : 'Customer'
                             }` : (
                             viewMode === 'user' ? 'User Management' :
                                 viewMode === 'partner' ? 'Company Management' :
-                                    viewMode === 'end_customer' ? 'End Customer Management' :
+                                    viewMode === 'end_customer' ? 'End user Name Management' :
                                         viewMode === 'company' ? 'Customer Management' :
                                             viewMode === 'financial_year' ? 'Financial Year Management' :
                                                 viewMode === 'product' ? 'Product / Service Management' :
@@ -922,7 +921,7 @@ const UserManagement: React.FC = () => {
                                 contact_person: '', alias_name: '', logo: null, address_line_1: '',
                                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
                                 mobile_number: '', email: '', website_url: '',
-                                linked_company_profile: '', industry: '', type: 'CUSTOMER',
+                                industry: '', type: 'CUSTOMER',
                                 payment_terms: 'NET_30',
                                 base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
                                 is_gst_applicable: true, gstin: '', state_code: '',
@@ -1011,7 +1010,7 @@ const UserManagement: React.FC = () => {
                                     gap: '8px'
                                 }}
                             >
-                                <Users size={14} /> End Customer
+                                <Users size={14} /> End user Name
                             </button>
                             <button
                                 onClick={() => { setViewMode('company'); setColumnFilters({}); }}
@@ -1670,11 +1669,11 @@ const UserManagement: React.FC = () => {
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            End Customer Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            End user Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="End Customer Name"
+                                            placeholder="End user Name"
                                             value={endCustomerFormData.name}
                                             onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, name: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
@@ -1691,8 +1690,8 @@ const UserManagement: React.FC = () => {
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         >
-                                            <option value="">Select Partner</option>
-                                            {partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                            <option value="">Select Customer</option>
+                                            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                         </select>
                                     </div>
                                     <div>
@@ -2294,19 +2293,6 @@ const UserManagement: React.FC = () => {
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Linked Company Profile
-                                                </label>
-                                                <select
-                                                    value={companyFormData.linked_company_profile}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, linked_company_profile: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                >
-                                                    <option value="">Select Company</option>
-                                                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                                </select>
-                                            </div>
 
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -2658,7 +2644,7 @@ const UserManagement: React.FC = () => {
                                 <thead>
                                     <tr style={{ background: 'var(--bg-secondary)' }}>
                                         <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                                            {viewMode === 'user' ? 'User' : viewMode === 'partner' ? 'Company' : viewMode === 'end_customer' ? 'End Customer' : viewMode === 'financial_year' ? 'Financial Year' : viewMode === 'product' ? 'Product / Service' : 'Customer'}
+                                            {viewMode === 'user' ? 'User' : viewMode === 'partner' ? 'Company' : viewMode === 'end_customer' ? 'End user Name' : viewMode === 'financial_year' ? 'Financial Year' : viewMode === 'product' ? 'Product / Service' : 'Customer'}
                                         </th>
                                         {viewMode === 'user' && (
                                             <>
@@ -3183,7 +3169,6 @@ const UserManagement: React.FC = () => {
                                                                 mobile_number: comp.mobile_number || '',
                                                                 email: comp.email || '',
                                                                 website_url: comp.website_url || '',
-                                                                linked_company_profile: comp.linked_company_profile || '',
                                                                 industry: comp.industry || '',
                                                                 type: comp.type || 'CUSTOMER',
                                                                 payment_terms: comp.payment_terms || 'NET_30',
@@ -3218,7 +3203,8 @@ const UserManagement: React.FC = () => {
                     </div>
                 )}
             </div>
-            );
+        </div>
+    );
 };
 
-            export default UserManagement;
+export default UserManagement;
