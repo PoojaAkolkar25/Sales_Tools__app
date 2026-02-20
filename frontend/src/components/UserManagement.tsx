@@ -889,21 +889,7 @@ const UserManagement: React.FC = () => {
                 }}>
                     <button
                         onClick={() => setShowForm(false)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: !showForm ? 'var(--theme-primary)' : 'transparent',
-                            color: !showForm ? 'white' : 'var(--text-secondary)',
-                            boxShadow: !showForm ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                        }}
+                        className={!showForm ? "ae-btn-primary" : "ae-btn-secondary"}
                     >
                         <LayoutDashboard size={18} /> Dashboard
                     </button>
@@ -947,22 +933,7 @@ const UserManagement: React.FC = () => {
                             setCompanyError('');
                             setShowForm(true);
                         }}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            height: '32px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: showForm && !editingId ? 'var(--theme-primary)' : 'transparent',
-                            color: showForm && !editingId ? 'white' : 'var(--text-secondary)',
-                            boxShadow: showForm && !editingId ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                        }}
+                        className={showForm && !editingId ? "ae-btn-primary" : "ae-btn-secondary"}
                     >
                         <PlusCircle size={18} /> Create New
                     </button>
@@ -2682,7 +2653,7 @@ const UserManagement: React.FC = () => {
                     </form >
                 ) : (
                     <div className="section-panel !p-0 overflow-hidden">
-                        <div style={{ overflowX: 'auto', width: '100%' }}>
+                        <div style={{ overflowX: 'auto', width: '100%', background: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
                             <table style={{ minWidth: '1500px', width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ background: 'var(--bg-secondary)' }}>
@@ -3113,22 +3084,13 @@ const UserManagement: React.FC = () => {
                                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                     <button
                                                         onClick={() => {
-                                                            const startMonth = fy.start_date ? monthNames[new Date(fy.start_date).getMonth()] : 'April';
-                                                            setFyFormData({ ...fy, first_month_of_fiscal_year: startMonth, first_month_of_tax_year: 'Same as fiscal year' });
+                                                            setFyFormData({ ...fy });
                                                             setEditingId(fy.id);
                                                             setShowForm(true);
                                                         }}
                                                         style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                        title="Edit Financial Year"
                                                     >
                                                         <Pencil size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDownloadReport(fy)}
-                                                        style={{ padding: '8px', color: '#10B981', border: 'none', background: 'rgba(16, 185, 129, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                        title="Download Invoice Register"
-                                                    >
-                                                        <Download size={16} />
                                                     </button>
                                                 </div>
                                             </td>
@@ -3255,10 +3217,8 @@ const UserManagement: React.FC = () => {
                         </div>
                     </div>
                 )}
-            </div >
-        </div >
-    );
-}
-    ;
+            </div>
+            );
+};
 
-export default UserManagement;
+            export default UserManagement;

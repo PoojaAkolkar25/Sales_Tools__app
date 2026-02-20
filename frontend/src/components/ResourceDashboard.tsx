@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import { formatToAppDate } from '../utils/dateUtils';
 import Pagination from './Pagination';
 
 const ALL_COLUMNS = [
@@ -323,7 +324,7 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView, onCreate 
                                                 case 'form_number':
                                                     return <td key={key} style={{ padding: '16px 24px' }}>
                                                         <span style={{ fontWeight: 800, color: 'var(--ae-blue)', fontSize: '0.85rem' }}>{req.form_number}</span>
-                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{new Date(req.request_date).toLocaleDateString()}</div>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{req.request_date ? formatToAppDate(req.request_date) : '---'}</div>
                                                     </td>;
                                                 case 'project_name':
                                                     return <td key={key} style={{ padding: '16px 24px' }}>

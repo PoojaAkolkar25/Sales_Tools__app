@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, RefreshCw, Eye, Search, Columns, ChevronDown } from 'lucide-react';
 import api from '../api';
 import Pagination from './Pagination';
+import { formatToAppDate } from '../utils/dateUtils';
 
 const ALL_COLUMNS = [
     { key: 'receipt_no', label: 'Receipt No' },
@@ -75,18 +76,6 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE
     );
-
-    const formatDate = (dateString?: string) => {
-        if (!dateString) return '—';
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return dateString;
-
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = date.toLocaleString('en-US', { month: 'short' });
-        const year = date.getFullYear();
-
-        return `${day}/${month}/${year}`;
-    };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -402,10 +391,10 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                                 case 'customer_name':
                                                     return <td key={key} style={{ fontWeight: 600 }}>{v.customer_name}</td>;
                                                 case 'payment_date':
-                                                    return <td key={key} style={{ fontWeight: 600 }}>{formatDate(v.payment_date)}</td>;
+                                                    return <td key={key} style={{ fontWeight: 600 }}>{formatToAppDate(v.payment_date)}</td>;
                                                 case 'reconciliation_date':
                                                     if (activeTab !== 'RECONCILED') return null;
-                                                    return <td key={key} style={{ color: '#00C853', fontWeight: 600 }}>{formatDate(v.reconciliation_date)}</td>;
+                                                    return <td key={key} style={{ color: '#00C853', fontWeight: 600 }}>{formatToAppDate(v.reconciliation_date)}</td>;
                                                 case 'amount_received':
                                                     return <td key={key} style={{ fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right' }}>${parseFloat(v.amount_received).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
                                                 case 'reference_number':

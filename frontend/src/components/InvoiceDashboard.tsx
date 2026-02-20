@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Download, CheckCircle, XCircle, Mail, BarChart3, Eye, Pencil, Send, ChevronDown, FileText, FileSpreadsheet, Columns } from 'lucide-react';
+import { Download, CheckCircle, XCircle, Mail, BarChart3, Eye, ChevronDown, FileText, FileSpreadsheet, Columns } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import { formatToAppDate } from '../utils/dateUtils';
 import Pagination from './Pagination';
 
 interface Invoice {
@@ -766,7 +767,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                 case 'customer':
                                                     return <td key={key}>{inv.customer_name}</td>;
                                                 case 'date':
-                                                    return <td key={key}>{new Date(inv.invoice_date).toLocaleDateString()}</td>;
+                                                    return <td key={key}>{inv.invoice_date ? formatToAppDate(inv.invoice_date) : '---'}</td>;
                                                 case 'amount':
                                                     return <td key={key} style={{ fontWeight: 600, textAlign: 'right' }}>{inv.currency} {inv.total_amount.toLocaleString()}</td>;
                                                 case 'type':
