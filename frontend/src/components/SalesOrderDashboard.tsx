@@ -66,7 +66,10 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
     const ITEMS_PER_PAGE = 20;
     const [stats, setStats] = useState({
         draft: 0,
-        submitted: 0,
+        pending: 0,
+        reverted: 0,
+        approved: 0,
+        rejected: 0,
         cancelled: 0,
         all: 0
     });
@@ -86,7 +89,10 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
             // Stats are updated based on status filtering
             setStats({
                 draft: response.data.filter((so: any) => so.status === 'DRAFT').length,
-                submitted: response.data.filter((so: any) => so.status === 'SUBMITTED').length,
+                pending: response.data.filter((so: any) => so.status === 'PENDING_APPROVAL' || so.status === 'SUBMITTED').length,
+                reverted: response.data.filter((so: any) => so.status === 'REVERTED').length,
+                approved: response.data.filter((so: any) => so.status === 'APPROVED').length,
+                rejected: response.data.filter((so: any) => so.status === 'REJECTED').length,
                 cancelled: response.data.filter((so: any) => so.status === 'CANCELLED').length,
                 all: response.data.length
             });
@@ -114,7 +120,8 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
         const matchesPODate = (so.po_date ? new Date(so.po_date).toLocaleDateString() : (so.order_date ? new Date(so.order_date).toLocaleDateString() : '')).toLowerCase().includes(filters.po_date.toLowerCase());
         const matchesStatusFilter = (so.status || '').toLowerCase().includes(filters.status.toLowerCase());
 
-        const matchesStatus = selectedStatus === '' ? true : so.status === selectedStatus;
+        const matchesStatus = selectedStatus === '' ? true :
+            (selectedStatus === 'PENDING_APPROVAL' ? (so.status === 'PENDING_APPROVAL' || so.status === 'SUBMITTED') : so.status === selectedStatus);
 
         return matchesDealId && matchesSONumber && matchesOrderDate && matchesCustomer &&
             matchesCustCode && matchesPONumber && matchesItems && matchesAmount &&
@@ -123,8 +130,10 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
 
     const statusFlow = [
         { label: `Draft (${stats.draft})`, value: 'DRAFT' },
-        { label: `Submitted (${stats.submitted})`, value: 'SUBMITTED' },
-        { label: `Cancelled (${stats.cancelled})`, value: 'CANCELLED' },
+        { label: `Pending (${stats.pending})`, value: 'PENDING_APPROVAL' },
+        { label: `Reverted (${stats.reverted})`, value: 'REVERTED' },
+        { label: `Approved (${stats.approved})`, value: 'APPROVED' },
+        { label: `Rejected (${stats.rejected})`, value: 'REJECTED' },
         { label: `All (${stats.all})`, value: '' }
     ];
 
@@ -182,6 +191,11 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
             console.error('Download failed', error);
             showNotification('Failed to download report', 'error');
         }
+    };
+
+    const handleReport = (type: string) => {
+        console.log('Report requested:', type);
+        showNotification('Report generation coming soon', 'info');
     };
 
     return (

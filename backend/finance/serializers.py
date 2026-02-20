@@ -67,7 +67,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'approved_by', 'approved_at', 'line_items', 'customer_name', 
             'project_name', 'deal_no', 'approved_by_name', 'sales_tax_rate', 'sales_tax_amount',
             'gst_declaration', 'lut_declaration', 'authorized_signatory', 
-            'signature_image', 'company_seal', 'irn', 'ack_no', 'ack_date', 'payment_terms_days'
+            'signature_image', 'company_seal', 'memo', 'irn', 'ack_no', 'ack_date', 'payment_terms_days',
+            'po_number', 'po_date'
         ]
 
     def to_internal_value(self, data):

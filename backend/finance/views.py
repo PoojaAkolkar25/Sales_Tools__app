@@ -59,12 +59,29 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         
         # Determine invoice number
         invoice_no = self.request.data.get('invoice_no')
-        if not invoice_no or invoice_no == '':
-            invoice_no = InvoiceService.generate_invoice_number()
-            
+        # Auto-populate address from Customer if available
+        billing_address = self.request.data.get('billing_address')
+        shipping_address = self.request.data.get('shipping_address')
+        customer_gstin = self.request.data.get('customer_gstin')
+        
+        deal_id = self.request.data.get('deal')
+        if deal_id:
+            from deals.models import Deal
+            deal_obj = Deal.objects.filter(id=deal_id).select_related('customer').first()
+            if deal_obj and deal_obj.customer:
+                if not billing_address:
+                    billing_address = deal_obj.customer.address
+                if not shipping_address:
+                    shipping_address = deal_obj.customer.address
+                if not customer_gstin:
+                    customer_gstin = deal_obj.customer.gstin
+
         # Save invoice with all calculated values
         invoice = serializer.save(
             invoice_no=invoice_no,
+            billing_address=billing_address,
+            shipping_address=shipping_address,
+            customer_gstin=customer_gstin,
             invoice_type=calc_results['invoice_type'],
             subtotal=calc_results['subtotal'],
             total_discount=calc_results['total_discount'],
@@ -142,8 +159,28 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         invoice_data = self.request.data
         calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
         
+        # Auto-populate address from Customer if available (for updates if missing)
+        billing_address = self.request.data.get('billing_address')
+        shipping_address = self.request.data.get('shipping_address')
+        customer_gstin = self.request.data.get('customer_gstin')
+        
+        deal_id = self.request.data.get('deal')
+        if deal_id:
+            from deals.models import Deal
+            deal_obj = Deal.objects.filter(id=deal_id).select_related('customer').first()
+            if deal_obj and deal_obj.customer:
+                if not billing_address:
+                    billing_address = deal_obj.customer.address
+                if not shipping_address:
+                    shipping_address = deal_obj.customer.address
+                if not customer_gstin:
+                    customer_gstin = deal_obj.customer.gstin
+
         # Save invoice with all calculated values
         invoice = serializer.save(
+            billing_address=billing_address,
+            shipping_address=shipping_address,
+            customer_gstin=customer_gstin,
             invoice_type=calc_results['invoice_type'],
             subtotal=calc_results['subtotal'],
             total_discount=calc_results['total_discount'],

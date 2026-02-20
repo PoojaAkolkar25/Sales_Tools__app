@@ -5,7 +5,11 @@ from deals.models import Customer, Product
 
 class SalesOrderStatus(models.TextChoices):
     DRAFT = 'DRAFT', 'Draft'
-    SUBMITTED = 'SUBMITTED', 'Submitted'
+    SUBMITTED = 'SUBMITTED', 'Submitted' # Deprecated, use PENDING_APPROVAL
+    PENDING_APPROVAL = 'PENDING_APPROVAL', 'Pending Approval'
+    APPROVED = 'APPROVED', 'Approved'
+    REJECTED = 'REJECTED', 'Rejected'
+    REVERTED = 'REVERTED', 'Reverted'
     CANCELLED = 'CANCELLED', 'Cancelled'
 
 class ItemType(models.TextChoices):
@@ -60,11 +64,19 @@ class SalesOrder(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        if self.status == SalesOrderStatus.SUBMITTED and not self.so_number:
-            # Generate SO number on submission
+        if (self.status == SalesOrderStatus.SUBMITTED or self.status == SalesOrderStatus.PENDING_APPROVAL) and not self.so_number:
+            # Generate SO number on submission/pending approval
             last_so = SalesOrder.objects.filter(so_number__startswith='SO-').order_by('so_number').last()
             # Simple increment logic for now
-            count = SalesOrder.objects.filter(status=SalesOrderStatus.SUBMITTED).count() + 1
+            count = SalesOrder.objects.filter(status__in=[SalesOrderStatus.SUBMITTED, SalesOrderStatus.PENDING_APPROVAL, SalesOrderStatus.APPROVED]).count() + 1
+            if last_so:
+                # Basic attempt to increment last number if simple count isn't enough
+                try:
+                    last_num = int(last_so.so_number.split('-')[1])
+                    if last_num >= count:
+                        count = last_num + 1
+                except:
+                    pass
             self.so_number = f"SO-{count:04d}"
         super().save(*args, **kwargs)
 
