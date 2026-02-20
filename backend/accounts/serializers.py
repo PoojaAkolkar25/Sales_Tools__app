@@ -70,6 +70,7 @@ class UserSerializer(serializers.ModelSerializer):
         from .models import UserProfile
         UserProfile.objects.create(
             user=user, 
+            employee_id=profile_data.get('employee_id'),
             state=profile_data.get('state'),
             mobile=profile_data.get('mobile'),
             department=profile_data.get('department'),
@@ -102,7 +103,7 @@ class UserSerializer(serializers.ModelSerializer):
             profile, created = UserProfile.objects.get_or_create(user=instance)
             
             # Update all profile fields if present in data
-            for field in ['state', 'mobile', 'department', 'region', 'reporting_to']:
+            for field in ['employee_id', 'state', 'mobile', 'department', 'region', 'reporting_to']:
                 if field in profile_data:
                     setattr(profile, field, profile_data[field])
             

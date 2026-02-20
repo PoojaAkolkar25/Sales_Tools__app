@@ -32,10 +32,8 @@ const UserManagement: React.FC = () => {
     const [error, setError] = useState('');
     const [companyError, setCompanyError] = useState('');
 
-    // Column Filters State
     const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
     const [searchTerm, setSearchTerm] = useState('');
-    const [showFilters, setShowFilters] = useState(false);
 
     const [companyFormData, setCompanyFormData] = useState({
         name: '',
@@ -229,10 +227,9 @@ const UserManagement: React.FC = () => {
         e.preventDefault();
         setError('');
         try {
-            const { employee_id, ...submitData } = formData as any;
             const cleanedData = {
-                ...submitData,
-                reporting_to: submitData.reporting_to || null
+                ...formData,
+                reporting_to: formData.reporting_to || null
             };
             await api.post('auth/users/', cleanedData);
             showNotification('User created successfully', 'success');
@@ -594,7 +591,13 @@ const UserManagement: React.FC = () => {
             const matchesSearch = (
                 (user.username?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
                 (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                (user.role?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+                (user.role?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (user.first_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (user.last_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (user.mobile?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (user.department?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (user.region?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (user.employee_id?.toLowerCase() || '').includes(searchTerm.toLowerCase())
             );
 
             const matchesFilters = Object.entries(columnFilters).every(([key, value]) => {
@@ -611,8 +614,11 @@ const UserManagement: React.FC = () => {
         return partners.filter(partner => {
             const matchesSearch = (
                 (partner.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                (partner.code?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                (partner.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+                (partner.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (partner.city?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (partner.state?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (partner.gstin?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (partner.pan?.toLowerCase() || '').includes(searchTerm.toLowerCase())
             );
 
             const matchesFilters = Object.entries(columnFilters).every(([key, value]) => {
@@ -626,18 +632,20 @@ const UserManagement: React.FC = () => {
     }, [partners, searchTerm, columnFilters]);
 
     const filteredEndCustomers = useMemo(() => {
-        return endCustomers.filter(customer => {
+        return endCustomers.filter(ec => {
             const matchesSearch = (
-                (customer.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                (customer.code?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                (customer.contact_person?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+                (ec.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (ec.end_customer_code?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (ec.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (ec.location?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (ec.industry?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (ec.contact_person?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (ec.phone?.toLowerCase() || '').includes(searchTerm.toLowerCase())
             );
 
             const matchesFilters = Object.entries(columnFilters).every(([key, value]) => {
                 if (!value) return true;
-                const itemValue = (customer as any)[key]?.toString().toLowerCase() ?? '';
-                // Handle nested or special fields if necessary, e.g., linked_partner name
-                // For now assuming flat structure or basic check
+                const itemValue = (ec as any)[key]?.toString().toLowerCase() ?? '';
                 return itemValue.includes(value.toLowerCase());
             });
 
@@ -649,8 +657,14 @@ const UserManagement: React.FC = () => {
         return companies.filter(company => {
             const matchesSearch = (
                 (company.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (company.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
                 (company.city?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                (company.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+                (company.state?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (company.gstin?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (company.industry?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (company.type?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (company.mobile_number?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (company.phone_number?.toLowerCase() || '').includes(searchTerm.toLowerCase())
             );
 
             const matchesFilters = Object.entries(columnFilters).every(([key, value]) => {
@@ -667,7 +681,9 @@ const UserManagement: React.FC = () => {
         return financialYears.filter(fy => {
             const matchesSearch = (
                 (fy.label?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                (fy.code?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+                (fy.code?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (fy.start_date?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (fy.end_date?.toLowerCase() || '').includes(searchTerm.toLowerCase())
             );
 
             const matchesFilters = Object.entries(columnFilters).every(([key, value]) => {
@@ -685,7 +701,10 @@ const UserManagement: React.FC = () => {
             const matchesSearch = (
                 (product.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
                 (product.product_code?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                (product.description?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+                (product.category?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (product.subcategory?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (product.description?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (product.hsn_sac_code?.toLowerCase() || '').includes(searchTerm.toLowerCase())
             );
 
             const matchesFilters = Object.entries(columnFilters).every(([key, value]) => {
@@ -969,28 +988,6 @@ const UserManagement: React.FC = () => {
 
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <button
-                                className="ae-btn-secondary"
-                                onClick={() => setShowFilters(!showFilters)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '6px 14px',
-                                    fontSize: '0.8rem',
-                                    height: '40px',
-                                    borderRadius: '10px',
-                                    background: showFilters ? 'var(--bg-accent)' : 'white',
-                                    color: showFilters ? 'var(--theme-primary)' : 'var(--ae-gray-800)',
-                                    borderColor: showFilters ? 'var(--theme-primary)' : 'var(--ae-gray-100)',
-                                    border: '1px solid',
-                                    fontWeight: 700,
-                                    cursor: 'pointer'
-                                }}
-                                title={showFilters ? "Hide Filters" : "Show Filters"}
-                            >
-                                <Filter size={16} /> Filters
-                            </button>
                         </div>
                     </div>
                 )
@@ -1147,14 +1144,15 @@ const UserManagement: React.FC = () => {
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Employee ID <span style={{ fontSize: '0.7rem', color: '#A0AEC0', fontWeight: 500 }}>(Auto)</span>
+                                            Employee ID
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Auto-generated"
+                                            name="employee_id"
+                                            placeholder="Enter Employee ID"
                                             value={formData.employee_id}
-                                            readOnly
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#F7F8FA', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#718096', outline: 'none', cursor: 'not-allowed' }}
+                                            onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                 </div>
@@ -2514,22 +2512,67 @@ const UserManagement: React.FC = () => {
                     </form>
                 ) : (
                     <div className="section-panel !p-0 overflow-hidden">
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ background: 'var(--bg-secondary)' }}>
-                                    <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        {viewMode === 'user' ? 'User' : viewMode === 'partner' ? 'Company' : viewMode === 'end_customer' ? 'End Customer' : viewMode === 'financial_year' ? 'Financial Year' : viewMode === 'product' ? 'Product / Service' : 'Customer'}
-                                    </th>
-                                    <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        {viewMode === 'financial_year' ? 'Start Date' : viewMode === 'product' ? 'Category' : 'Email'}
-                                    </th>
-                                    <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        {viewMode === 'user' ? 'Role' : viewMode === 'partner' ? 'Type / Industry' : viewMode === 'end_customer' ? 'Company / Location' : viewMode === 'financial_year' ? 'End Date' : viewMode === 'product' ? 'Code / Sub' : 'City / State'}
-                                    </th>
-                                    <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
-                                    <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
-                                </tr>
-                                {showFilters && (
+                        <div style={{ overflowX: 'auto', width: '100%' }}>
+                            <table style={{ minWidth: '1500px', width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ background: 'var(--bg-secondary)' }}>
+                                        <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+                                            {viewMode === 'user' ? 'User' : viewMode === 'partner' ? 'Company' : viewMode === 'end_customer' ? 'End Customer' : viewMode === 'financial_year' ? 'Financial Year' : viewMode === 'product' ? 'Product / Service' : 'Customer'}
+                                        </th>
+                                        {viewMode === 'user' && (
+                                            <>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Email</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Mobile</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Department</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Region</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Reporting To</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Role</th>
+                                            </>
+                                        )}
+                                        {viewMode === 'partner' && (
+                                            <>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Contact (E/P/M)</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Address</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Type / Industry</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Tax / MSME Info</th>
+                                            </>
+                                        )}
+                                        {viewMode === 'end_customer' && (
+                                            <>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Linked Partner</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Industry</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Location</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Contact Person (E/P)</th>
+                                            </>
+                                        )}
+                                        {viewMode === 'company' && (
+                                            <>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Contact (E/P/M)</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Address</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Industry / Type</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Tax / MSME Info</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Terms</th>
+                                            </>
+                                        )}
+                                        {viewMode === 'financial_year' && (
+                                            <>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Code</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Start Date</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>End Date</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Current FY</th>
+                                            </>
+                                        )}
+                                        {viewMode === 'product' && (
+                                            <>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Category / Sub</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>UOM / Price / Tax</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>HSN/SAC</th>
+                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Description</th>
+                                            </>
+                                        )}
+                                        <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+                                        <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
+                                    </tr>
                                     <tr style={{ background: 'var(--bg-secondary)' }}>
                                         <th style={{ padding: '8px 24px' }}>
                                             <div className="ae-input-group !mb-0">
@@ -2543,30 +2586,66 @@ const UserManagement: React.FC = () => {
                                                 />
                                             </div>
                                         </th>
-                                        <th style={{ padding: '8px 24px' }}>
-                                            <div className="ae-input-group !mb-0">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={columnFilters[viewMode === 'user' ? 'email' : viewMode === 'partner' ? 'email' : viewMode === 'end_customer' ? 'email' : viewMode === 'financial_year' ? 'start_date' : viewMode === 'product' ? 'category' : 'email'] || ''}
-                                                    onChange={(e) => setColumnFilters({ ...columnFilters, [viewMode === 'user' ? 'email' : viewMode === 'partner' ? 'email' : viewMode === 'end_customer' ? 'email' : viewMode === 'financial_year' ? 'start_date' : viewMode === 'product' ? 'category' : 'email']: e.target.value })}
-                                                    style={{ height: '28px', fontSize: '11px' }}
-                                                />
-                                            </div>
-                                        </th>
-                                        <th style={{ padding: '8px 24px' }}>
-                                            <div className="ae-input-group !mb-0">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={columnFilters[viewMode === 'user' ? 'role' : viewMode === 'partner' ? 'type' : viewMode === 'end_customer' ? 'location' : viewMode === 'financial_year' ? 'end_date' : viewMode === 'product' ? 'product_code' : 'city'] || ''}
-                                                    onChange={(e) => setColumnFilters({ ...columnFilters, [viewMode === 'user' ? 'role' : viewMode === 'partner' ? 'type' : viewMode === 'end_customer' ? 'location' : viewMode === 'financial_year' ? 'end_date' : viewMode === 'product' ? 'product_code' : 'city']: e.target.value })}
-                                                    style={{ height: '28px', fontSize: '11px' }}
-                                                />
-                                            </div>
-                                        </th>
+                                        {viewMode === 'user' && (
+                                            <>
+                                                <th style={{ padding: '8px 24px' }}>
+                                                    <div className="ae-input-group !mb-0">
+                                                        <Search className="ae-search-icon" size={12} />
+                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters.email || ''} onChange={(e) => setColumnFilters({ ...columnFilters, email: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
+                                                    </div>
+                                                </th>
+                                                <th style={{ padding: '8px 24px' }}>
+                                                    <div className="ae-input-group !mb-0">
+                                                        <Search className="ae-search-icon" size={12} />
+                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters.mobile || ''} onChange={(e) => setColumnFilters({ ...columnFilters, mobile: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
+                                                    </div>
+                                                </th>
+                                                <th style={{ padding: '8px 24px' }}>
+                                                    <div className="ae-input-group !mb-0">
+                                                        <Search className="ae-search-icon" size={12} />
+                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters.department || ''} onChange={(e) => setColumnFilters({ ...columnFilters, department: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
+                                                    </div>
+                                                </th>
+                                                <th style={{ padding: '8px 24px' }}>
+                                                    <div className="ae-input-group !mb-0">
+                                                        <Search className="ae-search-icon" size={12} />
+                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters.region || ''} onChange={(e) => setColumnFilters({ ...columnFilters, region: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
+                                                    </div>
+                                                </th>
+                                                <th style={{ padding: '8px 24px' }}>
+                                                    <div className="ae-input-group !mb-0">
+                                                        <Search className="ae-search-icon" size={12} />
+                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters.reporting_to_name || ''} onChange={(e) => setColumnFilters({ ...columnFilters, reporting_to_name: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
+                                                    </div>
+                                                </th>
+                                                <th style={{ padding: '8px 24px' }}>
+                                                    <div className="ae-input-group !mb-0">
+                                                        <Search className="ae-search-icon" size={12} />
+                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters.role || ''} onChange={(e) => setColumnFilters({ ...columnFilters, role: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
+                                                    </div>
+                                                </th>
+                                            </>
+                                        )}
+                                        {/* Simplified Filter row for other viewModes to avoid too many columns logic right now */}
+                                        {viewMode !== 'user' && (
+                                            <>
+                                                <th style={{ padding: '8px 24px' }}>
+                                                    <div className="ae-input-group !mb-0">
+                                                        <Search className="ae-search-icon" size={12} />
+                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters[viewMode === 'partner' ? 'email' : viewMode === 'end_customer' ? 'email' : viewMode === 'financial_year' ? 'start_date' : viewMode === 'product' ? 'category' : 'email'] || ''} onChange={(e) => setColumnFilters({ ...columnFilters, [viewMode === 'partner' ? 'email' : viewMode === 'end_customer' ? 'email' : viewMode === 'financial_year' ? 'start_date' : viewMode === 'product' ? 'category' : 'email']: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
+                                                    </div>
+                                                </th>
+                                                <th style={{ padding: '8px 24px' }}>
+                                                    <div className="ae-input-group !mb-0">
+                                                        <Search className="ae-search-icon" size={12} />
+                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters[viewMode === 'partner' ? 'type' : viewMode === 'end_customer' ? 'location' : viewMode === 'financial_year' ? 'end_date' : viewMode === 'product' ? 'product_code' : 'city'] || ''} onChange={(e) => setColumnFilters({ ...columnFilters, [viewMode === 'partner' ? 'type' : viewMode === 'end_customer' ? 'location' : viewMode === 'financial_year' ? 'end_date' : viewMode === 'product' ? 'product_code' : 'city']: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
+                                                    </div>
+                                                </th>
+                                                {/* Filler columns for simplicity in other modes for now */}
+                                                {(viewMode === 'partner' || viewMode === 'company' || viewMode === 'end_customer') && <th style={{ padding: '8px 24px' }}></th>}
+                                                {(viewMode === 'financial_year' || viewMode === 'product') && <th style={{ padding: '8px 24px' }}></th>}
+                                            </>
+                                        )}
                                         <th style={{ padding: '8px 24px' }}>
                                             <div className="ae-input-group !mb-0">
                                                 <Search className="ae-search-icon" size={12} />
@@ -2588,383 +2667,414 @@ const UserManagement: React.FC = () => {
                                             </button>
                                         </th>
                                     </tr>
-                                )}
-                            </thead>
-                            <tbody>
-                                {viewMode === 'user' ? filteredUsers.map((user) => (
-                                    <tr key={user.id} className="ae-table-row">
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div className="flex items-center">
-                                                <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
-                                                    <UserIcon size={20} />
+                                </thead>
+                                <tbody>
+                                    {viewMode === 'user' ? filteredUsers.map((user) => (
+                                        <tr key={user.id} className="ae-table-row">
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div className="flex items-center">
+                                                    <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
+                                                        <UserIcon size={20} />
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{user.username}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{user.first_name} {user.last_name}{user.employee_id ? ` · ${user.employee_id}` : ''}</div>
+                                                    </div>
                                                 </div>
-                                                <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{user.username}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{user.first_name} {user.last_name}{user.employee_id ? ` · ${user.employee_id}` : ''}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
+                                                    <Mail size={14} className="text-gray-400" /> {user.email || '—'}
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
-                                                <Mail size={14} className="text-gray-400" /> {user.email || '—'}
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <span style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '6px',
-                                                padding: '4px 10px',
-                                                borderRadius: '6px',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 700,
-                                                textTransform: 'uppercase',
-                                                background: user.role === 'app_admin' ? 'rgba(159, 122, 234, 0.1)' : 'var(--bg-accent)',
-                                                color: user.role === 'app_admin' ? '#9F7AEA' : 'var(--ae-blue)'
-                                            }}>
-                                                <Shield size={12} />
-                                                {user.role === 'app_admin' ? 'Admin' :
-                                                    user.role === 'sales_head' ? 'Sales Head' :
-                                                        user.role === 'pm_head' ? 'PM Head' :
-                                                            user.role === 'salesperson' ? 'Salesperson' :
-                                                                user.role === 'inside_sales_head' ? 'IS Head' : 'User'}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <span style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '6px',
-                                                padding: '4px 10px',
-                                                borderRadius: '6px',
-                                                fontSize: '0.7rem',
-                                                fontWeight: 800,
-                                                textTransform: 'uppercase',
-                                                background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)',
-                                                color: user.is_active ? '#00C853' : '#F44336'
-                                            }}>
-                                                {user.is_active ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                {user.is_active ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                <button
-                                                    onClick={() => handleToggleStatus(user.id, 'user')}
-                                                    style={{ padding: '8px', color: user.is_active ? '#00C853' : '#F44336', border: 'none', background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
-                                                    title={user.is_active ? "Deactivate User" : "Activate User"}
-                                                >
-                                                    <Power size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteUser(user.id)}
-                                                    style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
-                                                    title="Delete User"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )) : viewMode === 'partner' ? filteredPartners.map((p) => (
-                                    <tr key={p.id} className="ae-table-row">
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div className="flex items-center">
-                                                <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
-                                                    <Shield size={20} />
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.mobile || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.department || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.region || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.reporting_to_name || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <span style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    padding: '4px 10px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                    background: user.role === 'app_admin' ? 'rgba(159, 122, 234, 0.1)' : 'var(--bg-accent)',
+                                                    color: user.role === 'app_admin' ? '#9F7AEA' : 'var(--ae-blue)'
+                                                }}>
+                                                    <Shield size={12} />
+                                                    {user.role === 'app_admin' ? 'Admin' :
+                                                        user.role === 'sales_head' ? 'Sales Head' :
+                                                            user.role === 'pm_head' ? 'PM Head' :
+                                                                user.role === 'salesperson' ? 'Salesperson' :
+                                                                    user.role === 'inside_sales_head' ? 'IS Head' : 'User'}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <span style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    padding: '4px 10px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 800,
+                                                    textTransform: 'uppercase',
+                                                    background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                                                    color: user.is_active ? '#00C853' : '#F44336'
+                                                }}>
+                                                    {user.is_active ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                    {user.is_active ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                    <button
+                                                        onClick={() => handleToggleStatus(user.id, 'user')}
+                                                        style={{ padding: '8px', color: user.is_active ? '#00C853' : '#F44336', border: 'none', background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
+                                                        title={user.is_active ? "Deactivate User" : "Activate User"}
+                                                    >
+                                                        <Power size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteUser(user.id)}
+                                                        style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
+                                                        title="Delete User"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
                                                 </div>
-                                                <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{p.name}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.code}</div>
+                                            </td>
+                                        </tr>
+                                    )) : viewMode === 'partner' ? filteredPartners.map((p) => (
+                                        <tr key={p.id} className="ae-table-row">
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div className="flex items-center">
+                                                    <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
+                                                        <Shield size={20} />
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{p.name}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.code}</div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{p.email || '—'}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.mobile || '—'}</div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{p.type}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.industry || '—'}</div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: p.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: p.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                {p.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                {p.status}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                <button
-                                                    onClick={() => handleToggleStatus(p.id, 'partner')}
-                                                    style={{ padding: '8px', color: p.status === 'ACTIVE' ? '#00C853' : '#F44336', border: 'none', background: p.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                >
-                                                    <Power size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeletePartner(p.id)}
-                                                    style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    title="Delete Company"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        setPartnerFormData({
-                                                            name: p.name || '',
-                                                            logo: p.logo || null,
-                                                            address_line_1: p.address_line_1 || '',
-                                                            country: p.country || 'India',
-                                                            state: p.state || '',
-                                                            city: p.city || '',
-                                                            pincode: p.pincode || '',
-                                                            phone_number: p.phone_number || '',
-                                                            mobile: p.mobile || '',
-                                                            email: p.email || '',
-                                                            website_url: p.website_url || '',
-                                                            primary_contact: p.primary_contact || '',
-                                                            financial_year_begins: p.financial_year_begins || '01-Apr',
-                                                            base_currency: p.base_currency || 'INR',
-                                                            currency_symbol: p.currency_symbol || '₹ / INR',
-                                                            decimal_places: p.decimal_places || 2,
-                                                            is_gst_applicable: p.is_gst_applicable ?? true,
-                                                            gstin: p.gstin || '',
-                                                            state_code: p.state_code || '',
-                                                            msme_registered: p.msme_registered ?? false,
-                                                            msme_number: p.msme_number || '',
-                                                            pan: p.pan || '',
-                                                            tan: p.tan || '',
-                                                            cin: p.cin || '',
-                                                            status: p.status || 'ACTIVE'
-                                                        });
-                                                        setEditingId(p.id);
-                                                        setShowForm(true);
-                                                    }}
-                                                    style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                >
-                                                    <Pencil size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )) : viewMode === 'end_customer' ? filteredEndCustomers.map((ec) => (
-                                    <tr key={ec.id} className="ae-table-row">
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div className="flex items-center">
-                                                <div className="h-10 w-10 flex-shrink-0 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
-                                                    <UserIcon size={20} />
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{p.email || '—'}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>P: {p.phone_number || '—'} / M: {p.mobile_number || '—'}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#a0aec0' }}>{p.website_url || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{p.city}{p.state ? `, ${p.state}` : ''}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.country} {p.pincode}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{p.type}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.industry || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.85rem', color: '#4A5568', fontWeight: 500 }}>GST: {p.gstin || '—'}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>PAN: {p.pan || '—'} | TAN: {p.tan || '—'}</div>
+                                                {p.msme_registered && <div style={{ fontSize: '0.75rem', color: '#00C853' }}>MSME: {p.msme_number}</div>}
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: p.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: p.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                                                    {p.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                    {p.status}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                    <button
+                                                        onClick={() => handleToggleStatus(p.id, 'partner')}
+                                                        style={{ padding: '8px', color: p.status === 'ACTIVE' ? '#00C853' : '#F44336', border: 'none', background: p.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                    >
+                                                        <Power size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeletePartner(p.id)}
+                                                        style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                        title="Delete Company"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setPartnerFormData({
+                                                                name: p.name || '',
+                                                                logo: p.logo || null,
+                                                                address_line_1: p.address_line_1 || '',
+                                                                country: p.country || 'India',
+                                                                state: p.state || '',
+                                                                city: p.city || '',
+                                                                pincode: p.pincode || '',
+                                                                phone_number: p.phone_number || '',
+                                                                mobile: p.mobile || '',
+                                                                email: p.email || '',
+                                                                website_url: p.website_url || '',
+                                                                primary_contact: p.primary_contact || '',
+                                                                financial_year_begins: p.financial_year_begins || '01-Apr',
+                                                                base_currency: p.base_currency || 'INR',
+                                                                currency_symbol: p.currency_symbol || '₹ / INR',
+                                                                decimal_places: p.decimal_places || 2,
+                                                                is_gst_applicable: p.is_gst_applicable ?? true,
+                                                                gstin: p.gstin || '',
+                                                                state_code: p.state_code || '',
+                                                                msme_registered: p.msme_registered ?? false,
+                                                                msme_number: p.msme_number || '',
+                                                                pan: p.pan || '',
+                                                                tan: p.tan || '',
+                                                                cin: p.cin || '',
+                                                                status: p.status || 'ACTIVE'
+                                                            });
+                                                            setEditingId(p.id);
+                                                            setShowForm(true);
+                                                        }}
+                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
                                                 </div>
-                                                <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{ec.name}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.code}</div>
+                                            </td>
+                                        </tr>
+                                    )) : viewMode === 'end_customer' ? filteredEndCustomers.map((ec) => (
+                                        <tr key={ec.id} className="ae-table-row">
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div className="flex items-center">
+                                                    <div className="h-10 w-10 flex-shrink-0 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
+                                                        <UserIcon size={20} />
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{ec.name}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.code}</div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{ec.email || '—'}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.phone || '—'}</div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{ec.partner_name || '—'}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.location || '—'}</div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                {ec.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                {ec.status}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                <button
-                                                    onClick={() => handleToggleStatus(ec.id, 'end_customer')}
-                                                    style={{ padding: '8px', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336', border: 'none', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                >
-                                                    <Power size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteEndCustomer(ec.id)}
-                                                    style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    title="Delete End Customer"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        setEndCustomerFormData({ ...ec });
-                                                        setEditingId(ec.id);
-                                                        setShowForm(true);
-                                                    }}
-                                                    style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                >
-                                                    <Pencil size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )) : viewMode === 'financial_year' ? financialYears.map((fy) => (
-                                    <tr key={fy.id} className="ae-table-row">
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div className="flex items-center">
-                                                <div className="h-10 w-10 flex-shrink-0 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-                                                    <CheckCircle size={20} />
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{ec.linked_partner_name || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{ec.industry || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{ec.location || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{ec.contact_person || '—'}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.email || '—'} / {ec.phone || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                                                    {ec.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                    {ec.status}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                    <button
+                                                        onClick={() => handleToggleStatus(ec.id, 'end_customer')}
+                                                        style={{ padding: '8px', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336', border: 'none', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                    >
+                                                        <Power size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteEndCustomer(ec.id)}
+                                                        style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                        title="Delete End Customer"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setEndCustomerFormData({ ...ec });
+                                                            setEditingId(ec.id);
+                                                            setShowForm(true);
+                                                        }}
+                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
                                                 </div>
-                                                <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{fy.label}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{fy.code} {fy.is_current_fy && <span style={{ background: '#EBF4FF', color: '#1B66D1', padding: '2px 6px', borderRadius: '4px', fontSize: '0.65rem', marginLeft: '8px' }}>CURRENT</span>}</div>
+                                            </td>
+                                        </tr>
+                                    )) : viewMode === 'financial_year' ? financialYears.map((fy) => (
+                                        <tr key={fy.id} className="ae-table-row">
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div className="flex items-center">
+                                                    <div className="h-10 w-10 flex-shrink-0 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                                                        <CheckCircle size={20} />
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{fy.label}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{fy.code} {fy.is_current_fy && <span style={{ background: '#EBF4FF', color: '#1B66D1', padding: '2px 6px', borderRadius: '4px', fontSize: '0.65rem', marginLeft: '8px' }}>CURRENT</span>}</div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.start_date}</div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.end_date}</div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: fy.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: fy.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                {fy.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                {fy.status}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                <button
-                                                    onClick={() => {
-                                                        setFyFormData({ ...fy });
-                                                        setEditingId(fy.id);
-                                                        setShowForm(true);
-                                                    }}
-                                                    style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                >
-                                                    <Pencil size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )) : viewMode === 'product' ? products.map((prd) => (
-                                    <tr key={prd.id} className="ae-table-row">
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div className="flex items-center">
-                                                <div className="h-10 w-10 flex-shrink-0 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
-                                                    <Shield size={20} />
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.code}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.start_date}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.end_date}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                    <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.is_current_fy ? 'YES' : 'NO'}</div>
+                                                </td>
+                                                <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: fy.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: fy.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                                                        {fy.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                        {fy.status}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                        <button
+                                                            onClick={() => {
+                                                                setFyFormData({ ...fy });
+                                                                setEditingId(fy.id);
+                                                                setShowForm(true);
+                                                            }}
+                                                            style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                        >
+                                                            <Pencil size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                        </tr>
+                                    )) : viewMode === 'product' ? products.map((prd) => (
+                                        <tr key={prd.id} className="ae-table-row">
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div className="flex items-center">
+                                                    <div className="h-10 w-10 flex-shrink-0 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
+                                                        <Shield size={20} />
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{prd.name}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{prd.product_code}</div>
+                                                    </div>
                                                 </div>
-                                                <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{prd.name}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{prd.product_code}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{prd.category}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{prd.subcategory || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: prd.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: prd.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                                                    {prd.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                    {prd.status}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                    <button
+                                                        onClick={() => {
+                                                            setProductFormData({ ...prd });
+                                                            setEditingId(prd.id);
+                                                            setShowForm(true);
+                                                        }}
+                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{prd.category}</div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{prd.subcategory || '—'}</div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: prd.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: prd.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                {prd.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                {prd.status}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                <button
-                                                    onClick={() => {
-                                                        setProductFormData({ ...prd });
-                                                        setEditingId(prd.id);
-                                                        setShowForm(true);
-                                                    }}
-                                                    style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                >
-                                                    <Pencil size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )) : filteredCompanies.map((comp) => (
-                                    <tr key={comp.id} className="ae-table-row">
-                                        <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                            <div className="flex items-center">
-                                                <div className="h-10 w-10 flex-shrink-0 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded-full flex items-center justify-center">
-                                                    <Users size={20} />
+                                            </td>
+                                        </tr>
+                                    )) : filteredCompanies.map((comp) => (
+                                        <tr key={comp.id} className="ae-table-row">
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <div className="flex items-center">
+                                                    <div className="h-10 w-10 flex-shrink-0 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded-full flex items-center justify-center">
+                                                        <Users size={20} />
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{comp.name}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.alias_name || 'No Alias'}</div>
+                                                    </div>
                                                 </div>
-                                                <div className="ml-4">
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{comp.name}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.alias_name || 'No Alias'}</div>
+                                            </td>
+                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                                                <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
+                                                    <Mail size={14} className="text-gray-400" /> {comp.email || '—'}
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                            <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
-                                                <Mail size={14} className="text-gray-400" /> {comp.email || '—'}
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                            <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{comp.city || '—'}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.state_name || '—'}</div>
-                                        </td>
-                                        <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: 'rgba(0, 200, 83, 0.1)', color: '#00C853' }}>
-                                                <CheckCircle size={12} /> Active
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                <button
-                                                    onClick={() => {
-                                                        setCompanyFormData({
-                                                            name: comp.name || '',
-                                                            logo: comp.logo || null,
-                                                            address_line_1: comp.address_line_1 || '',
-                                                            country: comp.country || 'India',
-                                                            state: comp.state || '',
-                                                            city: comp.city || '',
-                                                            pincode: comp.pincode || '',
-                                                            phone_number: comp.phone_number || '',
-                                                            mobile_number: comp.mobile_number || '',
-                                                            email: comp.email || '',
-                                                            website_url: comp.website_url || '',
-                                                            linked_company_profile: comp.linked_company_profile || '',
-                                                            industry: comp.industry || '',
-                                                            type: comp.type || 'CUSTOMER',
-                                                            credit_limit: comp.credit_limit || 0,
-                                                            payment_terms: comp.payment_terms || 'NET_30',
-                                                            status: comp.status || 'ACTIVE',
-                                                            financial_year_begins: comp.financial_year_begins || '01-Apr',
-                                                            base_currency: comp.base_currency || 'INR',
-                                                            currency_symbol: comp.currency_symbol || '₹ / INR',
-                                                            decimal_places: comp.decimal_places || 2,
-                                                            is_gst_applicable: comp.is_gst_applicable ?? true,
-                                                            gstin: comp.gstin || '',
-                                                            state_code: comp.state_code || '',
-                                                            msme_registered: comp.msme_registered ?? false,
-                                                            msme_number: comp.msme_number || '',
-                                                            pan: comp.pan || '',
-                                                            tan: comp.tan || '',
-                                                            cin: comp.cin || ''
-                                                        });
-                                                        setEditingId(comp.id);
-                                                        setViewMode('company');
-                                                        setShowForm(true);
-                                                    }}
-                                                    style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    title="Edit Customer"
-                                                >
-                                                    <Pencil size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                            </td>
+                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{comp.city || '—'}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.state_name || '—'}</div>
+                                            </td>
+                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: 'rgba(0, 200, 83, 0.1)', color: '#00C853' }}>
+                                                    <CheckCircle size={12} /> Active
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                    <button
+                                                        onClick={() => {
+                                                            setCompanyFormData({
+                                                                name: comp.name || '',
+                                                                logo: comp.logo || null,
+                                                                address_line_1: comp.address_line_1 || '',
+                                                                country: comp.country || 'India',
+                                                                state: comp.state || '',
+                                                                city: comp.city || '',
+                                                                pincode: comp.pincode || '',
+                                                                phone_number: comp.phone_number || '',
+                                                                mobile_number: comp.mobile_number || '',
+                                                                email: comp.email || '',
+                                                                website_url: comp.website_url || '',
+                                                                linked_company_profile: comp.linked_company_profile || '',
+                                                                industry: comp.industry || '',
+                                                                type: comp.type || 'CUSTOMER',
+                                                                credit_limit: comp.credit_limit || 0,
+                                                                payment_terms: comp.payment_terms || 'NET_30',
+                                                                status: comp.status || 'ACTIVE',
+                                                                financial_year_begins: comp.financial_year_begins || '01-Apr',
+                                                                base_currency: comp.base_currency || 'INR',
+                                                                currency_symbol: comp.currency_symbol || '₹ / INR',
+                                                                decimal_places: comp.decimal_places || 2,
+                                                                is_gst_applicable: comp.is_gst_applicable ?? true,
+                                                                gstin: comp.gstin || '',
+                                                                state_code: comp.state_code || '',
+                                                                msme_registered: comp.msme_registered ?? false,
+                                                                msme_number: comp.msme_number || '',
+                                                                pan: comp.pan || '',
+                                                                tan: comp.tan || '',
+                                                                cin: comp.cin || ''
+                                                            });
+                                                            setEditingId(comp.id);
+                                                            setViewMode('company');
+                                                            setShowForm(true);
+                                                        }}
+                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                        title="Edit Customer"
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>
-        </div >
-    );
+        );
 };
 
 export default UserManagement;
-
