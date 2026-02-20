@@ -11,11 +11,32 @@ class StateMaster(models.Model):
         verbose_name_plural = "States"
 
     def __str__(self):
-        return f"{self.code} - {self.name}"
+        return f"{self.code} - {self.name}" 
+
+class EntityType(models.TextChoices):
+    AE_IND = 'AE_IND', 'AE ind'
+    AE_USA = 'AE_USA', 'AE Usa'
+
+class IndustryType(models.TextChoices):
+    IT = 'IT', 'IT'
+    BFSI = 'BFSI', 'BFSI'
+    MANUFACTURING = 'MANUFACTURING', 'Manufacturing'
+    HEALTHCARE = 'HEALTHCARE', 'Healthcare'
+    RETAIL = 'RETAIL', 'Retail'
+    TELECOM = 'TELECOM', 'Telecom'
+    EDUCATION = 'EDUCATION', 'Education'
+    GOVERNMENT = 'GOVERNMENT', 'Government'
+    AUTOMOTIVE = 'AUTOMOTIVE', 'Automotive'
+    FMCG = 'FMCG', 'FMCG'
+    OTHER = 'OTHER', 'Other'
 
 class CompanyProfile(models.Model):
     # 5.1 Company Basic Details
     name = models.CharField(max_length=255)
+    entity = models.CharField(max_length=10, choices=EntityType.choices, default=EntityType.AE_IND)
+    customer_id = models.CharField(max_length=50, blank=True, null=True)
+    region = models.CharField(max_length=100, blank=True, null=True)
+    contact_person = models.CharField(max_length=255, blank=True, null=True)
     alias_name = models.CharField(max_length=100, blank=True, null=True)
     logo = models.ImageField(upload_to='company/logos/', blank=True, null=True)
     
@@ -69,6 +90,11 @@ class CompanyProfile(models.Model):
                 state_match = StateMaster.objects.filter(code=self.state_code).first()
                 if state_match:
                     self.state = state_match
+        
+        # Auto-derive PAN from GSTIN if present (chars 3 to 12)
+        if self.gstin and len(self.gstin) >= 12 and not self.pan:
+            self.pan = self.gstin[2:12]
+            
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -312,16 +338,23 @@ class CustomerPartnerType(models.TextChoices):
     CHANNEL_PARTNER = 'CHANNEL_PARTNER', 'Channel Partner'
 
 class PaymentTerms(models.TextChoices):
-    NET_30 = 'NET_30', 'Net 30'
-    NET_60 = 'NET_60', 'Net 60'
-    NET_90 = 'NET_90', 'Net 90'
-    DUE_ON_RECEIPT = 'DUE_ON_RECEIPT', 'Due on Receipt'
+    NET_30 = 'NET_30', '30 days'
+    NET_60 = 'NET_60', '60 days'
+    NET_90 = 'NET_90', '90 days'
+    IMMEDIATE = 'IMMEDIATE', 'immediate'
 
 class EntityStatus(models.TextChoices):
     ACTIVE = 'ACTIVE', 'Active'
     INACTIVE = 'INACTIVE', 'Inactive'
 
 class CustomerPartner(models.Model):
+    # Customer Basic Details
+    name = models.CharField(max_length=255)
+    entity = models.CharField(max_length=10, choices=EntityType.choices, default=EntityType.AE_IND)
+    customer_id = models.CharField(max_length=50, blank=True, null=True)
+    region = models.CharField(max_length=100, blank=True, null=True)
+    contact_person = models.CharField(max_length=255, blank=True, null=True)
+    alias_name = models.CharField(max_length=100, blank=True, null=True)
     code = models.CharField(max_length=50, unique=True, blank=True)
     name = models.CharField(max_length=255)
     logo = models.ImageField(upload_to='partners/logos/', blank=True, null=True)
@@ -344,7 +377,7 @@ class CustomerPartner(models.Model):
     # Business Details
     linked_company = models.ForeignKey(CompanyProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='partners')
     type = models.CharField(max_length=20, choices=CustomerPartnerType.choices, default=CustomerPartnerType.CUSTOMER)
-    industry = models.CharField(max_length=100, blank=True, null=True)
+    industry = models.CharField(max_length=100, choices=IndustryType.choices, default=IndustryType.OTHER)
     credit_limit = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     payment_terms = models.CharField(max_length=20, choices=PaymentTerms.choices, default=PaymentTerms.NET_30)
     
@@ -390,6 +423,10 @@ class CustomerPartner(models.Model):
                 state_match = StateMaster.objects.filter(code=self.state_code).first()
                 if state_match:
                     self.state = state_match
+        
+        # Auto-derive PAN from GSTIN if present (chars 3 to 12)
+        if self.gstin and len(self.gstin) >= 12 and not self.pan:
+            self.pan = self.gstin[2:12]
                     
         super().save(*args, **kwargs)
 

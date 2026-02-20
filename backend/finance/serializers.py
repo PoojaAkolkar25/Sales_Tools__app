@@ -32,6 +32,16 @@ class CompanyProfileSerializer(serializers.ModelSerializer):
                     data.pop(field)
         return super().to_internal_value(data)
 
+    def validate_gstin(self, value):
+        if value:
+            # Check if this GSTIN already exists in any CompanyProfile
+            qs = CompanyProfile.objects.filter(gstin=value)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError("A company with this GSTIN already exists.")
+        return value
+
 class InvoiceLineItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceLineItem
@@ -140,6 +150,16 @@ class CustomerPartnerSerializer(serializers.ModelSerializer):
                 else:
                     data.pop(field)
         return super().to_internal_value(data)
+
+    def validate_gstin(self, value):
+        if value:
+            # Check if this GSTIN already exists in any CustomerPartner
+            qs = CustomerPartner.objects.filter(gstin=value)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError("A customer/partner with this GSTIN already exists.")
+        return value
 
 class EndCustomerSerializer(serializers.ModelSerializer):
     partner_name = serializers.CharField(source='linked_partner.name', read_only=True)

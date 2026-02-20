@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search, LayoutDashboard, PlusCircle, Paperclip, FileText, Eye } from 'lucide-react';
+import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search, LayoutDashboard, PlusCircle, Paperclip, FileText, Eye, Download } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const UserManagement: React.FC = () => {
@@ -37,6 +37,11 @@ const UserManagement: React.FC = () => {
 
     const [companyFormData, setCompanyFormData] = useState({
         name: '',
+        entity: 'AE_IND',
+        customer_id: '',
+        region: '',
+        contact_person: '',
+        alias_name: '',
         logo: null as File | string | null,
         address_line_1: '',
         country: 'India',
@@ -50,10 +55,7 @@ const UserManagement: React.FC = () => {
         linked_company_profile: '',
         industry: '',
         type: 'CUSTOMER',
-        credit_limit: 0,
         payment_terms: 'NET_30',
-        status: 'ACTIVE',
-        financial_year_begins: '01-Apr',
         base_currency: 'INR',
         currency_symbol: '₹ / INR',
         decimal_places: '' as any, // Initialize as empty string for placeholder
@@ -68,6 +70,7 @@ const UserManagement: React.FC = () => {
     });
     const [partnerFormData, setPartnerFormData] = useState({
         name: '',
+        contact_person: '',
         logo: null as File | string | null,
         address_line_1: '',
         country: 'India',
@@ -79,7 +82,6 @@ const UserManagement: React.FC = () => {
         email: '',
         website_url: '',
         primary_contact: '',
-        financial_year_begins: '01-Apr',
         base_currency: 'INR',
         currency_symbol: '₹ / INR',
         decimal_places: 2 as any,
@@ -91,7 +93,8 @@ const UserManagement: React.FC = () => {
         pan: '',
         tan: '',
         cin: '',
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        payment_terms: 'NET_30'
     });
 
     const [endCustomerFormData, setEndCustomerFormData] = useState({
@@ -106,13 +109,23 @@ const UserManagement: React.FC = () => {
         status: 'ACTIVE'
     });
 
-    const [fyFormData, setFyFormData] = useState({
-        code: '',
-        start_date: '',
-        end_date: '',
-        label: '',
-        status: 'ACTIVE',
-        is_current_fy: false
+    const currentYear = 2016;
+    const [fyFormData, setFyFormData] = useState(() => {
+        const yr = currentYear;
+        const startDate = `${yr}-04-01`;
+        const endDate = `${yr + 1}-03-31`;
+        const shortEnd = String(yr + 1).slice(-2);
+        return {
+            code: `FY${yr}-${shortEnd}`,
+            start_date: startDate,
+            end_date: endDate,
+            label: `FY ${yr}-${shortEnd}`,
+            status: 'ACTIVE',
+            is_current_fy: false,
+            first_month_of_fiscal_year: 'April',
+            first_month_of_tax_year: 'Same as fiscal year',
+            fy_year: yr
+        };
     });
 
     const [productFormData, setProductFormData] = useState({
@@ -283,12 +296,12 @@ const UserManagement: React.FC = () => {
             }
 
             setCompanyFormData({
-                name: '', logo: null, address_line_1: '',
+                name: '', entity: 'AE_IND', customer_id: '', region: '',
+                contact_person: '', alias_name: '', logo: null, address_line_1: '',
                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
                 mobile_number: '', email: '', website_url: '',
-                linked_company_profile: '', industry: '', type: 'CUSTOMER', credit_limit: 0,
-                payment_terms: 'NET_30', status: 'ACTIVE',
-                financial_year_begins: '01-Apr',
+                linked_company_profile: '', industry: '', type: 'CUSTOMER',
+                payment_terms: 'NET_30',
                 base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
                 is_gst_applicable: true, gstin: '', state_code: '',
                 msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
@@ -339,15 +352,15 @@ const UserManagement: React.FC = () => {
             }
 
             setPartnerFormData({
-                name: '', logo: null, address_line_1: '',
+                name: '', contact_person: '', logo: null, address_line_1: '',
                 country: 'India', state: '', city: '', pincode: '',
                 phone_number: '', mobile: '', email: '', website_url: '',
                 primary_contact: '',
-                financial_year_begins: '01-Apr', base_currency: 'INR',
+                base_currency: 'INR',
                 currency_symbol: '₹ / INR', decimal_places: 2,
                 is_gst_applicable: true, gstin: '', state_code: '',
                 msme_registered: false, msme_number: '', pan: '',
-                tan: '', cin: '', status: 'ACTIVE'
+                tan: '', cin: '', status: 'ACTIVE', payment_terms: 'NET_30'
             });
             setEditingId(null);
             fetchPartners();
@@ -383,26 +396,68 @@ const UserManagement: React.FC = () => {
         }
     };
 
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    const computeFYDates = (monthName: string, baseYear: number) => {
+        const monthIndex = monthNames.indexOf(monthName);
+        if (monthIndex === -1) return { start_date: '', end_date: '', code: '', label: '' };
+        const startMonth = String(monthIndex + 1).padStart(2, '0');
+        const startDate = `${baseYear}-${startMonth}-01`;
+        const endYear = monthIndex === 0 ? baseYear : baseYear + 1;
+        const endMonthIndex = monthIndex === 0 ? 11 : monthIndex - 1;
+        const endMonth = String(endMonthIndex + 1).padStart(2, '0');
+        const lastDay = new Date(endYear, endMonthIndex + 1, 0).getDate();
+        const endDate = `${endYear}-${endMonth}-${String(lastDay).padStart(2, '0')}`;
+        const shortEnd = String(endYear).slice(-2);
+        const code = `FY${baseYear}-${shortEnd}`;
+        const label = `FY ${baseYear}-${shortEnd}`;
+        return { start_date: startDate, end_date: endDate, code, label };
+    };
+
+    const handleFiscalMonthChange = (monthName: string) => {
+        const computed = computeFYDates(monthName, fyFormData.fy_year);
+        setFyFormData(prev => ({ ...prev, first_month_of_fiscal_year: monthName, ...computed }));
+    };
+
+    const handleFYYearChange = (year: number) => {
+        const computed = computeFYDates(fyFormData.first_month_of_fiscal_year, year);
+        setFyFormData(prev => ({ ...prev, fy_year: year, ...computed }));
+    };
+
     const handleCreateFinancialYear = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Validation: End Date > Start Date
-        if (fyFormData.start_date && fyFormData.end_date && fyFormData.start_date >= fyFormData.end_date) {
-            showNotification('End Date must be greater than Start Date', 'error');
+        if (!editingId && financialYears.some(fy => fy.code === fyFormData.code)) {
+            showNotification(`Financial Year ${fyFormData.code} already exists`, 'error');
             return;
         }
 
+        const submitData = {
+            code: fyFormData.code,
+            start_date: fyFormData.start_date,
+            end_date: fyFormData.end_date,
+            label: fyFormData.label,
+            status: fyFormData.status,
+            is_current_fy: fyFormData.is_current_fy
+        };
+
         try {
             if (editingId) {
-                await api.patch(`finance/financial-years/${editingId}/`, fyFormData);
+                await api.patch(`finance/financial-years/${editingId}/`, submitData);
                 showNotification('Financial Year updated successfully', 'success');
             } else {
-                await api.post('finance/financial-years/', fyFormData);
+                await api.post('finance/financial-years/', submitData);
                 showNotification('Financial Year created successfully', 'success');
             }
-            setFyFormData({
-                code: '', start_date: '', end_date: '', label: '',
-                status: 'ACTIVE', is_current_fy: false
-            });
+            {
+                const yr = currentYear;
+                const shortEnd = String(yr + 1).slice(-2);
+                setFyFormData({
+                    code: `FY${yr}-${shortEnd}`, start_date: `${yr}-04-01`, end_date: `${yr + 1}-03-31`,
+                    label: `FY ${yr}-${shortEnd}`, status: 'ACTIVE', is_current_fy: false,
+                    first_month_of_fiscal_year: 'April', first_month_of_tax_year: 'Same as fiscal year',
+                    fy_year: yr
+                });
+            }
             setEditingId(null);
             fetchFinancialYears();
             setShowForm(false);
@@ -487,6 +542,51 @@ const UserManagement: React.FC = () => {
         });
     };
 
+    const handleDownloadReport = async (fy: any) => {
+        try {
+            // Fetch Invoice Register data for the FY period
+            const response = await api.get(`finance/invoices/report_register/`, {
+                params: {
+                    start_date: fy.start_date,
+                    end_date: fy.end_date
+                }
+            });
+
+            const data = response.data;
+            if (!data || data.length === 0) {
+                showNotification('No data found for this period', 'info');
+                return;
+            }
+
+            // Convert JSON to CSV
+            const headers = Object.keys(data[0]);
+            const csvRows = [
+                headers.join(','),
+                ...data.map((row: any) =>
+                    headers.map(header => {
+                        const val = row[header];
+                        return `"${String(val || '').replace(/"/g, '""')}"`;
+                    }).join(',')
+                )
+            ];
+            const csvContent = csvRows.join('\n');
+
+            // Download as File
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Invoice_Register_${fy.code}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showNotification('Report downloaded successfully', 'success');
+        } catch (err) {
+            console.error('Error downloading report', err);
+            showNotification('Error downloading report', 'error');
+        }
+    };
+
     const handleToggleStatus = async (id: number, type: 'user' | 'partner' | 'end_customer' | 'company') => {
         try {
             let endpoint = '';
@@ -534,9 +634,9 @@ const UserManagement: React.FC = () => {
     const handleCurrencyChange = (val: string) => {
         let symbol = '';
         switch (val) {
-            case 'INR': symbol = '₹ / INR'; break;
+            case 'INR': symbol = 'â‚¹ / INR'; break;
             case 'USD': symbol = '$ / USD'; break;
-            case 'EURO': symbol = '€ / EURO'; break;
+            case 'EURO': symbol = 'â‚¬ / EURO'; break;
         }
 
         if (viewMode === 'partner') {
@@ -558,6 +658,7 @@ const UserManagement: React.FC = () => {
         const gstin = val.toUpperCase();
         let stateCode = '';
         let stateId = '';
+        let pan = '';
 
         if (gstin.length >= 2) {
             stateCode = gstin.substring(0, 2);
@@ -569,19 +670,34 @@ const UserManagement: React.FC = () => {
             }
         }
 
+        if (gstin.length >= 12) {
+            pan = gstin.substring(2, 12);
+        }
+
+        // Check for duplicate GSTIN
+        const isDuplicate = viewMode === 'partner'
+            ? partners.some(p => p.gstin === gstin && p.id !== editingId)
+            : companies.some(c => c.gstin === gstin && c.id !== editingId);
+
+        if (isDuplicate && gstin.length === 15) {
+            showNotification('Warning: This GSTIN already exists!', 'info');
+        }
+
         if (viewMode === 'partner') {
             setPartnerFormData({
                 ...partnerFormData,
                 gstin,
                 state_code: stateCode,
-                state: stateId || partnerFormData.state
+                state: stateId || partnerFormData.state,
+                pan: pan || partnerFormData.pan
             });
         } else {
             setCompanyFormData({
                 ...companyFormData,
                 gstin,
                 state_code: stateCode,
-                state: stateId || companyFormData.state
+                state: stateId || companyFormData.state,
+                pan: pan || companyFormData.pan
             });
         }
     };
@@ -799,15 +915,15 @@ const UserManagement: React.FC = () => {
                                 mobile: '', department: '', region: '', reporting_to: '', employee_id: ''
                             });
                             setPartnerFormData({
-                                name: '', logo: null, address_line_1: '',
+                                name: '', contact_person: '', logo: null, address_line_1: '',
                                 country: 'India', state: '', city: '', pincode: '',
                                 phone_number: '', mobile: '', email: '', website_url: '',
                                 primary_contact: '',
-                                financial_year_begins: '01-Apr', base_currency: 'INR',
+                                base_currency: 'INR',
                                 currency_symbol: '₹ / INR', decimal_places: 2,
                                 is_gst_applicable: true, gstin: '', state_code: '',
                                 msme_registered: false, msme_number: '', pan: '',
-                                tan: '', cin: '', status: 'ACTIVE'
+                                tan: '', cin: '', status: 'ACTIVE', payment_terms: 'NET_30'
                             });
                             setEndCustomerFormData({
                                 end_customer_code: '',
@@ -816,12 +932,12 @@ const UserManagement: React.FC = () => {
                                 status: 'ACTIVE'
                             });
                             setCompanyFormData({
-                                name: '', logo: null, address_line_1: '',
+                                name: '', entity: 'AE_IND', customer_id: '', region: '',
+                                contact_person: '', alias_name: '', logo: null, address_line_1: '',
                                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
                                 mobile_number: '', email: '', website_url: '',
-                                linked_company_profile: '', industry: '', type: 'CUSTOMER', credit_limit: 0,
-                                payment_terms: 'NET_30', status: 'ACTIVE',
-                                financial_year_begins: '01-Apr',
+                                linked_company_profile: '', industry: '', type: 'CUSTOMER',
+                                payment_terms: 'NET_30',
                                 base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
                                 is_gst_applicable: true, gstin: '', state_code: '',
                                 msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
@@ -1177,6 +1293,21 @@ const UserManagement: React.FC = () => {
                                                     required
                                                 />
                                             </div>
+
+
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Contact Person
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Contact Person"
+                                                    value={partnerFormData.contact_person}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, contact_person: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Company Logo
@@ -1228,12 +1359,13 @@ const UserManagement: React.FC = () => {
                                                                 onClick={() => setPartnerFormData({ ...partnerFormData, logo: null })}
                                                                 style={{ background: 'none', border: 'none', color: '#E53E3E', cursor: 'pointer', padding: '4px' }}
                                                             >
-                                                                <X size={14} />
+                                                                <Trash2 size={14} />
                                                             </button>
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
+
 
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -1378,19 +1510,6 @@ const UserManagement: React.FC = () => {
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Financial Year Begins
-                                                </label>
-                                                <select
-                                                    value={partnerFormData.financial_year_begins}
-                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, financial_year_begins: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                >
-                                                    <option value="01-Apr">01-Apr</option>
-                                                    <option value="01-Jan">01-Jan</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Base Currency <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <select
@@ -1406,15 +1525,14 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Symbol <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                    Symbol
                                                 </label>
                                                 <input
                                                     type="text"
                                                     placeholder="INR"
-                                                    required
+                                                    readOnly
                                                     value={partnerFormData.currency_symbol}
-                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, currency_symbol: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#f7fafc', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', outline: 'none', cursor: 'not-allowed' }}
                                                 />
                                             </div>
                                             <div>
@@ -1431,6 +1549,23 @@ const UserManagement: React.FC = () => {
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, decimal_places: e.target.value === '' ? '' : parseInt(e.target.value) })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Payment Terms <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                </label>
+                                                <select
+                                                    value={(partnerFormData as any).payment_terms || 'NET_30'}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, payment_terms: e.target.value } as any)}
+                                                    required
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                >
+                                                    <option value="IMMEDIATE">Immediate</option>
+                                                    <option value="NET_30">30 Days</option>
+                                                    <option value="NET_45">45 Days</option>
+                                                    <option value="NET_60">60 Days</option>
+                                                    <option value="NET_90">90 Days</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
@@ -1684,40 +1819,51 @@ const UserManagement: React.FC = () => {
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Label (e.g. FY 2025-26) <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            Year <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
-                                            type="text"
-                                            placeholder="Label"
-                                            value={fyFormData.label}
-                                            onChange={(e) => setFyFormData({ ...fyFormData, label: e.target.value })}
+                                            type="number"
+                                            placeholder="e.g. 2025"
+                                            value={fyFormData.fy_year}
+                                            onChange={(e) => handleFYYearChange(Number(e.target.value))}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
+                                            min={2000}
+                                            max={2099}
                                         />
+                                        <div style={{ fontSize: '0.7rem', color: '#718096', marginTop: '4px' }}>
+                                            Auto: {fyFormData.label} ({fyFormData.start_date} to {fyFormData.end_date})
+                                        </div>
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Start Date <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            First month of fiscal year <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
-                                        <input
-                                            type="date"
-                                            value={fyFormData.start_date}
-                                            onChange={(e) => setFyFormData({ ...fyFormData, start_date: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                        <select
+                                            value={fyFormData.first_month_of_fiscal_year}
+                                            onChange={(e) => handleFiscalMonthChange(e.target.value)}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', cursor: 'pointer' }}
                                             required
-                                        />
+                                        >
+                                            {monthNames.map(month => (
+                                                <option key={month} value={month}>{month}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            End Date <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            First month of tax year
                                         </label>
-                                        <input
-                                            type="date"
-                                            value={fyFormData.end_date}
-                                            onChange={(e) => setFyFormData({ ...fyFormData, end_date: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                            required
-                                        />
+                                        <select
+                                            value={fyFormData.first_month_of_tax_year}
+                                            onChange={(e) => setFyFormData({ ...fyFormData, first_month_of_tax_year: e.target.value })}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', cursor: 'pointer' }}
+                                        >
+                                            <option value="Same as fiscal year">Same as fiscal year</option>
+                                            {monthNames.map(month => (
+                                                <option key={month} value={month}>{month}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '24px' }}>
                                         <input
@@ -1928,6 +2074,68 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Company Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                </label>
+                                                <select
+                                                    value={companyFormData.entity}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, entity: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    required
+                                                >
+                                                    <option value="AE_IND">AE India</option>
+                                                    <option value="AE_USA">AE USA</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Customer ID
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Customer ID"
+                                                    value={companyFormData.customer_id}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, customer_id: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Region
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Region"
+                                                    value={companyFormData.region}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, region: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Contact Person
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Contact Person"
+                                                    value={companyFormData.contact_person}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, contact_person: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Alias Name
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Alias Name"
+                                                    value={companyFormData.alias_name}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, alias_name: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Logo
                                                 </label>
                                                 <div style={{
@@ -2128,30 +2336,30 @@ const UserManagement: React.FC = () => {
                                                     {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                                 </select>
                                             </div>
+
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Type
+                                                    Industry <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <select
-                                                    value={companyFormData.type}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, type: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                >
-                                                    <option value="CUSTOMER">Customer</option>
-                                                    <option value="CHANNEL_PARTNER">Channel Partner</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Industry
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Industry"
                                                     value={companyFormData.industry}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, industry: e.target.value })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                />
+                                                    required
+                                                >
+                                                    <option value="">Select Industry</option>
+                                                    <option value="IT">IT</option>
+                                                    <option value="BFSI">BFSI</option>
+                                                    <option value="Manufacturing">Manufacturing</option>
+                                                    <option value="Healthcare">Healthcare</option>
+                                                    <option value="Retail">Retail</option>
+                                                    <option value="Telecom">Telecom</option>
+                                                    <option value="Education">Education</option>
+                                                    <option value="Government">Government</option>
+                                                    <option value="Automotive">Automotive</option>
+                                                    <option value="FMCG">FMCG</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
@@ -2236,19 +2444,6 @@ const UserManagement: React.FC = () => {
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Financial Year Begins
-                                                </label>
-                                                <select
-                                                    value={companyFormData.financial_year_begins}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, financial_year_begins: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                >
-                                                    <option value="01-Apr">01-Apr</option>
-                                                    <option value="01-Jan">01-Jan</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Base Currency <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <select
@@ -2264,15 +2459,14 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Symbol <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                    Symbol
                                                 </label>
                                                 <input
                                                     type="text"
                                                     placeholder="INR"
-                                                    required
+                                                    readOnly
                                                     value={companyFormData.currency_symbol}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, currency_symbol: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#f7fafc', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', outline: 'none', cursor: 'not-allowed' }}
                                                 />
                                             </div>
                                             <div>
@@ -2292,18 +2486,6 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Credit Limit
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="0"
-                                                    value={companyFormData.credit_limit}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, credit_limit: Number(e.target.value) })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Payment Terms <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <select
@@ -2312,24 +2494,11 @@ const UserManagement: React.FC = () => {
                                                     required
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 >
+                                                    <option value="IMMEDIATE">Immediate</option>
                                                     <option value="NET_30">30 Days</option>
                                                     <option value="NET_45">45 Days</option>
                                                     <option value="NET_60">60 Days</option>
-                                                    <option value="DUE_ON_RECEIPT">Due on Receipt</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Status <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                                </label>
-                                                <select
-                                                    value={companyFormData.status}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, status: e.target.value })}
-                                                    required
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                >
-                                                    <option value="ACTIVE">Active</option>
-                                                    <option value="INACTIVE">Inactive</option>
+                                                    <option value="NET_90">90 Days</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -2448,8 +2617,9 @@ const UserManagement: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-                            )}
-                        </div>
+                            )
+                            }
+                        </div >
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -2509,7 +2679,7 @@ const UserManagement: React.FC = () => {
                                 <X size={16} /> Cancel
                             </button>
                         </div>
-                    </form>
+                    </form >
                 ) : (
                     <div className="section-panel !p-0 overflow-hidden">
                         <div style={{ overflowX: 'auto', width: '100%' }}>
@@ -2684,20 +2854,20 @@ const UserManagement: React.FC = () => {
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
                                                 <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
-                                                    <Mail size={14} className="text-gray-400" /> {user.email || '—'}
+                                                    <Mail size={14} className="text-gray-400" /> {user.email || '-'}
                                                 </div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.mobile || '—'}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.mobile || '-'}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.department || '—'}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.department || '-'}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.region || '—'}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.region || '-'}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.reporting_to_name || '—'}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.reporting_to_name || '-'}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
                                                 <span style={{
@@ -2770,9 +2940,9 @@ const UserManagement: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{p.email || '—'}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>P: {p.phone_number || '—'} / M: {p.mobile_number || '—'}</div>
-                                                <div style={{ fontSize: '0.75rem', color: '#a0aec0' }}>{p.website_url || '—'}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{p.email || '-'}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>P: {p.phone_number || '-'} / M: {p.mobile_number || '-'}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#a0aec0' }}>{p.website_url || '-'}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
                                                 <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{p.city}{p.state ? `, ${p.state}` : ''}</div>
@@ -2780,11 +2950,11 @@ const UserManagement: React.FC = () => {
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
                                                 <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{p.type}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.industry || '—'}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.industry || '-'}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.85rem', color: '#4A5568', fontWeight: 500 }}>GST: {p.gstin || '—'}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>PAN: {p.pan || '—'} | TAN: {p.tan || '—'}</div>
+                                                <div style={{ fontSize: '0.85rem', color: '#4A5568', fontWeight: 500 }}>GST: {p.gstin || '-'}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>PAN: {p.pan || '-'} | TAN: {p.tan || '-'}</div>
                                                 {p.msme_registered && <div style={{ fontSize: '0.75rem', color: '#00C853' }}>MSME: {p.msme_number}</div>}
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
@@ -2812,6 +2982,7 @@ const UserManagement: React.FC = () => {
                                                         onClick={() => {
                                                             setPartnerFormData({
                                                                 name: p.name || '',
+                                                                contact_person: p.contact_person || '',
                                                                 logo: p.logo || null,
                                                                 address_line_1: p.address_line_1 || '',
                                                                 country: p.country || 'India',
@@ -2823,7 +2994,6 @@ const UserManagement: React.FC = () => {
                                                                 email: p.email || '',
                                                                 website_url: p.website_url || '',
                                                                 primary_contact: p.primary_contact || '',
-                                                                financial_year_begins: p.financial_year_begins || '01-Apr',
                                                                 base_currency: p.base_currency || 'INR',
                                                                 currency_symbol: p.currency_symbol || '₹ / INR',
                                                                 decimal_places: p.decimal_places || 2,
@@ -2835,7 +3005,8 @@ const UserManagement: React.FC = () => {
                                                                 pan: p.pan || '',
                                                                 tan: p.tan || '',
                                                                 cin: p.cin || '',
-                                                                status: p.status || 'ACTIVE'
+                                                                status: p.status || 'ACTIVE',
+                                                                payment_terms: p.payment_terms || 'NET_30'
                                                             });
                                                             setEditingId(p.id);
                                                             setShowForm(true);
@@ -2861,17 +3032,17 @@ const UserManagement: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{ec.linked_partner_name || '—'}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{ec.linked_partner_name || '-'}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{ec.industry || '—'}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{ec.industry || '-'}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{ec.location || '—'}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{ec.location || '-'}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{ec.contact_person || '—'}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.email || '—'} / {ec.phone || '—'}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{ec.contact_person || '-'}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.email || '-'} / {ec.phone || '-'}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
                                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
@@ -2930,28 +3101,37 @@ const UserManagement: React.FC = () => {
                                                 <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.end_date}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                    <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.is_current_fy ? 'YES' : 'NO'}</div>
-                                                </td>
-                                                <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: fy.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: fy.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                        {fy.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                        {fy.status}
-                                                    </span>
-                                                </td>
-                                                <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                        <button
-                                                            onClick={() => {
-                                                                setFyFormData({ ...fy });
-                                                                setEditingId(fy.id);
-                                                                setShowForm(true);
-                                                            }}
-                                                            style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                        >
-                                                            <Pencil size={16} />
-                                                        </button>
-                                                    </div>
-                                                </td>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.is_current_fy ? 'YES' : 'NO'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: fy.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: fy.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                                                    {fy.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                    {fy.status}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                    <button
+                                                        onClick={() => {
+                                                            const startMonth = fy.start_date ? monthNames[new Date(fy.start_date).getMonth()] : 'April';
+                                                            setFyFormData({ ...fy, first_month_of_fiscal_year: startMonth, first_month_of_tax_year: 'Same as fiscal year' });
+                                                            setEditingId(fy.id);
+                                                            setShowForm(true);
+                                                        }}
+                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                        title="Edit Financial Year"
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDownloadReport(fy)}
+                                                        style={{ padding: '8px', color: '#10B981', border: 'none', background: 'rgba(16, 185, 129, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                        title="Download Invoice Register"
+                                                    >
+                                                        <Download size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     )) : viewMode === 'product' ? products.map((prd) => (
                                         <tr key={prd.id} className="ae-table-row">
@@ -2970,7 +3150,7 @@ const UserManagement: React.FC = () => {
                                                 <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{prd.category}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{prd.subcategory || '—'}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{prd.subcategory || '-'}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
                                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: prd.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: prd.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
@@ -3008,12 +3188,12 @@ const UserManagement: React.FC = () => {
                                             </td>
                                             <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                                                 <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
-                                                    <Mail size={14} className="text-gray-400" /> {comp.email || '—'}
+                                                    <Mail size={14} className="text-gray-400" /> {comp.email || '-'}
                                                 </div>
                                             </td>
                                             <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{comp.city || '—'}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.state_name || '—'}</div>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{comp.city || '-'}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.state_name || '-'}</div>
                                             </td>
                                             <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: 'rgba(0, 200, 83, 0.1)', color: '#00C853' }}>
@@ -3026,6 +3206,11 @@ const UserManagement: React.FC = () => {
                                                         onClick={() => {
                                                             setCompanyFormData({
                                                                 name: comp.name || '',
+                                                                entity: comp.entity || 'AE_IND',
+                                                                customer_id: comp.customer_id || '',
+                                                                region: comp.region || '',
+                                                                contact_person: comp.contact_person || '',
+                                                                alias_name: comp.alias_name || '',
                                                                 logo: comp.logo || null,
                                                                 address_line_1: comp.address_line_1 || '',
                                                                 country: comp.country || 'India',
@@ -3039,10 +3224,7 @@ const UserManagement: React.FC = () => {
                                                                 linked_company_profile: comp.linked_company_profile || '',
                                                                 industry: comp.industry || '',
                                                                 type: comp.type || 'CUSTOMER',
-                                                                credit_limit: comp.credit_limit || 0,
                                                                 payment_terms: comp.payment_terms || 'NET_30',
-                                                                status: comp.status || 'ACTIVE',
-                                                                financial_year_begins: comp.financial_year_begins || '01-Apr',
                                                                 base_currency: comp.base_currency || 'INR',
                                                                 currency_symbol: comp.currency_symbol || '₹ / INR',
                                                                 decimal_places: comp.decimal_places || 2,
@@ -3073,8 +3255,10 @@ const UserManagement: React.FC = () => {
                         </div>
                     </div>
                 )}
-            </div>
-        );
-};
+            </div >
+        </div >
+    );
+}
+    ;
 
 export default UserManagement;
