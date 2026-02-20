@@ -20,7 +20,8 @@ class LeadSerializer(serializers.ModelSerializer):
 
     def get_currency(self, obj):
         deal = obj.deals.first()
-        return deal.currency if deal else 'INR'
+        if deal: return deal.currency
+        return 'INR'
 
     def get_gstin(self, obj):
         deal = obj.deals.first()
@@ -29,17 +30,53 @@ class LeadSerializer(serializers.ModelSerializer):
         return ''
 
     def get_cost_sheet_id(self, obj):
+        # 1. Try approved cost sheet via direct lead link
+        from cost_sheets.models import CostSheet
+        cs = obj.cost_sheets.filter(status='APPROVED').first()
+        if cs: return cs.id
+        
+        # 2. Try any cost sheet via direct lead link
+        cs = obj.cost_sheets.first()
+        if cs: return cs.id
+        
+        # 3. Try via direct deal link (first deal)
         deal = obj.deals.first()
         if deal:
             cs = deal.cost_sheets.filter(status='APPROVED').first()
-            return cs.id if cs else None
+            if cs: return cs.id
+            cs = deal.cost_sheets.first()
+            if cs: return cs.id
+            
+        # 4. Fallback: Search by project name name-match
+        if obj.project_name:
+            cs = CostSheet.objects.filter(deal__deal_name=obj.project_name).first()
+            if cs: return cs.id
+            
         return None
 
     def get_cost_sheet_no(self, obj):
+        # 1. Try approved cost sheet via direct lead link
+        from cost_sheets.models import CostSheet
+        cs = obj.cost_sheets.filter(status='APPROVED').first()
+        if cs: return cs.cost_sheet_no
+        
+        # 2. Try any cost sheet via direct lead link
+        cs = obj.cost_sheets.first()
+        if cs: return cs.cost_sheet_no
+        
+        # 3. Try via direct deal link (first deal)
         deal = obj.deals.first()
         if deal:
             cs = deal.cost_sheets.filter(status='APPROVED').first()
-            return cs.cost_sheet_no if cs else None
+            if cs: return cs.cost_sheet_no
+            cs = deal.cost_sheets.first()
+            if cs: return cs.cost_sheet_no
+            
+        # 4. Fallback: Search by project name name-match
+        if obj.project_name:
+            cs = CostSheet.objects.filter(deal__deal_name=obj.project_name).first()
+            if cs: return cs.cost_sheet_no
+            
         return None
 
     class Meta:

@@ -2,7 +2,7 @@ import re
 from datetime import date
 from django.db import transaction
 from django.db.models import Max
-from .models import Invoice, InvoiceType, CompanyProfile, StateMaster
+from .models import Invoice, InvoiceType, CompanyProfile, StateMaster, BankConnection
 
 class InvoiceService:
     @staticmethod
@@ -181,10 +181,29 @@ class InvoiceService:
         company = CompanyProfile.objects.first()
         items = invoice.line_items.all().order_by('sr_no')
         
+        bank = BankConnection.objects.filter(is_primary_for_invoices=True).first()
+        if not bank:
+            bank = BankConnection.objects.filter(is_active=True).first()
+        
+        # Determine PO Number and Date (with fallback to linked Sales Order)
+        po_number = invoice.po_number
+        po_date = invoice.po_date
+        
+        if not po_number and invoice.deal:
+            from sales_orders.models import SalesOrder
+            # Try to find a sales order for the same deal/customer
+            so = SalesOrder.objects.filter(customer=invoice.deal.customer).order_by('-created_at').first()
+            if so:
+                po_number = so.po_number
+                po_date = so.po_date
+
         context = {
             'invoice': invoice,
             'items': items,
             'company': company,
+            'bank': bank,
+            'po_number': po_number,
+            'po_date': po_date,
             'now': date.today()
         }
         

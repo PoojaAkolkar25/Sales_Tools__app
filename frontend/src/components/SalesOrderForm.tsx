@@ -258,7 +258,37 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
 
     if (loading || !salesOrder) return <div className="p-12 text-center font-bold text-[#718096]">Loading details...</div>;
 
-    const isSubmitted = salesOrder.status === 'SUBMITTED';
+    const isSubmitted = ['SUBMITTED', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'CANCELLED'].includes(salesOrder.status);
+
+    const handleApprove = async () => {
+        if (!window.confirm('Are you sure you want to Approve this Sales Order?')) return;
+        setSaving(true);
+        try {
+            await api.post(`/sales-orders/${id}/approve/`);
+            showNotification('Sales Order Approved successfully', 'success');
+            fetchSalesOrderDetails();
+        } catch (error) {
+            console.error('Approve Error', error);
+            showNotification('Failed to Approve Sales Order', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleReject = async () => {
+        if (!window.confirm('Are you sure you want to Reject this Sales Order?')) return;
+        setSaving(true);
+        try {
+            await api.post(`/sales-orders/${id}/reject/`);
+            showNotification('Sales Order Rejected', 'info');
+            fetchSalesOrderDetails();
+        } catch (error) {
+            console.error('Reject Error', error);
+            showNotification('Failed to Reject Sales Order', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const getCurrencySymbol = (currency: string) => {
         switch (currency) {
@@ -295,6 +325,59 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 </h2>
             </div>
             {extra}
+            {(salesOrder.status === 'PENDING_APPROVAL' || salesOrder.status === 'SUBMITTED') && title === 'Basic Order Information' && (
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                        onClick={handleApprove}
+                        disabled={saving}
+                        style={{
+                            padding: '6px 16px',
+                            borderRadius: '6px',
+                            background: '#48BB78',
+                            color: 'white',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}
+                    >
+                        <CheckCircle2 size={16} /> Approve
+                    </button>
+                    <button
+                        onClick={handleReject}
+                        disabled={saving}
+                        style={{
+                            padding: '6px 16px',
+                            borderRadius: '6px',
+                            background: '#F56565',
+                            color: 'white',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}
+                    >
+                        <X size={16} /> Reject
+                    </button>
+                </div>
+            )}
+            {salesOrder.status === 'APPROVED' && title === 'Basic Order Information' && (
+                <div style={{
+                    padding: '6px 16px',
+                    borderRadius: '6px',
+                    background: '#C6F6D5',
+                    color: '#2F855A',
+                    fontWeight: 800,
+                    fontSize: '0.85rem',
+                    border: '1px solid #9AE6B4'
+                }}>
+                    APPROVED
+                </div>
+            )}
         </div>
     );
 

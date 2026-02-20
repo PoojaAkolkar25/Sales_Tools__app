@@ -62,9 +62,29 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
             customer_desc = existing.customer.name if existing.customer else existing.customer_name
             return Response({"error": f"PO Number {sales_order.po_number} already exists for this customer. Check first PO (ID: {existing.id}, Status: {status_desc})."}, status=status.HTTP_400_BAD_REQUEST)
 
-        sales_order.status = 'SUBMITTED'
+        sales_order.status = 'PENDING_APPROVAL'
         sales_order.save() # save method handles SO number generation
         
+        return Response(SalesOrderSerializer(sales_order).data)
+
+    @decorators.action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        sales_order = self.get_object()
+        if sales_order.status != 'PENDING_APPROVAL':
+             return Response({"error": "Only pending orders can be approved."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        sales_order.status = 'APPROVED'
+        sales_order.save()
+        return Response(SalesOrderSerializer(sales_order).data)
+
+    @decorators.action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        sales_order = self.get_object()
+        if sales_order.status != 'PENDING_APPROVAL':
+             return Response({"error": "Only pending orders can be rejected."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        sales_order.status = 'REJECTED'
+        sales_order.save()
         return Response(SalesOrderSerializer(sales_order).data)
 
     @decorators.action(detail=False, methods=['get'])

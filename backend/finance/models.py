@@ -142,11 +142,16 @@ class Invoice(models.Model):
     authorized_signatory = models.CharField(max_length=255, blank=True, null=True)
     signature_image = models.ImageField(upload_to='invoices/signatures/', blank=True, null=True)
     company_seal = models.ImageField(upload_to='invoices/seals/', blank=True, null=True)
+    memo = models.TextField(blank=True, null=True, verbose_name="Description / Memo")
 
     # e-Invoice Details (as per image)
     irn = models.CharField(max_length=255, blank=True, null=True, verbose_name="IRN")
     ack_no = models.CharField(max_length=100, blank=True, null=True, verbose_name="Ack No.")
     ack_date = models.DateField(blank=True, null=True, verbose_name="Ack Date")
+    
+    # Customer PO Details
+    po_number = models.CharField(max_length=100, blank=True, null=True, verbose_name="PO Number")
+    po_date = models.DateField(blank=True, null=True, verbose_name="PO Date")
     
     # Payment Terms Details
     payment_terms_days = models.IntegerField(default=30, verbose_name="Payment Terms (Days)")
@@ -182,13 +187,18 @@ class InvoiceLineItem(models.Model):
 
 class BankConnection(models.Model):
     bank_name = models.CharField(max_length=255)
+    branch_name = models.CharField(max_length=255, blank=True, null=True)
     account_number = models.CharField(max_length=100)
+    ifsc_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="IFSC Code")
+    swift_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="SWIFT Code")
+    
     api_key = models.CharField(max_length=255, blank=True, null=True)
     client_id = models.CharField(max_length=255, blank=True, null=True)
     oauth_credentials = models.TextField(blank=True, null=True)
     token = models.CharField(max_length=255, blank=True, null=True)
     secret_key = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    is_primary_for_invoices = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
