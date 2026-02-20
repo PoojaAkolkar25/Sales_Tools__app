@@ -2512,7 +2512,7 @@ const UserManagement: React.FC = () => {
                     </form>
                 ) : (
                     <div className="section-panel !p-0 overflow-hidden">
-                        <div style={{ overflowX: 'auto', width: '100%' }}>
+                        <div style={{ overflowX: 'auto', width: '100%', background: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
                             <table style={{ minWidth: '1500px', width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ background: 'var(--bg-secondary)' }}>
@@ -2930,28 +2930,28 @@ const UserManagement: React.FC = () => {
                                                 <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.end_date}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                    <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.is_current_fy ? 'YES' : 'NO'}</div>
-                                                </td>
-                                                <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: fy.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: fy.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                        {fy.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                        {fy.status}
-                                                    </span>
-                                                </td>
-                                                <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                        <button
-                                                            onClick={() => {
-                                                                setFyFormData({ ...fy });
-                                                                setEditingId(fy.id);
-                                                                setShowForm(true);
-                                                            }}
-                                                            style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                        >
-                                                            <Pencil size={16} />
-                                                        </button>
-                                                    </div>
-                                                </td>
+                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.is_current_fy ? 'YES' : 'NO'}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: fy.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: fy.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                                                    {fy.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                                                    {fy.status}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                    <button
+                                                        onClick={() => {
+                                                            setFyFormData({ ...fy });
+                                                            setEditingId(fy.id);
+                                                            setShowForm(true);
+                                                        }}
+                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     )) : viewMode === 'product' ? products.map((prd) => (
                                         <tr key={prd.id} className="ae-table-row">
@@ -3074,7 +3074,8 @@ const UserManagement: React.FC = () => {
                     </div>
                 )}
             </div>
-        );
+        </div>
+    );
 };
 
 export default UserManagement;
