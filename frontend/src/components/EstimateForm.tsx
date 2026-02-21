@@ -40,14 +40,17 @@ const getInitialFormData = () => ({
     deal: '',
     cost_sheet: '',
     items: [
-        { id: Date.now(), sr_no: 1, particulars: '', description: '', qty: 0, rate: 0, amount: 0 }
+        { id: Date.now(), sr_no: 1, particulars: '', description: '', subscription_from: '', subscription_to: '', qty: 0, rate: 0, discount: 0, amount: 0 }
     ],
     column_labels: {
         sr_no: 'Sr.No.',
         particulars: 'Particulars',
         description: 'Description',
+        subscription_from: 'Sub. From',
+        subscription_to: 'Sub. To',
         qty: 'Qty',
         rate: 'Rate',
+        discount: 'Discount',
         amount: 'Amount'
     }
 });
@@ -66,7 +69,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
     const [uploadFeedback, setUploadFeedback] = useState({ type: '', message: '' });
 
-    // Email Modal State
     const [emailModal, setEmailModal] = useState<{
         open: boolean;
         to: string;
@@ -75,6 +77,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         subject: string;
         body: string;
         templateType: 'standard' | 'followup' | 'revised';
+        customer_alias: string;
     }>({
         open: false,
         to: '',
@@ -82,7 +85,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         bcc: '',
         subject: '',
         body: '',
-        templateType: 'standard'
+        templateType: 'standard',
+        customer_alias: ''
     });
     const [sendingEmail, setSendingEmail] = useState(false);
     const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -93,19 +97,22 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const EMAIL_TEMPLATES = {
         standard: {
             name: 'Standard Proposal',
-            subject: (projectName: string, companyName: string) => `Proposal for ${projectName} - ${companyName}`,
+            subject: (customerAlias: string, estimateId: string, projectName: string) =>
+                customerAlias ? `${customerAlias} - ${estimateId} - ${projectName}` : `${estimateId} - ${projectName}`,
             body: (clientName: string, projectName: string, companyName: string, expirationDate: string, yourName: string) =>
                 `Dear ${clientName},\n\nGreetings from ${companyName} !!\n\nIt was a pleasure discussing ${projectName} with you. Based on our conversation, I’ve attached a detailed proposal including estimates / quotation for the services and license we discussed.\n\nYou can find the full breakdown of costs and timelines in the attached PDF.\n\nThis proposal is valid until ${expirationDate}. Please let me know if you have any questions or if you’d like to move forward.\n\nBest regards,\n${yourName}`
         },
         followup: {
             name: 'Follow-Up',
-            subject: (projectName: string) => `Quick question about your ${projectName} proposal`,
+            subject: (customerAlias: string, estimateId: string, projectName: string) =>
+                customerAlias ? `Follow up: ${customerAlias} - ${estimateId} - ${projectName}` : `Follow up: ${estimateId} - ${projectName}`,
             body: (clientName: string, _projectName: string, sentDate: string, yourName: string) =>
                 `Hi ${clientName},\n\nI’m checking in to see if you had a chance to review the proposal I sent on ${sentDate}. I’ve re-attached it here for your convenience.\n\nAre there any specific details or technical aspects I can clarify for you? I’m happy to hop on a 5-minute call to walk you through it.\n\nLooking forward to your thoughts.\n\nBest,\n${yourName}`
         },
         revised: {
             name: 'Revised Quotation',
-            subject: (projectName: string, companyName: string) => `Updated Quote for ${projectName} - ${companyName}`,
+            subject: (customerAlias: string, estimateId: string, projectName: string) =>
+                customerAlias ? `Revised: ${customerAlias} - ${estimateId} - ${projectName}` : `Revised: ${estimateId} - ${projectName}`,
             body: (clientName: string, _projectName: string, _companyName: string, revisionDetails: string, yourName: string) =>
                 `Dear ${clientName},\n\nThank you for your feedback on the initial proposal. As discussed, I have revised the scope to include ${revisionDetails} and adjusted the pricing accordingly.\n\nYou will find the updated proposal attached. Let me know if this aligns better with your current budget and requirements.\n\nKind regards,\n${yourName}`
         }
@@ -114,6 +121,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const openEmailModal = (type: keyof typeof EMAIL_TEMPLATES = 'standard') => {
         const clientName = estimate?.customer_name || '[Client Name]';
         const projectName = estimate?.project_name || '[Project Name]';
+        const customerAlias = estimate?.customer_alias || estimate?.customer?.alias_name || '';
+        const estimateId = estimate?.estimate_id || '';
         const companyName = companyProfile?.name || "Automation Edge";
         const yourName = "Your Name"; // Should ideally be from user profile
         const expirationDate = "[Expiration Date]";
@@ -124,13 +133,13 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         let body = "";
 
         if (type === 'standard') {
-            subject = EMAIL_TEMPLATES.standard.subject(projectName, companyName);
+            subject = EMAIL_TEMPLATES.standard.subject(customerAlias, estimateId, projectName);
             body = EMAIL_TEMPLATES.standard.body(clientName, projectName, companyName, expirationDate, yourName);
         } else if (type === 'followup') {
-            subject = EMAIL_TEMPLATES.followup.subject(projectName);
+            subject = EMAIL_TEMPLATES.followup.subject(customerAlias, estimateId, projectName);
             body = EMAIL_TEMPLATES.followup.body(clientName, projectName, sentDate, yourName);
         } else if (type === 'revised') {
-            subject = EMAIL_TEMPLATES.revised.subject(projectName, companyName);
+            subject = EMAIL_TEMPLATES.revised.subject(customerAlias, estimateId, projectName);
             body = EMAIL_TEMPLATES.revised.body(clientName, projectName, companyName, revisionDetails, yourName);
         }
 
@@ -141,7 +150,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
             bcc: '',
             subject: subject,
             body: body,
-            templateType: type
+            templateType: type,
+            customer_alias: estimate?.customer_alias || ''
         });
         // Open modal after state update
         setTimeout(() => setEmailModal(prev => ({ ...prev, open: true })), 0);
@@ -150,6 +160,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const handleTemplateChange = (type: keyof typeof EMAIL_TEMPLATES) => {
         const clientName = estimate?.customer_name || '[Client Name]';
         const projectName = estimate?.project_name || '[Project Name]';
+        const customerAlias = emailModal.customer_alias || estimate?.customer_alias || '';
+        const estimateId = estimate?.estimate_id || '';
         const companyName = companyProfile?.name || "Automation Edge";
         const yourName = "Your Name";
         const expirationDate = "[Expiration Date]";
@@ -160,13 +172,13 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         let body = "";
 
         if (type === 'standard') {
-            subject = EMAIL_TEMPLATES.standard.subject(projectName, companyName);
+            subject = EMAIL_TEMPLATES.standard.subject(customerAlias, estimateId, projectName);
             body = EMAIL_TEMPLATES.standard.body(clientName, projectName, companyName, expirationDate, yourName);
         } else if (type === 'followup') {
-            subject = EMAIL_TEMPLATES.followup.subject(projectName);
+            subject = EMAIL_TEMPLATES.followup.subject(customerAlias, estimateId, projectName);
             body = EMAIL_TEMPLATES.followup.body(clientName, projectName, sentDate, yourName);
         } else if (type === 'revised') {
-            subject = EMAIL_TEMPLATES.revised.subject(projectName, companyName);
+            subject = EMAIL_TEMPLATES.revised.subject(customerAlias, estimateId, projectName);
             body = EMAIL_TEMPLATES.revised.body(clientName, projectName, companyName, revisionDetails, yourName);
         }
 
@@ -217,7 +229,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         }
     };
 
-    const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.status === 'PENDING_APPROVAL' || estimate?.status === 'SUBMITTED';
+    const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.status === 'PENDING_APPROVAL' || estimate?.status === 'SUBMITTED' || estimate?.status === 'REWOUND';
 
     const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '24px' }}>
@@ -292,15 +304,22 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                 terms_conditions: response.data.terms_conditions || '',
                 deal: response.data.deal || '',
                 cost_sheet: response.data.cost_sheet || '',
-                items: response.data.items?.length > 0 ? response.data.items : [
-                    { id: Date.now(), sr_no: 1, particulars: '', description: '', qty: 0, rate: 0, amount: 0 }
+                items: response.data.items?.length > 0 ? response.data.items.map((item: any) => ({
+                    ...item,
+                    subscription_from: item.subscription_from || '',
+                    subscription_to: item.subscription_to || ''
+                })) : [
+                    { id: Date.now(), sr_no: 1, particulars: '', description: '', subscription_from: '', subscription_to: '', qty: 0, rate: 0, discount: 0, amount: 0 }
                 ],
                 column_labels: response.data.column_labels || {
                     sr_no: 'Sr.No.',
                     particulars: 'Particulars',
                     description: 'Description',
+                    subscription_from: 'Sub. From',
+                    subscription_to: 'Sub. To',
                     qty: 'Qty',
                     rate: 'Rate',
+                    discount: 'Discount',
                     amount: 'Amount'
                 }
             });
@@ -316,7 +335,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         const nextSrNo = formData.items.length + 1;
         setFormData({
             ...formData,
-            items: [...formData.items, { id: Date.now(), sr_no: nextSrNo, particulars: '', description: '', qty: 0, rate: 0, amount: 0 }]
+            items: [...formData.items, { id: Date.now(), sr_no: nextSrNo, particulars: '', description: '', subscription_from: '', subscription_to: '', qty: 0, rate: 0, discount: 0, amount: 0 }]
         });
     };
 
@@ -342,13 +361,13 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         const updated = formData.items.map((item: any) => {
             if (item.id === id) {
                 const newItem = { ...item, [field]: value };
-                if (field === 'qty' || field === 'rate') {
-                    newItem.amount = (newItem.qty || 0) * (newItem.rate || 0);
+                if (field === 'qty' || field === 'rate' || field === 'discount') {
+                    newItem.amount = (newItem.qty || 0) * (newItem.rate || 0) - (newItem.discount || 0);
                 } else if (field === 'amount') {
                     // If amount is edited manually, reverse calculate the rate
                     const qty = parseFloat(newItem.qty) || 0;
                     if (qty > 0) {
-                        newItem.rate = Number(((parseFloat(value) || 0) / qty).toFixed(2));
+                        newItem.rate = Number(((parseFloat(value) || 0 + parseFloat(newItem.discount || 0)) / qty).toFixed(2));
                     }
                 }
                 return newItem;
@@ -777,7 +796,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
 
                     {/* Submit to Customer button (via Email Modal) */}
-                    {(estimate?.status === 'SUBMITTED' || estimate?.approval_status === 'APPROVED') && (
+                    {(estimate?.status === 'SUBMITTED' || estimate?.approval_status === 'APPROVED') && estimate?.status !== 'REWOUND' && (
                         <button
                             onClick={() => openEmailModal()}
                             className="ae-btn-primary"
@@ -924,8 +943,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                     </div>
                 </div>
 
-                {/* Second Row: Estimate No, Estimate Date, Subscription Period */}
-                <div className="ae-grid-3" style={{ marginBottom: '24px', gap: '16px' }}>
+                {/* Second Row: Estimate No, Estimate Date */}
+                <div className="ae-grid-2" style={{ marginBottom: '24px', gap: '16px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Estimate No.</label>
                         <div style={{ padding: '6px 10px', background: '#F7FAFC', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '0.85rem', fontWeight: 600, color: '#718096', height: '34px', display: 'flex', alignItems: 'center' }}>{estimate?.estimate_id || 'Generating...'}</div>
@@ -939,30 +958,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                             value={formatToAppDate(formData.estimate_date)}
                             style={{ background: '#f8fafc', fontWeight: 600 }}
                         />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>
-                            Subscription Period <span style={{ color: '#FF6B00' }}>*</span>
-                        </label>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <input
-                                type="date"
-                                style={{ height: '34px', padding: '6px 10px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, background: 'white', flex: 1 }}
-                                value={formData.subscription_from}
-                                onChange={(e) => setFormData({ ...formData, subscription_from: e.target.value })}
-                                disabled={isReadOnly}
-                                placeholder="From"
-                            />
-                            <span style={{ color: '#718096' }}>to</span>
-                            <input
-                                type="date"
-                                style={{ height: '34px', padding: '6px 10px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, background: 'white', flex: 1 }}
-                                value={formData.subscription_to}
-                                onChange={(e) => setFormData({ ...formData, subscription_to: e.target.value })}
-                                disabled={isReadOnly}
-                                placeholder="To"
-                            />
-                        </div>
                     </div>
                 </div>
 
@@ -1273,6 +1268,68 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 </th>
                                 <th style={{
                                     padding: '6px 8px',
+                                    textAlign: 'left',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    color: 'black',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    borderBottom: '2px solid #E0E6ED',
+                                    whiteSpace: 'nowrap',
+                                    width: '120px'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {editingColumn === 'subscription_from' ? (
+                                            <input
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                value={formData.column_labels.subscription_from}
+                                                onChange={(e) => handleHeaderChange('subscription_from', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.subscription_from || 'Sub. From'}</span>
+                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('subscription_from')} />}
+                                            </>
+                                        )}
+                                    </div>
+                                </th>
+                                <th style={{
+                                    padding: '6px 8px',
+                                    textAlign: 'left',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    color: 'black',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    borderBottom: '2px solid #E0E6ED',
+                                    whiteSpace: 'nowrap',
+                                    width: '120px'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {editingColumn === 'subscription_to' ? (
+                                            <input
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                value={formData.column_labels.subscription_to}
+                                                onChange={(e) => handleHeaderChange('subscription_to', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.subscription_to || 'Sub. To'}</span>
+                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('subscription_to')} />}
+                                            </>
+                                        )}
+                                    </div>
+                                </th>
+                                <th style={{
+                                    padding: '6px 8px',
                                     textAlign: 'center',
                                     fontSize: '0.7rem',
                                     fontWeight: 700,
@@ -1327,6 +1384,36 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             <>
                                                 <span>{formData.column_labels.rate || 'Rate'}</span>
                                                 {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('rate')} />}
+                                            </>
+                                        )}
+                                    </div>
+                                </th>
+                                <th style={{
+                                    padding: '6px 8px',
+                                    textAlign: 'right',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    color: 'black',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    borderBottom: '2px solid #E0E6ED',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                        {editingColumn === 'discount' ? (
+                                            <input
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
+                                                value={formData.column_labels.discount}
+                                                onChange={(e) => handleHeaderChange('discount', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.discount || 'Discount'}</span>
+                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('discount')} />}
                                             </>
                                         )}
                                     </div>
@@ -1413,6 +1500,26 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             placeholder="Enter description"
                                         />
                                     </td>
+                                    <td style={{ padding: '8px' }}>
+                                        <input
+                                            type="date"
+                                            className="ae-input"
+                                            style={{ height: '36px', padding: '4px 8px', width: '100%', fontSize: '0.85rem' }}
+                                            value={item.subscription_from || ''}
+                                            onChange={(e) => handleItemChange(item.id, 'subscription_from', e.target.value)}
+                                            disabled={isReadOnly}
+                                        />
+                                    </td>
+                                    <td style={{ padding: '8px' }}>
+                                        <input
+                                            type="date"
+                                            className="ae-input"
+                                            style={{ height: '36px', padding: '4px 8px', width: '100%', fontSize: '0.85rem' }}
+                                            value={item.subscription_to || ''}
+                                            onChange={(e) => handleItemChange(item.id, 'subscription_to', e.target.value)}
+                                            disabled={isReadOnly}
+                                        />
+                                    </td>
 
                                     <td style={{ padding: '8px' }}>
                                         <input
@@ -1433,6 +1540,25 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                 style={{ height: '36px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%' }}
                                                 value={item.rate || 0}
                                                 onChange={(e) => handleItemChange(item.id, 'rate', e.target.value)}
+                                                disabled={isReadOnly}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Tab' && !e.shiftKey && index === formData.items.length - 1) {
+                                                        e.preventDefault();
+                                                        handleAddItem();
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '8px' }}>
+                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                            <span style={{ position: 'absolute', left: '8px', fontSize: '0.8rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
+                                            <input
+                                                type="number"
+                                                className="ae-input"
+                                                style={{ height: '36px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%' }}
+                                                value={item.discount || 0}
+                                                onChange={(e) => handleItemChange(item.id, 'discount', e.target.value)}
                                                 disabled={isReadOnly}
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Tab' && !e.shiftKey && index === formData.items.length - 1) {
@@ -1476,7 +1602,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                         </tbody>
                         <tfoot>
                             <tr style={{ background: '#F8FAFC' }}>
-                                <td colSpan={6} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total:</td>
+                                <td colSpan={isReadOnly ? 8 : 9} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total:</td>
                                 <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.95rem', fontWeight: 800, color: 'var(--theme-primary)' }}>
                                     {getCurrencySymbol(formData.currency || 'INR')}{calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </td>
@@ -1509,10 +1635,10 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                         />
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* Footer Actions (Outside Scroll Area) - Matching CostSheetForm floating pill style */}
-            <div style={{
+            < div style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -1572,370 +1698,380 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                         </>
                     )}
                 </div>
-                {estimate?.status === 'PENDING_APPROVAL' && (
-                    <span style={{
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        background: '#FFFAF0',
-                        color: '#DD6B20',
-                        fontWeight: 700,
-                        fontSize: '0.85rem',
-                        border: '1px solid #FBD38D',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                    }}>
-                        <Clock size={18} /> Pending Approval
-                    </span>
-                )}
-                {estimate?.approval_status === 'APPROVED' && (
-                    <div className="flex items-center gap-3">
+                {
+                    estimate?.status === 'PENDING_APPROVAL' && (
                         <span style={{
                             padding: '6px 16px',
                             borderRadius: '8px',
-                            background: '#E6F7ED',
-                            color: '#38A169',
+                            background: '#FFFAF0',
+                            color: '#DD6B20',
                             fontWeight: 700,
                             fontSize: '0.85rem',
-                            border: '1px solid #38A169',
+                            border: '1px solid #FBD38D',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px'
                         }}>
-                            <CheckCircle2 size={18} /> Approved
+                            <Clock size={18} /> Pending Approval
                         </span>
-                        {estimate?.is_latest && estimate?.version === 1 && (
-                            <button
-                                onClick={handleRewind}
-                                disabled={saving}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '8px 20px',
-                                    borderRadius: '8px',
-                                    background: '#EBF8FF',
-                                    color: '#3182CE',
-                                    border: '1px solid #BEE3F8',
-                                    fontWeight: 700,
-                                    fontSize: '0.85rem',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <History size={18} /> Rewind (New Version)
-                            </button>
-                        )}
-                    </div>
-                )}
-                {estimate?.status === 'REWOUND' && (
-                    <span style={{
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        background: '#F1F5F9',
-                        color: '#64748B',
-                        fontWeight: 700,
-                        fontSize: '0.85rem',
-                        border: '1px solid #CBD5E1',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                    }}>
-                        <History size={18} /> Rewound
-                    </span>
-                )}
-            </div>
+                    )
+                }
+                {
+                    estimate?.approval_status === 'APPROVED' && (
+                        <div className="flex items-center gap-3">
+                            <span style={{
+                                padding: '6px 16px',
+                                borderRadius: '8px',
+                                background: '#E6F7ED',
+                                color: '#38A169',
+                                fontWeight: 700,
+                                fontSize: '0.85rem',
+                                border: '1px solid #38A169',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                <CheckCircle2 size={18} /> Approved
+                            </span>
+                            {estimate?.is_latest && estimate?.version === 1 && (
+                                <button
+                                    onClick={handleRewind}
+                                    disabled={saving}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '8px 20px',
+                                        borderRadius: '8px',
+                                        background: '#EBF8FF',
+                                        color: '#3182CE',
+                                        border: '1px solid #BEE3F8',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <History size={18} /> Rewind (New Version)
+                                </button>
+                            )}
+                        </div>
+                    )
+                }
+                {
+                    estimate?.status === 'REWOUND' && (
+                        <span style={{
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            background: '#F1F5F9',
+                            color: '#64748B',
+                            fontWeight: 700,
+                            fontSize: '0.85rem',
+                            border: '1px solid #CBD5E1',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}>
+                            <History size={18} /> Rewound
+                        </span>
+                    )
+                }
+            </div >
 
             {/* Email Modal */}
-            {emailModal.open && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.6)',
-                    backdropFilter: 'blur(4px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 2000
-                }}>
+            {
+                emailModal.open && (
                     <div style={{
-                        background: 'white',
-                        padding: '32px',
-                        borderRadius: '16px',
-                        width: '600px',
-                        maxWidth: '95%',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                        maxHeight: '90vh',
-                        overflowY: 'auto'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <div>
-                                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1A202C' }}>Compose Proposal Email</h3>
-                                <p style={{ color: '#718096', fontSize: '0.85rem', marginTop: '4px' }}>Combined Estimate and Proposal will be attached automatically.</p>
-                            </div>
-                            <button
-                                onClick={() => setEmailModal({ ...emailModal, open: false })}
-                                style={{ padding: '8px', borderRadius: '50%', background: '#F7FAFC', border: 'none', cursor: 'pointer' }}
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <div style={{ marginBottom: '24px' }}>
-                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Select Template:</label>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                {(Object.keys(EMAIL_TEMPLATES) as Array<keyof typeof EMAIL_TEMPLATES>).map((type) => (
-                                    <button
-                                        key={type}
-                                        onClick={() => handleTemplateChange(type)}
-                                        style={{
-                                            padding: '8px 16px',
-                                            borderRadius: '8px',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 600,
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                            border: '1.5px solid',
-                                            background: emailModal.templateType === type ? '#38A169' : 'white',
-                                            color: emailModal.templateType === type ? 'white' : '#4A5568',
-                                            borderColor: emailModal.templateType === type ? '#38A169' : '#E2E8F0'
-                                        }}
-                                    >
-                                        {EMAIL_TEMPLATES[type].name}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
-                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>To:</label>
-                                <input
-                                    className="ae-input"
-                                    value={emailModal.to}
-                                    onChange={(e) => setEmailModal({ ...emailModal, to: e.target.value })}
-                                    placeholder="recipient@example.com"
-                                />
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
-                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>CC:</label>
-                                <input
-                                    className="ae-input"
-                                    value={emailModal.cc}
-                                    onChange={(e) => setEmailModal({ ...emailModal, cc: e.target.value })}
-                                    placeholder="cc@example.com (comma separated)"
-                                />
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
-                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Subject:</label>
-                                <input
-                                    className="ae-input"
-                                    value={emailModal.subject}
-                                    onChange={(e) => setEmailModal({ ...emailModal, subject: e.target.value })}
-                                    placeholder="Enter subject"
-                                />
-                            </div>
-
-                            <div style={{ marginTop: '16px' }}>
-                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Message Body</label>
-                                <textarea
-                                    className="ae-input"
-                                    value={emailModal.body}
-                                    onChange={(e) => setEmailModal({ ...emailModal, body: e.target.value })}
-                                    style={{ width: '100%', minHeight: '180px', padding: '12px', resize: 'vertical' }}
-                                    placeholder="Write your message here..."
-                                />
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '32px' }}>
-                            <button
-                                className="ae-btn-secondary"
-                                onClick={() => setEmailModal({ ...emailModal, open: false })}
-                                disabled={sendingEmail}
-                                style={{ padding: '10px 24px' }}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                className="ae-btn-primary"
-                                onClick={handleSendEmail}
-                                disabled={sendingEmail}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '10px 32px',
-                                    background: '#38A169'
-                                }}
-                            >
-                                {sendingEmail ? 'Sending...' : 'Send Now'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Rejection Modal */}
-            {showRejectModal && (
-                <div
-                    style={{
                         position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0,0,0,0.6)',
+                        backdropFilter: 'blur(4px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        zIndex: 10000,
-                        background: 'rgba(0, 0, 0, 0.45)',
-                        backdropFilter: 'blur(12px)',
-                        padding: '24px',
-                    }}
-                >
-                    <div
-                        style={{
-                            background: 'white',
-                            width: '100%',
-                            maxWidth: '400px',
-                            borderRadius: '24px',
-                            boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
-                            overflow: 'hidden',
-                            position: 'relative',
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                        zIndex: 2000
+                    }}>
                         <div style={{
-                            background: '#FF6B00',
-                            padding: '28px 24px 24px',
-                            position: 'relative',
+                            background: 'white',
+                            padding: '32px',
+                            borderRadius: '16px',
+                            width: '600px',
+                            maxWidth: '95%',
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                            maxHeight: '90vh',
+                            overflowY: 'auto'
                         }}>
-                            <button
-                                onClick={() => setShowRejectModal(false)}
-                                style={{
-                                    position: 'absolute',
-                                    top: '16px',
-                                    right: '16px',
-                                    width: '24px',
-                                    height: '24px',
-                                    borderRadius: '50%',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    color: 'white',
-                                    opacity: 0.7,
-                                }}
-                            >
-                                <X size={16} strokeWidth={3} />
-                            </button>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                <div>
+                                    <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1A202C' }}>Compose Proposal Email</h3>
+                                    <p style={{ color: '#718096', fontSize: '0.85rem', marginTop: '4px' }}>Combined Estimate and Proposal will be attached automatically.</p>
+                                </div>
+                                <button
+                                    onClick={() => setEmailModal({ ...emailModal, open: false })}
+                                    style={{ padding: '8px', borderRadius: '50%', background: '#F7FAFC', border: 'none', cursor: 'pointer' }}
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
 
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{
-                                    width: '36px',
-                                    height: '36px',
-                                    background: 'rgba(255,255,255,0.2)',
-                                    borderRadius: '10px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <Sparkles size={18} color="white" />
+                            <div style={{ marginBottom: '24px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Select Template:</label>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    {(Object.keys(EMAIL_TEMPLATES) as Array<keyof typeof EMAIL_TEMPLATES>).map((type) => (
+                                        <button
+                                            key={type}
+                                            onClick={() => handleTemplateChange(type)}
+                                            style={{
+                                                padding: '8px 16px',
+                                                borderRadius: '8px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                border: '1.5px solid',
+                                                background: emailModal.templateType === type ? '#38A169' : 'white',
+                                                color: emailModal.templateType === type ? 'white' : '#4A5568',
+                                                borderColor: emailModal.templateType === type ? '#38A169' : '#E2E8F0'
+                                            }}
+                                        >
+                                            {EMAIL_TEMPLATES[type].name}
+                                        </button>
+                                    ))}
                                 </div>
-                                <div style={{ flex: 1 }}>
-                                    <h3 style={{
-                                        fontSize: '1.25rem',
-                                        fontWeight: 800,
-                                        color: 'white',
-                                        margin: '0 0 4px 0',
-                                        lineHeight: 1.2
-                                    }}>Reject Estimate</h3>
-                                    <p style={{
-                                        margin: 0,
-                                        color: 'rgba(255,255,255,0.95)',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 500,
-                                        lineHeight: 1.4
-                                    }}>
-                                        Provide a reason for rejecting this estimate for the records.
-                                    </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
+                                    <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>To:</label>
+                                    <input
+                                        className="ae-input"
+                                        value={emailModal.to}
+                                        onChange={(e) => setEmailModal({ ...emailModal, to: e.target.value })}
+                                        placeholder="recipient@example.com"
+                                    />
                                 </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
+                                    <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>CC:</label>
+                                    <input
+                                        className="ae-input"
+                                        value={emailModal.cc}
+                                        onChange={(e) => setEmailModal({ ...emailModal, cc: e.target.value })}
+                                        placeholder="cc@example.com (comma separated)"
+                                    />
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
+                                    <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Subject:</label>
+                                    <input
+                                        className="ae-input"
+                                        value={emailModal.subject}
+                                        onChange={(e) => setEmailModal({ ...emailModal, subject: e.target.value })}
+                                        placeholder="Enter subject"
+                                    />
+                                </div>
+
+                                <div style={{ marginTop: '16px' }}>
+                                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Message Body</label>
+                                    <textarea
+                                        className="ae-input"
+                                        value={emailModal.body}
+                                        onChange={(e) => setEmailModal({ ...emailModal, body: e.target.value })}
+                                        style={{ width: '100%', minHeight: '180px', padding: '12px', resize: 'vertical' }}
+                                        placeholder="Write your message here..."
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '32px' }}>
+                                <button
+                                    className="ae-btn-secondary"
+                                    onClick={() => setEmailModal({ ...emailModal, open: false })}
+                                    disabled={sendingEmail}
+                                    style={{ padding: '10px 24px' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="ae-btn-primary"
+                                    onClick={handleSendEmail}
+                                    disabled={sendingEmail}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '10px 32px',
+                                        background: '#38A169'
+                                    }}
+                                >
+                                    {sendingEmail ? 'Sending...' : 'Send Now'}
+                                </button>
                             </div>
                         </div>
+                    </div>
+                )
+            }
 
-                        <div style={{ padding: '24px' }}>
-                            <div style={{ marginBottom: '20px' }}>
-                                <label style={{
-                                    display: 'block',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    color: '#1e293b',
-                                    marginBottom: '8px'
-                                }}>Rejection Reason</label>
-                                <textarea
-                                    value={rejectComment}
-                                    onChange={e => setRejectComment(e.target.value)}
-                                    placeholder="Type your reason here..."
-                                    autoFocus
-                                    style={{
-                                        width: '100%',
-                                        height: '90px',
-                                        background: '#f8fafc',
-                                        border: '1.5px solid #e2e8f0',
-                                        borderRadius: '12px',
-                                        padding: '12px 16px',
-                                        fontSize: '0.9rem',
-                                        color: '#1e293b',
-                                        outline: 'none',
-                                        resize: 'none',
-                                        fontWeight: 500
-                                    }}
-                                />
-                            </div>
-
+            {/* Rejection Modal */}
+            {
+                showRejectModal && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10000,
+                            background: 'rgba(0, 0, 0, 0.45)',
+                            backdropFilter: 'blur(12px)',
+                            padding: '24px',
+                        }}
+                    >
+                        <div
+                            style={{
+                                background: 'white',
+                                width: '100%',
+                                maxWidth: '400px',
+                                borderRadius: '24px',
+                                boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
+                                overflow: 'hidden',
+                                position: 'relative',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <div style={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                gap: '10px'
+                                background: '#FF6B00',
+                                padding: '28px 24px 24px',
+                                position: 'relative',
                             }}>
                                 <button
                                     onClick={() => setShowRejectModal(false)}
                                     style={{
-                                        padding: '10px 20px',
-                                        borderRadius: '12px',
-                                        background: '#f1f5f9',
-                                        color: '#475569',
-                                        fontWeight: 700,
-                                        fontSize: '0.85rem',
+                                        position: 'absolute',
+                                        top: '16px',
+                                        right: '16px',
+                                        width: '24px',
+                                        height: '24px',
+                                        borderRadius: '50%',
+                                        background: 'transparent',
                                         border: 'none',
-                                        cursor: 'pointer'
-                                    }}
-                                >Cancel</button>
-                                <button
-                                    onClick={handleReject}
-                                    style={{
-                                        padding: '10px 24px',
-                                        borderRadius: '12px',
-                                        background: 'var(--theme-primary)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
                                         color: 'white',
-                                        fontWeight: 700,
-                                        fontSize: '0.85rem',
-                                        border: 'none',
-                                        cursor: 'pointer'
+                                        opacity: 0.7,
                                     }}
-                                >Reject</button>
+                                >
+                                    <X size={16} strokeWidth={3} />
+                                </button>
+
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                    <div style={{
+                                        width: '36px',
+                                        height: '36px',
+                                        background: 'rgba(255,255,255,0.2)',
+                                        borderRadius: '10px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        <Sparkles size={18} color="white" />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <h3 style={{
+                                            fontSize: '1.25rem',
+                                            fontWeight: 800,
+                                            color: 'white',
+                                            margin: '0 0 4px 0',
+                                            lineHeight: 1.2
+                                        }}>Reject Estimate</h3>
+                                        <p style={{
+                                            margin: 0,
+                                            color: 'rgba(255,255,255,0.95)',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 500,
+                                            lineHeight: 1.4
+                                        }}>
+                                            Provide a reason for rejecting this estimate for the records.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ padding: '24px' }}>
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{
+                                        display: 'block',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 700,
+                                        color: '#1e293b',
+                                        marginBottom: '8px'
+                                    }}>Rejection Reason</label>
+                                    <textarea
+                                        value={rejectComment}
+                                        onChange={e => setRejectComment(e.target.value)}
+                                        placeholder="Type your reason here..."
+                                        autoFocus
+                                        style={{
+                                            width: '100%',
+                                            height: '90px',
+                                            background: '#f8fafc',
+                                            border: '1.5px solid #e2e8f0',
+                                            borderRadius: '12px',
+                                            padding: '12px 16px',
+                                            fontSize: '0.9rem',
+                                            color: '#1e293b',
+                                            outline: 'none',
+                                            resize: 'none',
+                                            fontWeight: 500
+                                        }}
+                                    />
+                                </div>
+
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '10px'
+                                }}>
+                                    <button
+                                        onClick={() => setShowRejectModal(false)}
+                                        style={{
+                                            padding: '10px 20px',
+                                            borderRadius: '12px',
+                                            background: '#f1f5f9',
+                                            color: '#475569',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            border: 'none',
+                                            cursor: 'pointer'
+                                        }}
+                                    >Cancel</button>
+                                    <button
+                                        onClick={handleReject}
+                                        style={{
+                                            padding: '10px 24px',
+                                            borderRadius: '12px',
+                                            background: 'var(--theme-primary)',
+                                            color: 'white',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            border: 'none',
+                                            cursor: 'pointer'
+                                        }}
+                                    >Reject</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-        </div>
+        </div >
     );
 };
 

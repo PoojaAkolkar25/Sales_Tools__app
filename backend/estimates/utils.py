@@ -16,10 +16,14 @@ def generate_estimate_pdf(estimate):
     try:
         # Prepare context for the template
         company = CompanyProfile.objects.first()
+        items = estimate.items.all().order_by('sr_no')
+        has_discount = any(float(item.discount or 0) > 0 for item in items)
+        
         context = {
             'estimate': estimate,
-            'items': estimate.items.all().order_by('sr_no'),
+            'items': items,
             'company': company,
+            'has_discount': has_discount,
         }
         
         # Render HTML

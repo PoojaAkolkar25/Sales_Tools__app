@@ -96,14 +96,17 @@ class EstimateItem(models.Model):
     sr_no = models.IntegerField()
     particulars = models.CharField(max_length=255)
     description = models.TextField(blank=True, default='')
+    subscription_from = models.DateField(null=True, blank=True)
+    subscription_to = models.DateField(null=True, blank=True)
     hsn_sac = models.CharField(max_length=20, blank=True, default='', verbose_name="HSN/SAC")
     qty = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     unit = models.CharField(max_length=20, default='Nos')
     rate = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    discount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     
     def save(self, *args, **kwargs):
-        self.amount = self.qty * self.rate
+        self.amount = (self.qty * self.rate) - self.discount
         super().save(*args, **kwargs)
 
     def __str__(self):
