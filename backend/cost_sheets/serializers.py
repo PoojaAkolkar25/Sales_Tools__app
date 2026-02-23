@@ -19,9 +19,14 @@ class LicenseItemSerializer(serializers.ModelSerializer):
     def validate(self, data):
         rate = data.get('rate', Decimal('0.00'))
         qty = data.get('qty', 1)
+        period_str = str(data.get('period', '1'))
+        try:
+            period = Decimal(period_str)
+        except Exception:
+            period = Decimal('1')
         margin_percentage = data.get('margin_percentage', Decimal('0.00'))
         
-        data['estimated_cost'] = rate * qty
+        data['estimated_cost'] = rate * qty * period
         data['estimated_margin_amount'] = data['estimated_cost'] * (margin_percentage / Decimal('100'))
         data['estimated_price'] = data['estimated_cost'] + data['estimated_margin_amount']
         return data
