@@ -1,9 +1,10 @@
 ﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { UserPlus, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search, LayoutDashboard, PlusCircle, Paperclip, FileText, Eye, Download, ChevronLeft, ChevronRight, Columns, ChevronDown } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
 import { Country, State, City } from 'country-state-city';
+import SearchableDropdown from './SearchableDropdown';
 
 const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: string }[]> = {
     user: [
@@ -257,12 +258,12 @@ const UserManagement: React.FC = () => {
     const [endCustomerFormData, setEndCustomerFormData] = useState({
         end_customer_code: '',
         name: '',
+        alias_name: '',
         linked_partner: '',
         industry: '',
         location: '',
         contact_person: '',
         email: '',
-        phone: '',
         status: 'ACTIVE'
     });
 
@@ -391,7 +392,7 @@ const UserManagement: React.FC = () => {
                 location: item.location || '',
                 contact_person: item.contact_person || '',
                 email: item.email || '',
-                phone: item.phone || '',
+                alias_name: item.alias_name || '',
                 status: item.status || 'ACTIVE'
             });
         } else if (mode === 'company') {
@@ -943,7 +944,7 @@ const UserManagement: React.FC = () => {
             setEndCustomerFormData({
                 end_customer_code: '',
                 name: '', linked_partner: '', industry: '', location: '',
-                contact_person: '', email: '', phone: '',
+                contact_person: '', email: '', alias_name: '',
                 status: 'ACTIVE'
             });
             setEditingId(null);
@@ -1195,7 +1196,7 @@ const UserManagement: React.FC = () => {
         switch (val) {
             case 'INR': symbol = '₹ / INR'; break;
             case 'USD': symbol = '$ / USD'; break;
-            case 'EURO': symbol = '€ / EURO'; break;
+            case 'EUR': symbol = '€ / EUR'; break;
         }
 
         if (viewMode === 'partner') {
@@ -1413,6 +1414,17 @@ const UserManagement: React.FC = () => {
             gap: '16px',
             minHeight: 'calc(100vh - 85px)'
         }}>
+            <style>{`
+                input:hover, input:focus, select:hover, select:focus, textarea:hover, textarea:focus, .ae-input:hover, .ae-input:focus {
+                    border-color: #FF6B00 !important;
+                    box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1) !important;
+                    outline: none !important;
+                }
+                .ae-searchable-dropdown:hover .ae-input, .ae-searchable-dropdown:focus-within .ae-input {
+                    border-color: #FF6B00 !important;
+                    box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1) !important;
+                }
+            `}</style>
             {/* Header Area */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, paddingBottom: '16px', borderBottom: showForm ? '1px solid #E0E6ED' : 'none', marginBottom: showForm ? '24px' : '0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1444,26 +1456,26 @@ const UserManagement: React.FC = () => {
             }}>
                 <div style={{
                     display: 'flex',
-                    gap: '4px',
                     alignItems: 'center',
                     background: 'white',
                     padding: '6px',
                     borderRadius: '12px',
                     border: '1px solid var(--border-primary)',
-                    boxShadow: 'var(--shadow-sm)'
+                    boxShadow: 'var(--shadow-sm)',
+                    gap: '8px'
                 }}>
                     <button
                         onClick={() => setShowForm(false)}
                         style={{
                             padding: '6px 20px',
                             borderRadius: '8px',
-                            fontSize: '0.85rem',
+                            fontSize: '0.8rem',
                             fontWeight: 700,
-                            border: 'none',
                             cursor: 'pointer',
                             transition: 'all 0.23s',
-                            background: !showForm ? 'var(--theme-primary)' : 'transparent',
-                            color: !showForm ? 'white' : 'var(--text-secondary)',
+                            background: !showForm ? 'var(--theme-primary)' : '#f8fafc',
+                            color: !showForm ? 'white' : '#64748b',
+                            border: !showForm ? 'none' : '1px solid #e2e8f0',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px'
@@ -1484,7 +1496,7 @@ const UserManagement: React.FC = () => {
                                 phone_number: '', mobile: '', email: '', website_url: '',
                                 primary_contact: '',
                                 base_currency: 'INR',
-                                currency_symbol: '? / INR', decimal_places: 2,
+                                currency_symbol: '₹ / INR', decimal_places: 2,
                                 is_gst_applicable: true, gstin: '', state_code: '',
                                 msme_registered: false, msme_number: '', pan: '',
                                 tan: '', cin: '', status: 'ACTIVE', payment_terms: 'NET_30'
@@ -1492,7 +1504,7 @@ const UserManagement: React.FC = () => {
                             setEndCustomerFormData({
                                 end_customer_code: '',
                                 name: '', linked_partner: '', industry: '', location: '',
-                                contact_person: '', email: '', phone: '',
+                                contact_person: '', email: '', alias_name: '',
                                 status: 'ACTIVE'
                             });
                             setCompanyFormData({
@@ -1502,7 +1514,7 @@ const UserManagement: React.FC = () => {
                                 mobile_number: '', email: '', website_url: '', linked_company_profile: '',
                                 industry: '', type: 'CUSTOMER',
                                 payment_terms: 'NET_30',
-                                base_currency: 'INR', currency_symbol: '? / INR', decimal_places: 2,
+                                base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
                                 is_gst_applicable: true, gstin: '', state_code: '',
                                 msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
                             });
@@ -1514,13 +1526,13 @@ const UserManagement: React.FC = () => {
                         style={{
                             padding: '6px 20px',
                             borderRadius: '8px',
-                            fontSize: '0.85rem',
+                            fontSize: '0.8rem',
                             fontWeight: 700,
-                            border: 'none',
                             cursor: 'pointer',
                             transition: 'all 0.23s',
-                            background: showForm && !editingId ? 'var(--theme-primary)' : 'transparent',
-                            color: showForm && !editingId ? 'white' : 'var(--text-secondary)',
+                            background: showForm && !editingId ? 'var(--theme-primary)' : '#f8fafc',
+                            color: showForm && !editingId ? 'white' : '#64748b',
+                            border: showForm && !editingId ? 'none' : '1px solid #e2e8f0',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px'
@@ -1552,7 +1564,7 @@ const UserManagement: React.FC = () => {
                                 style={{
                                     padding: '6px 20px',
                                     borderRadius: '8px',
-                                    fontSize: '0.85rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: 700,
                                     border: 'none',
                                     cursor: 'pointer',
@@ -1571,7 +1583,7 @@ const UserManagement: React.FC = () => {
                                 style={{
                                     padding: '6px 20px',
                                     borderRadius: '8px',
-                                    fontSize: '0.85rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: 700,
                                     border: 'none',
                                     cursor: 'pointer',
@@ -1590,7 +1602,7 @@ const UserManagement: React.FC = () => {
                                 style={{
                                     padding: '6px 20px',
                                     borderRadius: '8px',
-                                    fontSize: '0.85rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: 700,
                                     border: 'none',
                                     cursor: 'pointer',
@@ -1609,7 +1621,7 @@ const UserManagement: React.FC = () => {
                                 style={{
                                     padding: '6px 20px',
                                     borderRadius: '8px',
-                                    fontSize: '0.85rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: 700,
                                     border: 'none',
                                     cursor: 'pointer',
@@ -1628,7 +1640,7 @@ const UserManagement: React.FC = () => {
                                 style={{
                                     padding: '6px 20px',
                                     borderRadius: '8px',
-                                    fontSize: '0.85rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: 700,
                                     border: 'none',
                                     cursor: 'pointer',
@@ -1647,7 +1659,7 @@ const UserManagement: React.FC = () => {
                                 style={{
                                     padding: '6px 20px',
                                     borderRadius: '8px',
-                                    fontSize: '0.85rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: 700,
                                     border: 'none',
                                     cursor: 'pointer',
@@ -1831,21 +1843,21 @@ const UserManagement: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Role
-                                        </label>
-                                        <select
+                                        <SearchableDropdown
+                                            label="Role"
+                                            options={[
+                                                { value: 'app_admin', label: 'Admin' },
+                                                { value: 'sales_head', label: 'Sales Head' },
+                                                { value: 'inside_sales_head', label: 'Inside Sales Head' },
+                                                { value: 'pm_head', label: 'PM Head' },
+                                                { value: 'salesperson', label: 'Salesperson' },
+                                                { value: 'finance_manager', label: 'Finance Manager' },
+                                                { value: 'app_user', label: 'User' }
+                                            ]}
                                             value={formData.role}
-                                            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        >
-                                            <option value="app_user">User</option>
-                                            <option value="app_admin">Admin</option>
-                                            <option value="sales_head">Sales Head</option>
-                                            <option value="inside_sales_head">Inside Sales Head</option>
-                                            <option value="pm_head">PM Head</option>
-                                            <option value="salesperson">Salesperson</option>
-                                        </select>
+                                            onChange={(val) => setFormData({ ...formData, role: val as string })}
+                                            placeholder="Select Role"
+                                        />
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -1884,17 +1896,13 @@ const UserManagement: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Reporting To
-                                        </label>
-                                        <select
+                                        <SearchableDropdown
+                                            label="Reporting To"
+                                            options={users.map(u => ({ value: u.id, label: `${u.first_name || ''} ${u.last_name || ''} (${u.username})`.trim() }))}
                                             value={formData.reporting_to}
-                                            onChange={(e) => setFormData({ ...formData, reporting_to: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        >
-                                            <option value="">Select Manager</option>
-                                            {users.map(u => <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>)}
-                                        </select>
+                                            onChange={(val) => setFormData({ ...formData, reporting_to: val as string })}
+                                            placeholder="Select Manager"
+                                        />
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -1984,21 +1992,59 @@ const UserManagement: React.FC = () => {
                                                         </label>
                                                     </div>
                                                     {partnerFormData.logo && (
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0, justifyContent: 'space-between' }}>
                                                             {partnerFormData.logo instanceof File ? (
-                                                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }} title={partnerFormData.logo.name}>
                                                                     {partnerFormData.logo.name}
                                                                 </span>
                                                             ) : (
-                                                                <img src={partnerFormData.logo as string} alt="Logo" style={{ height: '30px', borderRadius: '4px' }} />
+                                                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Current Logo</span>
                                                             )}
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setPartnerFormData({ ...partnerFormData, logo: null })}
-                                                                style={{ background: 'none', border: 'none', color: '#E53E3E', cursor: 'pointer', padding: '4px' }}
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
+                                                            <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                                                                <button
+                                                                    type="button"
+                                                                    title="View"
+                                                                    onClick={() => {
+                                                                        if (partnerFormData.logo instanceof File) {
+                                                                            const url = URL.createObjectURL(partnerFormData.logo);
+                                                                            window.open(url, '_blank');
+                                                                        } else if (typeof partnerFormData.logo === 'string') {
+                                                                            window.open(partnerFormData.logo, '_blank');
+                                                                        }
+                                                                    }}
+                                                                    style={{ background: 'none', border: 'none', color: '#718096', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                                                >
+                                                                    <Eye size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    title="Download"
+                                                                    onClick={() => {
+                                                                        const link = document.createElement('a');
+                                                                        if (partnerFormData.logo instanceof File) {
+                                                                            link.href = URL.createObjectURL(partnerFormData.logo);
+                                                                            link.download = partnerFormData.logo.name;
+                                                                        } else if (typeof partnerFormData.logo === 'string') {
+                                                                            link.href = partnerFormData.logo;
+                                                                            link.download = 'company_logo';
+                                                                        }
+                                                                        document.body.appendChild(link);
+                                                                        link.click();
+                                                                        document.body.removeChild(link);
+                                                                    }}
+                                                                    style={{ background: 'none', border: 'none', color: '#718096', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                                                >
+                                                                    <Download size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    title="Delete"
+                                                                    onClick={() => setPartnerFormData({ ...partnerFormData, logo: null })}
+                                                                    style={{ background: 'none', border: 'none', color: '#E53E3E', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>
@@ -2087,51 +2133,33 @@ const UserManagement: React.FC = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Country
-                                                </label>
-                                                <select
+                                                <SearchableDropdown
+                                                    label="Country"
+                                                    options={Country.getAllCountries().map(c => ({ value: c.name, label: c.name }))}
                                                     value={partnerFormData.country}
-                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, country: e.target.value, state: '', city: '' })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                >
-                                                    <option value="">Select Country</option>
-                                                    {Country.getAllCountries().map(c => (
-                                                        <option key={c.isoCode} value={c.name}>{c.name}</option>
-                                                    ))}
-                                                </select>
+                                                    onChange={(val) => setPartnerFormData({ ...partnerFormData, country: val as string, state: '', city: '' })}
+                                                    placeholder="Select Country"
+                                                />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    State
-                                                </label>
-                                                <select
+                                                <SearchableDropdown
+                                                    label="State"
+                                                    options={partnerCountryIso ? State.getStatesOfCountry(partnerCountryIso).map(s => ({ value: s.name, label: s.name })) : []}
                                                     value={partnerFormData.state}
-                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, state: e.target.value, city: '' })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    onChange={(val) => setPartnerFormData({ ...partnerFormData, state: val as string, city: '' })}
+                                                    placeholder="Select State"
                                                     disabled={!partnerCountryIso}
-                                                >
-                                                    <option value="">Select State</option>
-                                                    {partnerCountryIso && State.getStatesOfCountry(partnerCountryIso).map(s => (
-                                                        <option key={s.isoCode} value={s.name}>{s.name}</option>
-                                                    ))}
-                                                </select>
+                                                />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    City
-                                                </label>
-                                                <select
+                                                <SearchableDropdown
+                                                    label="City"
+                                                    options={partnerCountryIso && partnerStateIso ? City.getCitiesOfState(partnerCountryIso, partnerStateIso).map(c => ({ value: c.name, label: c.name })) : []}
                                                     value={partnerFormData.city}
-                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, city: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    onChange={(val) => setPartnerFormData({ ...partnerFormData, city: val as string })}
+                                                    placeholder="Select City"
                                                     disabled={!partnerStateIso}
-                                                >
-                                                    <option value="">Select City</option>
-                                                    {partnerCountryIso && partnerStateIso && City.getCitiesOfState(partnerCountryIso, partnerStateIso).map(c => (
-                                                        <option key={c.name} value={c.name}>{c.name}</option>
-                                                    ))}
-                                                </select>
+                                                />
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -2155,19 +2183,18 @@ const UserManagement: React.FC = () => {
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Base Currency <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                                </label>
-                                                <select
+                                                <SearchableDropdown
+                                                    label="Base Currency"
+                                                    options={[
+                                                        { value: "INR", label: "INR" },
+                                                        { value: "USD", label: "USD" },
+                                                        { value: "EURO", label: "EURO" }
+                                                    ]}
                                                     value={partnerFormData.base_currency}
-                                                    onChange={(e) => handleCurrencyChange(e.target.value)}
+                                                    onChange={(val) => handleCurrencyChange(val as string)}
+                                                    placeholder="Select Currency"
                                                     required
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                >
-                                                    <option value="INR">INR</option>
-                                                    <option value="USD">USD</option>
-                                                    <option value="EURO">EURO</option>
-                                                </select>
+                                                />
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -2197,21 +2224,19 @@ const UserManagement: React.FC = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Payment Terms <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                                </label>
-                                                <select
+                                                <SearchableDropdown
+                                                    label="Payment Terms"
+                                                    options={[
+                                                        { value: 'IMMEDIATE', label: 'Immediate' },
+                                                        { value: 'NET_30', label: '30 Days' },
+                                                        { value: 'NET_45', label: '45 Days' },
+                                                        { value: 'NET_60', label: '60 Days' },
+                                                        { value: 'NET_90', label: '90 Days' }
+                                                    ]}
                                                     value={(partnerFormData as any).payment_terms || 'NET_30'}
-                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, payment_terms: e.target.value } as any)}
-                                                    required
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                >
-                                                    <option value="IMMEDIATE">Immediate</option>
-                                                    <option value="NET_30">30 Days</option>
-                                                    <option value="NET_45">45 Days</option>
-                                                    <option value="NET_60">60 Days</option>
-                                                    <option value="NET_90">90 Days</option>
-                                                </select>
+                                                    onChange={(val) => setPartnerFormData({ ...partnerFormData, payment_terms: val as string } as any)}
+                                                    placeholder="Select Payment Terms"
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -2251,9 +2276,10 @@ const UserManagement: React.FC = () => {
                                                         </label>
                                                         <input
                                                             type="text"
+                                                            placeholder="State Code"
                                                             value={partnerFormData.state_code}
-                                                            readOnly
-                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#f7fafc', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', outline: 'none' }}
+                                                            onChange={(e) => setPartnerFormData({ ...partnerFormData, state_code: e.target.value })}
+                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                         />
                                                     </div>
                                                 </>
@@ -2357,42 +2383,36 @@ const UserManagement: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Linked Partner <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <select
+                                        <SearchableDropdown
+                                            label="Linked Partner"
+                                            options={companies.map(c => ({ value: c.id, label: c.name }))}
                                             value={endCustomerFormData.linked_partner}
-                                            onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, linked_partner: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            onChange={(val) => setEndCustomerFormData({ ...endCustomerFormData, linked_partner: val as string })}
+                                            placeholder="Select Partner"
                                             required
-                                        >
-                                            <option value="">Select Customer</option>
-                                            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                        </select>
+                                        />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Industry <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <select
+                                        <SearchableDropdown
+                                            label="Industry"
+                                            options={[
+                                                { value: 'IT', label: 'IT' },
+                                                { value: 'BFSI', label: 'BFSI' },
+                                                { value: 'Manufacturing', label: 'Manufacturing' },
+                                                { value: 'Healthcare', label: 'Healthcare' },
+                                                { value: 'Retail', label: 'Retail' },
+                                                { value: 'Telecom', label: 'Telecom' },
+                                                { value: 'Education', label: 'Education' },
+                                                { value: 'Government', label: 'Government' },
+                                                { value: 'Automotive', label: 'Automotive' },
+                                                { value: 'FMCG', label: 'FMCG' },
+                                                { value: 'Other', label: 'Other' }
+                                            ]}
                                             value={endCustomerFormData.industry}
-                                            onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, industry: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            onChange={(val) => setEndCustomerFormData({ ...endCustomerFormData, industry: val as string })}
+                                            placeholder="Select Industry"
                                             required
-                                        >
-                                            <option value="">Select Industry</option>
-                                            <option value="IT">IT</option>
-                                            <option value="BFSI">BFSI</option>
-                                            <option value="Manufacturing">Manufacturing</option>
-                                            <option value="Healthcare">Healthcare</option>
-                                            <option value="Retail">Retail</option>
-                                            <option value="Telecom">Telecom</option>
-                                            <option value="Education">Education</option>
-                                            <option value="Government">Government</option>
-                                            <option value="Automotive">Automotive</option>
-                                            <option value="FMCG">FMCG</option>
-                                            <option value="Other">Other</option>
-                                        </select>
+                                        />
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -2435,30 +2455,29 @@ const UserManagement: React.FC = () => {
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Phone <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            Alias Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                         </label>
                                         <input
-                                            type="number"
-                                            placeholder="Phone"
-                                            value={endCustomerFormData.phone}
-                                            onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, phone: e.target.value })}
+                                            type="text"
+                                            placeholder="Alias Name"
+                                            value={endCustomerFormData.alias_name}
+                                            onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, alias_name: e.target.value })}
                                             style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Status <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <select
+                                        <SearchableDropdown
+                                            label="Status"
+                                            options={[
+                                                { value: 'ACTIVE', label: 'Active' },
+                                                { value: 'INACTIVE', label: 'Inactive' }
+                                            ]}
                                             value={endCustomerFormData.status}
-                                            onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, status: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            onChange={(val) => setEndCustomerFormData({ ...endCustomerFormData, status: val as string })}
+                                            placeholder="Select Status"
                                             required
-                                        >
-                                            <option value="ACTIVE">Active</option>
-                                            <option value="INACTIVE">Inactive</option>
-                                        </select>
+                                        />
                                     </div>
                                 </div>
                             ) : viewMode === 'financial_year' ? (
@@ -2482,34 +2501,25 @@ const UserManagement: React.FC = () => {
                                         </div>
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            First month of fiscal year <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <select
+                                        <SearchableDropdown
+                                            label="First month of fiscal year"
+                                            options={monthNames.map(month => ({ value: month, label: month }))}
                                             value={fyFormData.first_month_of_fiscal_year}
-                                            onChange={(e) => handleFiscalMonthChange(e.target.value)}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', cursor: 'pointer' }}
-                                            required
-                                        >
-                                            {monthNames.map(month => (
-                                                <option key={month} value={month}>{month}</option>
-                                            ))}
-                                        </select>
+                                            onChange={(val) => handleFiscalMonthChange(val as string)}
+                                            placeholder="Select Month"
+                                        />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            First month of tax year
-                                        </label>
-                                        <select
+                                        <SearchableDropdown
+                                            label="First month of tax year"
+                                            options={[
+                                                { value: 'Same as fiscal year', label: 'Same as fiscal year' },
+                                                ...monthNames.map(month => ({ value: month, label: month }))
+                                            ]}
                                             value={fyFormData.first_month_of_tax_year}
-                                            onChange={(e) => setFyFormData({ ...fyFormData, first_month_of_tax_year: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', cursor: 'pointer' }}
-                                        >
-                                            <option value="Same as fiscal year">Same as fiscal year</option>
-                                            {monthNames.map(month => (
-                                                <option key={month} value={month}>{month}</option>
-                                            ))}
-                                        </select>
+                                            onChange={(val) => setFyFormData({ ...fyFormData, first_month_of_tax_year: val as string })}
+                                            placeholder="Select Month"
+                                        />
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '24px' }}>
                                         <input
@@ -2549,43 +2559,39 @@ const UserManagement: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Category <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <select
+                                        <SearchableDropdown
+                                            label="Category"
+                                            options={[
+                                                { value: 'SOFTWARE', label: 'Software' },
+                                                { value: 'SERVICE', label: 'Service' }
+                                            ]}
                                             value={productFormData.category}
-                                            onChange={(e) => setProductFormData({ ...productFormData, category: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            onChange={(val) => setProductFormData({ ...productFormData, category: val as string })}
+                                            placeholder="Select Category"
                                             required
-                                        >
-                                            <option value="">Select Category</option>
-                                            <option value="SOFTWARE">Software</option>
-                                            <option value="SERVICE">Service</option>
-                                        </select>
+                                        />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Subcategory <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <select
+                                        <SearchableDropdown
+                                            label="Subcategory"
+                                            options={[
+                                                { value: 'Automation', label: 'Automation' },
+                                                { value: 'Analytics', label: 'Analytics' },
+                                                { value: 'Cloud', label: 'Cloud' },
+                                                { value: 'Consulting', label: 'Consulting' },
+                                                { value: 'Implementation', label: 'Implementation' },
+                                                { value: 'Integration', label: 'Integration' },
+                                                { value: 'Licensing', label: 'Licensing' },
+                                                { value: 'Maintenance', label: 'Maintenance' },
+                                                { value: 'Support', label: 'Support' },
+                                                { value: 'Training', label: 'Training' },
+                                                { value: 'Other', label: 'Other' }
+                                            ]}
                                             value={productFormData.subcategory}
-                                            onChange={(e) => setProductFormData({ ...productFormData, subcategory: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            onChange={(val) => setProductFormData({ ...productFormData, subcategory: val as string })}
+                                            placeholder="Select Subcategory"
                                             required
-                                        >
-                                            <option value="">Select Subcategory</option>
-                                            <option value="Automation">Automation</option>
-                                            <option value="Analytics">Analytics</option>
-                                            <option value="Cloud">Cloud</option>
-                                            <option value="Consulting">Consulting</option>
-                                            <option value="Implementation">Implementation</option>
-                                            <option value="Integration">Integration</option>
-                                            <option value="Licensing">Licensing</option>
-                                            <option value="Maintenance">Maintenance</option>
-                                            <option value="Support">Support</option>
-                                            <option value="Training">Training</option>
-                                            <option value="Other">Other</option>
-                                        </select>
+                                        />
                                     </div>
                                     <div style={{ gridColumn: 'span 2' }}>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -2600,26 +2606,24 @@ const UserManagement: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Unit of Measure <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <select
+                                        <SearchableDropdown
+                                            label="Unit of Measure"
+                                            options={[
+                                                { value: 'License', label: 'License' },
+                                                { value: 'Hour', label: 'Hour' },
+                                                { value: 'Day', label: 'Day' },
+                                                { value: 'Month', label: 'Month' },
+                                                { value: 'Year', label: 'Year' },
+                                                { value: 'Unit', label: 'Unit' },
+                                                { value: 'Project', label: 'Project' },
+                                                { value: 'User', label: 'User' },
+                                                { value: 'Other', label: 'Other' }
+                                            ]}
                                             value={productFormData.uom}
-                                            onChange={(e) => setProductFormData({ ...productFormData, uom: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            onChange={(val) => setProductFormData({ ...productFormData, uom: val as string })}
+                                            placeholder="Select UOM"
                                             required
-                                        >
-                                            <option value="">Select UOM</option>
-                                            <option value="License">License</option>
-                                            <option value="Hour">Hour</option>
-                                            <option value="Day">Day</option>
-                                            <option value="Month">Month</option>
-                                            <option value="Year">Year</option>
-                                            <option value="Unit">Unit</option>
-                                            <option value="Project">Project</option>
-                                            <option value="User">User</option>
-                                            <option value="Other">Other</option>
-                                        </select>
+                                        />
                                     </div>
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -2661,33 +2665,31 @@ const UserManagement: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Currency <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <select
+                                        <SearchableDropdown
+                                            label="Currency"
+                                            options={[
+                                                { value: 'INR', label: 'INR' },
+                                                { value: 'USD', label: 'USD' },
+                                                { value: 'EURO', label: 'EURO' }
+                                            ]}
                                             value={productFormData.currency}
-                                            onChange={(e) => setProductFormData({ ...productFormData, currency: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            onChange={(val) => setProductFormData({ ...productFormData, currency: val as string })}
+                                            placeholder="Select Currency"
                                             required
-                                        >
-                                            <option value="INR">INR</option>
-                                            <option value="USD">USD</option>
-                                            <option value="EURO">EURO</option>
-                                        </select>
+                                        />
                                     </div>
                                     <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Status <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <select
+                                        <SearchableDropdown
+                                            label="Status"
+                                            options={[
+                                                { value: 'ACTIVE', label: 'Active' },
+                                                { value: 'INACTIVE', label: 'Inactive' }
+                                            ]}
                                             value={productFormData.status}
-                                            onChange={(e) => setProductFormData({ ...productFormData, status: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            onChange={(val) => setProductFormData({ ...productFormData, status: val as string })}
+                                            placeholder="Select Status"
                                             required
-                                        >
-                                            <option value="ACTIVE">Active</option>
-                                            <option value="INACTIVE">Inactive</option>
-                                        </select>
+                                        />
                                     </div>
                                 </div>
                             ) : (
@@ -2702,26 +2704,25 @@ const UserManagement: React.FC = () => {
                                     <div className="section">
                                         <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Company Basic Details
+                                            Customer Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Entity <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                                </label>
-                                                <select
+                                                <SearchableDropdown
+                                                    label="Entity"
+                                                    options={[
+                                                        { value: 'AE_IND', label: 'AE India' },
+                                                        { value: 'AE_USA', label: 'AE USA' }
+                                                    ]}
                                                     value={companyFormData.entity}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, entity: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    onChange={(val) => setCompanyFormData({ ...companyFormData, entity: val as string })}
+                                                    placeholder="Select Entity"
                                                     required
-                                                >
-                                                    <option value="AE_IND">AE India</option>
-                                                    <option value="AE_USA">AE USA</option>
-                                                </select>
+                                                />
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Company Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                    Customer Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="text"
@@ -2734,7 +2735,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Alias Name
+                                                    Alias Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="text"
@@ -2742,6 +2743,7 @@ const UserManagement: React.FC = () => {
                                                     value={companyFormData.alias_name}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, alias_name: e.target.value })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    required
                                                 />
                                             </div>
                                             <div>
@@ -2808,8 +2810,19 @@ const UserManagement: React.FC = () => {
                                                                     {companyFormData.logo.name}
                                                                 </span>
                                                                 <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                                                                    <button type="button" onClick={() => { if (companyFormData.logo instanceof File) { const url = URL.createObjectURL(companyFormData.logo); window.open(url, '_blank'); } }} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#718096', display: 'flex' }}><Eye size={14} /></button>
-                                                                    <button type="button" onClick={() => setCompanyFormData({ ...companyFormData, logo: null })} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#E53E3E' }}><Trash2 size={14} /></button>
+                                                                    <button type="button" title="View" onClick={() => { if (companyFormData.logo instanceof File) { const url = URL.createObjectURL(companyFormData.logo); window.open(url, '_blank'); } }} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#718096', display: 'flex' }}><Eye size={14} /></button>
+                                                                    <button type="button" title="Download" onClick={() => {
+                                                                        if (companyFormData.logo instanceof File) {
+                                                                            const url = URL.createObjectURL(companyFormData.logo);
+                                                                            const link = document.createElement('a');
+                                                                            link.href = url;
+                                                                            link.download = companyFormData.logo.name;
+                                                                            document.body.appendChild(link);
+                                                                            link.click();
+                                                                            document.body.removeChild(link);
+                                                                        }
+                                                                    }} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#718096', display: 'flex' }}><Download size={14} /></button>
+                                                                    <button type="button" title="Delete" onClick={() => setCompanyFormData({ ...companyFormData, logo: null })} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#E53E3E' }}><Trash2 size={14} /></button>
                                                                 </div>
                                                             </div>
                                                         )}
@@ -2817,8 +2830,16 @@ const UserManagement: React.FC = () => {
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0, justifyContent: 'space-between' }}>
                                                                 <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#4A5568', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '150px' }} title="Current Logo">Current Logo</span>
                                                                 <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                                                                    <button type="button" onClick={() => window.open(companyFormData.logo as string, '_blank')} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#718096', display: 'flex' }}><Eye size={14} /></button>
-                                                                    <button type="button" onClick={() => setCompanyFormData({ ...companyFormData, logo: null })} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#E53E3E' }}><Trash2 size={14} /></button>
+                                                                    <button type="button" title="View" onClick={() => window.open(companyFormData.logo as string, '_blank')} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#718096', display: 'flex' }}><Eye size={14} /></button>
+                                                                    <button type="button" title="Download" onClick={() => {
+                                                                        const link = document.createElement('a');
+                                                                        link.href = companyFormData.logo as string;
+                                                                        link.download = 'company_logo';
+                                                                        document.body.appendChild(link);
+                                                                        link.click();
+                                                                        document.body.removeChild(link);
+                                                                    }} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#718096', display: 'flex' }}><Download size={14} /></button>
+                                                                    <button type="button" title="Delete" onClick={() => setCompanyFormData({ ...companyFormData, logo: null })} style={{ cursor: 'pointer', background: 'none', border: 'none', padding: '2px', color: '#E53E3E' }}><Trash2 size={14} /></button>
                                                                 </div>
                                                             </div>
                                                         )}
@@ -2836,18 +2857,6 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Email Address"
                                                     value={companyFormData.email}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Phone Number
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Phone Number"
-                                                    value={companyFormData.phone_number}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, phone_number: e.target.value })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
@@ -2878,28 +2887,26 @@ const UserManagement: React.FC = () => {
 
 
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Industry <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                                </label>
-                                                <select
+                                                <SearchableDropdown
+                                                    label="Industry"
+                                                    options={[
+                                                        { value: 'IT', label: 'IT' },
+                                                        { value: 'BFSI', label: 'BFSI' },
+                                                        { value: 'Manufacturing', label: 'Manufacturing' },
+                                                        { value: 'Healthcare', label: 'Healthcare' },
+                                                        { value: 'Retail', label: 'Retail' },
+                                                        { value: 'Telecom', label: 'Telecom' },
+                                                        { value: 'Education', label: 'Education' },
+                                                        { value: 'Government', label: 'Government' },
+                                                        { value: 'Automotive', label: 'Automotive' },
+                                                        { value: 'FMCG', label: 'FMCG' },
+                                                        { value: 'Other', label: 'Other' }
+                                                    ]}
                                                     value={companyFormData.industry}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, industry: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    onChange={(val) => setCompanyFormData({ ...companyFormData, industry: val as string })}
+                                                    placeholder="Select Industry"
                                                     required
-                                                >
-                                                    <option value="">Select Industry</option>
-                                                    <option value="IT">IT</option>
-                                                    <option value="BFSI">BFSI</option>
-                                                    <option value="Manufacturing">Manufacturing</option>
-                                                    <option value="Healthcare">Healthcare</option>
-                                                    <option value="Retail">Retail</option>
-                                                    <option value="Telecom">Telecom</option>
-                                                    <option value="Education">Education</option>
-                                                    <option value="Government">Government</option>
-                                                    <option value="Automotive">Automotive</option>
-                                                    <option value="FMCG">FMCG</option>
-                                                    <option value="Other">Other</option>
-                                                </select>
+                                                />
                                             </div>
 
 
@@ -2927,19 +2934,7 @@ const UserManagement: React.FC = () => {
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Linked Company Profile
-                                                </label>
-                                                <select
-                                                    value={companyFormData.linked_company_profile}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, linked_company_profile: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                >
-                                                    <option value="">Select Company</option>
-                                                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                                </select>
-                                            </div>
+
                                         </div>
                                     </div>
 
@@ -2951,62 +2946,44 @@ const UserManagement: React.FC = () => {
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div style={{ gridColumn: 'span 3' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Address Line 1
+                                                    Address Line
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    placeholder="Address Line 1"
+                                                    placeholder="Address Line"
                                                     value={companyFormData.address_line_1}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, address_line_1: e.target.value })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Country
-                                                </label>
-                                                <select
+                                                <SearchableDropdown
+                                                    label="Country"
+                                                    options={Country.getAllCountries().map(c => ({ value: c.name, label: c.name }))}
                                                     value={companyFormData.country}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, country: e.target.value, state: '', city: '' })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                >
-                                                    <option value="">Select Country</option>
-                                                    {Country.getAllCountries().map(c => (
-                                                        <option key={c.isoCode} value={c.name}>{c.name}</option>
-                                                    ))}
-                                                </select>
+                                                    onChange={(val) => setCompanyFormData({ ...companyFormData, country: val as string, state: '', city: '' })}
+                                                    placeholder="Select Country"
+                                                />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    State
-                                                </label>
-                                                <select
+                                                <SearchableDropdown
+                                                    label="State"
+                                                    options={companyCountryIso ? State.getStatesOfCountry(companyCountryIso).map(s => ({ value: s.name, label: s.name })) : []}
                                                     value={companyFormData.state}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, state: e.target.value, city: '' })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    onChange={(val) => setCompanyFormData({ ...companyFormData, state: val as string, city: '' })}
+                                                    placeholder="Select State"
                                                     disabled={!companyCountryIso}
-                                                >
-                                                    <option value="">Select State</option>
-                                                    {companyCountryIso && State.getStatesOfCountry(companyCountryIso).map(s => (
-                                                        <option key={s.isoCode} value={s.name}>{s.name}</option>
-                                                    ))}
-                                                </select>
+                                                />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    City
-                                                </label>
-                                                <select
+                                                <SearchableDropdown
+                                                    label="City"
+                                                    options={companyCountryIso && companyStateIso ? City.getCitiesOfState(companyCountryIso, companyStateIso).map(c => ({ value: c.name, label: c.name })) : []}
                                                     value={companyFormData.city}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, city: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    onChange={(val) => setCompanyFormData({ ...companyFormData, city: val as string })}
+                                                    placeholder="Select City"
                                                     disabled={!companyStateIso}
-                                                >
-                                                    <option value="">Select City</option>
-                                                    {companyCountryIso && companyStateIso && City.getCitiesOfState(companyCountryIso, companyStateIso).map(c => (
-                                                        <option key={c.name} value={c.name}>{c.name}</option>
-                                                    ))}
-                                                </select>
+                                                />
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -3030,20 +3007,18 @@ const UserManagement: React.FC = () => {
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Base Currency <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                                </label>
-                                                <select
+                                                <SearchableDropdown
+                                                    label="Base Currency"
+                                                    options={[
+                                                        { value: "INR", label: "INR - Indian Rupee" },
+                                                        { value: "USD", label: "USD - US Dollar" },
+                                                        { value: "EUR", label: "EUR - Euro" }
+                                                    ]}
                                                     value={companyFormData.base_currency}
-                                                    onChange={(e) => handleCurrencyChange(e.target.value)}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    onChange={(val) => handleCurrencyChange(val as string)}
+                                                    placeholder="Select Currency"
                                                     required
-                                                >
-                                                    <option value="INR">INR - Indian Rupee</option>
-                                                    <option value="USD">USD - US Dollar</option>
-                                                    <option value="EUR">EUR - Euro</option>
-                                                    <option value="GBP">GBP - British Pound</option>
-                                                </select>
+                                                />
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -3070,21 +3045,20 @@ const UserManagement: React.FC = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Payment Terms <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                                </label>
-                                                <select
+                                                <SearchableDropdown
+                                                    label="Payment Terms"
+                                                    options={[
+                                                        { value: 'NET_15', label: '15 Days' },
+                                                        { value: 'NET_30', label: '30 Days' },
+                                                        { value: 'NET_45', label: '45 Days' },
+                                                        { value: 'NET_60', label: '60 Days' },
+                                                        { value: 'DUE_ON_RECEIPT', label: 'Due on Receipt' }
+                                                    ]}
                                                     value={companyFormData.payment_terms}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, payment_terms: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    onChange={(val) => setCompanyFormData({ ...companyFormData, payment_terms: val as string })}
+                                                    placeholder="Select Payment Terms"
                                                     required
-                                                >
-                                                    <option value="NET_15">15 Days</option>
-                                                    <option value="NET_30">30 Days</option>
-                                                    <option value="NET_45">45 Days</option>
-                                                    <option value="NET_60">60 Days</option>
-                                                    <option value="DUE_ON_RECEIPT">Due on Receipt</option>
-                                                </select>
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -3124,9 +3098,10 @@ const UserManagement: React.FC = () => {
                                                         </label>
                                                         <input
                                                             type="text"
+                                                            placeholder="State Code"
                                                             value={companyFormData.state_code}
-                                                            readOnly
-                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#f7fafc', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', outline: 'none' }}
+                                                            onChange={(e) => setCompanyFormData({ ...companyFormData, state_code: e.target.value })}
+                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                         />
                                                     </div>
                                                 </>
@@ -3223,24 +3198,24 @@ const UserManagement: React.FC = () => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '6px',
-                                    padding: '6px 16px',
+                                    padding: '6px 20px',
                                     borderRadius: '8px',
                                     fontSize: '0.85rem',
                                     background: isCancelActive ? 'transparent' : 'var(--theme-primary)',
                                     color: isCancelActive ? 'var(--text-secondary)' : 'white',
                                     border: 'none',
-                                    fontWeight: 800,
+                                    fontWeight: 700,
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s'
+                                    transition: 'all 0.23s'
                                 }}
                             >
                                 <CheckCircle size={16} /> {
-                                    viewMode === 'user' ? (editingId ? 'UPDATE USER' : 'CREATE USER') :
-                                        viewMode === 'partner' ? (editingId ? 'UPDATE COMPANY' : 'SAVE COMPANY RECORD') :
-                                            viewMode === 'end_customer' ? (editingId ? 'UPDATE END CUSTOMER' : 'SAVE END CUSTOMER RECORD') :
-                                                viewMode === 'financial_year' ? (editingId ? 'UPDATE FY' : 'SAVE FY RECORD') :
-                                                    viewMode === 'product' ? (editingId ? 'UPDATE PRODUCT' : 'SAVE PRODUCT RECORD') :
-                                                        (editingId ? 'UPDATE CUSTOMER' : 'SAVE CUSTOMER RECORD')
+                                    viewMode === 'user' ? (editingId ? 'Update User' : 'Create User') :
+                                        viewMode === 'partner' ? (editingId ? 'Update Company' : 'Save Company Record') :
+                                            viewMode === 'end_customer' ? (editingId ? 'Update End Customer' : 'Save End Customer Record') :
+                                                viewMode === 'financial_year' ? (editingId ? 'Update FY' : 'Save FY Record') :
+                                                    viewMode === 'product' ? (editingId ? 'Update Product' : 'Save Product Record') :
+                                                        (editingId ? 'Update Customer' : 'Save Customer Record')
                                 }
                             </button>
                             <button
@@ -3261,7 +3236,7 @@ const UserManagement: React.FC = () => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '6px',
-                                    padding: '6px 16px',
+                                    padding: '6px 20px',
                                     borderRadius: '8px',
                                     fontSize: '0.85rem',
                                     background: isCancelActive ? 'var(--theme-primary)' : 'transparent',
@@ -3269,7 +3244,7 @@ const UserManagement: React.FC = () => {
                                     border: 'none',
                                     fontWeight: 700,
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s'
+                                    transition: 'all 0.23s'
                                 }}
                                 onMouseEnter={(e) => {
                                     if (!isCancelActive) {
@@ -3330,7 +3305,7 @@ const UserManagement: React.FC = () => {
                                     {ALL_COLUMNS[viewMode]?.filter(col => visibleColumns[viewMode].includes(col.key)).map(col => (
                                         <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />
                                     ))}
-                                    {viewMode === 'user' && <col style={{ width: '100px' }} />}
+                                    <col style={{ width: '151px' }} />
                                 </colgroup>
                                 <thead>
                                     <tr style={{ background: 'var(--ae-table-header-bg)', borderBottom: '1px solid var(--border-secondary)' }}>
@@ -3339,11 +3314,9 @@ const UserManagement: React.FC = () => {
                                                 {col.label}
                                             </th>
                                         ))}
-                                        {(viewMode === 'user') && (
-                                            <th style={{ padding: '4px 10px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', backgroundColor: 'var(--ae-table-header-bg)' }}>
-                                                Actions
-                                            </th>
-                                        )}
+                                        <th style={{ padding: '4px 10px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', backgroundColor: 'var(--ae-table-header-bg)' }}>
+                                            Actions
+                                        </th>
                                     </tr>
                                     {/* Filter Row */}
                                     <tr style={{ background: 'var(--ae-filter-row-bg)', borderBottom: '1px solid var(--border-secondary)' }}>
@@ -3361,16 +3334,14 @@ const UserManagement: React.FC = () => {
                                                 </div>
                                             </th>
                                         ))}
-                                        {(viewMode === 'user') && (
-                                            <th style={{ padding: '4px 10px', textAlign: 'right', backgroundColor: 'var(--ae-filter-row-bg)' }}>
-                                                <button
-                                                    onClick={() => { setColumnFilters({}); setSearchTerm(''); }}
-                                                    style={{ height: '24px', width: '80px', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
-                                                >
-                                                    Clear
-                                                </button>
-                                            </th>
-                                        )}
+                                        <th style={{ padding: '4px 10px', textAlign: 'right', backgroundColor: 'var(--ae-filter-row-bg)' }}>
+                                            <button
+                                                onClick={() => { setColumnFilters({}); setSearchTerm(''); }}
+                                                style={{ height: '24px', width: '80px', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
+                                            >
+                                                Clear
+                                            </button>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -3388,49 +3359,52 @@ const UserManagement: React.FC = () => {
                                                 </td>
                                             ))}
                                             {/* Action Column Body */}
-                                            {(viewMode === 'user') && (
-                                                <td style={{ padding: '4px 10px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                            <td style={{ padding: '4px 10px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                    {viewMode === 'user' ? (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleToggleStatus(item.id, 'user')}
+                                                                style={{ padding: '8px', color: '#FF6B00', border: '1px solid rgba(255, 107, 0, 0.3)', background: 'rgba(255, 107, 0, 0.08)', cursor: 'pointer', borderRadius: '8px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                title={item.is_active ? "Deactivate User" : "Activate User"}
+                                                            >
+                                                                <Power size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteUser(item.id)}
+                                                                style={{ padding: '8px', color: '#FF6B00', border: '1px solid rgba(255, 107, 0, 0.3)', background: 'rgba(255, 107, 0, 0.08)', cursor: 'pointer', borderRadius: '8px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                title="Delete User"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleEditClick(viewMode, item)}
+                                                                style={{ padding: '8px', color: 'white', border: 'none', background: '#FF6B00', cursor: 'pointer', borderRadius: '8px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                title="Edit User"
+                                                            >
+                                                                <Pencil size={16} />
+                                                            </button>
+                                                        </>
+                                                    ) : (
                                                         <button
-                                                            onClick={() => handleToggleStatus(item.id, 'user')}
-                                                            style={{ padding: '8px', color: item.is_active ? '#00C853' : '#F44336', border: 'none', background: item.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
-                                                            title={item.is_active ? "Deactivate User" : "Activate User"}
-                                                        >
-                                                            <Power size={16} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteUser(item.id)}
-                                                            style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
-                                                            title="Delete User"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setFormData({
-                                                                    username: item.username || '',
-                                                                    email: item.email || '',
-                                                                    password: '',
-                                                                    first_name: item.first_name || '',
-                                                                    last_name: item.last_name || '',
-                                                                    role: item.role || 'app_user',
-                                                                    mobile: item.mobile || '',
-                                                                    department: item.department || '',
-                                                                    region: item.region || '',
-                                                                    reporting_to: item.reporting_to || '',
-                                                                    employee_id: item.employee_id || '',
-                                                                });
-                                                                setEditingId(item.id);
-                                                                setShowForm(true);
+                                                            onClick={() => handleEditClick(viewMode, item)}
+                                                            style={{
+                                                                padding: '4px 16px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: 700,
+                                                                color: '#FF6B00',
+                                                                background: 'rgba(255, 107, 0, 0.08)',
+                                                                border: '1px solid rgba(255, 107, 0, 0.3)',
+                                                                borderRadius: '18px',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s'
                                                             }}
-                                                            style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                            title="Edit User"
                                                         >
-                                                            <Pencil size={16} />
+                                                            View
                                                         </button>
-                                                    </div>
-                                                </td>
-                                            )}
+                                                    )}
+                                                </div>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -3438,8 +3412,8 @@ const UserManagement: React.FC = () => {
                         </div >
                     </div >
                 )}
-            </div >
-        </div >
+            </div>
+        </div>
     );
 };
 
