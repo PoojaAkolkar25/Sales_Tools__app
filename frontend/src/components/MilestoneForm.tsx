@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { Plus, Save, AlertCircle, Clock, Trash2 } from 'lucide-react';
+import { Plus, Save, AlertCircle, Clock, Trash2, Calendar } from 'lucide-react';
+import SearchableDropdown from './SearchableDropdown';
+import { formatToAppDate } from '../utils/dateUtils';
 
 interface MilestoneFormProps {
     onBack: () => void;
@@ -18,6 +20,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
     const [saving, setSaving] = useState(false);
 
     const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const { showNotification, showConfirm } = useNotification();
 
     const getCurrencySymbol = (currency: string) => {
@@ -67,8 +70,8 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
         }
     };
 
-    const handleCustomerChange = (customerId: string) => {
-        const customer = customers.find(c => c.id.toString() === customerId);
+    const handleCustomerChange = (customerId: string | number) => {
+        const customer = customers.find(c => c.id.toString() === customerId.toString());
         setSelectedCustomer(customer || null);
         setSelectedSO(null);
         setMilestones([]);
@@ -128,8 +131,8 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
         }
     };
 
-    const handleSOChange = async (soId: string) => {
-        const so = salesOrders.find(s => s.id.toString() === soId);
+    const handleSOChange = async (soId: string | number) => {
+        const so = salesOrders.find(s => s.id.toString() === soId.toString());
         setSelectedSO(so || null);
 
         if (so) {
@@ -286,38 +289,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                             {id ? 'View / Edit Milestone Plan' : 'Create New Milestone Plan'}
                         </h2>
                     </div>
-                    <button
-                        onClick={() => {
-                            showConfirm({
-                                title: 'Are you sure you want to exit?',
-                                onConfirm: () => onBack()
-                            });
-                        }}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 12px',
-                            background: '#F8FAFC',
-                            border: '1px solid #E2E8F0',
-                            borderRadius: '8px',
-                            color: '#4A5568',
-                            fontSize: '0.8rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#EDF2F7';
-                            e.currentTarget.style.borderColor = '#CBD5E0';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#F8FAFC';
-                            e.currentTarget.style.borderColor = '#E2E8F0';
-                        }}
-                    >
-                        Back to List
-                    </button>
+
                 </div>
 
                 {/* Selection & Summary Section - Side-by-Side */}
@@ -346,55 +318,28 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
                                 Select Customer <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
-                            <select
-                                style={{
-                                    width: '100%',
-                                    padding: '6px 10px',
-                                    background: 'white',
-                                    border: '1px solid #E2E8F0',
-                                    borderRadius: '6px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 500,
-                                    color: '#1a1f36',
-                                    outline: 'none',
-                                    height: '34px'
-                                }}
-                                onChange={(e) => handleCustomerChange(e.target.value)}
-                                value={selectedCustomer?.id || ''}
-                            >
-                                <option value="">Select Customer...</option>
-                                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
+                            <SearchableDropdown
+                                options={customers.map(c => ({ value: c.id.toString(), label: c.name }))}
+                                value={selectedCustomer?.id?.toString() || ''}
+                                onChange={handleCustomerChange}
+                                placeholder="Select Customer..."
+                            />
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
                                 Select Sales Order <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
-                            <select
-                                style={{
-                                    width: '100%',
-                                    padding: '6px 10px',
-                                    background: 'white',
-                                    border: '1px solid #E2E8F0',
-                                    borderRadius: '6px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 500,
-                                    color: '#1a1f36',
-                                    outline: 'none',
-                                    height: '34px'
-                                }}
-                                onChange={(e) => handleSOChange(e.target.value)}
-                                value={selectedSO?.id || ''}
+                            <SearchableDropdown
+                                options={salesOrders.map(so => ({
+                                    value: so.id.toString(),
+                                    label: `${so.so_number || `DRAFT-${so.id} (${so.po_number || 'No PO'})`} - ${getCurrencySymbol(so.currency)} ${parseFloat(so.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                }))}
+                                value={selectedSO?.id?.toString() || ''}
+                                onChange={handleSOChange}
+                                placeholder={loading ? 'Loading...' : 'Select Sales Order...'}
                                 disabled={!selectedCustomer || loading}
-                            >
-                                <option value="">{loading ? 'Loading...' : 'Select Sales Order...'}</option>
-                                {salesOrders.map(so => (
-                                    <option key={so.id} value={so.id}>
-                                        {so.so_number || `DRAFT-${so.id} (${so.po_number || 'No PO'})`} - {getCurrencySymbol(so.currency)} {parseFloat(so.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                    </option>
-                                ))}
-                            </select>
+                            />
                         </div>
                     </div>
 
@@ -537,17 +482,46 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                                                     />
                                                 </td>
                                                 <td style={{ padding: '8px' }}>
-                                                    <input
-                                                        type="date"
-                                                        value={milestone.due_date || ''}
-                                                        onChange={(e) => handleMilestoneChange(index, 'due_date', e.target.value)}
-                                                        disabled={isInvoiced}
-                                                        style={{
-                                                            width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
-                                                            borderRadius: '6px', fontSize: '0.75rem',
-                                                            opacity: isInvoiced ? 0.7 : 1
-                                                        }}
-                                                    />
+                                                    <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
+                                                        <input
+                                                            type="text"
+                                                            value={formatToAppDate(milestone.due_date || '')}
+                                                            readOnly
+                                                            disabled={isInvoiced}
+                                                            style={{
+                                                                width: '100%', padding: '6px 8px', paddingRight: '28px', border: '1px solid #E2E8F0',
+                                                                borderRadius: '6px', fontSize: '0.75rem',
+                                                                opacity: isInvoiced ? 0.7 : 1,
+                                                                color: 'var(--text-primary)',
+                                                                background: isInvoiced ? '#F8FAFC' : 'white',
+                                                                cursor: isInvoiced ? 'not-allowed' : 'pointer',
+                                                                minHeight: '30px'
+                                                            }}
+                                                            onClick={(e) => {
+                                                                if (!isInvoiced) {
+                                                                    const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                                                    if (dateInput) dateInput.showPicker();
+                                                                }
+                                                            }}
+                                                        />
+                                                        <input
+                                                            type="date"
+                                                            value={milestone.due_date || ''}
+                                                            onChange={(e) => handleMilestoneChange(index, 'due_date', e.target.value)}
+                                                            disabled={isInvoiced}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                opacity: 0,
+                                                                cursor: isInvoiced ? 'not-allowed' : 'pointer',
+                                                                zIndex: 1,
+                                                                left: 0,
+                                                                top: 0
+                                                            }}
+                                                        />
+                                                        <Calendar size={14} style={{ position: 'absolute', right: '8px', color: '#A0AEC0', pointerEvents: 'none', zIndex: 2 }} />
+                                                    </div>
                                                 </td>
                                                 <td style={{ padding: '8px' }}>
                                                     <input
@@ -667,7 +641,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                         gap: '6px',
                         padding: '6px 16px',
                         borderRadius: '8px',
-                        fontSize: '0.85rem',
+                        fontSize: '0.8rem',
                         background: (!hoveredBtn || hoveredBtn === 'save') ? 'var(--theme-primary)' : 'transparent',
                         color: ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
                         border: 'none',
@@ -685,9 +659,12 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
 
                 <button
                     onClick={() => {
+                        setIsCancelModalOpen(true);
+                        setHoveredBtn('cancel');
                         showConfirm({
                             title: 'Are you sure you want to exit?',
-                            onConfirm: () => onBack()
+                            onConfirm: () => onBack(),
+                            onCancel: () => setIsCancelModalOpen(false)
                         });
                     }}
                     style={{
@@ -696,17 +673,21 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                         gap: '6px',
                         padding: '6px 16px',
                         borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        background: hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
-                        color: hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        fontSize: '0.8rem',
+                        background: (hoveredBtn === 'cancel' || isCancelModalOpen) ? 'var(--theme-primary)' : 'transparent',
+                        color: (hoveredBtn === 'cancel' || isCancelModalOpen) ? 'white' : 'var(--text-secondary)',
                         border: 'none',
-                        fontWeight: 700,
+                        fontWeight: 800,
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        boxShadow: hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                        boxShadow: (hoveredBtn === 'cancel' || isCancelModalOpen) ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                     }}
                     onMouseEnter={() => setHoveredBtn('cancel')}
-                    onMouseLeave={() => setHoveredBtn(null)}
+                    onMouseLeave={() => {
+                        if (!isCancelModalOpen) {
+                            setHoveredBtn(null);
+                        }
+                    }}
                 >
                     <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
                     <span>Cancel</span>

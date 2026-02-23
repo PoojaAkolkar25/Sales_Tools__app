@@ -17,7 +17,7 @@
   --ae-orange-dark: #E65100;
   --ae-green: #00C853;
   --ae-gray-50: #F8FAFC;
-  --ae-gray-100: #EDF2F7;
+  --ae-gray-100: #E2E8F0;
   --ae-gray-800: #000000;
   --ae-gray-900: #000000;
 
@@ -25,6 +25,8 @@
   --bg-primary: #FFFFFF;
   --bg-secondary: #F7FAFC;
   --bg-accent: #E2E8F0;
+  --ae-table-header-bg: #E2E8F0;
+  --ae-filter-row-bg: #EDF2F7;
   --bg-hover: #F1F5F9;
 
   --text-primary: #000000;
@@ -1719,7 +1721,7 @@ option {
 .ae-table-container {
   background: var(--bg-primary);
   border: 1px solid var(--border-primary);
-  border-radius: 12px;
+  border-radius: 0px;
   overflow-x: auto;
   box-shadow: var(--shadow-card);
   max-height: 65vh;
@@ -1735,7 +1737,7 @@ option {
 
 .ae-table th {
   background: var(--bg-accent);
-  padding: 6px 8px;
+  padding: 4px 6px;
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1748,7 +1750,7 @@ option {
 }
 
 .ae-table td {
-  padding: 6px 8px;
+  padding: 4px 6px;
   border-bottom: 1px solid var(--ae-gray-100);
   color: #000000;
   font-size: 0.75rem;
@@ -1790,6 +1792,7 @@ option {
   height: 34px;
 }
 
+.ae-input:hover,
 .ae-input:focus {
   border-color: var(--ae-orange);
   box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
@@ -1797,7 +1800,7 @@ option {
 
 .ae-search-icon {
   position: absolute;
-  left: 12px;
+  left: 8px;
   top: 50%;
   transform: translateY(-50%);
   color: #A0AEC0;
@@ -1808,7 +1811,7 @@ option {
 }
 
 .ae-input-group .ae-input {
-  padding-left: 36px !important;
+  padding-left: 24px !important;
 }
 
 /* --- Buttons --- */
@@ -2799,6 +2802,14 @@ option {
   width: 100%;
 }
 
+.ae-searchable-combobox-input.active,
+.ae-searchable-combobox-input:hover,
+.ae-searchable-combobox-input:focus {
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.15) !important;
+  outline: none;
+}
+
 .ae-searchable-dropdown-trigger {
   display: flex;
   align-items: center;
@@ -2832,7 +2843,7 @@ option {
 
 .ae-searchable-dropdown-label {
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;

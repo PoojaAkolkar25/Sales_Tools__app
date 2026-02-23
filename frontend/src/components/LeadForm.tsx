@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import { formatToAppDate } from '../utils/dateUtils';
 import SearchableDropdown from './SearchableDropdown';
 
 interface LeadFormProps {
@@ -19,6 +20,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
     const { showNotification, showConfirm } = useNotification();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [isCancelActive, setIsCancelActive] = useState(false);
     const [formData, setFormData] = useState({
         company: 'AE IND',
         lead_date: new Date().toISOString().split('T')[0],
@@ -139,24 +141,36 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 Lead Date <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
                             <div style={{ position: 'relative' }}>
+                                {/* Display-only text field showing DD/MMM/YYYY */}
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={formatToAppDate(formData.lead_date)}
+                                    className="ae-input"
+                                    style={{ width: '100%', height: '34px', cursor: 'pointer' }}
+                                    onClick={() => {
+                                        const picker = document.getElementById('lead-date-picker') as HTMLInputElement;
+                                        if (picker) picker.showPicker?.();
+                                    }}
+                                />
+                                {/* Hidden native date input for picking */}
                                 <input
                                     type="date"
+                                    id="lead-date-picker"
                                     name="lead_date"
                                     value={formData.lead_date}
                                     onChange={handleInputChange}
-                                    style={{
-                                        width: '100%',
-                                        padding: '6px 10px',
-                                        background: 'var(--bg-primary)',
-                                        border: '1px solid var(--border-primary)',
-                                        borderRadius: '6px',
-                                        fontSize: '0.85rem',
-                                        fontWeight: 500,
-                                        color: 'var(--text-primary)',
-                                        outline: 'none',
-                                        height: '34px'
-                                    }}
                                     required
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        opacity: 0,
+                                        cursor: 'pointer',
+                                        pointerEvents: 'none'
+                                    }}
                                 />
                                 <Calendar
                                     size={16}
@@ -166,8 +180,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                         top: '50%',
                                         transform: 'translateY(-50%)',
                                         color: 'var(--text-secondary)',
-                                        pointerEvents: 'none',
-                                        background: 'transparent'
+                                        pointerEvents: 'none'
                                     }}
                                 />
                             </div>
@@ -184,16 +197,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 value={formData.customer_name}
                                 onChange={handleInputChange}
                                 placeholder="Customer Name"
+                                className="ae-input"
                                 style={{
                                     width: '100%',
-                                    padding: '6px 10px',
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-primary)',
-                                    borderRadius: '6px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 500,
-                                    color: 'var(--text-primary)',
-                                    outline: 'none',
                                     height: '34px'
                                 }}
                                 required
@@ -211,16 +217,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 value={formData.project_name}
                                 onChange={handleInputChange}
                                 placeholder="Project Name"
+                                className="ae-input"
                                 style={{
                                     width: '100%',
-                                    padding: '6px 10px',
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-primary)',
-                                    borderRadius: '6px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 500,
-                                    color: 'var(--text-primary)',
-                                    outline: 'none',
                                     height: '34px'
                                 }}
                                 required
@@ -238,16 +237,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 value={formData.sales_person}
                                 onChange={handleInputChange}
                                 placeholder="Sales Person"
+                                className="ae-input"
                                 style={{
                                     width: '100%',
-                                    padding: '6px 10px',
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-primary)',
-                                    borderRadius: '6px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 500,
-                                    color: 'var(--text-primary)',
-                                    outline: 'none',
                                     height: '34px'
                                 }}
                             />
@@ -264,16 +256,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 value={formData.project_manager}
                                 onChange={handleInputChange}
                                 placeholder="Project Manager"
+                                className="ae-input"
                                 style={{
                                     width: '100%',
-                                    padding: '6px 10px',
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-primary)',
-                                    borderRadius: '6px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 500,
-                                    color: 'var(--text-primary)',
-                                    outline: 'none',
                                     height: '34px'
                                 }}
                             />
@@ -290,16 +275,9 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                                 value={formData.email}
                                 onChange={handleInputChange}
                                 placeholder="Email Address"
+                                className="ae-input"
                                 style={{
                                     width: '100%',
-                                    padding: '6px 10px',
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-primary)',
-                                    borderRadius: '6px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 500,
-                                    color: 'var(--text-primary)',
-                                    outline: 'none',
                                     height: '34px'
                                 }}
                             />
@@ -339,34 +317,78 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
                     <div style={{
                         display: 'flex',
-                        gap: '2px',
-                        alignItems: 'center',
                         background: 'white',
-                        padding: '6px',
+                        padding: '4px',
                         borderRadius: '12px',
                         border: '1px solid var(--border-primary)',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
                     }}>
+                        {/* Create Lead — first (orange unless cancel is active) */}
                         <button
                             type="submit"
                             disabled={saving}
-                            className="ae-btn-primary"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: isCancelActive ? 'transparent' : 'var(--theme-primary)',
+                                color: isCancelActive ? 'var(--text-secondary)' : 'white',
+                                boxShadow: isCancelActive ? 'none' : '0 2px 8px rgba(187, 77, 0, 0.3)'
+                            }}
                         >
                             {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                            <span>{id ? 'Update Lead' : 'Create Lead'}</span>
+                            <span>{id ? 'Update Lead' : 'Save Lead'}</span>
                         </button>
 
+                        {/* Cancel — second (orange when active) */}
                         <button
                             type="button"
                             onClick={() => {
+                                setIsCancelActive(true);
                                 showConfirm({
                                     title: 'Are you sure you want to exit?',
-                                    onConfirm: () => onBack()
+                                    onConfirm: () => onBack(),
+                                    onCancel: () => setIsCancelActive(false)
                                 });
                             }}
-                            className="ae-btn-secondary"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: isCancelActive ? 'var(--theme-primary)' : 'transparent',
+                                color: isCancelActive ? 'white' : 'var(--text-secondary)',
+                                boxShadow: isCancelActive ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isCancelActive) {
+                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                    e.currentTarget.style.color = 'var(--ae-orange)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isCancelActive) {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = 'var(--text-secondary)';
+                                }
+                            }}
                         >
-                            <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
+                            <span style={{ fontSize: '16px', lineHeight: '16px', fontWeight: 700 }}>×</span>
                             <span>Cancel</span>
                         </button>
                     </div>

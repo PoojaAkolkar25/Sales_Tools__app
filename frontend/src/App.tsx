@@ -36,7 +36,7 @@ import InvoiceDashboard from './components/InvoiceDashboard';
 import InvoiceForm from './components/InvoiceForm';
 import api from './api';
 import './index.css';
-import { NotificationProvider, useNotification } from './context/NotificationContext';
+import { useNotification } from './context/NotificationContext';
 import { useTheme } from './context/ThemeContext';
 import DealDashboard from './components/DealDashboard';
 import DealForm from './components/DealForm';
@@ -1518,9 +1518,7 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <NotificationProvider>
-        <AppContent />
-      </NotificationProvider>
+      <AppContent />
     </BrowserRouter>
   );
 };

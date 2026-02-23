@@ -73,19 +73,22 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                             padding: '10px 32px',
                             borderRadius: '8px',
                             fontSize: '1rem',
-                            fontWeight: 600,
+                            fontWeight: 700,
                             border: 'none',
-                            background: '#0061fe',
+                            background: '#FF6B00',
                             color: 'white',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
-                            minWidth: '100px'
+                            minWidth: '100px',
+                            boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.opacity = '0.9';
+                            e.currentTarget.style.background = '#e66000';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.opacity = '1';
+                            e.currentTarget.style.background = '#FF6B00';
+                            e.currentTarget.style.transform = 'translateY(0)';
                         }}
                     >
                         {confirmText}
@@ -97,18 +100,18 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                             borderRadius: '8px',
                             fontSize: '1rem',
                             fontWeight: 600,
-                            border: 'none',
-                            background: '#f1f5f9',
+                            border: '1px solid #E2E8F0',
+                            background: 'white',
                             color: '#475569',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
                             minWidth: '100px'
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#e2e8f0';
+                            e.currentTarget.style.background = '#f8fafc';
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#f1f5f9';
+                            e.currentTarget.style.background = 'white';
                         }}
                     >
                         {cancelText}

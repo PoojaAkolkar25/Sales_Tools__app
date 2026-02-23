@@ -18,10 +18,12 @@ import {
     PlusCircle,
     Paperclip,
     File as FileIcon,
-    Download
+    Download,
+    Calendar
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import SearchableDropdown from './SearchableDropdown';
 import { formatToAppDate } from '../utils/dateUtils';
 
 interface EstimateFormProps {
@@ -60,6 +62,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const [estimate, setEstimate] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [activeAction, setActiveAction] = useState<'save' | 'submit' | 'cancel' | null>('submit');
+    const [isConfirmingExit, setIsConfirmingExit] = useState(false);
     const [formData, setFormData] = useState<any>(getInitialFormData());
 
     const [deals, setDeals] = useState<any[]>([]);
@@ -67,7 +71,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const [companyProfile, setCompanyProfile] = useState<any>(null);
 
 
-    const [uploadFeedback, setUploadFeedback] = useState({ type: '', message: '' });
 
     const [emailModal, setEmailModal] = useState<{
         open: boolean;
@@ -436,7 +439,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const handleDownload = async (prop: any) => {
         try {
             const fileUrl = prop.file_url || getFileUrl(prop.file);
-            setUploadFeedback({ type: 'success', message: `Downloading ${prop.filename}...` });
+            // Download initiated
 
             const response = await api.get(fileUrl, { responseType: 'blob' });
             const blob = new Blob([response.data], { type: response.headers['content-type'] });
@@ -451,12 +454,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
             window.URL.revokeObjectURL(url);
 
             setTimeout(() => {
-                setUploadFeedback({ type: 'success', message: `${prop.filename} downloaded!` });
-                setTimeout(() => setUploadFeedback({ type: '', message: '' }), 3000);
+                showNotification(`${prop.filename} downloaded successfully`, 'success');
             }, 1000);
         } catch (error) {
             console.error('Error downloading file', error);
-            setUploadFeedback({ type: 'error', message: 'Download failed' });
+            showNotification(`Download failed for ${prop.filename}`, 'error');
         }
     };
 
@@ -817,26 +819,24 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                 </div>
             </div>
 
-            {/* Excel-like Grid Layout */}
-            <div style={{ padding: '24px', background: 'white', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                {/* First Row: Cost Sheet, Deal, Customer Name */}
-                <div className="ae-grid-3" style={{ marginBottom: '24px', gap: '16px' }}>
+            {/* Top Information Section */}
+            <div style={{ padding: '24px', background: 'white', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '16px' }}>
+                <div className="ae-grid-4" style={{ gap: '16px' }}>
+                    {/* Cost Sheet Amount */}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>
                             Cost Sheet Amount <span style={{ color: '#FF6B00' }}>*</span>
-                            {(estimate?.cost_sheet_price || (formData.cost_sheet && (costSheets.find(cs => cs.id.toString() === formData.cost_sheet.toString())?.total_estimated_price))) && (
-                                <span style={{ marginLeft: '8px', color: '#2b6cb0', fontWeight: 600 }}>
-                                    (CS Amt:₹{parseFloat(estimate?.cost_sheet_price || costSheets.find(cs => cs.id.toString() === formData.cost_sheet.toString())?.total_estimated_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })})
-                                </span>
-                            )}
                         </label>
                         {!id ? (
-                            <select
-                                className="ae-input"
-                                style={{ height: '34px', padding: '6px 10px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500 }}
-                                value={formData.cost_sheet}
-                                onChange={async (e) => {
-                                    const csId = e.target.value;
+                            <SearchableDropdown
+                                options={costSheets.map(cs => ({
+                                    value: cs.id,
+                                    label: `${cs.cost_sheet_no} - ${cs.project_name}`
+                                }))}
+                                value={formData.cost_sheet || ''}
+                                onChange={async (val) => {
+                                    const csId = val;
+                                    setFormData({ ...formData, cost_sheet: csId });
                                     if (!csId) {
                                         setFormData({ ...formData, cost_sheet: '', deal: '', items: [{ id: Date.now(), sr_no: 1, particulars: '', description: '', qty: 0, rate: 0, amount: 0 }] });
                                         setEstimate(null);
@@ -902,53 +902,68 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         showNotification('Failed to fetch cost sheet details', 'error');
                                     }
                                 }}
-                            >
-                                <option value="">Select Cost Sheet</option>
-                                {costSheets.map(cs => (
-                                    <option key={cs.id} value={cs.id}>{cs.cost_sheet_no} - {cs.project_name}</option>
-                                ))}
-                            </select>
+                                placeholder="Select Cost Sheet"
+                                className="w-full"
+                            />
                         ) : (
-                            <div style={{ padding: '6px 10px', background: '#F7FAFC', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '0.85rem', fontWeight: 600, height: '34px', display: 'flex', alignItems: 'center' }}>{estimate?.cost_sheet_no || 'XXXX'}</div>
+                            <div className="ae-input" style={{ background: '#F7FAFC', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                                {estimate?.cost_sheet_no || 'XXXX'}
+                            </div>
+                        )}
+                        {(estimate?.cost_sheet_price || (formData.cost_sheet && (costSheets.find(cs => cs.id.toString() === formData.cost_sheet.toString())?.total_estimated_price))) && (
+                            <p style={{ fontSize: '0.65rem', color: '#2b6cb0', marginTop: '4px', fontWeight: 600 }}>
+                                CS Amt: ₹{parseFloat(estimate?.cost_sheet_price || costSheets.find(cs => cs.id.toString() === formData.cost_sheet.toString())?.total_estimated_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </p>
                         )}
                     </div>
+
+                    {/* Deal No. */}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>
                             Deal No.
-                            {(estimate?.deal_amount || (formData.deal && (deals.find(d => d.id.toString() === formData.deal.toString())?.deal_amount))) && (
-                                <span style={{ marginLeft: '8px', color: '#38A169', fontWeight: 600 }}>
-                                    (Deal Amt: ₹{parseFloat(estimate?.deal_amount || deals.find(d => d.id.toString() === formData.deal.toString())?.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })})
-                                </span>
-                            )}
                         </label>
                         {!id ? (
-                            <select
-                                className="ae-input"
-                                style={{ height: '34px', padding: '6px 10px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500 }}
-                                value={formData.deal}
-                                onChange={(e) => setFormData({ ...formData, deal: e.target.value })}
-                            >
-                                <option value="">Select Deal</option>
-                                {deals.map(deal => (
-                                    <option key={deal.id} value={deal.id}>{deal.deal_id} - {deal.deal_name}</option>
-                                ))}
-                            </select>
+                            <SearchableDropdown
+                                options={deals.map(deal => ({
+                                    value: deal.id,
+                                    label: `${deal.deal_id} - ${deal.deal_name}`
+                                }))}
+                                value={formData.deal || ''}
+                                onChange={(val) => setFormData({ ...formData, deal: val })}
+                                placeholder="Select Deal"
+                                className="w-full"
+                            />
                         ) : (
-                            <div style={{ padding: '6px 10px', background: '#F7FAFC', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '0.85rem', fontWeight: 600, height: '34px', display: 'flex', alignItems: 'center' }}>{estimate?.deal_id || 'XXXX'}</div>
+                            <div className="ae-input" style={{ background: '#F7FAFC', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                                {estimate?.deal_id || 'XXXX'}
+                            </div>
+                        )}
+                        {(estimate?.deal_amount || (formData.deal && (deals.find(d => d.id.toString() === formData.deal.toString())?.deal_amount))) && (
+                            <p style={{ fontSize: '0.65rem', color: '#38A169', marginTop: '4px', fontWeight: 600 }}>
+                                Deal Amt: ₹{parseFloat(estimate?.deal_amount || deals.find(d => d.id.toString() === formData.deal.toString())?.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </p>
                         )}
                     </div>
+
+                    {/* Customer Name */}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Customer Name</label>
-                        <div style={{ padding: '6px 10px', background: '#F7FAFC', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '0.85rem', fontWeight: 600, color: '#1a1f36', height: '34px', display: 'flex', alignItems: 'center' }}>{estimate?.customer_name || 'Select Cost Sheet'}</div>
+                        <div className="ae-input" style={{ background: '#F7FAFC', fontWeight: 600, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {estimate?.customer_name || 'Select Cost Sheet'}
+                        </div>
+                    </div>
+
+                    {/* Estimate No. */}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Estimate No.</label>
+                        <div className="ae-input" style={{ background: '#F7FAFC', fontWeight: 600, color: '#718096', display: 'flex', alignItems: 'center' }}>
+                            {estimate?.estimate_id || 'Generating...'}
+                        </div>
                     </div>
                 </div>
 
-                {/* Second Row: Estimate No, Estimate Date */}
-                <div className="ae-grid-2" style={{ marginBottom: '24px', gap: '16px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Estimate No.</label>
-                        <div style={{ padding: '6px 10px', background: '#F7FAFC', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '0.85rem', fontWeight: 600, color: '#718096', height: '34px', display: 'flex', alignItems: 'center' }}>{estimate?.estimate_id || 'Generating...'}</div>
-                    </div>
+                <div className="ae-grid-4" style={{ gap: '16px', marginTop: '16px' }}>
+                    {/* Estimate Date */}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Estimate Date</label>
                         <input
@@ -959,212 +974,128 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                             style={{ background: '#f8fafc', fontWeight: 600 }}
                         />
                     </div>
-                </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>
-                        Proposal Attachment <span style={{ color: '#E53E3E' }}>*</span>
-                    </label>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '16px',
-                        padding: '4px 12px',
-                        background: '#F8FAFC',
-                        borderRadius: '12px',
-                        border: '1px solid #E0E6ED',
-                        width: 'fit-content',
-                        minWidth: 'fit-content',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                    }}>
-                        <input
-                            type="file"
-                            id="proposal-upload"
-                            style={{ display: 'none' }}
-                            onChange={handleFileChange}
-                            disabled={estimate?.status === 'SUBMITTED'}
-                        />
-                        <button
-                            onClick={() => document.getElementById('proposal-upload')?.click()}
-                            disabled={estimate?.status === 'SUBMITTED'}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                background: 'white',
-                                color: estimate?.status === 'SUBMITTED' ? '#CBD5E0' : '#1a1f36',
-                                border: '1px solid #E0E6ED',
-                                height: '34px',
-                                padding: '0 16px',
-                                borderRadius: '8px',
-                                fontWeight: 700,
-                                fontSize: '0.85rem',
-                                cursor: estimate?.status === 'SUBMITTED' ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s ease',
-                                whiteSpace: 'nowrap'
-                            }}
-                            onMouseEnter={(e) => {
-                                if (estimate?.status !== 'SUBMITTED') {
-                                    e.currentTarget.style.background = 'var(--theme-primary)';
-                                    e.currentTarget.style.color = 'white';
-                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (estimate?.status !== 'SUBMITTED') {
-                                    e.currentTarget.style.background = 'white';
-                                    e.currentTarget.style.color = 'var(--text-primary)';
-                                    e.currentTarget.style.borderColor = 'var(--border-primary)';
-                                }
-                            }}
-                        >
-                            <Paperclip size={14} /> Proposal Attachment
-                        </button>
-
-                        {/* File List pills */}
+                    {/* Proposal Attachment */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 3' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
+                            Proposal Attachment <span style={{ color: '#E53E3E' }}>*</span>
+                        </label>
                         <div style={{
-                            flex: 1,
                             display: 'flex',
-                            gap: '8px',
-                            overflowX: 'auto',
-                            padding: '4px 0',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '0 12px',
+                            background: '#F8FAFC',
+                            borderRadius: '8px',
+                            border: '1px solid #E0E6ED',
+                            height: '34px',
+                            width: 'fit-content',
+                            maxWidth: '100%',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                         }}>
-                            {/* Pending File Pill */}
-                            {pendingFile && (
-                                <div style={{
+                            <input
+                                type="file"
+                                id="proposal-upload"
+                                style={{ display: 'none' }}
+                                onChange={handleFileChange}
+                                disabled={estimate?.status === 'SUBMITTED'}
+                            />
+                            <button
+                                onClick={() => document.getElementById('proposal-upload')?.click()}
+                                disabled={estimate?.status === 'SUBMITTED'}
+                                style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '4px 10px',
-                                    background: '#FFF8F2', // Light orange for pending
-                                    borderRadius: '8px',
-                                    border: '1px solid #FF6B00',
-                                    minWidth: 'fit-content'
-                                }}>
-                                    <Clock size={12} style={{ color: 'var(--theme-primary)' }} />
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                                        {pendingFile.name} (Pending)
-                                    </span>
-                                    <button
-                                        onClick={() => setPendingFile(null)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: '#E53E3E', display: 'flex' }}
-                                        title="Remove pending file"
-                                    >
-                                        <X size={12} />
-                                    </button>
-                                </div>
-                            )}
+                                    gap: '6px',
+                                    background: 'var(--bg-primary)',
+                                    color: estimate?.status === 'SUBMITTED' ? '#CBD5E0' : 'var(--text-primary)',
+                                    border: '1px solid var(--border-primary)',
+                                    height: '24px',
+                                    padding: '0 10px',
+                                    borderRadius: '6px',
+                                    fontWeight: 700,
+                                    fontSize: '0.75rem',
+                                    cursor: estimate?.status === 'SUBMITTED' ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (estimate?.status !== 'SUBMITTED') {
+                                        e.currentTarget.style.background = 'var(--theme-primary)';
+                                        e.currentTarget.style.color = 'white';
+                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (estimate?.status !== 'SUBMITTED') {
+                                        e.currentTarget.style.background = 'var(--bg-primary)';
+                                        e.currentTarget.style.color = 'var(--text-primary)';
+                                        e.currentTarget.style.borderColor = 'var(--border-primary)';
+                                    }
+                                }}
+                            >
+                                <Paperclip size={12} /> Attach
+                            </button>
 
-                            {/* Existing Proposals */}
-                            {(estimate?.proposals || []).length > 0 ? (
-                                [...estimate.proposals].reverse().map((prop: any) => (
-                                    <div key={prop.id} style={{
+                            {/* File List pills */}
+                            <div style={{
+                                display: 'flex',
+                                gap: '8px',
+                                overflowX: 'auto',
+                                alignItems: 'center'
+                            }}>
+                                {/* Pending File Pill */}
+                                {pendingFile && (
+                                    <div style={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '8px',
-                                        padding: '4px 10px',
-                                        background: 'white',
-                                        borderRadius: '8px',
-                                        border: '1px solid #E0E6ED',
-                                        minWidth: 'fit-content'
+                                        gap: '6px',
+                                        padding: '2px 8px',
+                                        background: '#FFF8F2',
+                                        borderRadius: '6px',
+                                        border: '1px solid #FF6B00',
+                                        whiteSpace: 'nowrap'
                                     }}>
-                                        <FileIcon size={14} style={{ color: '#FF6B00' }} />
-                                        <span style={{
-                                            fontSize: '0.8rem',
-                                            fontWeight: 600,
-                                            color: '#1a1f36',
-                                            maxWidth: '120px',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap'
-                                        }} title={`${prop.filename} (v${prop.version})`}>
-                                            {prop.filename} {prop.version > 1 && `(v${prop.version})`}
-                                        </span>
-                                        <div style={{ display: 'flex', gap: '4px' }}>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleView(prop)}
-                                                style={{
-                                                    width: '22px',
-                                                    height: '22px',
-                                                    borderRadius: '50%',
-                                                    border: 'none',
-                                                    background: '#e0f2fe',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    cursor: 'pointer',
-                                                    color: '#0369a1'
-                                                }}
-                                                title="View"
-                                            >
-                                                <Eye size={10} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDownload(prop)}
-                                                style={{
-                                                    width: '22px',
-                                                    height: '22px',
-                                                    borderRadius: '50%',
-                                                    border: 'none',
-                                                    background: '#f1f5f9',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    cursor: 'pointer',
-                                                    color: '#475569'
-                                                }}
-                                                title={`Download (Uploaded by ${prop.uploaded_by_name || 'System'})`}
-                                            >
-                                                <Download size={10} />
-                                            </button>
-                                            {estimate?.status !== 'SUBMITTED' && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRemoveProposal(prop.id)}
-                                                    style={{
-                                                        width: '22px',
-                                                        height: '22px',
-                                                        borderRadius: '50%',
-                                                        border: 'none',
-                                                        background: '#fee2e2',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        cursor: 'pointer',
-                                                        color: '#ef4444'
-                                                    }}
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 size={10} />
-                                                </button>
-                                            )}
-                                        </div>
+                                        <Clock size={10} style={{ color: 'var(--theme-primary)' }} />
+                                        <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>{pendingFile.name} (Pending)</span>
+                                        <button
+                                            onClick={() => setPendingFile(null)}
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', color: '#E53E3E', display: 'flex' }}
+                                        >
+                                            <X size={10} />
+                                        </button>
                                     </div>
-                                ))
-                            ) : (
-                                <span style={{ fontSize: '0.9rem', color: '#A0AEC0', fontStyle: 'italic', marginLeft: '10px' }}>
-                                    {!pendingFile && 'No attachments yet'}
-                                </span>
-                            )}
-                            {uploadFeedback.message && (
-                                <div style={{
-                                    padding: '4px 12px',
-                                    borderRadius: '6px',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 600,
-                                    background: uploadFeedback.type === 'error' ? '#FFF5F5' : '#F0FFF4',
-                                    color: uploadFeedback.type === 'error' ? '#C53030' : '#2F855A',
-                                    border: `1px solid ${uploadFeedback.type === 'error' ? '#FEB2B2' : '#9AE6B4'}`,
-                                    marginLeft: '10px',
-                                    whiteSpace: 'nowrap',
-                                    animation: 'fadeIn 0.3s ease'
-                                }}>
-                                    {uploadFeedback.message}
-                                </div>
-                            )}
+                                )}
+
+                                {/* Existing Proposals */}
+                                {(estimate?.proposals || []).length > 0 ? (
+                                    [...estimate.proposals].reverse().map((prop: any) => (
+                                        <div key={prop.id} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '2px 8px',
+                                            background: 'white',
+                                            borderRadius: '6px',
+                                            border: '1px solid #E0E6ED',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            <FileIcon size={12} style={{ color: '#FF6B00' }} />
+                                            <span style={{ fontSize: '0.7rem', fontWeight: 600, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {prop.filename}
+                                            </span>
+                                            <div style={{ display: 'flex', gap: '2px' }}>
+                                                <Eye size={10} style={{ cursor: 'pointer', color: '#0369a1' }} onClick={() => handleView(prop)} />
+                                                <Download size={10} style={{ cursor: 'pointer', color: '#475569' }} onClick={() => handleDownload(prop)} />
+                                                {estimate?.status !== 'SUBMITTED' && (
+                                                    <Trash2 size={10} style={{ cursor: 'pointer', color: '#ef4444' }} onClick={() => handleRemoveProposal(prop.id)} />
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    !pendingFile && <span style={{ fontSize: '0.75rem', color: '#A0AEC0', fontStyle: 'italic' }}>No attachments</span>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1276,7 +1207,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     letterSpacing: '0.05em',
                                     borderBottom: '2px solid #E0E6ED',
                                     whiteSpace: 'nowrap',
-                                    width: '120px'
+                                    width: '140px'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         {editingColumn === 'subscription_from' ? (
@@ -1307,7 +1238,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     letterSpacing: '0.05em',
                                     borderBottom: '2px solid #E0E6ED',
                                     whiteSpace: 'nowrap',
-                                    width: '120px'
+                                    width: '140px'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         {editingColumn === 'subscription_to' ? (
@@ -1501,24 +1432,58 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         />
                                     </td>
                                     <td style={{ padding: '8px' }}>
-                                        <input
-                                            type="date"
-                                            className="ae-input"
-                                            style={{ height: '36px', padding: '4px 8px', width: '100%', fontSize: '0.85rem' }}
-                                            value={item.subscription_from || ''}
-                                            onChange={(e) => handleItemChange(item.id, 'subscription_from', e.target.value)}
-                                            disabled={isReadOnly}
-                                        />
+                                        <div style={{ position: 'relative' }}>
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                className="ae-input"
+                                                style={{ height: '36px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer', background: isReadOnly ? '#f7fafc' : 'white' }}
+                                                value={item.subscription_from ? formatToAppDate(item.subscription_from) : ''}
+                                                onClick={() => {
+                                                    if (!isReadOnly) {
+                                                        const picker = document.getElementById(`sub-from-${item.id}`) as HTMLInputElement;
+                                                        if (picker) picker.showPicker?.();
+                                                    }
+                                                }}
+                                                placeholder="DD/MMM/YYYY"
+                                            />
+                                            <input
+                                                type="date"
+                                                id={`sub-from-${item.id}`}
+                                                style={{ position: 'absolute', opacity: 0, inset: 0, width: '100%', pointerEvents: 'none' }}
+                                                value={item.subscription_from || ''}
+                                                onChange={(e) => handleItemChange(item.id, 'subscription_from', e.target.value)}
+                                                disabled={isReadOnly}
+                                            />
+                                            <Calendar size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
+                                        </div>
                                     </td>
                                     <td style={{ padding: '8px' }}>
-                                        <input
-                                            type="date"
-                                            className="ae-input"
-                                            style={{ height: '36px', padding: '4px 8px', width: '100%', fontSize: '0.85rem' }}
-                                            value={item.subscription_to || ''}
-                                            onChange={(e) => handleItemChange(item.id, 'subscription_to', e.target.value)}
-                                            disabled={isReadOnly}
-                                        />
+                                        <div style={{ position: 'relative' }}>
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                className="ae-input"
+                                                style={{ height: '36px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer', background: isReadOnly ? '#f7fafc' : 'white' }}
+                                                value={item.subscription_to ? formatToAppDate(item.subscription_to) : ''}
+                                                onClick={() => {
+                                                    if (!isReadOnly) {
+                                                        const picker = document.getElementById(`sub-to-${item.id}`) as HTMLInputElement;
+                                                        if (picker) picker.showPicker?.();
+                                                    }
+                                                }}
+                                                placeholder="DD/MMM/YYYY"
+                                            />
+                                            <input
+                                                type="date"
+                                                id={`sub-to-${item.id}`}
+                                                style={{ position: 'absolute', opacity: 0, inset: 0, width: '100%', pointerEvents: 'none' }}
+                                                value={item.subscription_to || ''}
+                                                onChange={(e) => handleItemChange(item.id, 'subscription_to', e.target.value)}
+                                                disabled={isReadOnly}
+                                            />
+                                            <Calendar size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
+                                        </div>
                                     </td>
 
                                     <td style={{ padding: '8px' }}>
@@ -1646,13 +1611,19 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                 padding: '6px',
                 borderRadius: '12px',
                 border: '1px solid #E0E6ED',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                 width: 'fit-content',
                 flexShrink: 0,
                 zIndex: 10,
                 marginTop: '10px',
                 marginLeft: 'auto' // Align to the right
-            }}>
+            }}
+                onMouseLeave={() => {
+                    if (!isConfirmingExit) {
+                        setActiveAction('submit');
+                    }
+                }}
+            >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {id && isReadOnly && estimate?.approval_status !== 'PENDING' && (
                         <button
@@ -1666,9 +1637,24 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                         <>
                             <button
                                 onClick={() => handleSave(false)}
+                                onMouseEnter={() => !isConfirmingExit && setActiveAction('save')}
                                 disabled={saving}
-                                className="ae-btn-secondary"
-                                style={{ border: 'none' }}
+                                style={{
+                                    height: '38px',
+                                    padding: '0 18px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    borderRadius: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    border: 'none',
+                                    background: activeAction === 'save' ? 'var(--theme-primary)' : 'transparent',
+                                    color: activeAction === 'save' ? 'white' : 'var(--text-secondary)',
+                                    transition: 'all 0.2s',
+                                    cursor: 'pointer',
+                                    boxShadow: activeAction === 'save' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                                }}
                             >
                                 <Save size={16} />
                                 <span>Save Draft</span>
@@ -1676,8 +1662,24 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
                             <button
                                 onClick={handleSaveAndSubmit}
+                                onMouseEnter={() => !isConfirmingExit && setActiveAction('submit')}
                                 disabled={saving}
-                                className="ae-btn-primary"
+                                style={{
+                                    height: '38px',
+                                    padding: '0 20px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    borderRadius: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    background: activeAction === 'submit' ? 'var(--theme-primary)' : 'transparent',
+                                    color: activeAction === 'submit' ? 'white' : 'var(--text-secondary)',
+                                    border: 'none',
+                                    transition: 'all 0.2s',
+                                    cursor: 'pointer',
+                                    boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                                }}
                             >
                                 <PlusCircle size={18} />
                                 <span>Submit for Approval</span>
@@ -1685,12 +1687,33 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
                             <button
                                 onClick={() => {
+                                    setIsConfirmingExit(true);
                                     showConfirm({
                                         title: 'Are you sure you want to exit?',
-                                        onConfirm: () => onBack()
+                                        onConfirm: () => onBack(),
+                                        onCancel: () => {
+                                            setIsConfirmingExit(false);
+                                            setActiveAction('submit');
+                                        }
                                     });
                                 }}
-                                className="ae-btn-secondary"
+                                onMouseEnter={() => !isConfirmingExit && setActiveAction('cancel')}
+                                style={{
+                                    height: '38px',
+                                    padding: '0 18px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    borderRadius: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    border: 'none',
+                                    background: activeAction === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                                    color: activeAction === 'cancel' ? 'white' : 'var(--text-secondary)',
+                                    transition: 'all 0.2s',
+                                    cursor: 'pointer',
+                                    boxShadow: activeAction === 'cancel' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                                }}
                             >
                                 <X size={16} />
                                 <span>Cancel</span>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     PlusCircle,
     Server,
@@ -12,13 +12,39 @@ import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
 import Pagination from './Pagination';
 
-const ALL_COLUMNS = [
-    { key: 'form_number', label: 'Form Number' },
-    { key: 'project_name', label: 'Project' },
-    { key: 'requestor', label: 'Requestor' },
-    { key: 'server_type', label: 'Resource Type' },
-    { key: 'status', label: 'Status' }
+const ALL_COL_CONFIG = [
+    { key: 'form_number', label: 'Form Number', shortLabel: 'FORM NO' },
+    { key: 'project_name', label: 'Project', shortLabel: 'PROJ.' },
+    { key: 'requestor', label: 'Requestor', shortLabel: 'REQ.' },
+    { key: 'server_type', label: 'Resource Type', shortLabel: 'TYPE' },
+    { key: 'status', label: 'Status', shortLabel: 'ST.' }
 ];
+
+const SHORT_COL_WIDTHS: Record<string, number> = {
+    form_number: 55,
+    project_name: 50,
+    requestor: 50,
+    server_type: 50,
+    status: 35,
+    actions: 60
+};
+
+const FULL_LABEL_WIDTHS: Record<string, number> = {
+    form_number: 95,
+    project_name: 80,
+    requestor: 90,
+    server_type: 105,
+    status: 70
+};
+
+const MAX_COL_WIDTHS: Record<string, number> = {
+    form_number: 150,
+    project_name: 250,
+    requestor: 250,
+    server_type: 180,
+    status: 120,
+    actions: 120
+};
 
 interface ResourceDashboardProps {
     onView: (id: number) => void;
@@ -37,10 +63,55 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView, onCreate 
         requestor: ''
     });
     const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
+        const saved = localStorage.getItem('resourceDashboard_colWidths');
+        if (saved) return JSON.parse(saved);
+        const defaults: Record<string, number> = {};
+        ALL_COL_CONFIG.forEach(c => { defaults[c.key] = FULL_LABEL_WIDTHS[c.key] || 150; });
+        defaults['actions'] = 120;
+        return defaults;
+    });
+
     const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
         const saved = localStorage.getItem('resourceDashboard_visibleColumns');
-        return saved ? JSON.parse(saved) : ALL_COLUMNS.map(c => c.key);
+        return saved ? JSON.parse(saved) : ALL_COL_CONFIG.map(c => c.key);
     });
+
+    const resizingRef = useRef<{ colKey: string; startWidth: number; startX: number } | null>(null);
+
+    useEffect(() => {
+        localStorage.setItem('resourceDashboard_colWidths', JSON.stringify(colWidths));
+    }, [colWidths]);
+
+    const startResize = (e: React.MouseEvent, colKey: string) => {
+        e.preventDefault();
+        resizingRef.current = {
+            colKey,
+            startWidth: colWidths[colKey],
+            startX: e.clientX
+        };
+
+        const onMouseMove = (ev: MouseEvent) => {
+            if (!resizingRef.current) return;
+            const key = resizingRef.current.colKey;
+            const delta = ev.clientX - resizingRef.current.startX;
+            const minWidth = SHORT_COL_WIDTHS[key] ?? 40;
+            const maxWidth = MAX_COL_WIDTHS[key] ?? 500;
+            const newWidth = Math.min(maxWidth, Math.max(minWidth, resizingRef.current.startWidth + delta));
+            setColWidths(prev => ({ ...prev, [key]: newWidth }));
+        };
+
+        const onMouseUp = () => {
+            resizingRef.current = null;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    };
+
+    const getColWidth = (key: string) => colWidths[key] ?? 150;
 
     useEffect(() => {
         localStorage.setItem('resourceDashboard_visibleColumns', JSON.stringify(visibleColumns));
@@ -158,7 +229,7 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView, onCreate 
                                     background: 'var(--bg-secondary)'
                                 }}>
                                     <button
-                                        onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))}
+                                        onClick={() => setVisibleColumns(ALL_COL_CONFIG.map(c => c.key))}
                                         style={{ background: 'none', border: 'none', color: 'var(--ae-blue)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
                                     >
                                         Select All
@@ -171,7 +242,7 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView, onCreate 
                                     </button>
                                 </div>
                                 <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                    {ALL_COLUMNS.map(col => (
+                                    {ALL_COL_CONFIG.map(col => (
                                         <label key={col.key} style={{
                                             display: 'flex',
                                             alignItems: 'center',
@@ -228,165 +299,212 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView, onCreate 
             </div>
 
             <div className="section-panel !p-0 overflow-hidden">
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr style={{ background: 'var(--bg-secondary)' }}>
-                            {visibleColumns.map(key => {
-                                const col = ALL_COLUMNS.find(c => c.key === key);
-                                if (!col) return null;
-                                return (
-                                    <th key={key} style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        {col.label}
+                <div style={{ overflowX: 'auto' }}>
+                    <table className="ae-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+                        <colgroup>
+                            {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />
+                            ))}
+                            <col style={{ width: `${getColWidth('actions')}px` }} />
+                        </colgroup>
+                        <thead>
+                            <tr style={{ background: 'var(--ae-table-header-bg)' }}>
+                                {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                    <th key={col.key} style={{
+                                        position: 'relative',
+                                        backgroundColor: 'var(--ae-table-header-bg)',
+                                        padding: '8px 16px',
+                                        textAlign: 'left',
+                                        fontSize: '11px',
+                                        fontWeight: 900,
+                                        color: 'var(--text-secondary)',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.05em',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        userSelect: 'none',
+                                        borderRight: '1px solid var(--border-secondary)',
+                                        borderBottom: '1px solid var(--border-secondary)'
+                                    }}>
+                                        <span title={col.label}>
+                                            {getColWidth(col.key) < (SHORT_COL_WIDTHS[col.key] + 5)
+                                                ? col.shortLabel
+                                                : col.label}
+                                        </span>
+                                        <div
+                                            onMouseDown={(e) => startResize(e, col.key)}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                right: 0,
+                                                width: '6px',
+                                                height: '100%',
+                                                cursor: 'col-resize',
+                                                background: 'transparent',
+                                                zIndex: 20
+                                            }}
+                                            title="Drag to resize"
+                                        />
                                     </th>
-                                );
-                            })}
-                            <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Action</th>
-                        </tr>
-                        {showFilters && (
-                            <tr style={{ background: 'var(--bg-secondary)' }}>
-                                {visibleColumns.map(key => {
-                                    const col = ALL_COLUMNS.find(c => c.key === key);
-                                    if (!col) return null;
-
-                                    const renderFilter = () => {
-                                        switch (key) {
-                                            case 'form_number':
-                                                return <div className="ae-input-group !mb-0">
-                                                    <Search className="ae-search-icon" size={12} />
-                                                    <input
-                                                        className="ae-input"
-                                                        placeholder="Filter..."
-                                                        value={filters.form_number}
-                                                        onChange={e => setFilters({ ...filters, form_number: e.target.value })}
-                                                        style={{ height: '24px', fontSize: '11px' }}
-                                                    />
-                                                </div>;
-                                            case 'project_name':
-                                                return <div className="ae-input-group !mb-0">
-                                                    <Search className="ae-search-icon" size={12} />
-                                                    <input
-                                                        className="ae-input"
-                                                        placeholder="Filter..."
-                                                        value={filters.project_name}
-                                                        onChange={e => setFilters({ ...filters, project_name: e.target.value })}
-                                                        style={{ height: '24px', fontSize: '11px' }}
-                                                    />
-                                                </div>;
-                                            case 'requestor':
-                                                return <div className="ae-input-group !mb-0">
-                                                    <Search className="ae-search-icon" size={12} />
-                                                    <input
-                                                        className="ae-input"
-                                                        placeholder="Filter..."
-                                                        value={filters.requestor}
-                                                        onChange={e => setFilters({ ...filters, requestor: e.target.value })}
-                                                        style={{ height: '24px', fontSize: '11px' }}
-                                                    />
-                                                </div>;
-                                            default:
-                                                return null;
-                                        }
-                                    };
-
-                                    return (
-                                        <th key={key} style={{ padding: '8px 24px' }}>
-                                            {renderFilter()}
+                                ))}
+                                <th style={{
+                                    padding: '8px 16px',
+                                    textAlign: 'right',
+                                    fontSize: '11px',
+                                    fontWeight: 900,
+                                    color: 'var(--text-secondary)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    borderBottom: '1px solid var(--border-secondary)'
+                                }}>Action</th>
+                            </tr>
+                            {showFilters && (
+                                <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
+                                    {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                        <th key={col.key} style={{ padding: '4px 16px', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                            {(() => {
+                                                switch (col.key) {
+                                                    case 'form_number':
+                                                        return <div className="ae-input-group !mb-0" style={{ display: 'block' }}>
+                                                            <Search className="ae-search-icon" size={12} />
+                                                            <input
+                                                                className="ae-input"
+                                                                placeholder="Filter..."
+                                                                value={filters.form_number}
+                                                                onChange={e => setFilters({ ...filters, form_number: e.target.value })}
+                                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                            />
+                                                        </div>;
+                                                    case 'project_name':
+                                                        return <div className="ae-input-group !mb-0" style={{ display: 'block' }}>
+                                                            <Search className="ae-search-icon" size={12} />
+                                                            <input
+                                                                className="ae-input"
+                                                                placeholder="Filter..."
+                                                                value={filters.project_name}
+                                                                onChange={e => setFilters({ ...filters, project_name: e.target.value })}
+                                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                            />
+                                                        </div>;
+                                                    case 'requestor':
+                                                        return <div className="ae-input-group !mb-0" style={{ display: 'block' }}>
+                                                            <Search className="ae-search-icon" size={12} />
+                                                            <input
+                                                                className="ae-input"
+                                                                placeholder="Filter..."
+                                                                value={filters.requestor}
+                                                                onChange={e => setFilters({ ...filters, requestor: e.target.value })}
+                                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                            />
+                                                        </div>;
+                                                    default:
+                                                        return null;
+                                                }
+                                            })()}
                                         </th>
+                                    ))}
+                                    <th style={{ padding: '4px 16px', textAlign: 'right', borderBottom: '1px solid var(--border-secondary)' }}>
+                                        <button
+                                            onClick={() => setFilters({ form_number: '', project_name: '', requestor: '' })}
+                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                        >
+                                            Clear
+                                        </button>
+                                    </th>
+                                </tr>
+                            )}
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={visibleColumns.length + 1} style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: 600 }}>Loading requests...</td>
+                                </tr>
+                            ) : paginatedRequests.length === 0 ? (
+                                <tr>
+                                    <td colSpan={visibleColumns.length + 1} style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: 600 }}>No resource requests found.</td>
+                                </tr>
+                            ) : (
+                                paginatedRequests.map((req) => {
+                                    const status = getStatusStyle(req.status);
+                                    return (
+                                        <tr key={req.id} className="ae-table-row">
+                                            {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => {
+                                                const cellStyle = {
+                                                    padding: '8px 16px',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                    fontSize: '0.8rem'
+                                                } as React.CSSProperties;
+
+                                                switch (col.key) {
+                                                    case 'form_number':
+                                                        return <td key={col.key} style={cellStyle}>
+                                                            <span style={{ fontWeight: 800, color: 'var(--ae-blue)', fontSize: '0.85rem' }}>{req.form_number}</span>
+                                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{req.request_date ? formatToAppDate(req.request_date) : '---'}</div>
+                                                        </td>;
+                                                    case 'project_name':
+                                                        return <td key={col.key} style={cellStyle}>
+                                                            <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{req.project_name}</span>
+                                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{req.environment}</div>
+                                                        </td>;
+                                                    case 'requestor':
+                                                        return <td key={col.key} style={cellStyle}>
+                                                            <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>{req.requestor_detail?.full_name}</span>
+                                                        </td>;
+                                                    case 'server_type':
+                                                        return <td key={col.key} style={cellStyle}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <Server size={14} className="text-[var(--theme-primary)]" />
+                                                                <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>{req.server_type} ({req.server_category})</span>
+                                                            </div>
+                                                        </td>;
+                                                    case 'status':
+                                                        return <td key={col.key} style={cellStyle}>
+                                                            <span style={{
+                                                                padding: '4px 12px',
+                                                                borderRadius: '20px',
+                                                                fontSize: '10px',
+                                                                fontWeight: 900,
+                                                                textTransform: 'uppercase',
+                                                                background: status.bg,
+                                                                color: status.color,
+                                                                border: `1px solid ${status.color}20`
+                                                            }}>
+                                                                {status.label}
+                                                            </span>
+                                                        </td>;
+                                                    default:
+                                                        return null;
+                                                }
+                                            })}
+                                            <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                                                <button
+                                                    onClick={() => onView(req.id)}
+                                                    style={{
+                                                        padding: '6px 12px',
+                                                        borderRadius: '6px',
+                                                        background: 'var(--bg-secondary)',
+                                                        color: 'var(--text-secondary)',
+                                                        border: '1px solid var(--border-primary)',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px'
+                                                    }}
+                                                >
+                                                    Details <ArrowRight size={14} />
+                                                </button>
+                                            </td>
+                                        </tr>
                                     );
-                                })}
-                                <th style={{ padding: '8px 24px', textAlign: 'right' }}>
-                                    <button
-                                        onClick={() => setFilters({ form_number: '', project_name: '', requestor: '' })}
-                                        style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
-                                    >
-                                        Clear
-                                    </button>
-                                </th>
-                            </tr>
-                        )}
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr>
-                                <td colSpan={visibleColumns.length + 1} style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: 600 }}>Loading requests...</td>
-                            </tr>
-                        ) : paginatedRequests.length === 0 ? (
-                            <tr>
-                                <td colSpan={visibleColumns.length + 1} style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: 600 }}>No resource requests found.</td>
-                            </tr>
-                        ) : (
-                            paginatedRequests.map((req) => {
-                                const status = getStatusStyle(req.status);
-                                return (
-                                    <tr key={req.id} className="ae-table-row">
-                                        {visibleColumns.map(key => {
-                                            switch (key) {
-                                                case 'form_number':
-                                                    return <td key={key} style={{ padding: '16px 24px' }}>
-                                                        <span style={{ fontWeight: 800, color: 'var(--ae-blue)', fontSize: '0.85rem' }}>{req.form_number}</span>
-                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{req.request_date ? formatToAppDate(req.request_date) : '---'}</div>
-                                                    </td>;
-                                                case 'project_name':
-                                                    return <td key={key} style={{ padding: '16px 24px' }}>
-                                                        <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{req.project_name}</span>
-                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{req.environment}</div>
-                                                    </td>;
-                                                case 'requestor':
-                                                    return <td key={key} style={{ padding: '16px 24px' }}>
-                                                        <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>{req.requestor_detail?.full_name}</span>
-                                                    </td>;
-                                                case 'server_type':
-                                                    return <td key={key} style={{ padding: '16px 24px' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <Server size={14} className="text-[var(--theme-primary)]" />
-                                                            <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>{req.server_type} ({req.server_category})</span>
-                                                        </div>
-                                                    </td>;
-                                                case 'status':
-                                                    return <td key={key} style={{ padding: '16px 24px' }}>
-                                                        <span style={{
-                                                            padding: '4px 12px',
-                                                            borderRadius: '20px',
-                                                            fontSize: '10px',
-                                                            fontWeight: 900,
-                                                            textTransform: 'uppercase',
-                                                            background: status.bg,
-                                                            color: status.color,
-                                                            border: `1px solid ${status.color}20`
-                                                        }}>
-                                                            {status.label}
-                                                        </span>
-                                                    </td>;
-                                                default:
-                                                    return null;
-                                            }
-                                        })}
-                                        <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                                            <button
-                                                onClick={() => onView(req.id)}
-                                                style={{
-                                                    padding: '6px 12px',
-                                                    borderRadius: '6px',
-                                                    background: 'var(--bg-secondary)',
-                                                    color: 'var(--text-secondary)',
-                                                    border: '1px solid var(--border-primary)',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 700,
-                                                    cursor: 'pointer',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '4px'
-                                                }}
-                                            >
-                                                Details <ArrowRight size={14} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        )}
-                    </tbody>
-                </table>
+                                })
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <Pagination

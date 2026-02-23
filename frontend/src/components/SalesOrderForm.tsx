@@ -7,7 +7,8 @@ import {
     FileText,
     Loader2,
     Trash2,
-    PlusCircle
+    PlusCircle,
+    Calendar
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -28,7 +29,14 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     const [salesOrder, setSalesOrder] = useState<any>(null);
 
 
-    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+    const [hoveredBtn, setHoveredBtn] = useState<string | null>('submit');
+    const [isConfirmingExit, setIsConfirmingExit] = useState(false);
+
+    useEffect(() => {
+        if (isConfirmingExit) {
+            setHoveredBtn('cancel');
+        }
+    }, [isConfirmingExit]);
     const { showNotification, showConfirm } = useNotification();
 
     useEffect(() => {
@@ -399,40 +407,31 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                         <SectionHeader title="Basic Order Information" />
                         <div className="ae-grid-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Order Number</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Sales Order Number</label>
                                 <input
                                     type="text"
                                     value={salesOrder.so_number || 'Auto-generated on Submit'}
                                     className="ae-input"
                                     style={{
-                                        background: '#F8FAFC',
-                                        fontWeight: 700,
-                                        color: 'var(--ae-blue)',
+                                        background: 'var(--bg-secondary)',
+                                        color: 'var(--text-secondary)',
                                     }}
                                     disabled
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Name</label>
-                                <div style={{
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Name</label>
+                                <div className="ae-input" style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
-                                    background: salesOrder.customer ? 'rgba(0, 200, 83, 0.05)' : 'rgba(255, 107, 0, 0.05)',
-                                    padding: '6px 12px',
-                                    borderRadius: '8px',
-                                    border: `1px solid ${salesOrder.customer ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 107, 0, 0.1)'}`,
-                                    height: '34px'
+                                    background: 'var(--bg-secondary)',
+                                    color: 'var(--text-primary)',
+                                    minHeight: '34px',
+                                    cursor: 'default'
                                 }}>
-                                    {salesOrder.customer ? (
-                                        <CheckCircle2 size={16} className="text-green-600" />
-                                    ) : (
-                                        <X size={16} className="text-orange-600" />
-                                    )}
                                     <span style={{
-                                        fontSize: '0.8rem',
-                                        fontWeight: 700,
-                                        color: salesOrder.customer_name === 'not match with company profile' ? '#C53030' : '#1a1f36',
+                                        fontSize: '0.85rem',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap'
@@ -442,7 +441,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 </div>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Code</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Code</label>
                                 <input
                                     name="customer_code"
                                     type="text"
@@ -454,7 +453,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Purchase Order Number <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Purchase Order Number <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
                                 <input
                                     name="po_number"
                                     type="text"
@@ -462,54 +461,114 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     onChange={handleInputChange}
                                     className="ae-input"
                                     disabled={isSubmitted}
-                                    style={{ ...getHighlightStyle(salesOrder.po_number) }}
                                 />
                             </div>
+
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Purchase Order Date</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Purchase Order Date</label>
                                 {isSubmitted ? (
-                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', ...getHighlightStyle(salesOrder.po_date) }}>{salesOrder.po_date ? formatToAppDate(salesOrder.po_date) : ''}</div>
+                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px' }}>{salesOrder.po_date ? formatToAppDate(salesOrder.po_date) : ''}</div>
                                 ) : (
-                                    <input
-                                        name="po_date"
-                                        type="date"
-                                        value={salesOrder.po_date || ''}
-                                        onChange={handleInputChange}
-                                        className="ae-input"
-                                        style={{ ...getHighlightStyle(salesOrder.po_date) }}
-                                    />
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            value={salesOrder.po_date ? formatToAppDate(salesOrder.po_date) : ''}
+                                            readOnly
+                                            className="ae-input"
+                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px' }}
+                                            onClick={(e) => {
+                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                                if (dateInput) dateInput.showPicker();
+                                            }}
+                                            placeholder="Select Date"
+                                        />
+                                        <input
+                                            name="po_date"
+                                            type="date"
+                                            value={salesOrder.po_date || ''}
+                                            onChange={handleInputChange}
+                                            style={{
+                                                position: 'absolute',
+                                                visibility: 'hidden',
+                                                width: 0,
+                                                height: 0
+                                            }}
+                                        />
+                                        <Calendar size={14} style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
+                                    </div>
                                 )}
                             </div>
+
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Valid From <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Valid From <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
                                 {isSubmitted ? (
-                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', ...getHighlightStyle(salesOrder.po_from_date) }}>{salesOrder.po_from_date ? formatToAppDate(salesOrder.po_from_date) : ''}</div>
+                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px' }}>{salesOrder.po_from_date ? formatToAppDate(salesOrder.po_from_date) : ''}</div>
                                 ) : (
-                                    <input
-                                        name="po_from_date"
-                                        type="date"
-                                        value={salesOrder.po_from_date || ''}
-                                        onChange={handleInputChange}
-                                        className="ae-input"
-                                        style={{ ...getHighlightStyle(salesOrder.po_from_date) }}
-                                    />
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            value={salesOrder.po_from_date ? formatToAppDate(salesOrder.po_from_date) : ''}
+                                            readOnly
+                                            className="ae-input"
+                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px' }}
+                                            onClick={(e) => {
+                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                                if (dateInput) dateInput.showPicker();
+                                            }}
+                                            placeholder="Select Date"
+                                        />
+                                        <input
+                                            name="po_from_date"
+                                            type="date"
+                                            value={salesOrder.po_from_date || ''}
+                                            onChange={handleInputChange}
+                                            style={{
+                                                position: 'absolute',
+                                                visibility: 'hidden',
+                                                width: 0,
+                                                height: 0
+                                            }}
+                                        />
+                                        <Calendar size={14} style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
+                                    </div>
                                 )}
                             </div>
+
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Valid To <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Valid To <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
                                 {isSubmitted ? (
-                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', ...getHighlightStyle(salesOrder.po_to_date) }}>{salesOrder.po_to_date ? formatToAppDate(salesOrder.po_to_date) : ''}</div>
+                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px' }}>{salesOrder.po_to_date ? formatToAppDate(salesOrder.po_to_date) : ''}</div>
                                 ) : (
-                                    <input
-                                        name="po_to_date"
-                                        type="date"
-                                        value={salesOrder.po_to_date || ''}
-                                        onChange={handleInputChange}
-                                        className="ae-input"
-                                        style={{ ...getHighlightStyle(salesOrder.po_to_date) }}
-                                    />
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            value={salesOrder.po_to_date ? formatToAppDate(salesOrder.po_to_date) : ''}
+                                            readOnly
+                                            className="ae-input"
+                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px' }}
+                                            onClick={(e) => {
+                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                                if (dateInput) dateInput.showPicker();
+                                            }}
+                                            placeholder="Select Date"
+                                        />
+                                        <input
+                                            name="po_to_date"
+                                            type="date"
+                                            value={salesOrder.po_to_date || ''}
+                                            onChange={handleInputChange}
+                                            style={{
+                                                position: 'absolute',
+                                                visibility: 'hidden',
+                                                width: 0,
+                                                height: 0
+                                            }}
+                                        />
+                                        <Calendar size={14} style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
+                                    </div>
                                 )}
                             </div>
+
                         </div>
                     </section>
 
@@ -521,16 +580,16 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 <thead>
                                     <tr style={{ background: '#F8FAFC' }}>
                                         <th style={{ padding: '12px 8px', width: '40px' }}></th>
-                                        <th style={{ width: '60px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Sr.No.</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '120px' }}>Type</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '20%' }}>Product</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '20%' }}>Description</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '130px' }}>Start Date</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '130px' }}>End Date</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '80px' }}>Qty</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '120px' }}>Rate</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '80px' }}>Disc%</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Total</th>
+                                        <th style={{ width: '60px', padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Sr.No.</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '130px' }}>Type</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '20%' }}>Product</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '20%' }}>Description</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '140px' }}>Start Date</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '140px' }}>End Date</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '80px' }}>Qty</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '120px' }}>Rate</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '80px' }}>Disc%</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Total</th>
                                         {!isSubmitted && <th style={{ padding: '12px 16px', borderBottom: '1px solid #E0E6ED', width: '40px' }}></th>}
                                     </tr>
                                 </thead>
@@ -561,180 +620,174 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                 )}
                                             </td>
                                             <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{index + 1}</td>
-                                            <td style={{ padding: '8px 16px' }}>
-                                                <select
-                                                    value={item.item_type || 'LICENSE'}
-                                                    onChange={(e) => handleItemChange(index, 'item_type', e.target.value)}
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '6px 10px',
-                                                        border: '1px solid #E2E8F0',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.8rem',
-                                                        outline: 'none',
-                                                        fontWeight: 600
-                                                    }}
+                                            <td style={{ padding: '8px 16px', minWidth: '120px' }}>
+                                                <SearchableDropdown
+                                                    options={[
+                                                        { value: 'LICENSE', label: 'License' },
+                                                        { value: 'SERVICES', label: 'Services' },
+                                                    ]}
+                                                    value={item.item_type || ''}
+                                                    onChange={(val) => handleItemChange(index, 'item_type', val as string)}
+                                                    placeholder="Type"
+                                                    className="w-full"
                                                     disabled={isSubmitted}
-                                                >
-                                                    <option value="LICENSE">License</option>
-                                                    <option value="SERVICES">Services</option>
-                                                </select>
+                                                />
                                             </td>
                                             <td style={{ padding: '8px 16px' }}>
-                                                <input
-                                                    type="text"
+                                                <textarea
                                                     value={item.product_name || item.product || ''}
                                                     onChange={(e) => handleItemChange(index, 'product_name', e.target.value)}
+                                                    className="ae-input custom-scrollbar"
                                                     style={{
                                                         width: '100%',
+                                                        minWidth: 0,
+                                                        height: '80px',
                                                         padding: '6px 10px',
-                                                        border: '1px solid #E2E8F0',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.8rem',
-                                                        fontWeight: 600,
+                                                        fontSize: '0.85rem',
                                                         outline: 'none',
-                                                        ...getHighlightStyle(item.product_name || item.product)
+                                                        resize: 'none',
+                                                        lineHeight: '1.4',
+                                                        overflowY: 'auto',
+                                                        boxSizing: 'border-box',
+                                                        wordBreak: 'break-word',
+                                                        whiteSpace: 'pre-wrap'
                                                     }}
                                                     placeholder="Product Name"
                                                     disabled={isSubmitted}
                                                 />
                                             </td>
                                             <td style={{ padding: '8px 16px' }}>
-                                                <input
-                                                    type="text"
+                                                <textarea
                                                     value={item.description || ''}
                                                     onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                                                    className="ae-input custom-scrollbar"
                                                     style={{
                                                         width: '100%',
+                                                        minWidth: 0,
+                                                        height: '80px',
                                                         padding: '6px 10px',
-                                                        border: '1px solid #E2E8F0',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.8rem',
-                                                        color: '#1a1f36',
+                                                        fontSize: '0.85rem',
+                                                        color: 'var(--text-secondary)',
                                                         outline: 'none',
-                                                        ...getHighlightStyle(item.description)
+                                                        resize: 'none',
+                                                        lineHeight: '1.4',
+                                                        overflowY: 'auto',
+                                                        boxSizing: 'border-box',
+                                                        wordBreak: 'break-word',
+                                                        whiteSpace: 'pre-wrap'
                                                     }}
                                                     placeholder="Item Description"
                                                     disabled={isSubmitted}
                                                 />
                                             </td>
-                                            <td style={{ padding: '8px 16px' }}>
+                                            <td style={{ padding: '8px 16px', position: 'relative' }}>
                                                 {isSubmitted ? (
-                                                    <div style={{
-                                                        width: '100%',
-                                                        padding: '6px 10px',
-                                                        border: '1px solid #E2E8F0',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.8rem',
-                                                        fontWeight: 600,
-                                                        background: '#F8FAFC',
-                                                        minHeight: '30px',
-                                                        ...getHighlightStyle(item.start_date)
-                                                    }}>{item.start_date ? formatToAppDate(item.start_date) : ''}</div>
+                                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', fontSize: '0.85rem' }}>{item.start_date ? formatToAppDate(item.start_date) : ''}</div>
                                                 ) : (
-                                                    <input
-                                                        type="date"
-                                                        value={item.start_date || ''}
-                                                        onChange={(e) => handleItemChange(index, 'start_date', e.target.value)}
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '6px 10px',
-                                                            border: '1px solid #E2E8F0',
-                                                            borderRadius: '6px',
-                                                            fontSize: '0.8rem',
-                                                            outline: 'none',
-                                                            ...getHighlightStyle(item.start_date)
-                                                        }}
-                                                    />
+                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '130px' }}>
+                                                        <input
+                                                            type="text"
+                                                            value={item.start_date ? formatToAppDate(item.start_date) : ''}
+                                                            readOnly
+                                                            className="ae-input"
+                                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '28px', fontSize: '0.85rem', width: '100%' }}
+                                                            onClick={(e) => {
+                                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                                                if (dateInput) dateInput.showPicker();
+                                                            }}
+                                                            placeholder="Select Date"
+                                                        />
+                                                        <input
+                                                            type="date"
+                                                            value={item.start_date || ''}
+                                                            onChange={(e) => handleItemChange(index, 'start_date', e.target.value)}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                visibility: 'hidden',
+                                                                width: 0,
+                                                                height: 0
+                                                            }}
+                                                        />
+                                                        <Calendar size={14} style={{ position: 'absolute', right: '8px', color: '#718096', pointerEvents: 'none' }} />
+                                                    </div>
                                                 )}
                                             </td>
-                                            <td style={{ padding: '8px 16px' }}>
+                                            <td style={{ padding: '8px 16px', position: 'relative' }}>
                                                 {isSubmitted ? (
-                                                    <div style={{
-                                                        width: '100%',
-                                                        padding: '6px 10px',
-                                                        border: '1px solid #E2E8F0',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.8rem',
-                                                        fontWeight: 600,
-                                                        background: '#F8FAFC',
-                                                        minHeight: '30px',
-                                                        ...getHighlightStyle(item.end_date)
-                                                    }}>{item.end_date ? formatToAppDate(item.end_date) : ''}</div>
+                                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', fontSize: '0.85rem' }}>{item.end_date ? formatToAppDate(item.end_date) : ''}</div>
                                                 ) : (
-                                                    <input
-                                                        type="date"
-                                                        value={item.end_date || ''}
-                                                        onChange={(e) => handleItemChange(index, 'end_date', e.target.value)}
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '6px 10px',
-                                                            border: '1px solid #E2E8F0',
-                                                            borderRadius: '6px',
-                                                            fontSize: '0.8rem',
-                                                            outline: 'none',
-                                                            ...getHighlightStyle(item.end_date)
-                                                        }}
-                                                    />
+                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '130px' }}>
+                                                        <input
+                                                            type="text"
+                                                            value={item.end_date ? formatToAppDate(item.end_date) : ''}
+                                                            readOnly
+                                                            className="ae-input"
+                                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '28px', fontSize: '0.85rem', width: '100%' }}
+                                                            onClick={(e) => {
+                                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                                                if (dateInput) dateInput.showPicker();
+                                                            }}
+                                                            placeholder="Select Date"
+                                                        />
+                                                        <input
+                                                            type="date"
+                                                            value={item.end_date || ''}
+                                                            onChange={(e) => handleItemChange(index, 'end_date', e.target.value)}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                visibility: 'hidden',
+                                                                width: 0,
+                                                                height: 0
+                                                            }}
+                                                        />
+                                                        <Calendar size={14} style={{ position: 'absolute', right: '8px', color: '#718096', pointerEvents: 'none' }} />
+                                                    </div>
                                                 )}
                                             </td>
-                                            <td style={{ padding: '8px 16px' }}>
+                                            <td style={{ padding: '8px 16px', textAlign: 'center' }}>
                                                 <input
                                                     type="number"
-                                                    value={item.qty === 0 ? '' : item.qty}
+                                                    value={item.qty || ''}
                                                     onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
-                                                    placeholder="0"
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '6px 10px',
-                                                        border: '1px solid #E0E6ED',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.8rem',
-                                                        fontWeight: 700,
-                                                        textAlign: 'center',
-                                                        ...getHighlightStyle(item.qty)
-                                                    }}
+                                                    className="ae-input"
+                                                    style={{ width: '100%', padding: '6px 10px', fontSize: '0.85rem', textAlign: 'center' }}
+                                                    min="1"
                                                     disabled={isSubmitted}
                                                 />
                                             </td>
                                             <td style={{ padding: '8px 16px' }}>
                                                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                                    <span style={{ position: 'absolute', left: '10px', fontSize: '0.8rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(salesOrder.currency)}</span>
+                                                    <span style={{ position: 'absolute', left: '10px', color: '#718096', fontSize: '0.85rem', fontWeight: 600 }}>{getCurrencySymbol(salesOrder.currency)}</span>
                                                     <input
                                                         type="number"
-                                                        value={item.rate === 0 ? '' : item.rate}
+                                                        value={item.rate || ''}
                                                         onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
-                                                        placeholder="0"
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '6px 10px 6px 24px',
-                                                            border: '1px solid #E0E6ED',
-                                                            borderRadius: '6px',
-                                                            fontSize: '0.8rem',
-                                                            fontWeight: 700,
-                                                            ...getHighlightStyle(item.rate)
-                                                        }}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Tab' && !e.shiftKey && index === salesOrder.items.length - 1) {
-                                                                e.preventDefault();
-                                                                handleAddItem();
-                                                            }
-                                                        }}
+                                                        className="ae-input"
+                                                        style={{ width: '100%', padding: '6px 10px 6px 24px', fontSize: '0.85rem' }}
+                                                        min="0"
+                                                        step="0.01"
                                                         disabled={isSubmitted}
                                                     />
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '8px 16px' }}>
-                                                <input
-                                                    type="number"
-                                                    value={item.discount_percent || 0}
-                                                    onChange={(e) => handleItemChange(index, 'discount_percent', e.target.value)}
-                                                    style={{ width: '100%', padding: '6px 10px', border: '1px solid #E0E6ED', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, color: '#C53030', textAlign: 'center' }}
-                                                    disabled={isSubmitted}
-                                                />
+                                            <td style={{ padding: '8px 16px', textAlign: 'center' }}>
+                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                                    <input
+                                                        type="number"
+                                                        value={item.discount_percent || 0}
+                                                        onChange={(e) => handleItemChange(index, 'discount_percent', e.target.value)}
+                                                        className="ae-input"
+                                                        style={{ width: '100%', padding: '6px 10px', fontSize: '0.85rem', color: '#C53030', textAlign: 'center' }}
+                                                        min="0"
+                                                        max="100"
+                                                        step="0.01"
+                                                        disabled={isSubmitted}
+                                                    />
+                                                    <span style={{ position: 'absolute', right: '10px', color: '#C53030', fontSize: '0.85rem', pointerEvents: 'none' }}>%</span>
+                                                </div>
                                             </td>
-                                            <td style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36' }}>
-                                                {getCurrencySymbol(salesOrder.currency)}{parseFloat(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            <td style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                                {getCurrencySymbol(salesOrder.currency)} {((parseFloat(item.qty as unknown as string) || 0) * (parseFloat(item.rate as unknown as string) || 0) * (1 - (parseFloat(item.discount_percent as unknown as string) || 0) / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </td>
                                             {!isSubmitted && (
                                                 <td style={{ padding: '8px', textAlign: 'center' }}>
@@ -906,86 +959,94 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 zIndex: 10,
                 marginTop: '10px',
                 marginLeft: 'auto'
-            }}>
+            }}
+                className="button-container"
+                onMouseLeave={() => {
+                    if (!isConfirmingExit) {
+                        setHoveredBtn('submit');
+                    }
+                }}
+            >
                 {!isSubmitted && (
                     <>
                         <button
                             onClick={handleSave}
                             disabled={saving}
                             style={{
+                                height: '38px',
+                                padding: '0 18px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                padding: '8px 24px',
-                                borderRadius: '8px',
-                                fontSize: '0.9rem',
-                                height: '40px',
+                                border: 'none',
                                 background: hoveredBtn === 'draft' ? 'var(--theme-primary)' : 'transparent',
                                 color: hoveredBtn === 'draft' ? 'white' : 'var(--text-secondary)',
-                                border: 'none',
-                                fontWeight: 800,
-                                cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                boxShadow: hoveredBtn === 'draft' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                                cursor: 'pointer',
+                                boxShadow: hoveredBtn === 'draft' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
                             }}
-                            onMouseEnter={() => setHoveredBtn('draft')}
-                            onMouseLeave={() => setHoveredBtn(null)}
+                            onMouseEnter={() => !isConfirmingExit && setHoveredBtn('draft')}
                         >
-                            {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                            {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
                             <span>Save as Draft</span>
                         </button>
                         <button
                             onClick={handleSubmit}
                             disabled={saving}
                             style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                padding: '8px 24px',
-                                borderRadius: '8px',
-                                fontSize: '0.9rem',
-                                height: '40px',
-                                background: (!hoveredBtn || hoveredBtn === 'submit') ? 'var(--theme-primary)' : 'transparent',
-                                color: ((!hoveredBtn || hoveredBtn === 'submit') ? 'white' : 'var(--text-secondary)'),
+                                background: hoveredBtn === 'submit' ? 'var(--theme-primary)' : 'transparent',
+                                color: hoveredBtn === 'submit' ? 'white' : 'var(--text-secondary)',
                                 border: 'none',
-                                cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                boxShadow: (!hoveredBtn || hoveredBtn === 'submit') ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                                cursor: 'pointer',
+                                boxShadow: hoveredBtn === 'submit' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
                             }}
-                            onMouseEnter={() => setHoveredBtn('submit')}
-                            onMouseLeave={() => setHoveredBtn(null)}
+                            onMouseEnter={() => !isConfirmingExit && setHoveredBtn('submit')}
                         >
                             <PlusCircle size={18} />
-                            <span style={{ fontWeight: 800 }}>Submit for Approval</span>
+                            <span>Submit for Approval</span>
                         </button>
                     </>
                 )}
 
                 <button
                     onClick={() => {
+                        setIsConfirmingExit(true);
                         showConfirm({
                             title: 'Are you sure you want to exit?',
-                            onConfirm: () => onBack()
+                            onConfirm: () => onBack(),
+                            onCancel: () => setIsConfirmingExit(false)
                         });
+                        setHoveredBtn('cancel');
                     }}
                     style={{
+                        height: '38px',
+                        padding: '0 18px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        borderRadius: '8px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        padding: '8px 20px',
-                        borderRadius: '8px',
-                        fontSize: '0.9rem',
                         background: hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
                         color: hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
                         border: 'none',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        height: '40px',
                         transition: 'all 0.2s',
-                        boxShadow: hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                        cursor: 'pointer',
+                        boxShadow: hoveredBtn === 'cancel' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
                     }}
-                    onMouseEnter={() => setHoveredBtn('cancel')}
-                    onMouseLeave={() => setHoveredBtn(null)}
+                    onMouseEnter={() => !isConfirmingExit && setHoveredBtn('cancel')}
                 >
                     <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
                     <span>Cancel</span>

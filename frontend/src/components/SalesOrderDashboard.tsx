@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Eye,
     Download,
-    Filter,
     Search,
     ChevronDown,
+    ChevronLeft,
+    ChevronRight,
     Columns,
     FileSpreadsheet,
     FileText,
@@ -21,12 +22,67 @@ interface SalesOrderDashboardProps {
     refreshKey?: number;
 }
 
+const ALL_COL_CONFIG = [
+    { key: 'deal_id', label: 'Deal ID', shortLabel: 'DEAL' },
+    { key: 'so_number', label: 'SO Number', shortLabel: 'SO#' },
+    { key: 'order_date', label: 'Order Date', shortLabel: 'DATE' },
+    { key: 'customer', label: 'Customer', shortLabel: 'CUST.' },
+    { key: 'cust_code', label: 'Cust Code', shortLabel: 'CODE' },
+    { key: 'po_number', label: 'PO Number', shortLabel: 'PO#' },
+    { key: 'items', label: 'Items (Summary)', shortLabel: 'ITEMS' },
+    { key: 'status', label: 'Status', shortLabel: 'ST.' },
+    { key: 'amount', label: 'Amount', shortLabel: 'AMT' },
+    { key: 'po_date', label: 'PO Date', shortLabel: 'PO DT' },
+    { key: 'actions', label: 'Actions', shortLabel: 'ACT.' },
+];
+
+const SHORT_COL_WIDTHS: Record<string, number> = {
+    deal_id: 40,
+    so_number: 55,
+    order_date: 55,
+    customer: 75,
+    cust_code: 55,
+    po_number: 60,
+    items: 75,
+    status: 45,
+    amount: 55,
+    po_date: 60,
+    actions: 60
+};
+
+const FULL_LABEL_WIDTHS: Record<string, number> = {
+    deal_id: 60,
+    so_number: 85,
+    order_date: 90,
+    customer: 120,
+    cust_code: 80,
+    po_number: 95,
+    items: 110,
+    status: 75,
+    amount: 90,
+    po_date: 85,
+    actions: 100
+};
+
+const MAX_COL_WIDTHS: Record<string, number> = {
+    deal_id: 100,
+    so_number: 150,
+    order_date: 150,
+    customer: 250,
+    cust_code: 120,
+    po_number: 180,
+    items: 300,
+    status: 120,
+    amount: 150,
+    po_date: 120,
+    actions: 120
+};
+
 const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refreshKey }) => {
     const navigate = useNavigate();
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState({
         deal_id: '',
         so_number: '',
@@ -60,6 +116,54 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
     useEffect(() => {
         localStorage.setItem('salesOrderDashboard_visibleColumns', JSON.stringify(visibleColumns));
     }, [visibleColumns]);
+
+    const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
+        const saved = localStorage.getItem('salesOrderDashboard_colWidths');
+        if (saved) return JSON.parse(saved);
+        const defaults: Record<string, number> = {};
+        ALL_COL_CONFIG.forEach(c => { defaults[c.key] = FULL_LABEL_WIDTHS[c.key] || 150; });
+        return defaults;
+    });
+
+    useEffect(() => {
+        localStorage.setItem('salesOrderDashboard_colWidths', JSON.stringify(colWidths));
+    }, [colWidths]);
+
+    const tableScrollRef = useRef<HTMLDivElement>(null);
+
+    const resizingRef = useRef<{ colKey: string; startWidth: number; startX: number } | null>(null);
+
+    const startResize = (e: React.MouseEvent, colKey: string) => {
+        e.preventDefault();
+        resizingRef.current = {
+            colKey,
+            startWidth: colWidths[colKey],
+            startX: e.clientX
+        };
+
+        const onMouseMove = (ev: MouseEvent) => {
+            if (!resizingRef.current) return;
+            const key = resizingRef.current.colKey;
+            const delta = ev.clientX - resizingRef.current.startX;
+            const minWidth = SHORT_COL_WIDTHS[key] ?? 40;
+            const maxWidth = MAX_COL_WIDTHS[key] ?? 400;
+            const newWidth = Math.min(maxWidth, Math.max(minWidth, resizingRef.current.startWidth + delta));
+            setColWidths(prev => ({ ...prev, [key]: newWidth }));
+        };
+
+        const onMouseUp = () => {
+            resizingRef.current = null;
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            document.body.style.cursor = 'default';
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+        document.body.style.cursor = 'col-resize';
+    };
+
+    const getColWidth = (key: string) => colWidths[key] || 100;
 
     const toggleColumn = (col: keyof typeof visibleColumns) => {
         setVisibleColumns((prev: any) => ({ ...prev, [col]: !prev[col] }));
@@ -132,9 +236,9 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
     const statusFlow = [
         { label: `Draft (${stats.draft})`, value: 'DRAFT' },
         { label: `Pending (${stats.pending})`, value: 'PENDING_APPROVAL' },
-        { label: `Reverted (${stats.reverted})`, value: 'REVERTED' },
         { label: `Approved (${stats.approved})`, value: 'APPROVED' },
         { label: `Rejected (${stats.rejected})`, value: 'REJECTED' },
+        { label: `Reverted (${stats.reverted})`, value: 'REVERTED' },
         { label: `All (${stats.all})`, value: '' }
     ];
 
@@ -201,7 +305,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                 marginBottom: '60px',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                 maxHeight: 'none',
-                overflowY: 'visible',
+                overflow: 'visible',
                 background: 'white'
             }}>
                 {/* Header Controls Area */}
@@ -273,8 +377,12 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                     background: 'white',
                                     color: 'var(--text-secondary)',
                                     fontWeight: 700,
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    border: '1px solid var(--border-primary)',
+                                    transition: 'all 0.2s'
                                 }}
+                                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.5)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
                             >
                                 <Download size={16} /> Export <ChevronDown size={14} />
                             </button>
@@ -296,26 +404,6 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                             )}
                         </div>
 
-                        <button
-                            className="ae-btn-secondary"
-                            onClick={() => setShowFilters(!showFilters)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '6px 14px',
-                                fontSize: '0.8rem',
-                                height: '32px',
-                                borderRadius: '8px',
-                                background: showFilters ? 'var(--bg-secondary)' : 'white',
-                                color: showFilters ? 'var(--theme-primary)' : 'var(--text-secondary)',
-                                borderColor: showFilters ? 'var(--theme-primary)' : 'var(--border-primary)',
-                                fontWeight: 700,
-                                cursor: 'pointer'
-                            }}
-                        >
-                            <Filter size={16} /> Filters
-                        </button>
 
                         <div style={{ position: 'relative' }}>
                             <button
@@ -332,8 +420,12 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                     background: 'white',
                                     color: 'var(--text-secondary)',
                                     fontWeight: 700,
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    border: '1px solid var(--border-primary)',
+                                    transition: 'all 0.2s'
                                 }}
+                                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.5)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
                             >
                                 <Columns size={16} /> Columns <ChevronDown size={14} />
                             </button>
@@ -461,27 +553,114 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                     </div>
                 </div>
 
-                <div style={{ overflowX: 'auto' }}>
+                <div style={{ position: 'relative' }}>
+                    {/* Left scroll button */}
+                    <button
+                        onClick={() => tableScrollRef.current?.scrollBy({ left: -150, behavior: 'smooth' })}
+                        style={{
+                            position: 'absolute',
+                            left: '-18px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            zIndex: 30,
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            background: 'white',
+                            border: '1px solid var(--border-primary)',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'var(--text-primary)',
+                            transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
+                        title="Scroll left"
+                    >
+                        <ChevronLeft size={18} />
+                    </button>
 
-                    <table className="ae-table">
-                        <thead>
-                            <tr>
-                                {visibleColumns.deal_id && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Deal ID</th>}
-                                {visibleColumns.so_number && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>SO Number</th>}
-                                {visibleColumns.order_date && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Order Date</th>}
-                                {visibleColumns.customer && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Customer</th>}
-                                {visibleColumns.cust_code && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Cust Code</th>}
-                                {visibleColumns.po_number && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>PO Number</th>}
-                                {visibleColumns.items && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Items (Summary)</th>}
-                                {visibleColumns.status && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Status</th>}
-                                {visibleColumns.amount && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>Amount</th>}
-                                {visibleColumns.po_date && <th style={{ backgroundColor: 'var(--bg-secondary)', textTransform: 'uppercase' }}>PO Date</th>}
-                                {visibleColumns.actions && <th style={{ backgroundColor: 'var(--bg-secondary)', textAlign: 'center', textTransform: 'uppercase' }}>Actions</th>}
-                            </tr>
-                            {showFilters && (
-                                <tr style={{ background: 'var(--bg-secondary)' }}>
+                    {/* Right scroll button */}
+                    <button
+                        onClick={() => tableScrollRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
+                        style={{
+                            position: 'absolute',
+                            right: '-18px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            zIndex: 30,
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            background: 'white',
+                            border: '1px solid var(--border-primary)',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'var(--text-primary)',
+                            transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
+                        title="Scroll right"
+                    >
+                        <ChevronRight size={18} />
+                    </button>
+
+                    <div ref={tableScrollRef} style={{ overflowX: 'auto' }}>
+                        <table className="ae-table" style={{ tableLayout: 'fixed', width: 'max-content' }}>
+                            <colgroup>
+                                {ALL_COL_CONFIG.filter(col => visibleColumns[col.key as keyof typeof visibleColumns]).map(col => (
+                                    <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />
+                                ))}
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    {ALL_COL_CONFIG.filter(col => visibleColumns[col.key as keyof typeof visibleColumns]).map(col => (
+                                        <th key={col.key} style={{
+                                            backgroundColor: 'var(--ae-table-header-bg)',
+                                            textTransform: 'uppercase',
+                                            position: 'relative',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            userSelect: 'none',
+                                            paddingRight: '20px',
+                                            borderRight: '1px solid var(--border-secondary)',
+                                            borderBottom: '1px solid var(--border-secondary)',
+                                            textAlign: col.key === 'actions' ? 'center' : 'left'
+                                        }}>
+                                            <span title={col.label}>
+                                                {getColWidth(col.key) < (SHORT_COL_WIDTHS[col.key] + 5)
+                                                    ? col.shortLabel
+                                                    : col.label}
+                                            </span>
+                                            {col.key !== 'actions' && (
+                                                <div
+                                                    onMouseDown={(e) => startResize(e, col.key)}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        right: 0,
+                                                        width: '6px',
+                                                        height: '100%',
+                                                        cursor: 'col-resize',
+                                                        background: 'transparent',
+                                                        zIndex: 20
+                                                    }}
+                                                    title="Drag to resize"
+                                                />
+                                            )}
+                                        </th>
+                                    ))}
+                                </tr>
+                                <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
                                     {visibleColumns.deal_id && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <div className="ae-input-group">
                                                 <Search className="ae-search-icon" size={12} />
                                                 <input
@@ -495,7 +674,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         </th>
                                     )}
                                     {visibleColumns.so_number && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <div className="ae-input-group">
                                                 <Search className="ae-search-icon" size={12} />
                                                 <input
@@ -509,7 +688,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         </th>
                                     )}
                                     {visibleColumns.order_date && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <div className="ae-input-group">
                                                 <Search className="ae-search-icon" size={12} />
                                                 <input
@@ -523,7 +702,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         </th>
                                     )}
                                     {visibleColumns.customer && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <div className="ae-input-group">
                                                 <Search className="ae-search-icon" size={12} />
                                                 <input
@@ -537,7 +716,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         </th>
                                     )}
                                     {visibleColumns.cust_code && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <div className="ae-input-group">
                                                 <Search className="ae-search-icon" size={12} />
                                                 <input
@@ -551,7 +730,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         </th>
                                     )}
                                     {visibleColumns.po_number && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <div className="ae-input-group">
                                                 <Search className="ae-search-icon" size={12} />
                                                 <input
@@ -565,7 +744,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         </th>
                                     )}
                                     {visibleColumns.items && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <div className="ae-input-group">
                                                 <Search className="ae-search-icon" size={12} />
                                                 <input
@@ -579,7 +758,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         </th>
                                     )}
                                     {visibleColumns.status && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <div className="ae-input-group">
                                                 <Search className="ae-search-icon" size={12} />
                                                 <input
@@ -593,7 +772,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         </th>
                                     )}
                                     {visibleColumns.amount && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <div className="ae-input-group">
                                                 <Search className="ae-search-icon" size={12} />
                                                 <input
@@ -607,7 +786,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         </th>
                                     )}
                                     {visibleColumns.po_date && (
-                                        <th style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <div className="ae-input-group">
                                                 <Search className="ae-search-icon" size={12} />
                                                 <input
@@ -621,7 +800,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         </th>
                                     )}
                                     {visibleColumns.actions && (
-                                        <th style={{ textAlign: 'center', backgroundColor: 'var(--bg-secondary)' }}>
+                                        <th style={{ textAlign: 'center', backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <button
                                                 onClick={() => setFilters({
                                                     deal_id: '',
@@ -642,169 +821,173 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         </th>
                                     )}
                                 </tr>
-                            )}
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={10} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td>
-                                </tr>
-                            ) : paginatedSalesOrders.length === 0 ? (
-                                <tr>
-                                    <td colSpan={Object.values(visibleColumns).filter(Boolean).length} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No Sales Orders found.</td>
-                                </tr>
-                            ) : paginatedSalesOrders.map((so) => (
-                                <tr key={so.id}>
-                                    {visibleColumns.deal_id && (
-                                        <td className="whitespace-nowrap">
-                                            <span
-                                                style={{ color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
-                                                onClick={() => navigate(`/ deal ? id = ${so.deal} `)}
-                                            >
-                                                {so.deal_id || '---'}
-                                            </span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.so_number && (
-                                        <td className="whitespace-nowrap">
-                                            <span
-                                                style={{ color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
-                                                onClick={() => onView(so.id)}
-                                            >
-                                                {so.so_number || `DRAFT - ${so.id} `}
-                                            </span>
-                                            {so.status === 'DRAFT' && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800 uppercase tracking-tighter">Draft</span>}
-                                        </td>
-                                    )}
-                                    {visibleColumns.order_date && (
-                                        <td className="whitespace-nowrap">
-                                            <span style={{ fontSize: '0.8rem' }}>{so.order_date ? formatToAppDate(so.order_date) : '---'}</span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.customer && (
-                                        <td className="whitespace-nowrap">
-                                            <div className="flex flex-col">
-                                                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{so.customer_name || 'N/A'}</span>
-                                            </div>
-                                        </td>
-                                    )}
-                                    {visibleColumns.cust_code && (
-                                        <td className="whitespace-nowrap">
-                                            <span style={{ fontSize: '0.8rem' }}>{so.customer_code || '---'}</span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.po_number && (
-                                        <td className="whitespace-nowrap">
-                                            <span style={{ fontSize: '0.8rem' }}>{so.po_number}</span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.items && (
-                                        <td className="whitespace-nowrap">
-                                            <div className="flex flex-col text-xs">
-                                                {so.items && so.items.length > 0 ? (
-                                                    <>
-                                                        <span className="text-slate-700 truncate max-w-[150px]" title={so.items[0].description || so.items[0].product_name}>
-                                                            {so.items[0].description || (so.items[0].product ? `Product #${so.items[0].product} ` : 'Unmapped Item')}
-                                                        </span>
-                                                        {so.items.length > 1 && (
-                                                            <span className="text-orange-600 font-semibold" style={{ fontSize: '0.65rem' }}>
-                                                                + {so.items.length - 1} more items
-                                                            </span>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <span className="text-gray-400 italic">No Items</span>
-                                                )}
-                                            </div>
-                                        </td>
-                                    )}
-                                    {visibleColumns.status && (
-                                        <td className="whitespace-nowrap">
-                                            <span style={{
-                                                padding: '4px 10px',
-                                                borderRadius: '6px',
-                                                fontSize: '9px',
-                                                fontWeight: 600,
-                                                textTransform: 'uppercase',
-                                                background: so.status === 'SUBMITTED' ? 'rgba(0, 200, 83, 0.1)' : 'var(--bg-secondary)',
-                                                color: so.status === 'SUBMITTED' ? '#00C853' : 'var(--theme-primary)'
-                                            }}>
-                                                {so.status}
-                                            </span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.amount && (
-                                        <td className="whitespace-nowrap">
-                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{so.currency} {parseFloat(so.total_amount).toLocaleString()}</span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.po_date && (
-                                        <td className="whitespace-nowrap">
-                                            <span style={{ fontSize: '0.75rem' }}>{so.po_date ? formatToAppDate(so.po_date) : (so.order_date ? formatToAppDate(so.order_date) : '-')}</span>
-                                        </td>
-                                    )}
-                                    {visibleColumns.actions && (
-                                        <td style={{ width: '120px', minWidth: '120px', padding: '8px' }}>
-                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
-                                                <button
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={10} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td>
+                                    </tr>
+                                ) : paginatedSalesOrders.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={Object.values(visibleColumns).filter(Boolean).length} style={{ textAlign: 'center', padding: '100px', color: '#718096' }}>No Sales Orders found.</td>
+                                    </tr>
+                                ) : paginatedSalesOrders.map((so) => (
+                                    <tr key={so.id}>
+                                        {visibleColumns.deal_id && (
+                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <span
+                                                    style={{ color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    onClick={() => navigate(`/ deal ? id = ${so.deal} `)}
+                                                >
+                                                    {so.deal_id || '---'}
+                                                </span>
+                                            </td>
+                                        )}
+                                        {visibleColumns.so_number && (
+                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <span
+                                                    style={{ color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
                                                     onClick={() => onView(so.id)}
-                                                    style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        padding: '6px 12px',
-                                                        background: 'var(--ae-blue)',
-                                                        color: 'white',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.75rem',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onMouseOver={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
-                                                    onMouseOut={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
-                                                    title="View Details"
                                                 >
-                                                    <Eye size={14} />
-                                                </button>
+                                                    {so.so_number || `DRAFT - ${so.id} `}
+                                                </span>
+                                                {so.status === 'DRAFT' && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800 uppercase tracking-tighter">Draft</span>}
+                                            </td>
+                                        )}
+                                        {visibleColumns.order_date && (
+                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <span style={{ fontSize: '0.8rem' }}>{so.order_date ? formatToAppDate(so.order_date) : '---'}</span>
+                                            </td>
+                                        )}
+                                        {visibleColumns.customer && (
+                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <div className="flex flex-col">
+                                                    <span style={{ fontWeight: 400, fontSize: '0.85rem' }}>{so.customer_name || 'N/A'}</span>
+                                                </div>
+                                            </td>
+                                        )}
+                                        {visibleColumns.cust_code && (
+                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <span style={{ fontSize: '0.8rem' }}>{so.customer_code || '---'}</span>
+                                            </td>
+                                        )}
+                                        {visibleColumns.po_number && (
+                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <span style={{ fontSize: '0.8rem' }}>{so.po_number}</span>
+                                            </td>
+                                        )}
+                                        {visibleColumns.items && (
+                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <div className="flex flex-col text-xs">
+                                                    {so.items && so.items.length > 0 ? (
+                                                        <>
+                                                            <span className="text-slate-700 truncate max-w-[150px]" title={so.items[0].description || so.items[0].product_name}>
+                                                                {so.items[0].description || (so.items[0].product ? `Product #${so.items[0].product} ` : 'Unmapped Item')}
+                                                            </span>
+                                                            {so.items.length > 1 && (
+                                                                <span className="text-orange-600 font-normal" style={{ fontSize: '0.65rem' }}>
+                                                                    + {so.items.length - 1} more items
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-gray-400 italic">No Items</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        )}
+                                        {visibleColumns.status && (
+                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <span style={{
+                                                    padding: '4px 10px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '9px',
+                                                    fontWeight: 400,
+                                                    textTransform: 'uppercase',
+                                                    background: so.status === 'SUBMITTED' ? 'rgba(0, 200, 83, 0.1)' : 'var(--bg-secondary)',
+                                                    color: so.status === 'SUBMITTED' ? '#00C853' : 'var(--theme-primary)'
+                                                }}>
+                                                    {so.status}
+                                                </span>
+                                            </td>
+                                        )}
+                                        {visibleColumns.amount && (
+                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <span style={{ fontWeight: 400, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{so.currency} {parseFloat(so.total_amount).toLocaleString()}</span>
+                                            </td>
+                                        )}
+                                        {visibleColumns.po_date && (
+                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <span style={{ fontSize: '0.75rem' }}>{so.po_date ? formatToAppDate(so.po_date) : (so.order_date ? formatToAppDate(so.order_date) : '-')}</span>
+                                            </td>
+                                        )}
+                                        {visibleColumns.actions && (
+                                            <td style={{ width: '120px', minWidth: '120px', padding: '8px' }}>
+                                                <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                                                    <button
+                                                        onClick={() => onView(so.id)}
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            padding: '6px 12px',
+                                                            background: 'var(--theme-primary)',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '6px',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 600,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseOver={(e) => { e.currentTarget.style.background = 'var(--theme-primary-dark, #cc5500)'; }}
+                                                        onMouseOut={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; }}
+                                                        title="View Details"
+                                                    >
+                                                        <Eye size={14} />
+                                                    </button>
 
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDownloadReport(so.id, so.so_number);
-                                                    }}
-                                                    style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        padding: '6px 12px',
-                                                        background: 'var(--theme-primary)',
-                                                        color: 'white',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.75rem',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onMouseOver={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
-                                                    onMouseOut={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
-                                                    title="Download PO"
-                                                >
-                                                    <Download size={14} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    )}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDownloadReport(so.id, so.so_number);
+                                                        }}
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            padding: '6px 12px',
+                                                            background: 'rgba(255,107,0,0.08)',
+                                                            color: 'var(--theme-primary)',
+                                                            border: '1px solid rgba(255,107,0,0.25)',
+                                                            borderRadius: '6px',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 600,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseOver={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                                                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,107,0,0.08)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)'; }}
+                                                        title="Download PO"
+                                                    >
+                                                        <Download size={14} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        )}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <Pagination
+                        currentPage={currentPage}
+                        totalItems={filteredSalesOrders.length}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        onPageChange={setCurrentPage}
+                    />
                 </div>
-
-                <Pagination
-                    currentPage={currentPage}
-                    totalItems={filteredSalesOrders.length}
-                    itemsPerPage={ITEMS_PER_PAGE}
-                    onPageChange={setCurrentPage}
-                />
             </div>
         </div>
     );

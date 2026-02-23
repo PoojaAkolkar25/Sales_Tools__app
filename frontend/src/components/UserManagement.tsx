@@ -1,8 +1,163 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { UserPlus, Mail, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search, LayoutDashboard, PlusCircle, Paperclip, FileText, Eye, Download } from 'lucide-react';
+import { UserPlus, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search, LayoutDashboard, PlusCircle, Paperclip, FileText, Eye, Download, ChevronLeft, ChevronRight, Columns, ChevronDown } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+
+const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: string }[]> = {
+    user: [
+        { key: 'username', label: 'User', shortLabel: 'User' },
+        { key: 'first_name', label: 'First Name', shortLabel: 'First' },
+        { key: 'last_name', label: 'Last Name', shortLabel: 'Last' },
+        { key: 'employee_id', label: 'Emp ID', shortLabel: 'ID' },
+        { key: 'email', label: 'Email', shortLabel: 'Mail' },
+        { key: 'mobile', label: 'Mobile', shortLabel: 'Mob' },
+        { key: 'department', label: 'Department', shortLabel: 'Dept' },
+        { key: 'region', label: 'Region', shortLabel: 'Reg' },
+        { key: 'reporting_to_name', label: 'Reporting To', shortLabel: 'Rept' },
+        { key: 'role', label: 'Role', shortLabel: 'Role' },
+        { key: 'is_active', label: 'Status', shortLabel: 'Stat' },
+    ],
+    partner: [
+        { key: 'name', label: 'Company Name', shortLabel: 'Co' },
+        { key: 'contact_person', label: 'Contact Person', shortLabel: 'Cont' },
+        { key: 'address_line_1', label: 'Address Line', shortLabel: 'Addr' },
+        { key: 'city', label: 'City', shortLabel: 'City' },
+        { key: 'state_name', label: 'State', shortLabel: 'Stat' },
+        { key: 'pincode', label: 'Pincode', shortLabel: 'Pin' },
+        { key: 'phone_number', label: 'Phone', shortLabel: 'Ph' },
+        { key: 'mobile', label: 'Mobile', shortLabel: 'Mob' },
+        { key: 'email', label: 'Email Address', shortLabel: 'Mail' },
+        { key: 'website_url', label: 'Website URL', shortLabel: 'Web' },
+        { key: 'primary_contact', label: 'Primary Contact', shortLabel: 'Pri' },
+        { key: 'base_currency', label: 'Currency', shortLabel: 'Cur' },
+        { key: 'decimal_places', label: 'Decimals', shortLabel: 'Dec' },
+        { key: 'gstin', label: 'GSTIN', shortLabel: 'GST' },
+        { key: 'pan', label: 'PAN', shortLabel: 'PAN' },
+        { key: 'tan', label: 'TAN', shortLabel: 'TAN' },
+        { key: 'cin', label: 'CIN', shortLabel: 'CIN' },
+        { key: 'msme_number', label: 'MSME No', shortLabel: 'MSME' },
+        { key: 'payment_terms', label: 'Payment Terms', shortLabel: 'Terms' },
+    ],
+    end_customer: [
+        { key: 'end_customer_code', label: 'Code', shortLabel: 'Code' },
+        { key: 'name', label: 'End user Name', shortLabel: 'Name' },
+        { key: 'linked_partner_name', label: 'Linked Partner', shortLabel: 'Part' },
+        { key: 'industry', label: 'Industry', shortLabel: 'Ind' },
+        { key: 'location', label: 'Location', shortLabel: 'Loc' },
+        { key: 'contact_person', label: 'Contact Person', shortLabel: 'Cont' },
+        { key: 'email', label: 'Email', shortLabel: 'Mail' },
+        { key: 'phone', label: 'Phone', shortLabel: 'Ph' },
+        { key: 'status', label: 'Status', shortLabel: 'Stat' },
+    ],
+    company: [
+        { key: 'name', label: 'Customer Name', shortLabel: 'Co' },
+        { key: 'entity', label: 'Entity', shortLabel: 'Ent' },
+        { key: 'customer_id', label: 'Customer ID', shortLabel: 'ID' },
+        { key: 'region', label: 'Region', shortLabel: 'Reg' },
+        { key: 'contact_person', label: 'Contact Person', shortLabel: 'Cont' },
+        { key: 'alias_name', label: 'Alias', shortLabel: 'Alias' },
+        { key: 'address_line_1', label: 'Address Line', shortLabel: 'Addr' },
+        { key: 'city', label: 'City', shortLabel: 'City' },
+        { key: 'state_name', label: 'State', shortLabel: 'Stat' },
+        { key: 'pincode', label: 'Pincode', shortLabel: 'Pin' },
+        { key: 'phone_number', label: 'Phone', shortLabel: 'Ph' },
+        { key: 'mobile_number', label: 'Mobile', shortLabel: 'Mob' },
+        { key: 'email', label: 'Email', shortLabel: 'Mail' },
+        { key: 'website_url', label: 'Website', shortLabel: 'Web' },
+        { key: 'industry', label: 'Industry', shortLabel: 'Ind' },
+        { key: 'type', label: 'Type', shortLabel: 'Type' },
+        { key: 'payment_terms', label: 'Payment Terms', shortLabel: 'Terms' },
+        { key: 'base_currency', label: 'Currency', shortLabel: 'Cur' },
+        { key: 'gstin', label: 'GSTIN', shortLabel: 'GST' },
+        { key: 'pan', label: 'PAN', shortLabel: 'PAN' },
+        { key: 'tan', label: 'TAN', shortLabel: 'TAN' },
+        { key: 'cin', label: 'CIN', shortLabel: 'CIN' },
+        { key: 'msme_number', label: 'MSME No', shortLabel: 'MSME' },
+    ],
+    financial_year: [
+        { key: 'label', label: 'Financial Year', shortLabel: 'FY' },
+        { key: 'code', label: 'Code', shortLabel: 'Code' },
+        { key: 'fy_year', label: 'Year', shortLabel: 'Year' },
+        { key: 'start_date', label: 'Start Date', shortLabel: 'Start' },
+        { key: 'end_date', label: 'End Date', shortLabel: 'End' },
+        { key: 'first_month_of_fiscal_year', label: 'Fiscal Month', shortLabel: 'FMon' },
+        { key: 'first_month_of_tax_year', label: 'Tax Month', shortLabel: 'TMon' },
+        { key: 'is_current_fy', label: 'Current', shortLabel: 'Curr' },
+        { key: 'status', label: 'Status', shortLabel: 'Stat' },
+    ],
+    product: [
+        { key: 'product_code', label: 'Code', shortLabel: 'Code' },
+        { key: 'name', label: 'Product Name', shortLabel: 'Name' },
+        { key: 'category', label: 'Category', shortLabel: 'Cat' },
+        { key: 'subcategory', label: 'Subcategory', shortLabel: 'Sub' },
+        { key: 'uom', label: 'UOM', shortLabel: 'UOM' },
+        { key: 'standard_price', label: 'Price', shortLabel: 'Prc' },
+        { key: 'tax_percentage', label: 'Tax %', shortLabel: 'Tax' },
+        { key: 'hsn_sac_code', label: 'HSN/SAC', shortLabel: 'HSN' },
+        { key: 'currency', label: 'Currency', shortLabel: 'Cur' },
+        { key: 'description', label: 'Description', shortLabel: 'Desc' },
+        { key: 'status', label: 'Status', shortLabel: 'Stat' },
+    ]
+};
+
+const DEFAULT_COL_WIDTHS: Record<string, number> = {
+    username: 180,
+    first_name: 150,
+    last_name: 150,
+    employee_id: 120,
+    email: 220,
+    mobile: 150,
+    department: 150,
+    region: 150,
+    reporting_to_name: 180,
+    role: 150,
+    is_active: 100,
+    name: 250,
+    contact_person: 180,
+    address_line_1: 250,
+    city: 120,
+    state_name: 150,
+    pincode: 100,
+    phone_number: 150,
+    website_url: 200,
+    primary_contact: 180,
+    base_currency: 100,
+    decimal_places: 100,
+    gstin: 180,
+    pan: 150,
+    tan: 150,
+    cin: 220,
+    msme_number: 180,
+    payment_terms: 150,
+    end_customer_code: 120,
+    linked_partner_name: 200,
+    industry: 150,
+    location: 150,
+    status: 100,
+    entity: 120,
+    customer_id: 120,
+    alias_name: 150,
+    mobile_number: 150,
+    type: 120,
+    label: 150,
+    code: 120,
+    fy_year: 100,
+    start_date: 120,
+    end_date: 120,
+    first_month_of_fiscal_year: 150,
+    first_month_of_tax_year: 150,
+    is_current_fy: 100,
+    product_code: 120,
+    category: 150,
+    subcategory: 150,
+    uom: 100,
+    standard_price: 120,
+    tax_percentage: 100,
+    hsn_sac_code: 120,
+    currency: 100,
+    description: 300,
+};
 
 const UserManagement: React.FC = () => {
     const { showNotification, showConfirm } = useNotification();
@@ -16,6 +171,7 @@ const UserManagement: React.FC = () => {
     const [financialYears, setFinancialYears] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
     const [showForm, setShowForm] = useState(false);
+    const [isCancelActive, setIsCancelActive] = useState(false);
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -52,6 +208,7 @@ const UserManagement: React.FC = () => {
         mobile_number: '',
         email: '',
         website_url: '',
+        linked_company_profile: '',
         industry: '',
         type: 'CUSTOMER',
         payment_terms: 'NET_30',
@@ -142,6 +299,272 @@ const UserManagement: React.FC = () => {
     });
 
     const location = useLocation();
+
+    const [visibleColumns, setVisibleColumns] = useState<Record<string, string[]>>(() => {
+        const saved = localStorage.getItem('userManagement_visibleColumns');
+        const savedParsed = saved ? JSON.parse(saved) : {};
+        const defaults: Record<string, string[]> = {};
+        Object.keys(ALL_COLUMNS).forEach(mode => {
+            // Get all possible keys for the current mode
+            const allKeys = ALL_COLUMNS[mode].map(col => col.key);
+
+            if (savedParsed[mode]) {
+                // Merge saved visibility with new columns from ALL_COLUMNS
+                // This ensures newly added columns in ALL_COLUMNS are visible even for returning users
+                // Re-initializing when ALL_COLUMNS has more keys than saved ensures new columns are visible
+                if (allKeys.length > savedParsed[mode].length) {
+                    defaults[mode] = allKeys;
+                } else {
+                    defaults[mode] = savedParsed[mode];
+                }
+            } else {
+                defaults[mode] = allKeys;
+            }
+        });
+        return defaults;
+    });
+
+    const [colWidths] = useState<Record<string, number>>(() => {
+        const saved = localStorage.getItem('userManagement_colWidths');
+        if (saved) return JSON.parse(saved);
+        return DEFAULT_COL_WIDTHS;
+    });
+
+    const tableScrollRef = useRef<HTMLDivElement>(null);
+    const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const columnMenuRef = useRef<HTMLDivElement>(null);
+
+    const getColWidth = (key: string) => colWidths[key] ?? 150;
+
+    const renderUserCell = (user: any, colKey: string) => {
+        switch (colKey) {
+            case 'username':
+                return (
+                    <div className="flex items-center">
+                        <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
+                            <UserIcon size={20} />
+                        </div>
+                        <div className="ml-4">
+                            <div style={{ fontSize: '0.85rem', fontWeight: 400, color: '#1a1f36' }}>{user.username}</div>
+                        </div>
+                    </div>
+                );
+            case 'first_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.first_name || '-'}</div>;
+            case 'last_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.last_name || '-'}</div>;
+            case 'employee_id': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{user.employee_id || '-'}</div>;
+            case 'email': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.email || '-'}</div>;
+            case 'mobile': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.mobile || '-'}</div>;
+            case 'department': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.department || '-'}</div>;
+            case 'region': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.region || '-'}</div>;
+            case 'reporting_to_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.reporting_to_name || '-'}</div>;
+            case 'role': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.role || '-'}</div>;
+            case 'is_active':
+                return (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: user.is_active ? '#00C853' : '#F44336' }}>
+                        {user.is_active ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
+                        {user.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                );
+            default: return null;
+        }
+    };
+
+    const renderPartnerCell = (p: any, colKey: string) => {
+        switch (colKey) {
+            case 'name':
+                return (
+                    <div className="flex items-center">
+                        <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
+                            <Shield size={20} />
+                        </div>
+                        <div className="ml-4">
+                            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{p.name}</div>
+                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.code}</div>
+                        </div>
+                    </div>
+                );
+            case 'contact_person': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.contact_person || '-'}</div>;
+            case 'address_line_1': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.address_line_1 || '-'}</div>;
+            case 'city': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.city || '-'}</div>;
+            case 'state_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.state_name || p.state || '-'}</div>;
+            case 'pincode': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.pincode || '-'}</div>;
+            case 'phone_number': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.phone_number || '-'}</div>;
+            case 'mobile': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.mobile || '-'}</div>;
+            case 'email': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.email || '-'}</div>;
+            case 'website_url': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.website_url || '-'}</div>;
+            case 'primary_contact': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.primary_contact || '-'}</div>;
+            case 'base_currency': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 700 }}>{p.currency_symbol} ({p.base_currency})</div>;
+            case 'decimal_places': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.decimal_places}</div>;
+            case 'gstin': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{p.gstin || '-'}</div>;
+            case 'pan': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.pan || '-'}</div>;
+            case 'tan': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.tan || '-'}</div>;
+            case 'cin': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.cin || '-'}</div>;
+            case 'msme_number': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.msme_number || '-'}</div>;
+            case 'payment_terms': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.payment_terms || '-'}</div>;
+            default: return null;
+        }
+    };
+
+    const renderEndCustomerCell = (ec: any, colKey: string) => {
+        switch (colKey) {
+            case 'name':
+                return (
+                    <div className="flex items-center">
+                        <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
+                            <Users size={20} />
+                        </div>
+                        <div className="ml-4">
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{ec.name}</div>
+                            <div style={{ fontSize: '0.65rem', color: '#718096' }}>{ec.end_customer_code}</div>
+                        </div>
+                    </div>
+                );
+            case 'end_customer_code': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{ec.end_customer_code}</div>;
+            case 'linked_partner_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.linked_partner_name || '-'}</div>;
+            case 'industry': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.industry || '-'}</div>;
+            case 'location': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.location || '-'}</div>;
+            case 'contact_person': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.contact_person || '-'}</div>;
+            case 'email': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.email || '-'}</div>;
+            case 'phone': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.phone || '-'}</div>;
+            case 'status':
+                return (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                        {ec.status === 'ACTIVE' ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
+                        {ec.status}
+                    </span>
+                );
+            default: return null;
+        }
+    };
+
+    const renderCompanyCell = (c: any, colKey: string) => {
+        switch (colKey) {
+            case 'name':
+                return (
+                    <div className="flex items-center">
+                        <div className="ml-4">
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{c.name}</div>
+                            <div style={{ fontSize: '0.65rem', color: '#718096' }}>{c.customer_id}</div>
+                        </div>
+                    </div>
+                );
+            case 'entity': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.entity}</div>;
+            case 'customer_id': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{c.customer_id}</div>;
+            case 'region': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.region}</div>;
+            case 'contact_person': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.contact_person || '-'}</div>;
+            case 'alias_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.alias_name || '-'}</div>;
+            case 'address_line_1': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.address_line_1 || '-'}</div>;
+            case 'city': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.city}</div>;
+            case 'state_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.state_name || c.state || '-'}</div>;
+            case 'pincode': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.pincode}</div>;
+            case 'phone_number': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.phone_number || '-'}</div>;
+            case 'mobile_number': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.mobile_number || '-'}</div>;
+            case 'email': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.email || '-'}</div>;
+            case 'website_url': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.website_url || '-'}</div>;
+            case 'industry': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.industry || '-'}</div>;
+            case 'type': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 600 }}>{c.type}</div>;
+            case 'payment_terms': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.payment_terms || '-'}</div>;
+            case 'base_currency': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 700 }}>{c.currency_symbol} ({c.base_currency})</div>;
+            case 'gstin': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{c.gstin || '-'}</div>;
+            case 'pan': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.pan || '-'}</div>;
+            case 'tan': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.tan || '-'}</div>;
+            case 'cin': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.cin || '-'}</div>;
+            case 'msme_number': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.msme_number || '-'}</div>;
+            default: return null;
+        }
+    };
+
+    const renderFYCell = (fy: any, colKey: string) => {
+        switch (colKey) {
+            case 'label': return <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{fy.label}</div>;
+            case 'code': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{fy.code}</div>;
+            case 'fy_year': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{fy.fy_year}</div>;
+            case 'start_date': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{fy.start_date}</div>;
+            case 'end_date': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{fy.end_date}</div>;
+            case 'first_month_of_fiscal_year': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{fy.first_month_of_fiscal_year}</div>;
+            case 'first_month_of_tax_year': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{fy.first_month_of_tax_year}</div>;
+            case 'is_current_fy':
+                return (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 800, background: fy.is_current_fy ? 'rgba(0, 200, 83, 0.1)' : 'rgba(113, 128, 150, 0.1)', color: fy.is_current_fy ? '#00C853' : '#718096' }}>
+                        {fy.is_current_fy ? 'YES' : 'NO'}
+                    </span>
+                );
+            case 'status':
+                return (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', background: fy.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: fy.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                        {fy.status === 'ACTIVE' ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
+                        {fy.status}
+                    </span>
+                );
+            default: return null;
+        }
+    };
+
+    const renderProductCell = (product: any, colKey: string) => {
+        switch (colKey) {
+            case 'name':
+                return (
+                    <div className="flex items-center">
+                        <div className="ml-4">
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{product.name}</div>
+                            <div style={{ fontSize: '0.65rem', color: '#718096' }}>{product.product_code}</div>
+                        </div>
+                    </div>
+                );
+            case 'product_code': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{product.product_code}</div>;
+            case 'category': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 600 }}>{product.category}</div>;
+            case 'subcategory': return <div style={{ fontSize: '0.75rem', color: '#718096', fontWeight: 500 }}>{product.subcategory || '-'}</div>;
+            case 'uom': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{product.uom}</div>;
+            case 'standard_price': return <div style={{ fontSize: '0.75rem', color: '#1a1f36', fontWeight: 700 }}>{product.currency === 'INR' ? '₹' : product.currency === 'USD' ? '$' : '€'} {product.standard_price}</div>;
+            case 'tax_percentage': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{product.tax_percentage}%</div>;
+            case 'hsn_sac_code': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{product.hsn_sac_code || '-'}</div>;
+            case 'currency': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{product.currency}</div>;
+            case 'description': return <div style={{ fontSize: '0.7rem', color: '#718096', lineHeight: 1.4 }}>{product.description || '-'}</div>;
+            case 'status':
+                return (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', background: product.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: product.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
+                        {product.status === 'ACTIVE' ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
+                        {product.status}
+                    </span>
+                );
+            default: return null;
+        }
+    };
+
+    const renderCell = (mode: string, item: any, colKey: string) => {
+        switch (mode) {
+            case 'user': return renderUserCell(item, colKey);
+            case 'partner': return renderPartnerCell(item, colKey);
+            case 'end_customer': return renderEndCustomerCell(item, colKey);
+            case 'company': return renderCompanyCell(item, colKey);
+            case 'financial_year': return renderFYCell(item, colKey);
+            case 'product': return renderProductCell(item, colKey);
+            default: return null;
+        }
+    };
+
+    const toggleColumn = (mode: string, key: string) => {
+        setVisibleColumns(prev => {
+            const next = { ...prev };
+            if (next[mode].includes(key)) {
+                next[mode] = next[mode].filter(k => k !== key);
+            } else {
+                next[mode] = [...next[mode], key];
+            }
+            localStorage.setItem('userManagement_visibleColumns', JSON.stringify(next));
+            return next;
+        });
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (columnMenuRef.current && !columnMenuRef.current.contains(event.target as Node)) {
+                setShowColumnMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         fetchData();
@@ -298,7 +721,7 @@ const UserManagement: React.FC = () => {
                 name: '', entity: 'AE_IND', customer_id: '', region: '',
                 contact_person: '', alias_name: '', logo: null, address_line_1: '',
                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
-                mobile_number: '', email: '', website_url: '',
+                mobile_number: '', email: '', website_url: '', linked_company_profile: '',
                 industry: '', type: 'CUSTOMER',
                 payment_terms: 'NET_30',
                 base_currency: 'INR', currency_symbol: '? / INR', decimal_places: 2,
@@ -883,14 +1306,27 @@ const UserManagement: React.FC = () => {
                     background: 'white',
                     padding: '6px',
                     borderRadius: '12px',
-                    border: '1px solid #E0E6ED',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    border: '1px solid var(--border-primary)',
+                    boxShadow: 'var(--shadow-sm)'
                 }}>
                     <button
                         onClick={() => setShowForm(false)}
-                        className={!showForm ? "ae-btn-primary" : "ae-btn-secondary"}
+                        style={{
+                            padding: '6px 20px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.23s',
+                            background: !showForm ? 'var(--theme-primary)' : 'transparent',
+                            color: !showForm ? 'white' : 'var(--text-secondary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}
                     >
-                        <LayoutDashboard size={18} /> Dashboard
+                        <LayoutDashboard size={14} /> Dashboard
                     </button>
                     <button
                         onClick={() => {
@@ -920,7 +1356,7 @@ const UserManagement: React.FC = () => {
                                 name: '', entity: 'AE_IND', customer_id: '', region: '',
                                 contact_person: '', alias_name: '', logo: null, address_line_1: '',
                                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
-                                mobile_number: '', email: '', website_url: '',
+                                mobile_number: '', email: '', website_url: '', linked_company_profile: '',
                                 industry: '', type: 'CUSTOMER',
                                 payment_terms: 'NET_30',
                                 base_currency: 'INR', currency_symbol: '? / INR', decimal_places: 2,
@@ -932,9 +1368,22 @@ const UserManagement: React.FC = () => {
                             setCompanyError('');
                             setShowForm(true);
                         }}
-                        className={showForm && !editingId ? "ae-btn-primary" : "ae-btn-secondary"}
+                        style={{
+                            padding: '6px 20px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.23s',
+                            background: showForm && !editingId ? 'var(--theme-primary)' : 'transparent',
+                            color: showForm && !editingId ? 'white' : 'var(--text-secondary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}
                     >
-                        <PlusCircle size={18} /> Create New
+                        <PlusCircle size={14} /> Create New
                     </button>
                 </div>
             </div>
@@ -1074,6 +1523,82 @@ const UserManagement: React.FC = () => {
 
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ position: 'relative' }} ref={columnMenuRef}>
+                                <button
+                                    className="ae-btn-secondary"
+                                    onClick={() => setShowColumnMenu(!showColumnMenu)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '6px 14px',
+                                        fontSize: '0.8rem',
+                                        border: showColumnMenu ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                        boxShadow: showColumnMenu ? '0 0 0 2px rgba(187, 77, 0, 0.1)' : 'none'
+                                    }}
+                                >
+                                    <Columns size={16} /> Columns <ChevronDown size={14} />
+                                </button>
+                                {showColumnMenu && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        right: 0,
+                                        marginTop: '8px',
+                                        background: 'white',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
+                                        border: '1px solid var(--border-primary)',
+                                        zIndex: 100,
+                                        minWidth: '220px',
+                                        maxHeight: '450px',
+                                        overflowY: 'auto'
+                                    }}>
+                                        <div style={{
+                                            padding: '12px 16px',
+                                            borderBottom: '1px solid var(--border-primary)',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            background: 'var(--bg-secondary)'
+                                        }}>
+                                            <button
+                                                onClick={() => setVisibleColumns(prev => ({ ...prev, [viewMode]: ALL_COLUMNS[viewMode].map(c => c.key) }))}
+                                                style={{ background: 'none', border: 'none', color: 'var(--ae-blue)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                            >
+                                                Select All
+                                            </button>
+                                            <button
+                                                onClick={() => setVisibleColumns(prev => ({ ...prev, [viewMode]: [] }))}
+                                                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                            >
+                                                Clear All
+                                            </button>
+                                        </div>
+                                        {ALL_COLUMNS[viewMode]?.map(col => (
+                                            <label key={col.key} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '12px',
+                                                padding: '10px 16px',
+                                                fontSize: '0.85rem',
+                                                color: 'var(--text-primary)',
+                                                cursor: 'pointer',
+                                                userSelect: 'none',
+                                                borderBottom: '1px solid var(--border-primary)'
+                                            }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={visibleColumns[viewMode].includes(col.key)}
+                                                    onChange={() => toggleColumn(viewMode, col.key)}
+                                                    style={{ cursor: 'pointer', accentColor: '#FF6B00' }}
+                                                />
+                                                <span style={{ fontWeight: 600 }}>{col.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )
@@ -1408,11 +1933,11 @@ const UserManagement: React.FC = () => {
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div style={{ gridColumn: 'span 3' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Address Line 1
+                                                    Address Line
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    placeholder="Address Line 1"
+                                                    placeholder="Address Line"
                                                     value={partnerFormData.address_line_1}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, address_line_1: e.target.value })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
@@ -2533,14 +3058,15 @@ const UserManagement: React.FC = () => {
                         </div >
                         <div style={{
                             display: 'flex',
-                            alignItems: 'center',
+                            justifyContent: 'flex-end',
                             gap: '4px',
                             background: 'white',
                             padding: '6px',
                             borderRadius: '12px',
                             border: '1px solid #E0E6ED',
                             boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
-                            width: 'fit-content'
+                            width: 'fit-content',
+                            marginLeft: 'auto'
                         }}>
                             <button
                                 type="submit"
@@ -2551,11 +3077,12 @@ const UserManagement: React.FC = () => {
                                     padding: '6px 16px',
                                     borderRadius: '8px',
                                     fontSize: '0.85rem',
-                                    background: 'var(--theme-primary)',
-                                    color: 'white',
+                                    background: isCancelActive ? 'transparent' : 'var(--theme-primary)',
+                                    color: isCancelActive ? 'var(--text-secondary)' : 'white',
                                     border: 'none',
                                     fontWeight: 800,
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
                                 }}
                             >
                                 <CheckCircle size={16} /> {
@@ -2570,8 +3097,16 @@ const UserManagement: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    setShowForm(false);
-                                    setEditingId(null);
+                                    setIsCancelActive(true);
+                                    showConfirm({
+                                        title: 'Are you sure you want to exit?',
+                                        onConfirm: () => {
+                                            setShowForm(false);
+                                            setEditingId(null);
+                                            setIsCancelActive(false);
+                                        },
+                                        onCancel: () => setIsCancelActive(false)
+                                    });
                                 }}
                                 style={{
                                     display: 'flex',
@@ -2580,11 +3115,24 @@ const UserManagement: React.FC = () => {
                                     padding: '6px 16px',
                                     borderRadius: '8px',
                                     fontSize: '0.85rem',
-                                    background: 'transparent',
-                                    color: '#718096',
+                                    background: isCancelActive ? 'var(--theme-primary)' : 'transparent',
+                                    color: isCancelActive ? 'white' : '#718096',
                                     border: 'none',
                                     fontWeight: 700,
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!isCancelActive) {
+                                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                        e.currentTarget.style.color = 'var(--ae-orange)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!isCancelActive) {
+                                        e.currentTarget.style.background = 'transparent';
+                                        e.currentTarget.style.color = '#718096';
+                                    }
                                 }}
                             >
                                 <X size={16} /> Cancel
@@ -2592,573 +3140,158 @@ const UserManagement: React.FC = () => {
                         </div>
                     </form >
                 ) : (
-                    <div className="section-panel !p-0 overflow-hidden">
-                        <div style={{ overflowX: 'auto', width: '100%', background: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
-                            <table style={{ minWidth: '1500px', width: '100%', borderCollapse: 'collapse' }}>
+                    <div className="section-panel !p-0" style={{ position: 'relative', overflow: 'visible', margin: '0 25px', borderRadius: '0px' }}>
+                        {/* Scroll Buttons */}
+                        <button
+                            onClick={() => tableScrollRef.current?.scrollBy({ left: -150, behavior: 'smooth' })}
+                            style={{
+                                position: 'absolute', left: '-20px', top: '50%', transform: 'translateY(-50%)',
+                                zIndex: 100, width: '40px', height: '40px', borderRadius: '50%',
+                                background: 'white', border: '1px solid var(--border-primary)',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                color: 'var(--text-primary)', transition: 'all 0.2s',
+                            }}
+                            title="Scroll left"
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
+                        >
+                            <ChevronLeft size={20} />
+                        </button>
+                        <button
+                            onClick={() => tableScrollRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
+                            style={{
+                                position: 'absolute', right: '-20px', top: '50%', transform: 'translateY(-50%)',
+                                zIndex: 100, width: '40px', height: '40px', borderRadius: '50%',
+                                background: 'white', border: '1px solid var(--border-primary)',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                color: 'var(--text-primary)', transition: 'all 0.2s',
+                            }}
+                            title="Scroll right"
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
+                        >
+                            <ChevronRight size={20} />
+                        </button>
+
+                        <div ref={tableScrollRef} style={{ overflowX: 'auto', width: '100%', background: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
+                            <table style={{ tableLayout: 'fixed', width: '100%', borderCollapse: 'collapse' }}>
+                                <colgroup>
+                                    {ALL_COLUMNS[viewMode]?.filter(col => visibleColumns[viewMode].includes(col.key)).map(col => (
+                                        <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />
+                                    ))}
+                                    {viewMode === 'user' && <col style={{ width: '100px' }} />}
+                                </colgroup>
                                 <thead>
-                                    <tr style={{ background: 'var(--bg-secondary)' }}>
-                                        <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                                            {viewMode === 'user' ? 'User' : viewMode === 'partner' ? 'Company' : viewMode === 'end_customer' ? 'End Customer' : viewMode === 'financial_year' ? 'Financial Year' : viewMode === 'product' ? 'Product / Service' : 'Customer'}
-                                        </th>
-                                        {viewMode === 'user' && (
-                                            <>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Email</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Mobile</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Department</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Region</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Reporting To</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Role</th>
-                                            </>
+                                    <tr style={{ background: 'var(--ae-table-header-bg)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                        {ALL_COLUMNS[viewMode]?.filter(col => visibleColumns[viewMode].includes(col.key)).map(col => (
+                                            <th key={col.key} style={{ padding: '4px 10px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', borderRight: '1px solid var(--border-secondary)', backgroundColor: 'var(--ae-table-header-bg)' }}>
+                                                {col.label}
+                                            </th>
+                                        ))}
+                                        {(viewMode === 'user') && (
+                                            <th style={{ padding: '4px 10px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', backgroundColor: 'var(--ae-table-header-bg)' }}>
+                                                Actions
+                                            </th>
                                         )}
-                                        {viewMode === 'partner' && (
-                                            <>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Contact (E/P/M)</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Address</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Type / Industry</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Tax / MSME Info</th>
-                                            </>
-                                        )}
-                                        {viewMode === 'end_customer' && (
-                                            <>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Linked Partner</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Industry</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Location</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Contact Person (E/P)</th>
-                                            </>
-                                        )}
-                                        {viewMode === 'company' && (
-                                            <>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Contact (E/P/M)</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Address</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Industry / Type</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Tax / MSME Info</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Terms</th>
-                                            </>
-                                        )}
-                                        {viewMode === 'financial_year' && (
-                                            <>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Code</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Start Date</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>End Date</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Current FY</th>
-                                            </>
-                                        )}
-                                        {viewMode === 'product' && (
-                                            <>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Category / Sub</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>UOM / Price / Tax</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>HSN/SAC</th>
-                                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Description</th>
-                                            </>
-                                        )}
-                                        <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
-                                        <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
                                     </tr>
-                                    <tr style={{ background: 'var(--bg-secondary)' }}>
-                                        <th style={{ padding: '8px 24px' }}>
-                                            <div className="ae-input-group !mb-0">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={columnFilters[viewMode === 'user' ? 'username' : viewMode === 'partner' ? 'name' : viewMode === 'end_customer' ? 'name' : viewMode === 'financial_year' ? 'label' : viewMode === 'product' ? 'name' : 'name'] || ''}
-                                                    onChange={(e) => setColumnFilters({ ...columnFilters, [viewMode === 'user' ? 'username' : viewMode === 'partner' ? 'name' : viewMode === 'end_customer' ? 'name' : viewMode === 'financial_year' ? 'label' : viewMode === 'product' ? 'name' : 'name']: e.target.value })}
-                                                    style={{ height: '28px', fontSize: '11px' }}
-                                                />
-                                            </div>
-                                        </th>
-                                        {viewMode === 'user' && (
-                                            <>
-                                                <th style={{ padding: '8px 24px' }}>
-                                                    <div className="ae-input-group !mb-0">
-                                                        <Search className="ae-search-icon" size={12} />
-                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters.email || ''} onChange={(e) => setColumnFilters({ ...columnFilters, email: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
-                                                    </div>
-                                                </th>
-                                                <th style={{ padding: '8px 24px' }}>
-                                                    <div className="ae-input-group !mb-0">
-                                                        <Search className="ae-search-icon" size={12} />
-                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters.mobile || ''} onChange={(e) => setColumnFilters({ ...columnFilters, mobile: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
-                                                    </div>
-                                                </th>
-                                                <th style={{ padding: '8px 24px' }}>
-                                                    <div className="ae-input-group !mb-0">
-                                                        <Search className="ae-search-icon" size={12} />
-                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters.department || ''} onChange={(e) => setColumnFilters({ ...columnFilters, department: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
-                                                    </div>
-                                                </th>
-                                                <th style={{ padding: '8px 24px' }}>
-                                                    <div className="ae-input-group !mb-0">
-                                                        <Search className="ae-search-icon" size={12} />
-                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters.region || ''} onChange={(e) => setColumnFilters({ ...columnFilters, region: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
-                                                    </div>
-                                                </th>
-                                                <th style={{ padding: '8px 24px' }}>
-                                                    <div className="ae-input-group !mb-0">
-                                                        <Search className="ae-search-icon" size={12} />
-                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters.reporting_to_name || ''} onChange={(e) => setColumnFilters({ ...columnFilters, reporting_to_name: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
-                                                    </div>
-                                                </th>
-                                                <th style={{ padding: '8px 24px' }}>
-                                                    <div className="ae-input-group !mb-0">
-                                                        <Search className="ae-search-icon" size={12} />
-                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters.role || ''} onChange={(e) => setColumnFilters({ ...columnFilters, role: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
-                                                    </div>
-                                                </th>
-                                            </>
+                                    {/* Filter Row */}
+                                    <tr style={{ background: 'var(--ae-filter-row-bg)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                        {ALL_COLUMNS[viewMode]?.filter(col => visibleColumns[viewMode].includes(col.key)).map(col => (
+                                            <th key={`filter-${col.key}`} style={{ padding: '4px 10px', borderRight: '1px solid var(--border-secondary)', backgroundColor: 'var(--ae-filter-row-bg)' }}>
+                                                <div className="ae-input-group !mb-0" style={{ margin: 0 }}>
+                                                    <Search className="ae-search-icon" size={12} />
+                                                    <input
+                                                        className="ae-input"
+                                                        placeholder="Filter..."
+                                                        value={columnFilters[col.key] || ''}
+                                                        onChange={(e) => setColumnFilters({ ...columnFilters, [col.key]: e.target.value })}
+                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                    />
+                                                </div>
+                                            </th>
+                                        ))}
+                                        {(viewMode === 'user') && (
+                                            <th style={{ padding: '4px 10px', textAlign: 'right', backgroundColor: 'var(--ae-filter-row-bg)' }}>
+                                                <button
+                                                    onClick={() => { setColumnFilters({}); setSearchTerm(''); }}
+                                                    style={{ height: '24px', width: '80px', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
+                                                >
+                                                    Clear
+                                                </button>
+                                            </th>
                                         )}
-                                        {/* Simplified Filter row for other viewModes to avoid too many columns logic right now */}
-                                        {viewMode !== 'user' && (
-                                            <>
-                                                <th style={{ padding: '8px 24px' }}>
-                                                    <div className="ae-input-group !mb-0">
-                                                        <Search className="ae-search-icon" size={12} />
-                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters[viewMode === 'partner' ? 'email' : viewMode === 'end_customer' ? 'email' : viewMode === 'financial_year' ? 'start_date' : viewMode === 'product' ? 'category' : 'email'] || ''} onChange={(e) => setColumnFilters({ ...columnFilters, [viewMode === 'partner' ? 'email' : viewMode === 'end_customer' ? 'email' : viewMode === 'financial_year' ? 'start_date' : viewMode === 'product' ? 'category' : 'email']: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
-                                                    </div>
-                                                </th>
-                                                <th style={{ padding: '8px 24px' }}>
-                                                    <div className="ae-input-group !mb-0">
-                                                        <Search className="ae-search-icon" size={12} />
-                                                        <input className="ae-input" placeholder="Filter..." value={columnFilters[viewMode === 'partner' ? 'type' : viewMode === 'end_customer' ? 'location' : viewMode === 'financial_year' ? 'end_date' : viewMode === 'product' ? 'product_code' : 'city'] || ''} onChange={(e) => setColumnFilters({ ...columnFilters, [viewMode === 'partner' ? 'type' : viewMode === 'end_customer' ? 'location' : viewMode === 'financial_year' ? 'end_date' : viewMode === 'product' ? 'product_code' : 'city']: e.target.value })} style={{ height: '28px', fontSize: '11px' }} />
-                                                    </div>
-                                                </th>
-                                                {/* Filler columns for simplicity in other modes for now */}
-                                                {(viewMode === 'partner' || viewMode === 'company' || viewMode === 'end_customer') && <th style={{ padding: '8px 24px' }}></th>}
-                                                {(viewMode === 'financial_year' || viewMode === 'product') && <th style={{ padding: '8px 24px' }}></th>}
-                                            </>
-                                        )}
-                                        <th style={{ padding: '8px 24px' }}>
-                                            <div className="ae-input-group !mb-0">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={columnFilters[viewMode === 'user' ? 'is_active' : 'status'] || ''}
-                                                    onChange={(e) => setColumnFilters({ ...columnFilters, [viewMode === 'user' ? 'is_active' : 'status']: e.target.value })}
-                                                    style={{ height: '28px', fontSize: '11px' }}
-                                                />
-                                            </div>
-                                        </th>
-                                        <th style={{ padding: '8px 24px', textAlign: 'right' }}>
-                                            <button
-                                                onClick={() => { setColumnFilters({}); setSearchTerm(''); }}
-                                                style={{ height: '24px', width: '100px', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
-                                            >
-                                                Clear
-                                            </button>
-                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {viewMode === 'user' ? filteredUsers.map((user) => (
-                                        <tr key={user.id} className="ae-table-row">
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
-                                                        <UserIcon size={20} />
+                                    {(viewMode === 'user' ? filteredUsers :
+                                        viewMode === 'partner' ? filteredPartners :
+                                            viewMode === 'end_customer' ? filteredEndCustomers :
+                                                viewMode === 'company' ? filteredCompanies :
+                                                    viewMode === 'financial_year' ? filteredFinancialYears :
+                                                        filteredProducts
+                                    ).map((item) => (
+                                        <tr key={item.id} className="ae-table-row">
+                                            {ALL_COLUMNS[viewMode]?.filter(col => visibleColumns[viewMode].includes(col.key)).map(col => (
+                                                <td key={col.key} style={{ padding: '4px 10px', verticalAlign: 'middle' }}>
+                                                    {renderCell(viewMode, item, col.key)}
+                                                </td>
+                                            ))}
+                                            {/* Action Column Body */}
+                                            {(viewMode === 'user') && (
+                                                <td style={{ padding: '4px 10px', textAlign: 'right', verticalAlign: 'middle' }}>
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                        <button
+                                                            onClick={() => handleToggleStatus(item.id, 'user')}
+                                                            style={{ padding: '8px', color: item.is_active ? '#00C853' : '#F44336', border: 'none', background: item.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
+                                                            title={item.is_active ? "Deactivate User" : "Activate User"}
+                                                        >
+                                                            <Power size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteUser(item.id)}
+                                                            style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
+                                                            title="Delete User"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setFormData({
+                                                                    username: item.username || '',
+                                                                    email: item.email || '',
+                                                                    password: '',
+                                                                    first_name: item.first_name || '',
+                                                                    last_name: item.last_name || '',
+                                                                    role: item.role || 'app_user',
+                                                                    mobile: item.mobile || '',
+                                                                    department: item.department || '',
+                                                                    region: item.region || '',
+                                                                    reporting_to: item.reporting_to || '',
+                                                                    employee_id: item.employee_id || '',
+                                                                });
+                                                                setEditingId(item.id);
+                                                                setShowForm(true);
+                                                            }}
+                                                            style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
+                                                            title="Edit User"
+                                                        >
+                                                            <Pencil size={16} />
+                                                        </button>
                                                     </div>
-                                                    <div className="ml-4">
-                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{user.username}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{user.first_name} {user.last_name}{user.employee_id ? ` · ${user.employee_id}` : ''}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
-                                                    <Mail size={14} className="text-gray-400" /> {user.email || '-'}
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.mobile || '-'}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.department || '-'}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.region || '-'}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{user.reporting_to_name || '-'}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <span style={{
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '6px',
-                                                    padding: '4px 10px',
-                                                    borderRadius: '6px',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 700,
-                                                    textTransform: 'uppercase',
-                                                    background: user.role === 'app_admin' ? 'rgba(159, 122, 234, 0.1)' : 'var(--bg-accent)',
-                                                    color: user.role === 'app_admin' ? '#9F7AEA' : 'var(--ae-blue)'
-                                                }}>
-                                                    <Shield size={12} />
-                                                    {user.role === 'app_admin' ? 'Admin' :
-                                                        user.role === 'sales_head' ? 'Sales Head' :
-                                                            user.role === 'pm_head' ? 'PM Head' :
-                                                                user.role === 'salesperson' ? 'Salesperson' :
-                                                                    user.role === 'inside_sales_head' ? 'IS Head' : 'User'}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <span style={{
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '6px',
-                                                    padding: '4px 10px',
-                                                    borderRadius: '6px',
-                                                    fontSize: '0.7rem',
-                                                    fontWeight: 800,
-                                                    textTransform: 'uppercase',
-                                                    background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)',
-                                                    color: user.is_active ? '#00C853' : '#F44336'
-                                                }}>
-                                                    {user.is_active ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                    {user.is_active ? 'Active' : 'Inactive'}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => handleToggleStatus(user.id, 'user')}
-                                                        style={{ padding: '8px', color: user.is_active ? '#00C853' : '#F44336', border: 'none', background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
-                                                        title={user.is_active ? "Deactivate User" : "Activate User"}
-                                                    >
-                                                        <Power size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteUser(user.id)}
-                                                        style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px', transition: 'all 0.2s' }}
-                                                        title="Delete User"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )) : viewMode === 'partner' ? filteredPartners.map((p) => (
-                                        <tr key={p.id} className="ae-table-row">
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
-                                                        <Shield size={20} />
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{p.name}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.code}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{p.email || '-'}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>P: {p.phone_number || '-'} / M: {p.mobile_number || '-'}</div>
-                                                <div style={{ fontSize: '0.75rem', color: '#a0aec0' }}>{p.website_url || '-'}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{p.city}{p.state ? `, ${p.state}` : ''}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.country} {p.pincode}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{p.type}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.industry || '-'}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.85rem', color: '#4A5568', fontWeight: 500 }}>GST: {p.gstin || '-'}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>PAN: {p.pan || '-'} | TAN: {p.tan || '-'}</div>
-                                                {p.msme_registered && <div style={{ fontSize: '0.75rem', color: '#00C853' }}>MSME: {p.msme_number}</div>}
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: p.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: p.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                    {p.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                    {p.status}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => handleToggleStatus(p.id, 'partner')}
-                                                        style={{ padding: '8px', color: p.status === 'ACTIVE' ? '#00C853' : '#F44336', border: 'none', background: p.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    >
-                                                        <Power size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeletePartner(p.id)}
-                                                        style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                        title="Delete Company"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setPartnerFormData({
-                                                                name: p.name || '',
-                                                                contact_person: p.contact_person || '',
-                                                                logo: p.logo || null,
-                                                                address_line_1: p.address_line_1 || '',
-                                                                country: p.country || 'India',
-                                                                state: p.state || '',
-                                                                city: p.city || '',
-                                                                pincode: p.pincode || '',
-                                                                phone_number: p.phone_number || '',
-                                                                mobile: p.mobile || '',
-                                                                email: p.email || '',
-                                                                website_url: p.website_url || '',
-                                                                primary_contact: p.primary_contact || '',
-                                                                base_currency: p.base_currency || 'INR',
-                                                                currency_symbol: p.currency_symbol || '₹ / INR',
-                                                                decimal_places: p.decimal_places || 2,
-                                                                is_gst_applicable: p.is_gst_applicable ?? true,
-                                                                gstin: p.gstin || '',
-                                                                state_code: p.state_code || '',
-                                                                msme_registered: p.msme_registered ?? false,
-                                                                msme_number: p.msme_number || '',
-                                                                pan: p.pan || '',
-                                                                tan: p.tan || '',
-                                                                cin: p.cin || '',
-                                                                status: p.status || 'ACTIVE',
-                                                                payment_terms: p.payment_terms || 'NET_30'
-                                                            });
-                                                            setEditingId(p.id);
-                                                            setShowForm(true);
-                                                        }}
-                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )) : viewMode === 'end_customer' ? filteredEndCustomers.map((ec) => (
-                                        <tr key={ec.id} className="ae-table-row">
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
-                                                        <UserIcon size={20} />
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{ec.name}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.code}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{ec.linked_partner_name || '-'}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{ec.industry || '-'}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{ec.location || '-'}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{ec.contact_person || '-'}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{ec.email || '-'} / {ec.phone || '-'}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                    {ec.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                    {ec.status}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => handleToggleStatus(ec.id, 'end_customer')}
-                                                        style={{ padding: '8px', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336', border: 'none', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    >
-                                                        <Power size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteEndCustomer(ec.id)}
-                                                        style={{ padding: '8px', color: '#E53E3E', border: 'none', background: 'rgba(229, 62, 62, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                        title="Delete End Customer"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setEndCustomerFormData({ ...ec });
-                                                            setEditingId(ec.id);
-                                                            setShowForm(true);
-                                                        }}
-                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )) : viewMode === 'financial_year' ? financialYears.map((fy) => (
-                                        <tr key={fy.id} className="ae-table-row">
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-                                                        <CheckCircle size={20} />
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{fy.label}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{fy.code} {fy.is_current_fy && <span style={{ background: '#EBF4FF', color: '#1B66D1', padding: '2px 6px', borderRadius: '4px', fontSize: '0.65rem', marginLeft: '8px' }}>CURRENT</span>}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.code}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.start_date}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.end_date}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{fy.is_current_fy ? 'YES' : 'NO'}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: fy.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: fy.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                    {fy.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                    {fy.status}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => {
-                                                            setFyFormData({ ...fy });
-                                                            setEditingId(fy.id);
-                                                            setShowForm(true);
-                                                        }}
-                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )) : viewMode === 'product' ? products.map((prd) => (
-                                        <tr key={prd.id} className="ae-table-row">
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
-                                                        <Shield size={20} />
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{prd.name}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{prd.product_code}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{prd.category}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>{prd.subcategory || '-'}</div>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: prd.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: prd.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
-                                                    {prd.status === 'ACTIVE' ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
-                                                    {prd.status}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '16px 24px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => {
-                                                            setProductFormData({ ...prd });
-                                                            setEditingId(prd.id);
-                                                            setShowForm(true);
-                                                        }}
-                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )) : filteredCompanies.map((comp) => (
-                                        <tr key={comp.id} className="ae-table-row">
-                                            <td style={{ padding: '16px 24px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 flex-shrink-0 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded-full flex items-center justify-center">
-                                                        <Users size={20} />
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{comp.name}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.alias_name || 'No Alias'}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 500 }}>
-                                                    <Mail size={14} className="text-gray-400" /> {comp.email || '-'}
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <div style={{ fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{comp.city || '-'}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#718096' }}>{comp.state_name || '-'}</div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', background: 'rgba(0, 200, 83, 0.1)', color: '#00C853' }}>
-                                                    <CheckCircle size={12} /> Active
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                    <button
-                                                        onClick={() => {
-                                                            setCompanyFormData({
-                                                                name: comp.name || '',
-                                                                entity: comp.entity || 'AE_IND',
-                                                                customer_id: comp.customer_id || '',
-                                                                region: comp.region || '',
-                                                                contact_person: comp.contact_person || '',
-                                                                alias_name: comp.alias_name || '',
-                                                                logo: comp.logo || null,
-                                                                address_line_1: comp.address_line_1 || '',
-                                                                country: comp.country || 'India',
-                                                                state: comp.state || '',
-                                                                city: comp.city || '',
-                                                                pincode: comp.pincode || '',
-                                                                phone_number: comp.phone_number || '',
-                                                                mobile_number: comp.mobile_number || '',
-                                                                email: comp.email || '',
-                                                                website_url: comp.website_url || '',
-                                                                linked_company_profile: comp.linked_company_profile || '',
-                                                                industry: comp.industry || '',
-                                                                type: comp.type || 'CUSTOMER',
-                                                                payment_terms: comp.payment_terms || 'NET_30',
-                                                                base_currency: comp.base_currency || 'INR',
-                                                                currency_symbol: comp.currency_symbol || '₹ / INR',
-                                                                decimal_places: comp.decimal_places || 2,
-                                                                is_gst_applicable: comp.is_gst_applicable ?? true,
-                                                                gstin: comp.gstin || '',
-                                                                state_code: comp.state_code || '',
-                                                                msme_registered: comp.msme_registered ?? false,
-                                                                msme_number: comp.msme_number || '',
-                                                                pan: comp.pan || '',
-                                                                tan: comp.tan || '',
-                                                                cin: comp.cin || ''
-                                                            });
-                                                            setEditingId(comp.id);
-                                                            setViewMode('company');
-                                                            setShowForm(true);
-                                                        }}
-                                                        style={{ padding: '8px', color: 'var(--ae-blue)', border: 'none', background: 'rgba(0, 102, 204, 0.1)', cursor: 'pointer', borderRadius: '6px' }}
-                                                        title="Edit Customer"
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
                                 </tbody>
-                            </table>
-                        </div>
-                    </div>
+                            </table >
+                        </div >
+                    </div >
                 )}
-            </div>
-            );
+            </div >
+        </div >
+    );
 };
 
-            export default UserManagement;
+export default UserManagement;

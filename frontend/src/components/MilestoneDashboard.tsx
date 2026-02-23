@@ -6,24 +6,64 @@ import {
     Eye,
     Columns,
     ChevronDown,
-    FileSpreadsheet
+    FileSpreadsheet,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
 import Pagination from './Pagination';
 
-const ALL_COLUMNS = [
-    { key: 'milestone_no', label: 'Milestone No' },
-    { key: 'deal', label: 'Deal' },
-    { key: 'sales_order', label: 'Sales Order' },
-    { key: 'customer', label: 'Customer' },
-    { key: 'description', label: 'Description' },
-    { key: 'due_date', label: 'Due Date' },
-    { key: 'amount', label: 'Amount' },
-    { key: 'status', label: 'Status' },
-    { key: 'invoice_no', label: 'Invoice No' }
+const ALL_COL_CONFIG = [
+    { key: 'milestone_no', label: 'Milestone No', shortLabel: 'MLST. NO' },
+    { key: 'deal', label: 'Deal', shortLabel: 'DEAL' },
+    { key: 'sales_order', label: 'Sales Order', shortLabel: 'S.O.' },
+    { key: 'customer', label: 'Customer', shortLabel: 'CUST.' },
+    { key: 'description', label: 'Description', shortLabel: 'DESC.' },
+    { key: 'due_date', label: 'Due Date', shortLabel: 'DATE' },
+    { key: 'amount', label: 'Amount', shortLabel: 'AMT.' },
+    { key: 'status', label: 'Status', shortLabel: 'ST.' },
+    { key: 'invoice_no', label: 'Invoice No', shortLabel: 'INV. NO' }
 ];
+
+const SHORT_COL_WIDTHS: Record<string, number> = {
+    milestone_no: 55,
+    deal: 50,
+    sales_order: 50,
+    customer: 55,
+    description: 55,
+    due_date: 50,
+    amount: 45,
+    status: 35,
+    invoice_no: 55,
+    actions: 60
+};
+
+const FULL_LABEL_WIDTHS: Record<string, number> = {
+    milestone_no: 95,
+    deal: 75,
+    sales_order: 90,
+    customer: 110,
+    description: 130,
+    due_date: 75,
+    amount: 85,
+    status: 75,
+    invoice_no: 95
+};
+
+const MAX_COL_WIDTHS: Record<string, number> = {
+    customer: 250,
+    description: 350,
+    milestone_no: 150,
+    deal: 120,
+    sales_order: 150,
+    due_date: 120,
+    amount: 150,
+    status: 120,
+    invoice_no: 150,
+    actions: 120
+};
 
 interface MilestoneDashboardProps {
     onView?: (id: number) => void;
@@ -59,10 +99,58 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
     const [isDownloading, setIsDownloading] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
+        const saved = localStorage.getItem('milestoneDashboard_colWidths');
+        if (saved) return JSON.parse(saved);
+        const defaults: Record<string, number> = {};
+        ALL_COL_CONFIG.forEach(col => {
+            defaults[col.key] = FULL_LABEL_WIDTHS[col.key] || 150;
+        });
+        defaults['actions'] = 120;
+        return defaults;
+    });
+
     const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
         const saved = localStorage.getItem('milestoneDashboard_visibleColumns');
-        return saved ? JSON.parse(saved) : ALL_COLUMNS.map(col => col.key);
+        return saved ? JSON.parse(saved) : ALL_COL_CONFIG.map(col => col.key);
     });
+
+    const resizingRef = useRef<{ colKey: string; startWidth: number; startX: number } | null>(null);
+    const tableScrollRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        localStorage.setItem('milestoneDashboard_colWidths', JSON.stringify(colWidths));
+    }, [colWidths]);
+
+    const startResize = (e: React.MouseEvent, colKey: string) => {
+        e.preventDefault();
+        resizingRef.current = {
+            colKey,
+            startWidth: colWidths[colKey],
+            startX: e.clientX
+        };
+
+        const onMouseMove = (ev: MouseEvent) => {
+            if (!resizingRef.current) return;
+            const key = resizingRef.current.colKey;
+            const delta = ev.clientX - resizingRef.current.startX;
+            const minWidth = SHORT_COL_WIDTHS[key] ?? 40;
+            const maxWidth = MAX_COL_WIDTHS[key] ?? 500;
+            const newWidth = Math.min(maxWidth, Math.max(minWidth, resizingRef.current.startWidth + delta));
+            setColWidths(prev => ({ ...prev, [key]: newWidth }));
+        };
+
+        const onMouseUp = () => {
+            resizingRef.current = null;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    };
+
+    const getColWidth = (key: string) => colWidths[key] ?? 150;
 
     const columnMenuRef = useRef<HTMLDivElement>(null);
     const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -246,7 +334,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden',
+                overflow: 'visible',
                 maxHeight: 'none',
                 overflowY: 'visible'
             }}>
@@ -333,7 +421,15 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                     background: 'white',
                                     color: 'var(--text-secondary)',
                                     fontWeight: 700,
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    border: `1px solid ${showExportMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)'}`,
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.5)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = showExportMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)';
                                 }}
                             >
                                 <Download size={16} /> Export <ChevronDown size={14} />
@@ -376,7 +472,15 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                     background: 'white',
                                     color: 'var(--text-secondary)',
                                     fontWeight: 700,
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    border: `1px solid ${showColumnMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)'}`,
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.5)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = showColumnMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)';
                                 }}
                             >
                                 <Columns size={16} /> Columns <ChevronDown size={14} />
@@ -404,7 +508,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                         background: 'var(--bg-secondary)'
                                     }}>
                                         <button
-                                            onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))}
+                                            onClick={() => setVisibleColumns(ALL_COL_CONFIG.map(c => c.key))}
                                             style={{
                                                 background: 'none',
                                                 border: 'none',
@@ -441,7 +545,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                         </button>
                                     </div>
                                     <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                        {ALL_COLUMNS.map(col => (
+                                        {ALL_COL_CONFIG.map(col => (
                                             <label key={col.key} style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -485,196 +589,281 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                 </div>
 
                 {/* Table Area */}
-                <div style={{ overflowX: 'auto' }}>
-                    <table className="ae-table">
-                        <thead>
-                            <tr>
+                <div style={{ position: 'relative' }}>
+                    {/* Left scroll button */}
+                    <button
+                        onClick={() => tableScrollRef.current?.scrollBy({ left: -150, behavior: 'smooth' })}
+                        style={{
+                            position: 'absolute',
+                            left: '-18px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            zIndex: 30,
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border-primary)',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'var(--text-primary)',
+                            transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
+                        title="Scroll left"
+                    >
+                        <ChevronLeft size={18} />
+                    </button>
+
+                    {/* Right scroll button */}
+                    <button
+                        onClick={() => tableScrollRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
+                        style={{
+                            position: 'absolute',
+                            right: '-18px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            zIndex: 30,
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border-primary)',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'var(--text-primary)',
+                            transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
+                        title="Scroll right"
+                    >
+                        <ChevronRight size={18} />
+                    </button>
+
+                    <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
+                        <table className="ae-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+                            <colgroup>
+                                {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                    <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />
+                                ))}
+                                <col style={{ width: `${getColWidth('actions')}px` }} />
+                            </colgroup>
+                            <thead>
                                 <tr>
-                                    {visibleColumns.map(key => {
-                                        const col = ALL_COLUMNS.find(c => c.key === key);
-                                        if (!col) return null;
-                                        return (
-                                            <th key={key} style={{
-                                                height: '40px',
-                                                top: 0,
-                                                whiteSpace: 'nowrap',
-                                                zIndex: 12,
-                                                backgroundColor: 'var(--bg-secondary)',
-                                                textAlign: (key === 'amount') ? 'right' : (key === 'status') ? 'center' : 'left'
-                                            }}>
-                                                {col.label}
-                                            </th>
-                                        );
-                                    })}
-                                    <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, width: '130px', backgroundColor: 'var(--bg-secondary)' }}>Actions</th>
+                                    {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                        <th key={col.key} style={{
+                                            position: 'relative',
+                                            backgroundColor: 'var(--ae-table-header-bg)',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            userSelect: 'none',
+                                            paddingRight: '20px',
+                                            borderRight: '1px solid var(--border-secondary)',
+                                            borderBottom: '1px solid var(--border-secondary)',
+                                            zIndex: 12,
+                                            top: 0,
+                                            color: 'var(--text-secondary)',
+                                            textAlign: (col.key === 'amount') ? 'right' : (col.key === 'status') ? 'center' : 'left'
+                                        }}>
+                                            <span title={col.label}>
+                                                {getColWidth(col.key) < (SHORT_COL_WIDTHS[col.key] + 5)
+                                                    ? col.shortLabel
+                                                    : col.label}
+                                            </span>
+                                            <div
+                                                onMouseDown={(e) => startResize(e, col.key)}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    right: 0,
+                                                    width: '6px',
+                                                    height: '100%',
+                                                    cursor: 'col-resize',
+                                                    background: 'transparent',
+                                                    zIndex: 20
+                                                }}
+                                                title="Drag to resize"
+                                            />
+                                        </th>
+                                    ))}
+                                    <th style={{
+                                        backgroundColor: 'var(--ae-table-header-bg)',
+                                        zIndex: 12,
+                                        textAlign: 'center',
+                                        height: '40px',
+                                        whiteSpace: 'nowrap',
+                                        top: 0,
+                                        color: 'var(--text-secondary)',
+                                        borderBottom: '1px solid var(--border-secondary)'
+                                    }}>Actions</th>
                                 </tr>
-                            </tr>
-                            {showFilters && (
-                                <tr style={{ background: 'var(--bg-secondary)' }}>
-                                    {visibleColumns.map(key => {
-                                        const col = ALL_COLUMNS.find(c => c.key === key);
-                                        if (!col) return null;
-
-                                        const getFilterValue = () => {
-                                            switch (key) {
-                                                case 'milestone_no': return filters.milestoneNo;
-                                                case 'deal': return filters.dealId;
-                                                case 'sales_order': return filters.soNumber;
-                                                case 'customer': return filters.customerName;
-                                                case 'description': return filters.description;
-                                                case 'due_date': return filters.dueDateSearch;
-                                                case 'amount': return filters.amountSearch;
-                                                case 'status': return filters.statusSearch;
-                                                case 'invoice_no': return filters.invoiceNo;
-                                                default: return '';
-                                            }
-                                        };
-
-                                        const setFilterValue = (val: string) => {
-                                            switch (key) {
-                                                case 'milestone_no': setFilters({ ...filters, milestoneNo: val }); break;
-                                                case 'deal': setFilters({ ...filters, dealId: val }); break;
-                                                case 'sales_order': setFilters({ ...filters, soNumber: val }); break;
-                                                case 'customer': setFilters({ ...filters, customerName: val }); break;
-                                                case 'description': setFilters({ ...filters, description: val }); break;
-                                                case 'due_date': setFilters({ ...filters, dueDateSearch: val }); break;
-                                                case 'amount': setFilters({ ...filters, amountSearch: val }); break;
-                                                case 'status': setFilters({ ...filters, statusSearch: val }); break;
-                                                case 'invoice_no': setFilters({ ...filters, invoiceNo: val }); break;
-                                            }
-                                        };
-
-                                        return (
-                                            <th key={key} style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
-                                                <div className="ae-input-group">
+                                {showFilters && (
+                                    <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
+                                        {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                            <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                                <div className="ae-input-group" style={{ margin: 0 }}>
                                                     <Search className="ae-search-icon" size={12} />
                                                     <input
                                                         className="ae-input"
                                                         placeholder="Filter..."
-                                                        value={getFilterValue()}
-                                                        onChange={e => setFilterValue(e.target.value)}
-                                                        style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                        value={(() => {
+                                                            switch (col.key) {
+                                                                case 'milestone_no': return filters.milestoneNo;
+                                                                case 'deal': return filters.dealId;
+                                                                case 'sales_order': return filters.soNumber;
+                                                                case 'customer': return filters.customerName;
+                                                                case 'description': return filters.description;
+                                                                case 'due_date': return filters.dueDateSearch;
+                                                                case 'amount': return filters.amountSearch;
+                                                                case 'status': return filters.statusSearch;
+                                                                case 'invoice_no': return filters.invoiceNo;
+                                                                default: return '';
+                                                            }
+                                                        })()}
+                                                        onChange={e => {
+                                                            const val = e.target.value;
+                                                            switch (col.key) {
+                                                                case 'milestone_no': setFilters({ ...filters, milestoneNo: val }); break;
+                                                                case 'deal': setFilters({ ...filters, dealId: val }); break;
+                                                                case 'sales_order': setFilters({ ...filters, soNumber: val }); break;
+                                                                case 'customer': setFilters({ ...filters, customerName: val }); break;
+                                                                case 'description': setFilters({ ...filters, description: val }); break;
+                                                                case 'due_date': setFilters({ ...filters, dueDateSearch: val }); break;
+                                                                case 'amount': setFilters({ ...filters, amountSearch: val }); break;
+                                                                case 'status': setFilters({ ...filters, statusSearch: val }); break;
+                                                                case 'invoice_no': setFilters({ ...filters, invoiceNo: val }); break;
+                                                            }
+                                                        }}
+                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
                                                     />
                                                 </div>
                                             </th>
-                                        );
-                                    })}
-                                    <th style={{ textAlign: 'center', top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
-                                        <button
-                                            onClick={() => setFilters({
-                                                milestoneNo: '',
-                                                dealId: '',
-                                                soNumber: '',
-                                                customerName: '',
-                                                description: '',
-                                                dueDateSearch: '',
-                                                amountSearch: '',
-                                                statusSearch: '',
-                                                invoiceNo: '',
-                                                status: 'PENDING',
-                                                period: '',
-                                                startDate: '',
-                                                endDate: ''
-                                            })}
-                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
-                                        >
-                                            Clear
-                                        </button>
-                                    </th>
-                                </tr>
-                            )}
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}>Loading...</td></tr>
-                            ) : paginatedMilestones.length === 0 ? (
-                                <tr><td colSpan={visibleColumns.length + 1} style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>No milestones found.</td></tr>
-                            ) : (
-                                paginatedMilestones.map((m) => (
-                                    <tr key={m.id}>
-                                        {visibleColumns.map(key => {
-                                            switch (key) {
-                                                case 'milestone_no':
-                                                    return <td key={key} style={{ fontWeight: 700, color: 'var(--theme-primary)', fontFamily: 'monospace' }}>{m.milestone_no}</td>;
-                                                case 'deal':
-                                                    return <td key={key}>
-                                                        {m.sales_order_details?.deal ? (
-                                                            <span
-                                                                onClick={() => navigate(`/deal?id=${m.sales_order_details.deal}`)}
-                                                                style={{ fontWeight: 600, color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
-                                                            >
-                                                                {m.sales_order_details.deal_id}
-                                                            </span>
-                                                        ) : '—'}
-                                                    </td>;
-                                                case 'sales_order':
-                                                    return <td key={key} style={{ fontWeight: 700, color: 'var(--ae-blue)', fontSize: '0.8rem' }}>{m.sales_order_details?.so_number}</td>;
-                                                case 'customer':
-                                                    return <td key={key} style={{ fontWeight: 500 }}>{m.sales_order_details?.customer_name}</td>;
-                                                case 'description':
-                                                    return <td key={key} style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={m.description || '—'}>{m.description}</td>;
-                                                case 'due_date':
-                                                    return <td key={key} style={{ fontWeight: 600 }}>{m.due_date ? formatToAppDate(m.due_date) : '---'}</td>;
-                                                case 'amount':
-                                                    return <td key={key} style={{ textAlign: 'right', fontWeight: 700, color: '#1a1f36' }}>${parseFloat(m.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
-                                                case 'status':
-                                                    return <td key={key} style={{ textAlign: 'center' }}>
-                                                        <span style={{
-                                                            padding: '4px 10px',
-                                                            borderRadius: '6px',
-                                                            fontSize: '10px',
-                                                            fontWeight: 700,
-                                                            textTransform: 'uppercase',
-                                                            background: m.status === 'INVOICED' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(187, 77, 0, 0.1)',
-                                                            color: m.status === 'INVOICED' ? '#00C853' : 'var(--theme-primary)'
-                                                        }}>
-                                                            {m.status}
-                                                        </span>
-                                                    </td>;
-                                                case 'invoice_no':
-                                                    return <td key={key} style={{ fontWeight: 700, color: '#00C853' }}>{m.invoice_details?.invoice_no || '—'}</td>;
-                                                default:
-                                                    return null;
-                                            }
-                                        })}
-                                        <td style={{ textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                                        ))}
+                                        <th style={{
+                                            textAlign: 'center',
+                                            backgroundColor: 'var(--ae-filter-row-bg)',
+                                            borderBottom: '1px solid var(--border-secondary)'
+                                        }}>
                                             <button
-                                                onClick={() => onView && onView(m.id)}
-                                                style={{ padding: '6px', color: 'var(--ae-blue)', background: 'none', border: 'none', cursor: 'pointer' }}
-                                                title="View Milestone"
-                                            >
-                                                <Eye size={18} />
+                                                onClick={() => setFilters({
+                                                    milestoneNo: '', dealId: '', soNumber: '', customerName: '',
+                                                    description: '', dueDateSearch: '', amountSearch: '', statusSearch: '',
+                                                    invoiceNo: '', status: 'PENDING', period: '', startDate: '', endDate: ''
+                                                })}
+                                                style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}>
+                                                Clear
                                             </button>
-                                            <button
-                                                onClick={async () => {
-                                                    try {
-                                                        const response = await api.get(`/milestones/${m.id}/download_pdf/`, {
-                                                            responseType: 'blob'
-                                                        });
-                                                        const url = window.URL.createObjectURL(new Blob([response.data]));
-                                                        const link = document.createElement('a');
-                                                        link.href = url;
-                                                        link.setAttribute('download', `milestone_${m.milestone_no}.pdf`);
-                                                        document.body.appendChild(link);
-                                                        link.click();
-                                                        link.parentNode?.removeChild(link);
-                                                        window.URL.revokeObjectURL(url);
-                                                    } catch (error) {
-                                                        console.error('Error downloading PDF', error);
-                                                        showNotification('Error downloading PDF', 'error');
-                                                    }
-                                                }}
-                                                style={{ padding: '6px', color: 'var(--ae-orange)', background: 'none', border: 'none', cursor: 'pointer' }}
-                                                title="Download Milestone PDF"
-                                            >
-                                                <Download size={18} />
-                                            </button>
-                                        </td>
+                                        </th>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                )}
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}>Loading...</td></tr>
+                                ) : paginatedMilestones.length === 0 ? (
+                                    <tr><td colSpan={visibleColumns.length + 1} style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>No milestones found.</td></tr>
+                                ) : (
+                                    paginatedMilestones.map((m) => (
+                                        <tr key={m.id}>
+                                            {visibleColumns.map(key => {
+                                                const cellStyle = {
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                    fontSize: '0.8rem'
+                                                } as React.CSSProperties;
+
+                                                switch (key) {
+                                                    case 'milestone_no':
+                                                        return <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)', fontFamily: 'monospace' }}>{m.milestone_no}</td>;
+                                                    case 'deal':
+                                                        return <td key={key} style={cellStyle}>
+                                                            {m.sales_order_details?.deal ? (
+                                                                <span
+                                                                    onClick={() => navigate(`/deal?id=${m.sales_order_details.deal}`)}
+                                                                    style={{ fontWeight: 600, color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                                                >
+                                                                    {m.sales_order_details.deal_id}
+                                                                </span>
+                                                            ) : '—'}
+                                                        </td>;
+                                                    case 'sales_order':
+                                                        return <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--ae-blue)', fontSize: '0.8rem' }}>{m.sales_order_details?.so_number}</td>;
+                                                    case 'customer':
+                                                        return <td key={key} style={{ ...cellStyle, fontWeight: 500 }}>{m.sales_order_details?.customer_name}</td>;
+                                                    case 'description':
+                                                        return <td key={key} style={cellStyle} title={m.description || '—'}>{m.description}</td>;
+                                                    case 'due_date':
+                                                        return <td key={key} style={{ ...cellStyle, fontWeight: 600 }}>{m.due_date ? formatToAppDate(m.due_date) : '---'}</td>;
+                                                    case 'amount':
+                                                        return <td key={key} style={{ ...cellStyle, textAlign: 'right', fontWeight: 700, color: '#1a1f36' }}>${parseFloat(m.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
+                                                    case 'status':
+                                                        return <td key={key} style={{ ...cellStyle, textAlign: 'center' }}>
+                                                            <span style={{
+                                                                padding: '4px 10px',
+                                                                borderRadius: '6px',
+                                                                fontSize: '10px',
+                                                                fontWeight: 700,
+                                                                textTransform: 'uppercase',
+                                                                background: m.status === 'INVOICED' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(187, 77, 0, 0.1)',
+                                                                color: m.status === 'INVOICED' ? '#00C853' : 'var(--theme-primary)'
+                                                            }}>
+                                                                {m.status}
+                                                            </span>
+                                                        </td>;
+                                                    case 'invoice_no':
+                                                        return <td key={key} style={{ ...cellStyle, fontWeight: 700, color: '#00C853' }}>{m.invoice_details?.invoice_no || '—'}</td>;
+                                                    default:
+                                                        return null;
+                                                }
+                                            })}
+                                            <td style={{ textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                                                <button
+                                                    onClick={() => onView && onView(m.id)}
+                                                    style={{ padding: '6px', color: 'var(--ae-blue)', background: 'none', border: 'none', cursor: 'pointer' }}
+                                                    title="View Milestone"
+                                                >
+                                                    <Eye size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            const response = await api.get(`/milestones/${m.id}/download_pdf/`, {
+                                                                responseType: 'blob'
+                                                            });
+                                                            const url = window.URL.createObjectURL(new Blob([response.data]));
+                                                            const link = document.createElement('a');
+                                                            link.href = url;
+                                                            link.setAttribute('download', `milestone_${m.milestone_no}.pdf`);
+                                                            document.body.appendChild(link);
+                                                            link.click();
+                                                            link.parentNode?.removeChild(link);
+                                                            window.URL.revokeObjectURL(url);
+                                                        } catch (error) {
+                                                            console.error('Error downloading PDF', error);
+                                                            showNotification('Error downloading PDF', 'error');
+                                                        }
+                                                    }}
+                                                    style={{ padding: '6px', color: 'var(--ae-orange)', background: 'none', border: 'none', cursor: 'pointer' }}
+                                                    title="Download Milestone PDF"
+                                                >
+                                                    <Download size={18} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <Pagination

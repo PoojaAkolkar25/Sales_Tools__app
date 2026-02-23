@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Save, Calendar, DollarSign, Paperclip, File as FileIcon, Download, Trash2 } from 'lucide-react';
+import { Save, Calendar, DollarSign, Paperclip, File as FileIcon, Download, Trash2, Eye } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
@@ -19,6 +19,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
     const [loading, setLoading] = useState(false);
 
     const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
     const [formData, setFormData] = useState({
         customer_name: '', // Changed from lead to customer_name
@@ -313,37 +314,6 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                             RECONCILED
                         </button>
                     </div>
-
-                    <div style={{
-                        display: 'flex',
-                        gap: '4px',
-                        background: 'white',
-                        padding: '6px',
-                        borderRadius: '12px',
-                        border: '1px solid #E0E6ED',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                    }}>
-                        <button
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '6px 16px',
-                                height: '32px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                border: 'none',
-                                cursor: 'default',
-                                transition: 'all 0.2s',
-                                background: 'var(--theme-primary)',
-                                color: 'white',
-                                boxShadow: 'var(--shadow-md)'
-                            }}
-                        >
-                            {id ? 'View Receipt' : 'Create Receipt'}
-                        </button>
-                    </div>
                 </div>
 
                 {/* Main Form Content */}
@@ -376,20 +346,44 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Payment Date</label>
-                            <div style={{ position: 'relative' }}>
-                                <Calendar size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
+                            <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
+                                <input
+                                    readOnly
+                                    className="ae-input"
+                                    value={formData.payment_date ? formatToAppDate(formData.payment_date) : ''}
+                                    style={{
+                                        width: '100%', padding: '6px 12px', paddingRight: '32px',
+                                        borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36',
+                                        background: 'white', cursor: 'pointer', height: '38px'
+                                    }}
+                                    onClick={(e) => {
+                                        const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                        if (dateInput) dateInput.showPicker();
+                                    }}
+                                />
                                 <input
                                     type="date"
-                                    style={{ width: '100%', padding: '6px 12px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
                                     value={formData.payment_date}
                                     onChange={e => setFormData({ ...formData, payment_date: e.target.value })}
+                                    style={{
+                                        position: 'absolute',
+                                        width: '100%',
+                                        height: '100%',
+                                        opacity: 0,
+                                        cursor: 'pointer',
+                                        zIndex: 1,
+                                        left: 0,
+                                        top: 0
+                                    }}
                                 />
+                                <Calendar size={14} style={{ position: 'absolute', right: '12px', color: '#A0AEC0', pointerEvents: 'none', zIndex: 2 }} />
                             </div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Number</label>
                             <input
-                                style={{ width: '100%', padding: '6px 12px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
+                                className="ae-input"
+                                style={{ width: '100%', padding: '6px 12px', background: 'white', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', height: '38px' }}
                                 placeholder="Cheque / UTR / Ref No"
                                 value={formData.reference_number}
                                 onChange={e => setFormData({ ...formData, reference_number: e.target.value })}
@@ -397,16 +391,18 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Payment Method</label>
-                            <select
-                                style={{ width: '100%', padding: '6px 12px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
+                            <SearchableDropdown
+                                options={[
+                                    { value: 'Bank Transfer (NEFT)', label: 'Bank Transfer (NEFT)' },
+                                    { value: 'Cheque', label: 'Cheque' },
+                                    { value: 'Cash', label: 'Cash' },
+                                    { value: 'Credit Card', label: 'Credit Card' }
+                                ]}
                                 value={formData.payment_method}
-                                onChange={e => setFormData({ ...formData, payment_method: e.target.value })}
-                            >
-                                <option>Bank Transfer (NEFT)</option>
-                                <option>Cheque</option>
-                                <option>Cash</option>
-                                <option>Credit Card</option>
-                            </select>
+                                onChange={(val) => setFormData({ ...formData, payment_method: val.toString() })}
+                                placeholder="Select Payment Method"
+                                className="w-full"
+                            />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deposit To (Bank)</label>
@@ -427,7 +423,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 <DollarSign size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
                                 <input
                                     type="number"
-                                    style={{ width: '100%', padding: '6px 12px 6px 32px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
+                                    className="ae-input"
+                                    style={{ width: '100%', padding: '6px 12px 6px 32px', background: 'white', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', height: '38px' }}
                                     value={formData.amount_received}
                                     onChange={e => setFormData({ ...formData, amount_received: e.target.value })}
                                 />
@@ -439,7 +436,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 <DollarSign size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
                                 <input
                                     type="number"
-                                    style={{ width: '100%', padding: '6px 12px 6px 32px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
+                                    className="ae-input"
+                                    style={{ width: '100%', padding: '6px 12px 6px 32px', background: 'white', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', height: '38px' }}
                                     value={formData.bank_charges}
                                     onChange={e => setFormData({ ...formData, bank_charges: e.target.value })}
                                 />
@@ -451,7 +449,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 <DollarSign size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
                                 <input
                                     type="number"
-                                    style={{ width: '100%', padding: '6px 12px 6px 32px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', outline: 'none', height: '38px' }}
+                                    className="ae-input"
+                                    style={{ width: '100%', padding: '6px 12px 6px 32px', background: '#F8FAFC', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', height: '38px' }}
                                     value={formData.tds_receivable}
                                     readOnly
                                 />
@@ -461,7 +460,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>TDS (%)</label>
                             <input
                                 type="number"
-                                style={{ width: '100%', padding: '6px 12px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
+                                className="ae-input"
+                                style={{ width: '100%', padding: '6px 12px', background: 'white', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', height: '38px' }}
                                 value={formData.tds_percentage}
                                 onChange={e => setFormData({ ...formData, tds_percentage: e.target.value })}
                             />
@@ -471,7 +471,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                             <input
                                 type="number"
                                 step="0.0001"
-                                style={{ width: '100%', padding: '6px 12px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', height: '38px' }}
+                                className="ae-input"
+                                style={{ width: '100%', padding: '6px 12px', background: 'white', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', height: '38px' }}
                                 value={formData.exchange_rate}
                                 onChange={e => setFormData({ ...formData, exchange_rate: e.target.value })}
                             />
@@ -542,7 +543,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                     <td>
                                                         <input
                                                             type="number"
-                                                            style={{ width: '100%', height: '28px', fontSize: '12px', textAlign: 'right', padding: '4px 8px', border: '1px solid #E2E8F0', borderRadius: '6px', outline: 'none' }}
+                                                            className="ae-input"
+                                                            style={{ width: '100%', height: '28px', fontSize: '12px', textAlign: 'right', padding: '4px 8px', border: '1px solid #E2E8F0', borderRadius: '6px' }}
                                                             placeholder="0.00"
                                                             value={adjustment?.payment_amount || ''}
                                                             onChange={e => handleAdjustmentChange(inv.id, 'payment_amount', e.target.value)}
@@ -551,7 +553,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                     <td>
                                                         <input
                                                             type="number"
-                                                            style={{ width: '100%', height: '28px', fontSize: '12px', textAlign: 'right', padding: '4px 8px', border: '1px solid #E2E8F0', borderRadius: '6px', outline: 'none' }}
+                                                            className="ae-input"
+                                                            style={{ width: '100%', height: '28px', fontSize: '12px', textAlign: 'right', padding: '4px 8px', borderRadius: '6px' }}
                                                             placeholder="0.00"
                                                             value={adjustment?.tds_amount || ''}
                                                             onChange={e => handleAdjustmentChange(inv.id, 'tds_amount', e.target.value)}
@@ -681,8 +684,6 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                     onClick={() => {
                                                         const url = URL.createObjectURL(file);
                                                         window.open(url, '_blank');
-                                                        // Note: we should revoke object URL eventually, but for this quick view it's okay, or we can handle it better. 
-                                                        // For simplicity in this context, we just open it.
                                                     }}
                                                     style={{
                                                         width: '22px',
@@ -696,7 +697,32 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                         cursor: 'pointer',
                                                         color: '#475569'
                                                     }}
-                                                    title="View/Download"
+                                                    title="View"
+                                                >
+                                                    <Eye size={10} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const url = URL.createObjectURL(file);
+                                                        const a = document.createElement('a');
+                                                        a.href = url;
+                                                        a.download = file.name;
+                                                        a.click();
+                                                    }}
+                                                    style={{
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        borderRadius: '50%',
+                                                        border: 'none',
+                                                        background: '#f1f5f9',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        color: '#475569'
+                                                    }}
+                                                    title="Download"
                                                 >
                                                     <Download size={10} />
                                                 </button>
@@ -796,16 +822,16 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        padding: '8px 24px',
-                        background: (!hoveredBtn || hoveredBtn === 'save') ? 'var(--theme-primary)' : 'transparent',
-                        color: ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
+                        padding: '6px 20px',
+                        background: (!hoveredBtn && !isCancelModalOpen || hoveredBtn === 'save') ? 'var(--theme-primary)' : 'transparent',
+                        color: ((!hoveredBtn && !isCancelModalOpen || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
                         border: 'none',
                         borderRadius: '8px',
-                        fontSize: '0.9rem',
-                        fontWeight: 800,
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
                         cursor: loading ? 'not-allowed' : 'pointer',
                         transition: 'all 0.2s',
-                        boxShadow: (!hoveredBtn || hoveredBtn === 'save') ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                        boxShadow: (!hoveredBtn && !isCancelModalOpen || hoveredBtn === 'save') ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                     }}
                     onMouseEnter={() => setHoveredBtn('save')}
                     onMouseLeave={() => setHoveredBtn(null)}
@@ -815,25 +841,27 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                 </button>
                 <button
                     onClick={() => {
+                        setIsCancelModalOpen(true);
                         showConfirm({
                             title: 'Are you sure you want to exit?',
-                            onConfirm: () => onBack()
+                            onConfirm: () => onBack(),
+                            onCancel: () => setIsCancelModalOpen(false)
                         });
                     }}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        padding: '8px 20px',
-                        background: hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
-                        color: hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        padding: '6px 18px',
+                        background: (hoveredBtn === 'cancel' || isCancelModalOpen) ? 'var(--theme-primary)' : 'transparent',
+                        color: (hoveredBtn === 'cancel' || isCancelModalOpen) ? 'white' : 'var(--text-secondary)',
                         border: 'none',
                         borderRadius: '8px',
-                        fontSize: '0.9rem',
+                        fontSize: '0.8rem',
                         fontWeight: 700,
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        boxShadow: hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                        boxShadow: (hoveredBtn === 'cancel' || isCancelModalOpen) ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
                     }}
                     onMouseEnter={() => setHoveredBtn('cancel')}
                     onMouseLeave={() => setHoveredBtn(null)}

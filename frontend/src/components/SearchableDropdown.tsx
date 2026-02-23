@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, ChevronDown, Check, Plus } from 'lucide-react';
+import { ChevronDown, Check, Plus } from 'lucide-react';
 
 interface Option {
     value: string | number;
@@ -16,6 +16,7 @@ interface SearchableDropdownProps {
     addNewLabel?: string;
     className?: string;
     disabled?: boolean;
+    allowCustom?: boolean;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -27,43 +28,86 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     onAddNew,
     addNewLabel = 'Add New',
     className = '',
-    disabled = false
+    disabled = false,
+    allowCustom = false
 }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [inputText, setInputText] = useState('');
     const containerRef = useRef<HTMLDivElement>(null);
-    const searchInputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    const selectedOption = useMemo(() =>
-        options.find(opt => opt.value === value),
-        [options, value]);
+    // Resolve the display label for the current value
+    const selectedLabel = useMemo(() => {
+        const found = options.find(opt => opt.value === value);
+        return found ? found.label : (allowCustom && value ? String(value) : '');
+    }, [options, value, allowCustom]);
 
-    const filteredOptions = useMemo(() =>
-        options.filter(opt =>
-            opt.label.toLowerCase().includes(searchTerm.toLowerCase())
-        ),
-        [options, searchTerm]);
+    // When external value changes, sync the input text when closed
+    useEffect(() => {
+        if (!isOpen) {
+            setInputText(selectedLabel);
+        }
+    }, [selectedLabel, isOpen]);
+
+    const filteredOptions = useMemo(() => {
+        if (!inputText.trim() || inputText === selectedLabel) return options;
+        return options.filter(opt =>
+            opt.label.toLowerCase().includes(inputText.toLowerCase())
+        );
+    }, [options, inputText, selectedLabel]);
+
+    const showCustomOption = allowCustom
+        && inputText.trim() !== ''
+        && inputText !== selectedLabel
+        && !options.some(opt => opt.label.toLowerCase() === inputText.trim().toLowerCase());
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                // On blur: if custom allowed, commit whatever is typed; else revert
+                if (allowCustom && inputText.trim() !== '') {
+                    onChange(inputText.trim());
+                } else if (!allowCustom) {
+                    setInputText(selectedLabel); // revert to last known good value
+                }
                 setIsOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [allowCustom, inputText, selectedLabel, onChange]);
 
-    useEffect(() => {
-        if (isOpen && searchInputRef.current) {
-            searchInputRef.current.focus();
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const text = e.target.value;
+        setInputText(text);
+        setIsOpen(true);
+        // If user cleared the field entirely, also clear the value
+        if (text === '') {
+            onChange('');
         }
-    }, [isOpen]);
+    };
+
+    const handleInputFocus = () => {
+        setIsOpen(true);
+        // Select all text on focus so user can easily replace
+        inputRef.current?.select();
+    };
 
     const handleSelect = (option: Option) => {
         onChange(option.value);
+        setInputText(option.label);
         setIsOpen(false);
-        setSearchTerm('');
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && allowCustom && inputText.trim() !== '') {
+            onChange(inputText.trim());
+            setIsOpen(false);
+        }
+        if (e.key === 'Escape') {
+            setInputText(selectedLabel);
+            setIsOpen(false);
+        }
     };
 
     return (
@@ -74,38 +118,62 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                 </label>
             )}
 
-            <div
-                className={`ae-searchable-dropdown-trigger ${isOpen ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
-                onClick={() => !disabled && setIsOpen(!isOpen)}
-            >
-                <div className={`ae-searchable-dropdown-label ${!selectedOption ? 'placeholder' : ''}`}>
-                    {selectedOption ? selectedOption.label : placeholder}
-                </div>
-                <ChevronDown size={16} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            {/* Combined trigger + search: single editable input */}
+            <div style={{ position: 'relative', width: '100%' }}>
+                <input
+                    ref={inputRef}
+                    type="text"
+                    className={`ae-input ae-searchable-combobox-input ${isOpen ? 'active' : ''}`}
+                    placeholder={placeholder}
+                    value={inputText}
+                    onChange={handleInputChange}
+                    onFocus={handleInputFocus}
+                    onKeyDown={handleKeyDown}
+                    disabled={disabled}
+                    autoComplete="off"
+                    style={{ paddingRight: '32px', cursor: disabled ? 'not-allowed' : 'text' }}
+                />
+                <ChevronDown
+                    size={16}
+                    onClick={() => !disabled && (isOpen ? setIsOpen(false) : inputRef.current?.focus())}
+                    style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: `translateY(-50%) ${isOpen ? 'rotate(180deg)' : ''}`,
+                        transition: 'transform 0.2s',
+                        color: '#718096',
+                        cursor: 'pointer',
+                        pointerEvents: disabled ? 'none' : 'auto'
+                    }}
+                />
             </div>
 
             {isOpen && (
                 <div className="ae-searchable-dropdown-menu">
-                    <div className="ae-searchable-dropdown-search-wrapper">
-                        <Search size={14} className="ae-searchable-dropdown-search-icon" />
-                        <input
-                            ref={searchInputRef}
-                            type="text"
-                            className="ae-searchable-dropdown-search-input"
-                            placeholder="Search..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                    </div>
-
                     <div className="ae-searchable-dropdown-options">
+                        {showCustomOption && (
+                            <div
+                                className="ae-searchable-dropdown-option"
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onChange(inputText.trim());
+                                    setIsOpen(false);
+                                }}
+                            >
+                                <span style={{ flex: 1, fontStyle: 'italic', color: 'var(--theme-primary)' }}>
+                                    Use "{inputText}"
+                                </span>
+                            </div>
+                        )}
                         {filteredOptions.length > 0 ? (
                             filteredOptions.map((option) => (
                                 <div
                                     key={option.value}
                                     className={`ae-searchable-dropdown-option ${value === option.value ? 'selected' : ''}`}
-                                    onClick={(e) => {
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
                                         e.stopPropagation();
                                         handleSelect(option);
                                     }}
@@ -114,9 +182,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                                     {value === option.value && <Check size={14} />}
                                 </div>
                             ))
-                        ) : (
+                        ) : !showCustomOption && (
                             <div className="ae-searchable-dropdown-no-results">
-                                No results found for "{searchTerm}"
+                                {inputText ? `No results for "${inputText}"` : 'Start typing to search...'}
                             </div>
                         )}
                     </div>
@@ -126,7 +194,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                             <button
                                 type="button"
                                 className="ae-searchable-dropdown-add-btn"
-                                onClick={(e) => {
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
                                     e.stopPropagation();
                                     setIsOpen(false);
                                     onAddNew();

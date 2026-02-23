@@ -4,6 +4,8 @@ import {
     FileSpreadsheet,
     FileText,
     ChevronDown,
+    ChevronLeft,
+    ChevronRight,
     Download,
     Columns
 } from 'lucide-react';
@@ -15,58 +17,84 @@ import Pagination from './Pagination';
 
 // Width needed to fit the SHORT label (initial/collapsed state)
 const SHORT_COL_WIDTHS: Record<string, number> = {
-    deal_id: 55,
-    deal_date: 65,
-    deal_name: 80,
-    company: 55,
-    lead_no: 55,
-    stage: 65,
-    currency: 55,
-    deal_amount: 55,
-    deal_type: 55,
-    customer_name: 75,
+    deal_id: 35,
+    deal_date: 45,
+    deal_name: 50,
+    company: 40,
+    lead_no: 40,
+    stage: 55,
+    currency: 40,
+    deal_amount: 50,
+    deal_type: 45,
+    customer_name: 60,
     customer_email: 60,
-    end_customer: 75,
-    client_type: 65,
-    inside_salesperson: 75,
+    end_customer: 70,
+    client_type: 55,
+    inside_salesperson: 70,
     inside_sales_head: 70,
-    salesperson_name: 65,
-    sales_head: 65,
-    project_manager: 55,
-    project_manager_head: 65,
-    expected_close_date: 65,
-    hubspot_id: 60,
-    last_synced_at: 60,
+    salesperson_name: 60,
+    sales_head: 60,
+    project_manager: 40,
+    project_manager_head: 60,
+    expected_close_date: 60,
+    hubspot_id: 50,
+    last_synced_at: 55,
 };
 
 // Width at which the FULL label becomes visible (snaps to full label text)
 const FULL_LABEL_WIDTHS: Record<string, number> = {
-    deal_id: 55,
-    deal_date: 110,
-    deal_name: 140,
-    company: 100,
-    lead_no: 90,
-    stage: 130,
-    currency: 90,
+    deal_id: 45,
+    deal_date: 85,
+    deal_name: 130,
+    company: 85,
+    lead_no: 75,
+    stage: 110,
+    currency: 55,
     deal_amount: 90,
-    deal_type: 90,
-    customer_name: 190,
-    customer_email: 160,
-    end_customer: 130,
+    deal_type: 95,
+    customer_name: 130,
+    customer_email: 140,
+    end_customer: 125,
     client_type: 100,
-    inside_salesperson: 160,
-    inside_sales_head: 160,
-    salesperson_name: 120,
-    sales_head: 110,
-    project_manager: 130,
-    project_manager_head: 100,
-    expected_close_date: 145,
-    hubspot_id: 110,
-    last_synced_at: 120,
+    inside_salesperson: 130,
+    inside_sales_head: 130,
+    salesperson_name: 115,
+    sales_head: 115,
+    project_manager: 115,
+    project_manager_head: 115,
+    expected_close_date: 115,
+    hubspot_id: 85,
+    last_synced_at: 115,
 };
 
 // MIN_COL_WIDTHS = smallest allowed (short label width)
-const MIN_COL_WIDTHS = SHORT_COL_WIDTHS;
+
+
+// MAX_COL_WIDTHS = largest allowed (full label and content width)
+const MAX_COL_WIDTHS: Record<string, number> = {
+    deal_id: 70,
+    deal_date: 110,
+    deal_name: 250,
+    company: 120,
+    lead_no: 100,
+    stage: 150,
+    currency: 80,
+    deal_amount: 150,
+    deal_type: 150,
+    customer_name: 250,
+    customer_email: 200,
+    end_customer: 200,
+    client_type: 120,
+    inside_salesperson: 180,
+    inside_sales_head: 180,
+    salesperson_name: 150,
+    sales_head: 150,
+    project_manager: 150,
+    project_manager_head: 150,
+    expected_close_date: 150,
+    hubspot_id: 120,
+    last_synced_at: 150,
+};
 
 const ALL_COLUMNS = [
     { key: 'deal_id', label: 'ID', shortLabel: 'ID' },
@@ -146,13 +174,17 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const columnMenuRef = useRef<HTMLDivElement>(null);
     const resizingRef = useRef<{ colKey: string; startX: number; startWidth: number } | null>(null);
+    const tableScrollRef = useRef<HTMLDivElement>(null);
 
     const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
         const saved = localStorage.getItem('dealDashboard_colWidths');
-        return saved ? JSON.parse(saved) : {};
+        if (saved) return JSON.parse(saved);
+        const defaults: Record<string, number> = {};
+        ALL_COLUMNS.forEach(c => { defaults[c.key] = FULL_LABEL_WIDTHS[c.key] || 150; });
+        return defaults;
     });
 
-    const getColWidth = (key: string) => colWidths[key] ?? SHORT_COL_WIDTHS[key] ?? 60;
+    const getColWidth = (key: string) => colWidths[key] ?? 150;
 
     const startResize = useCallback((e: React.MouseEvent, key: string) => {
         e.preventDefault();
@@ -161,9 +193,12 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
 
         const onMouseMove = (ev: MouseEvent) => {
             if (!resizingRef.current) return;
+            const key = resizingRef.current.colKey;
             const delta = ev.clientX - resizingRef.current.startX;
-            const newWidth = Math.max(MIN_COL_WIDTHS[resizingRef.current.colKey] ?? 60, resizingRef.current.startWidth + delta);
-            setColWidths(prev => ({ ...prev, [resizingRef.current!.colKey]: newWidth }));
+            const minWidth = SHORT_COL_WIDTHS[key] ?? 40;
+            const maxWidth = MAX_COL_WIDTHS[key] ?? 300;
+            const newWidth = Math.min(maxWidth, Math.max(minWidth, resizingRef.current.startWidth + delta));
+            setColWidths(prev => ({ ...prev, [key]: newWidth }));
         };
 
         const onMouseUp = () => {
@@ -479,7 +514,15 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                         <button
                             className="ae-btn-secondary"
                             onClick={() => setShowExportMenu(!showExportMenu)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 14px',
+                                fontSize: '0.8rem',
+                                border: showExportMenu ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                boxShadow: showExportMenu ? '0 0 0 2px rgba(187, 77, 0, 0.1)' : 'none'
+                            }}
                         >
                             <Download size={16} /> Export <ChevronDown size={14} />
                         </button>
@@ -508,7 +551,15 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                         <button
                             className="ae-btn-secondary"
                             onClick={() => setShowColumnMenu(!showColumnMenu)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '0.8rem' }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 14px',
+                                fontSize: '0.8rem',
+                                border: showColumnMenu ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                boxShadow: showColumnMenu ? '0 0 0 2px rgba(187, 77, 0, 0.1)' : 'none'
+                            }}
                         >
                             <Columns size={16} /> Columns <ChevronDown size={14} />
                         </button>
@@ -645,155 +696,246 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                 ))}
             </div>
 
-            <div style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
-                <table className="ae-table" style={{ tableLayout: 'fixed', width: 'max-content', minWidth: '100%' }}>
-                    <colgroup>
-                        {visibleColumns.map(key => (
-                            <col key={key} style={{ width: `${getColWidth(key)}px` }} />
-                        ))}
-                        <col style={{ width: '80px' }} />
-                    </colgroup>
-                    <thead>
-                        <tr>
-                            {visibleColumns.map(key => {
-                                const col = ALL_COLUMNS.find(c => c.key === key);
-                                return (
-                                    <th key={key} style={{
-                                        backgroundColor: 'var(--bg-secondary)',
-                                        zIndex: 12,
-                                        position: 'relative',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        userSelect: 'none',
-                                        paddingRight: '20px'
-                                    }}>
-                                        {/* Show short label until dragged to full-label threshold */}
-                                        <span title={col?.label}>
-                                            {getColWidth(key) >= (FULL_LABEL_WIDTHS[key] ?? 999)
-                                                ? col?.label
-                                                : col?.shortLabel ?? col?.label}
-                                        </span>
-                                        {/* Resize handle */}
-                                        <div
-                                            onMouseDown={(e) => startResize(e, key)}
-                                            style={{
-                                                position: 'absolute',
-                                                top: 0,
-                                                right: 0,
-                                                width: '6px',
-                                                height: '100%',
-                                                cursor: 'col-resize',
-                                                background: 'transparent',
-                                                zIndex: 20,
-                                            }}
-                                            title="Drag to resize"
-                                        />
-                                    </th>
-                                );
-                            })}
-                            <th style={{ backgroundColor: 'var(--bg-secondary)', zIndex: 12, textAlign: 'center', whiteSpace: 'nowrap' }}>Actions</th>
-                        </tr>
-                        {showFilters && (
-                            <tr style={{ background: 'var(--bg-secondary)' }}>
-                                {visibleColumns.map(key => (
-                                    <th key={key} style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                                        <div className="ae-input-group" style={{ margin: 0 }}>
-                                            <input
-                                                className="ae-input"
-                                                placeholder="Filter..."
-                                                value={(filters as any)[key]}
-                                                onChange={e => setFilters({ ...filters, [key]: e.target.value })}
-                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+            <div style={{ position: 'relative' }}>
+                {/* Left scroll button */}
+                <button
+                    onClick={() => tableScrollRef.current?.scrollBy({ left: -150, behavior: 'smooth' })}
+                    style={{
+                        position: 'absolute',
+                        left: '-18px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        zIndex: 30,
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border-primary)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: 'var(--text-primary)',
+                        transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
+                    title="Scroll left"
+                >
+                    <ChevronLeft size={18} />
+                </button>
+
+                {/* Right scroll button */}
+                <button
+                    onClick={() => tableScrollRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
+                    style={{
+                        position: 'absolute',
+                        right: '-18px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        zIndex: 30,
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border-primary)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: 'var(--text-primary)',
+                        transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
+                    title="Scroll right"
+                >
+                    <ChevronRight size={18} />
+                </button>
+
+                <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
+                    <table className="ae-table" style={{ tableLayout: 'fixed', width: 'max-content' }}>
+                        <colgroup>
+                            {visibleColumns.map(key => (
+                                <col key={key} style={{ width: `${getColWidth(key)}px` }} />
+                            ))}
+                            <col style={{ width: '80px' }} />
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                {visibleColumns.map(key => {
+                                    const col = ALL_COLUMNS.find(c => c.key === key);
+                                    return (
+                                        <th key={key} style={{
+                                            backgroundColor: 'var(--ae-table-header-bg)',
+                                            zIndex: 12,
+                                            position: 'relative',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            userSelect: 'none',
+                                            paddingRight: '20px',
+                                            borderRight: '1px solid var(--border-secondary)',
+                                            borderBottom: '1px solid var(--border-secondary)'
+                                        }}>
+                                            {/* Show short label until dragged to full-label threshold */}
+                                            <span title={col?.label}>
+                                                {getColWidth(key) < (SHORT_COL_WIDTHS[key] + 5)
+                                                    ? col?.shortLabel ?? col?.label
+                                                    : col?.label}
+                                            </span>
+                                            {/* Resize handle */}
+                                            <div
+                                                onMouseDown={(e) => startResize(e, key)}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    right: 0,
+                                                    width: '6px',
+                                                    height: '100%',
+                                                    cursor: 'col-resize',
+                                                    background: 'transparent',
+                                                    zIndex: 20,
+                                                }}
+                                                title="Drag to resize"
                                             />
-                                        </div>
-                                    </th>
-                                ))}
-                                <th style={{ textAlign: 'center', backgroundColor: 'var(--bg-secondary)' }}>
-                                    <button
-                                        onClick={() => setFilters({
-                                            deal_id: '', deal_name: '', company: '', lead_no: '', stage: '',
-                                            currency: '', deal_amount: '', deal_type: '',
-                                            customer_name: '', customer_email: '', end_customer: '',
-                                            client_type: '', inside_salesperson: '',
-                                            inside_sales_head: '', salesperson_name: '', sales_head: '',
-                                            project_manager: '', project_manager_head: '',
-                                            expected_close_date: '', deal_date: '',
-                                            hubspot_id: '', last_synced_at: '',
-                                            period: '', startDate: '', endDate: ''
-                                        })}
-                                        style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
-                                    >
-                                        Clear
-                                    </button>
-                                </th>
+                                        </th>
+                                    );
+                                })}
+                                <th style={{ backgroundColor: 'var(--ae-table-header-bg)', zIndex: 12, textAlign: 'center', whiteSpace: 'nowrap', borderBottom: '1px solid var(--border-secondary)' }}>Actions</th>
                             </tr>
-                        )}
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
-                        ) : paginatedDeals.length === 0 ? (
-                            <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>No projects found.</td></tr>
-                        ) : (
-                            paginatedDeals.map((deal: Deal) => {
-                                const stageStyle = getStageColor(deal.stage);
-                                return (
-                                    <tr key={deal.id}>
-                                        {visibleColumns.map(key => {
-                                            switch (key) {
-                                                case 'deal_id':
-                                                    return (
-                                                        <td key={key}
-                                                            style={{ fontWeight: 600, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
-                                                            onClick={() => onView(deal.id)}
-                                                        >
-                                                            {deal.deal_id}
-                                                        </td>
-                                                    );
-                                                case 'deal_date':
-                                                    return <td key={key}>{formatToAppDate(deal.deal_date)}</td>;
-                                                case 'deal_name':
-                                                    return <td key={key} style={{ fontWeight: 700 }}>{deal.deal_name}</td>;
-                                                case 'company':
-                                                    return <td key={key}>{deal.company}</td>;
-                                                case 'lead_no':
-                                                    return <td key={key}>{(deal as any).lead_no || '—'}</td>;
-                                                case 'stage':
-                                                    return (
-                                                        <td key={key}>
-                                                            <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: stageStyle.bg, color: stageStyle.text }}>
-                                                                {deal.stage.replace('_', ' ')}
-                                                            </span>
-                                                        </td>
-                                                    );
-                                                case 'currency':
-                                                    return <td key={key}>{deal.currency}</td>;
-                                                case 'deal_amount':
-                                                    return (
-                                                        <td key={key} style={{ fontWeight: 700 }}>
-                                                            {deal.currency === 'INR' ? '₹' : deal.currency === 'USD' ? '$' : deal.currency === 'EURO' ? '€' : ''}
-                                                            {parseFloat(deal.deal_amount).toLocaleString()}
-                                                        </td>
-                                                    );
-                                                case 'expected_close_date':
-                                                    return <td key={key}>{formatToAppDate((deal as any).expected_close_date)}</td>;
-                                                case 'last_synced_at':
-                                                    return <td key={key}>{deal.last_synced_at ? formatToAppDate(deal.last_synced_at) : '—'}</td>;
-                                                default:
-                                                    return <td key={key}>{(deal as any)[key] || '—'}</td>;
-                                            }
-                                        })}
-                                        <td style={{ textAlign: 'center' }}>
-                                            <button onClick={() => onView(deal.id)} className="ae-btn-secondary" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>
-                                                View
-                                            </button>
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        )}
-                    </tbody>
-                </table>
+                            {showFilters && (
+                                <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
+                                    {visibleColumns.map(key => (
+                                        <th key={key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                            <div className="ae-input-group" style={{ margin: 0 }}>
+                                                <input
+                                                    className="ae-input"
+                                                    placeholder="Filter..."
+                                                    value={(filters as any)[key]}
+                                                    onChange={e => setFilters({ ...filters, [key]: e.target.value })}
+                                                    style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                />
+                                            </div>
+                                        </th>
+                                    ))}
+                                    <th style={{ textAlign: 'center', backgroundColor: 'var(--ae-filter-row-bg)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                        <button
+                                            onClick={() => setFilters({
+                                                deal_id: '', deal_name: '', company: '', lead_no: '', stage: '',
+                                                currency: '', deal_amount: '', deal_type: '',
+                                                customer_name: '', customer_email: '', end_customer: '',
+                                                client_type: '', inside_salesperson: '',
+                                                inside_sales_head: '', salesperson_name: '', sales_head: '',
+                                                project_manager: '', project_manager_head: '',
+                                                expected_close_date: '', deal_date: '',
+                                                hubspot_id: '', last_synced_at: '',
+                                                period: '', startDate: '', endDate: ''
+                                            })}
+                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                        >
+                                            Clear
+                                        </button>
+                                    </th>
+                                </tr>
+                            )}
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
+                            ) : paginatedDeals.length === 0 ? (
+                                <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>No projects found.</td></tr>
+                            ) : (
+                                paginatedDeals.map((deal: Deal) => {
+                                    const stageStyle = getStageColor(deal.stage);
+                                    return (
+                                        <tr key={deal.id}>
+                                            {visibleColumns.map(key => {
+                                                switch (key) {
+                                                    case 'deal_id':
+                                                        return (
+                                                            <td key={key}
+                                                                style={{ fontWeight: 600, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
+                                                                onClick={() => onView(deal.id)}
+                                                            >
+                                                                {deal.deal_id}
+                                                            </td>
+                                                        );
+                                                    case 'deal_date':
+                                                        return <td key={key}>{formatToAppDate(deal.deal_date)}</td>;
+                                                    case 'deal_name':
+                                                        return <td key={key} style={{}}>{deal.deal_name}</td>;
+                                                    case 'company':
+                                                        return <td key={key}>{deal.company}</td>;
+                                                    case 'lead_no':
+                                                        return <td key={key}>{(deal as any).lead_no || '—'}</td>;
+                                                    case 'stage':
+                                                        return (
+                                                            <td key={key}>
+                                                                <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: stageStyle.bg, color: stageStyle.text }}>
+                                                                    {deal.stage.replace('_', ' ')}
+                                                                </span>
+                                                            </td>
+                                                        );
+                                                    case 'currency':
+                                                        return <td key={key}>{deal.currency}</td>;
+                                                    case 'deal_amount':
+                                                        return (
+                                                            <td key={key} style={{}}>
+                                                                {deal.currency === 'INR' ? '₹' : deal.currency === 'USD' ? '$' : deal.currency === 'EURO' ? '€' : ''}
+                                                                {parseFloat(deal.deal_amount).toLocaleString()}
+                                                            </td>
+                                                        );
+                                                    case 'expected_close_date':
+                                                        return <td key={key}>{formatToAppDate((deal as any).expected_close_date)}</td>;
+                                                    case 'last_synced_at':
+                                                        return <td key={key}>{deal.last_synced_at ? formatToAppDate(deal.last_synced_at) : '—'}</td>;
+                                                    default:
+                                                        return <td key={key}>{(deal as any)[key] || '—'}</td>;
+                                                }
+                                            })}
+                                            <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                                                <button
+                                                    onClick={() => onView(deal.id)}
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        background: 'rgba(187, 77, 0, 0.07)',
+                                                        color: 'var(--theme-primary)',
+                                                        border: '1px solid rgba(187, 77, 0, 0.25)',
+                                                        padding: '4px 14px',
+                                                        borderRadius: '20px',
+                                                        fontSize: '0.72rem',
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer',
+                                                        letterSpacing: '0.04em',
+                                                        transition: 'all 0.18s',
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'var(--theme-primary)';
+                                                        e.currentTarget.style.color = 'white';
+                                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
+                                                        e.currentTarget.style.color = 'var(--theme-primary)';
+                                                        e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
+                                                        e.currentTarget.style.boxShadow = 'none';
+                                                    }}
+                                                >
+                                                    View
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <Pagination

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, ArrowLeft, Eye } from 'lucide-react';
+import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, ArrowLeft, Eye, Calendar } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
+import { formatToAppDate } from '../utils/dateUtils';
 
 interface Lead {
     id: number;
@@ -161,6 +162,17 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const [rejectComment, setRejectComment] = useState('');
     const [revertComment, setRevertComment] = useState('');
     const [showRejectModal, setShowRejectModal] = useState(false);
+
+    // Button states for active action (hover or selected)
+    const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel'>('submit');
+    const [isConfirmingExit, setIsConfirmingExit] = useState(false);
+
+    // Update activeAction based on confirmation state
+    useEffect(() => {
+        if (isConfirmingExit) {
+            setActiveAction('cancel');
+        }
+    }, [isConfirmingExit]);
 
 
     const getCurrencySymbol = (cur: string) => {
@@ -868,9 +880,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             {/* Lead No. */}
                             <div>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead No.</label>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', padding: '6px 0' }}>
-                                    {lead?.lead_no ? `${lead.lead_no} (${lead.project_name || 'No Project Name'})` : '—'}
-                                </div>
+                                <input
+                                    type="text"
+                                    className="ae-input"
+                                    value={lead?.lead_no ? `${lead.lead_no} (${lead.project_name || 'No Project Name'})` : '—'}
+                                    disabled
+                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'default' }}
+                                />
                             </div>
 
                             {/* Deal No. */}
@@ -964,7 +980,57 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             {/* Cost Sheet Date */}
                             <div>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet Date</label>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', padding: '6px 0' }}>{formatDateDisplay(costSheetDate)}</div>
+                                {!isReadOnly ? (
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            className="ae-input"
+                                            value={formatToAppDate(costSheetDate)}
+                                            style={{ width: '100%', cursor: 'pointer' }}
+                                            onClick={() => {
+                                                const picker = document.getElementById('cost-sheet-date-picker') as HTMLInputElement;
+                                                if (picker) picker.showPicker?.();
+                                            }}
+                                        />
+                                        <input
+                                            type="date"
+                                            id="cost-sheet-date-picker"
+                                            className="ae-input"
+                                            value={costSheetDate}
+                                            onChange={e => setCostSheetDate(e.target.value)}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                opacity: 0,
+                                                cursor: 'pointer',
+                                                pointerEvents: 'none'
+                                            }}
+                                        />
+                                        <Calendar
+                                            size={16}
+                                            style={{
+                                                position: 'absolute',
+                                                right: '10px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                color: 'var(--text-secondary)',
+                                                pointerEvents: 'none'
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        className="ae-input"
+                                        value={formatToAppDate(costSheetDate)}
+                                        disabled
+                                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'default' }}
+                                    />
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1763,15 +1829,34 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 zIndex: 10,
                 marginTop: '10px',
                 marginLeft: 'auto'
-            }}>
+            }}
+                className="button-container"
+                onMouseLeave={() => {
+                    if (!isConfirmingExit) {
+                        setActiveAction('submit');
+                    }
+                }}
+            >
                 {status === 'PENDING' || status === 'REVERTED' ? (
                     <>
                         <button
                             onClick={() => handleSave('PENDING')}
-                            className="ae-btn-secondary"
+                            onMouseEnter={() => !isConfirmingExit && setActiveAction('draft')}
                             style={{
-                                color: 'var(--text-secondary)',
-                                border: 'none'
+                                height: '38px',
+                                padding: '0 18px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                border: 'none',
+                                background: activeAction === 'draft' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeAction === 'draft' ? 'white' : 'var(--text-secondary)',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer',
+                                boxShadow: activeAction === 'draft' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
                             }}
                         >
                             <Save size={16} />
@@ -1780,7 +1865,23 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                         <button
                             onClick={() => handleSave('SUBMITTED')}
-                            className="ae-btn-primary"
+                            onMouseEnter={() => !isConfirmingExit && setActiveAction('submit')}
+                            style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: activeAction === 'submit' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeAction === 'submit' ? 'white' : 'var(--text-secondary)',
+                                border: 'none',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer',
+                                boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                            }}
                         >
                             <PlusCircle size={18} />
                             <span>Submit for Approval</span>
@@ -1790,9 +1891,26 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                 {status === 'SUBMITTED' && (
                     <>
+                        {/* Status is submitted, typically for approvers. We'll leave these styles as is or standardize if needed */}
                         <button
                             onClick={handleApprove}
                             className="ae-btn-success"
+                            style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: '#00C853',
+                                color: 'white',
+                                border: 'none',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#00ad48'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = '#00C853'}
                         >
                             <CheckCircle size={18} />
                             <span>Approve</span>
@@ -1802,10 +1920,21 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             onClick={() => setShowRevertModal(true)}
                             className="ae-btn-secondary"
                             style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
                                 background: '#FFFBEB',
                                 color: '#D89614',
-                                borderColor: 'rgba(216, 150, 20, 0.2)'
+                                border: '1px solid rgba(216, 150, 20, 0.2)',
+                                transition: 'all 0.2s'
                             }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#FEF3C7'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = '#FFFBEB'}
                         >
                             <ArrowLeft size={18} />
                             <span>Revert</span>
@@ -1814,6 +1943,22 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         <button
                             onClick={() => setShowRejectModal(true)}
                             className="ae-btn-danger"
+                            style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: '#fef2f2',
+                                color: '#dc2626',
+                                border: '1px solid rgba(220, 38, 38, 0.2)',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = '#fef2f2'}
                         >
                             <XCircle size={18} />
                             <span>Reject</span>
@@ -1823,13 +1968,35 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                 <button
                     onClick={() => {
+                        setIsConfirmingExit(true);
                         showConfirm({
                             title: 'Are you sure you want to exit?',
-                            onConfirm: () => onBack()
+                            onConfirm: () => onBack(),
+                            onCancel: () => {
+                                setIsConfirmingExit(false);
+                                setActiveAction('submit');
+                            }
                         });
                     }}
-                    className="ae-btn-secondary"
+                    onMouseEnter={() => !isConfirmingExit && setActiveAction('cancel')}
+                    style={{
+                        height: '38px',
+                        padding: '0 18px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        border: 'none',
+                        background: activeAction === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: activeAction === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        transition: 'all 0.2s',
+                        cursor: 'pointer',
+                        boxShadow: activeAction === 'cancel' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                    }}
                 >
+                    <X size={18} />
                     <span>Cancel</span>
                 </button>
             </div>

@@ -8,6 +8,7 @@ import {
     File,
     Save,
     Eye,
+    Calendar,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -26,6 +27,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
     const navigate = useNavigate();
     const { showNotification, showConfirm } = useNotification();
     const [loading, setLoading] = useState(false);
+    const [isCancelActive, setIsCancelActive] = useState(false);
     const [leads, setLeads] = useState<any[]>([]);
     const [partners, setPartners] = useState<any[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
@@ -518,8 +520,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead Date</label>
                                 <input
-                                    type="date"
-                                    value={formData.lead ? leads.find(l => l.id === parseInt(formData.lead))?.lead_date || '' : ''}
+                                    type="text"
+                                    value={formatToAppDate(formData.lead ? leads.find(l => l.id === parseInt(formData.lead))?.lead_date || '' : '')}
+                                    placeholder="mm/dd/yyyy"
                                     className="ae-input"
                                     disabled
                                     style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
@@ -541,6 +544,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     type="text"
                                     name="deal_date"
                                     value={formatToAppDate(formData.deal_date)}
+                                    placeholder="mm/dd/yyyy"
                                     className="ae-input"
                                     disabled
                                     style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
@@ -613,8 +617,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                         <SectionHeader title="Deal Value" />
 
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
+                        <div style={{ overflow: 'visible' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '16px' }}>
                                 <thead>
                                     <tr style={{ background: '#F8FAFC' }}>
                                         <th style={{ padding: '12px 8px', width: '40px' }}></th>
@@ -782,7 +786,48 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Expected Close Date</label>
-                                <input type="date" name="expected_close_date" value={formData.expected_close_date} onChange={handleInputChange} className="ae-input" />
+                                <div style={{ position: 'relative', width: '100%' }}>
+                                    <input
+                                        type="text"
+                                        value={formatToAppDate(formData.expected_close_date)}
+                                        readOnly
+                                        placeholder="dd/Mon/yyyy"
+                                        className="ae-input"
+                                        style={{ width: '100%', cursor: 'pointer', paddingRight: '32px' }}
+                                        onClick={() => {
+                                            const picker = document.getElementById('deal-expected-date-picker') as HTMLInputElement;
+                                            if (picker) picker.showPicker?.();
+                                        }}
+                                    />
+                                    <input
+                                        type="date"
+                                        id="deal-expected-date-picker"
+                                        name="expected_close_date"
+                                        value={formData.expected_close_date}
+                                        onChange={handleInputChange}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            opacity: 0,
+                                            cursor: 'pointer',
+                                            pointerEvents: 'none'
+                                        }}
+                                    />
+                                    <Calendar
+                                        size={16}
+                                        style={{
+                                            position: 'absolute',
+                                            right: '10px',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            color: '#718096',
+                                            pointerEvents: 'none'
+                                        }}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -792,33 +837,67 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         <SectionHeader title="Deal Team" />
                         <div className="ae-grid-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Inside Salesperson Name</label>
-                                <input type="text" name="inside_salesperson" placeholder="Inside Salesperson Name" value={formData.inside_salesperson} onChange={handleInputChange} className="ae-input" />
+                                <SearchableDropdown
+                                    label="Inside Salesperson Name"
+                                    options={[]}
+                                    value={formData.inside_salesperson}
+                                    onChange={(val) => handleInputChange({ target: { name: 'inside_salesperson', value: val } } as any)}
+                                    placeholder="Inside Salesperson Name"
+                                    allowCustom={true}
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Inside Sales Head</label>
-                                <input type="text" name="inside_sales_head"
-                                    placeholder="Inside Sales Head" value={formData.inside_sales_head} onChange={handleInputChange} className="ae-input" />
+                                <SearchableDropdown
+                                    label="Inside Sales Head"
+                                    options={[]}
+                                    value={formData.inside_sales_head}
+                                    onChange={(val) => handleInputChange({ target: { name: 'inside_sales_head', value: val } } as any)}
+                                    placeholder="Inside Sales Head"
+                                    allowCustom={true}
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Salesperson Name</label>
-                                <input type="text" name="salesperson_name"
-                                    placeholder="Salesperson Name" value={formData.salesperson_name} onChange={handleInputChange} className="ae-input" />
+                                <SearchableDropdown
+                                    label="Salesperson Name"
+                                    options={[]}
+                                    value={formData.salesperson_name}
+                                    onChange={(val) => handleInputChange({ target: { name: 'salesperson_name', value: val } } as any)}
+                                    placeholder="Salesperson Name"
+                                    allowCustom={true}
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Head</label>
-                                <input type="text" name="sales_head" placeholder="Sales Head" value={formData.sales_head} onChange={handleInputChange} className="ae-input" />
+                                <SearchableDropdown
+                                    label="Sales Head"
+                                    options={[]}
+                                    value={formData.sales_head}
+                                    onChange={(val) => handleInputChange({ target: { name: 'sales_head', value: val } } as any)}
+                                    placeholder="Sales Head"
+                                    allowCustom={true}
+                                />
                             </div>
                         </div>
 
                         <div className="ae-grid-4 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Manager</label>
-                                <input type="text" name="project_manager" placeholder="Project Manager" value={formData.project_manager} onChange={handleInputChange} className="ae-input" />
+                                <SearchableDropdown
+                                    label="Project Manager"
+                                    options={[]}
+                                    value={formData.project_manager}
+                                    onChange={(val) => handleInputChange({ target: { name: 'project_manager', value: val } } as any)}
+                                    placeholder="Project Manager"
+                                    allowCustom={true}
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Manager Head</label>
-                                <input type="text" name="project_manager_head" placeholder="Project Manager Head" value={formData.project_manager_head} onChange={handleInputChange} className="ae-input" />
+                                <SearchableDropdown
+                                    label="Project Manager Head"
+                                    options={[]}
+                                    value={formData.project_manager_head}
+                                    onChange={(val) => handleInputChange({ target: { name: 'project_manager_head', value: val } } as any)}
+                                    placeholder="Project Manager Head"
+                                    allowCustom={true}
+                                />
                             </div>
                         </div>
                     </div>
@@ -1022,33 +1101,78 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
                     <div style={{
                         display: 'flex',
-                        gap: '4px',
-                        alignItems: 'center',
                         background: 'white',
-                        padding: '6px',
+                        padding: '4px',
                         borderRadius: '12px',
-                        border: '1px solid #E0E6ED',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                        border: '1px solid var(--border-primary)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
                     }}>
+                        {/* Save — orange when not cancelling */}
                         <button
                             type="submit"
                             disabled={loading}
-                            className="ae-btn-primary"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: isCancelActive ? 'transparent' : 'var(--theme-primary)',
+                                color: isCancelActive ? 'var(--text-secondary)' : 'white',
+                                boxShadow: isCancelActive ? 'none' : '0 2px 8px rgba(187, 77, 0, 0.3)'
+                            }}
                         >
                             {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                            {loading ? 'Saving...' : id ? 'Update Deal' : 'Save Deal'}
+                            <span>{loading ? 'Saving...' : id ? 'Update Deal' : 'Save Deal'}</span>
                         </button>
+
+                        {/* Cancel — orange when active */}
                         <button
                             type="button"
                             onClick={() => {
+                                setIsCancelActive(true);
                                 showConfirm({
                                     title: 'Are you sure you want to exit?',
-                                    onConfirm: () => onBack()
+                                    onConfirm: () => onBack(),
+                                    onCancel: () => setIsCancelActive(false)
                                 });
                             }}
-                            className="ae-btn-secondary"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: isCancelActive ? 'var(--theme-primary)' : 'transparent',
+                                color: isCancelActive ? 'white' : 'var(--text-secondary)',
+                                boxShadow: isCancelActive ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isCancelActive) {
+                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                    e.currentTarget.style.color = 'var(--ae-orange)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isCancelActive) {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = 'var(--text-secondary)';
+                                }
+                            }}
                         >
-                            <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
+                            <span style={{ fontSize: '16px', lineHeight: '16px', fontWeight: 700 }}>×</span>
                             <span>Cancel</span>
                         </button>
                     </div>

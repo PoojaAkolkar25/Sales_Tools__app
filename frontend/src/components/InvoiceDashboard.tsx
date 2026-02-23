@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Download, CheckCircle, XCircle, Mail, BarChart3, Eye, ChevronDown, FileText, FileSpreadsheet, Columns } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -27,32 +27,124 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [loading, setLoading] = useState(true);
     const [showFilters] = useState(true);
-    const [showReports, setShowReports] = useState(false);
-    const [showExportMenu, setShowExportMenu] = useState(false);
-    const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [activeDropdown, setActiveDropdown] = useState<'export' | 'reports' | 'columns' | null>(null);
+    const showReports = activeDropdown === 'reports';
+    const showExportMenu = activeDropdown === 'export';
+    const showColumnMenu = activeDropdown === 'columns';
+    const setShowReports = (val: boolean) => setActiveDropdown(val ? 'reports' : null);
+    const setShowExportMenu = (val: boolean) => setActiveDropdown(val ? 'export' : null);
+    const setShowColumnMenu = (val: boolean) => setActiveDropdown(val ? 'columns' : null);
     const [isDownloading, setIsDownloading] = useState(false);
     const [reportModal, setReportModal] = useState<{ show: boolean; title: string; data: any; type: 'tax' | 'billing' | null }>({ show: false, title: '', data: null, type: null });
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 20;
 
-    const ALL_COLUMNS = [
-        { key: 'invoice_no', label: 'Invoice No' },
-        { key: 'deal_no', label: 'Deal ID' },
-        { key: 'customer', label: 'Customer' },
-        { key: 'date', label: 'Date' },
-        { key: 'amount', label: 'Amount' },
-        { key: 'type', label: 'Type' },
-        { key: 'status', label: 'Status' }
+    const ALL_COL_CONFIG = [
+        { key: 'invoice_no', label: 'Invoice No', shortLabel: 'INV#' },
+        { key: 'deal_no', label: 'Deal ID', shortLabel: 'DEAL' },
+        { key: 'customer', label: 'Customer', shortLabel: 'CUST.' },
+        { key: 'date', label: 'Date', shortLabel: 'DATE' },
+        { key: 'amount', label: 'Amount', shortLabel: 'AMT' },
+        { key: 'type', label: 'Type', shortLabel: 'TYPE' },
+        { key: 'status', label: 'Status', shortLabel: 'ST.' }
     ];
+
+    const SHORT_COL_WIDTHS: Record<string, number> = {
+        invoice_no: 40,
+        deal_no: 40,
+        customer: 55,
+        date: 45,
+        amount: 50,
+        type: 45,
+        status: 35,
+        actions: 60
+    };
+
+    const FULL_LABEL_WIDTHS: Record<string, number> = {
+        invoice_no: 75,
+        deal_no: 65,
+        customer: 120,
+        date: 75,
+        amount: 85,
+        type: 85,
+        status: 75
+    };
+
+    const MAX_COL_WIDTHS: Record<string, number> = {
+        invoice_no: 120,
+        deal_no: 120,
+        customer: 250,
+        date: 120,
+        amount: 150,
+        type: 120,
+        status: 120,
+        actions: 120
+    };
+
+    const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
+        const saved = localStorage.getItem('invoiceDashboard_colWidths');
+        if (saved) return JSON.parse(saved);
+        const defaults: Record<string, number> = {};
+        ALL_COL_CONFIG.forEach(c => { defaults[c.key] = FULL_LABEL_WIDTHS[c.key] || 150; });
+        return defaults;
+    });
+
+    const resizingRef = useRef<{ colKey: string; startWidth: number; startX: number } | null>(null);
+
+    useEffect(() => {
+        localStorage.setItem('invoiceDashboard_colWidths', JSON.stringify(colWidths));
+    }, [colWidths]);
+
+    const startResize = (e: React.MouseEvent, colKey: string) => {
+        e.preventDefault();
+        resizingRef.current = {
+            colKey,
+            startWidth: colWidths[colKey],
+            startX: e.clientX
+        };
+
+        const onMouseMove = (ev: MouseEvent) => {
+            if (!resizingRef.current) return;
+            const key = resizingRef.current.colKey;
+            const delta = ev.clientX - resizingRef.current.startX;
+            const minWidth = SHORT_COL_WIDTHS[key] ?? 40;
+            const maxWidth = MAX_COL_WIDTHS[key] ?? 500;
+            const newWidth = Math.min(maxWidth, Math.max(minWidth, resizingRef.current.startWidth + delta));
+            setColWidths(prev => ({ ...prev, [key]: newWidth }));
+        };
+
+        const onMouseUp = () => {
+            resizingRef.current = null;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    };
+
+    const getColWidth = (key: string) => colWidths[key] ?? 150;
 
     const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
         const saved = localStorage.getItem('invoiceDashboard_visibleColumns');
-        return saved ? JSON.parse(saved) : ALL_COLUMNS.map(c => c.key);
+        return saved ? JSON.parse(saved) : ALL_COL_CONFIG.map(c => c.key);
     });
 
     useEffect(() => {
         localStorage.setItem('invoiceDashboard_visibleColumns', JSON.stringify(visibleColumns));
     }, [visibleColumns]);
+
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setActiveDropdown(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Filters State
     const [filters, setFilters] = useState({
@@ -199,13 +291,14 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'PAID': return { bg: 'rgba(56, 161, 105, 0.1)', color: '#38A169' };
-            case 'APPROVED': return { bg: 'rgba(49, 130, 206, 0.1)', color: '#3182CE' };
-            case 'PENDING_APPROVAL': return { bg: 'var(--bg-secondary)', color: 'var(--theme-primary)' };
-            case 'SENT': return { bg: 'rgba(159, 122, 234, 0.1)', color: '#9F7AEA' };
-            case 'CANCELLED': return { bg: 'rgba(160, 174, 192, 0.1)', color: '#A0AEC0' };
-            case 'DRAFT': return { bg: 'var(--bg-secondary)', color: 'var(--text-secondary)' };
-            default: return { bg: 'rgba(187, 77, 0, 0.1)', color: 'var(--theme-primary)' };
+            case 'PAID': return { bg: 'rgba(56, 161, 105, 0.1)', color: '#38A169', label: 'Paid' };
+            case 'APPROVED': return { bg: 'rgba(0, 200, 83, 0.1)', color: '#00C853', label: 'Approved' };
+            case 'PENDING_APPROVAL': return { bg: 'var(--bg-secondary)', color: 'var(--theme-primary)', label: 'Pending' };
+            case 'SENT': return { bg: 'rgba(159, 122, 234, 0.1)', color: '#9F7AEA', label: 'Sent' };
+            case 'CANCELLED': return { bg: 'rgba(160, 174, 192, 0.1)', color: '#A0AEC0', label: 'Cancelled' };
+            case 'DRAFT':
+            case 'OPEN': return { bg: 'rgba(113, 128, 150, 0.1)', color: '#718096', label: 'Draft' };
+            default: return { bg: 'var(--bg-secondary)', color: 'var(--theme-primary)', label: status.replace('_', ' ') };
         }
     };
 
@@ -330,7 +423,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                     </div>
 
                     {/* Actions (Period, Export, Reports, Filters, Columns) - Right Side */}
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div ref={wrapperRef} style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Period:</span>
                             <select
@@ -363,7 +456,15 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     background: 'white',
                                     color: 'var(--text-secondary)',
                                     fontWeight: 700,
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    border: `1px solid ${showExportMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)'}`,
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!isDownloading) e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.5)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!isDownloading) e.currentTarget.style.borderColor = showExportMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)';
                                 }}
                             >
                                 <Download size={16} /> Export <ChevronDown size={14} />
@@ -406,9 +507,16 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     borderRadius: '8px',
                                     background: showReports ? 'var(--bg-secondary)' : 'white',
                                     color: showReports ? 'var(--theme-primary)' : 'var(--text-secondary)',
-                                    borderColor: showReports ? 'var(--theme-primary)' : 'var(--border-primary)',
                                     fontWeight: 700,
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    border: `1px solid ${showReports ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)'}`,
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.5)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = showReports ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)';
                                 }}
                             >
                                 <BarChart3 size={16} /> Reports <ChevronDown size={14} />
@@ -438,7 +546,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                             width: '100%',
                                             border: 'none',
                                             background: 'none',
-                                            color: 'var(--text-primary)',
+                                            color: '#000',
                                             cursor: 'pointer',
                                             textAlign: 'left'
                                         }}
@@ -458,7 +566,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                             width: '100%',
                                             border: 'none',
                                             background: 'none',
-                                            color: 'var(--text-primary)',
+                                            color: '#000',
                                             cursor: 'pointer',
                                             textAlign: 'left'
                                         }}
@@ -478,7 +586,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                             width: '100%',
                                             border: 'none',
                                             background: 'none',
-                                            color: 'var(--text-primary)',
+                                            color: '#000',
                                             cursor: 'pointer',
                                             textAlign: 'left'
                                         }}
@@ -506,7 +614,15 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     background: 'white',
                                     color: 'var(--text-secondary)',
                                     fontWeight: 700,
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    border: `1px solid ${showColumnMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)'}`,
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.5)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = showColumnMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)';
                                 }}
                             >
                                 <Columns size={16} /> Columns <ChevronDown size={14} />
@@ -535,11 +651,11 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                         background: 'var(--bg-secondary)'
                                     }}>
                                         <button
-                                            onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))}
+                                            onClick={() => setVisibleColumns(ALL_COL_CONFIG.map(c => c.key))}
                                             style={{
                                                 background: 'none',
                                                 border: 'none',
-                                                color: 'var(--ae-blue)',
+                                                color: 'var(--theme-primary)',
                                                 fontSize: '0.75rem',
                                                 fontWeight: 700,
                                                 cursor: 'pointer',
@@ -547,7 +663,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                 borderRadius: '4px',
                                                 transition: 'background 0.2s'
                                             }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = '#EBF5FF'}
                                             onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                         >
                                             Select All
@@ -557,7 +673,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                             style={{
                                                 background: 'none',
                                                 border: 'none',
-                                                color: 'var(--text-tertiary)',
+                                                color: 'var(--text-secondary)',
                                                 fontSize: '0.75rem',
                                                 fontWeight: 700,
                                                 cursor: 'pointer',
@@ -571,20 +687,20 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                             Clear All
                                         </button>
                                     </div>
-                                    {ALL_COLUMNS.map(col => (
+                                    {ALL_COL_CONFIG.map(col => (
                                         <label key={col.key} style={{
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '12px',
                                             padding: '10px 16px',
                                             fontSize: '0.85rem',
-                                            color: 'var(--text-primary)',
+                                            color: '#2D3748',
                                             cursor: 'pointer',
                                             userSelect: 'none',
                                             transition: 'background 0.2s',
                                             borderBottom: '1px solid var(--border-primary)'
                                         }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
                                             onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
                                         >
                                             <input
@@ -615,122 +731,153 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
 
                 {/* Table Area */}
                 <div style={{ overflowX: 'auto' }}>
-                    <table className="ae-table" style={{ width: '100%' }}>
+                    <table className="ae-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+                        <colgroup>
+                            {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />
+                            ))}
+                            <col style={{ width: `${getColWidth('actions')}px` }} />
+                        </colgroup>
                         <thead>
                             <tr>
-                                {visibleColumns.map(key => {
-                                    const col = ALL_COLUMNS.find(c => c.key === key);
-                                    if (!col) return null;
-                                    return (
-                                        <th key={key} style={{
-                                            height: '40px',
-                                            top: 0,
-                                            whiteSpace: 'nowrap',
-                                            zIndex: 12,
-                                            backgroundColor: 'var(--bg-secondary)',
-                                            textAlign: (key === 'amount') ? 'right' : 'left'
-                                        }}>
-                                            {col.label}
-                                        </th>
-                                    );
-                                })}
-                                <th style={{ height: '40px', textAlign: 'center', top: 0, whiteSpace: 'nowrap', zIndex: 12, backgroundColor: 'var(--bg-secondary)', minWidth: '100px' }}>Actions</th>
+                                {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                    <th key={col.key} style={{
+                                        backgroundColor: 'var(--ae-table-header-bg)',
+                                        position: 'relative',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        userSelect: 'none',
+                                        paddingRight: '20px',
+                                        borderRight: '1px solid var(--border-secondary)',
+                                        borderBottom: '1px solid var(--border-secondary)',
+                                        zIndex: 12,
+                                        top: 0,
+                                        color: 'var(--text-secondary)',
+                                        textAlign: (col.key === 'amount') ? 'right' : 'left'
+                                    }}>
+                                        <span title={col.label}>
+                                            {getColWidth(col.key) < (SHORT_COL_WIDTHS[col.key] + 5)
+                                                ? col.shortLabel
+                                                : col.label}
+                                        </span>
+                                        <div
+                                            onMouseDown={(e) => startResize(e, col.key)}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                right: 0,
+                                                width: '6px',
+                                                height: '100%',
+                                                cursor: 'col-resize',
+                                                background: 'transparent',
+                                                zIndex: 20
+                                            }}
+                                            title="Drag to resize"
+                                        />
+                                    </th>
+                                ))}
+                                <th style={{
+                                    backgroundColor: 'var(--ae-table-header-bg)',
+                                    zIndex: 12,
+                                    textAlign: 'center',
+                                    whiteSpace: 'nowrap',
+                                    top: 0,
+                                    color: 'var(--text-secondary)',
+                                    borderBottom: '1px solid var(--border-secondary)'
+                                }}>Actions</th>
                             </tr>
                             {showFilters && (
-                                <tr>
-                                    {visibleColumns.map(key => {
-                                        const col = ALL_COLUMNS.find(c => c.key === key);
-                                        if (!col) return null;
-
-                                        const renderFilter = () => {
-                                            switch (key) {
-                                                case 'invoice_no':
-                                                    return <input
-                                                        className="ae-input"
-                                                        placeholder="Filter..."
-                                                        value={filters.invoice_no}
-                                                        onChange={e => setFilters({ ...filters, invoice_no: e.target.value })}
-                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                                    />;
-                                                case 'deal_no':
-                                                    return <input
-                                                        className="ae-input"
-                                                        placeholder="Filter..."
-                                                        value={filters.deal_no}
-                                                        onChange={e => setFilters({ ...filters, deal_no: e.target.value })}
-                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                                    />;
-                                                case 'customer':
-                                                    return <input
-                                                        className="ae-input"
-                                                        placeholder="Filter..."
-                                                        value={filters.customer_name}
-                                                        onChange={e => setFilters({ ...filters, customer_name: e.target.value })}
-                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                                    />;
-                                                case 'date':
-                                                    return <input
-                                                        className="ae-input"
-                                                        placeholder="Filter..."
-                                                        value={filters.date_input}
-                                                        onChange={e => setFilters({ ...filters, date_input: e.target.value })}
-                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                                    />;
-                                                case 'amount':
-                                                    return <input
-                                                        className="ae-input"
-                                                        placeholder="Filter..."
-                                                        value={filters.amount_input}
-                                                        onChange={e => setFilters({ ...filters, amount_input: e.target.value })}
-                                                        style={{ height: '24px', fontSize: '11px', width: '80px', paddingTop: 0, paddingBottom: 0 }}
-                                                    />;
-                                                case 'type':
-                                                    return <select
-                                                        className="ae-input"
-                                                        value={filters.type}
-                                                        onChange={e => setFilters({ ...filters, type: e.target.value })}
-                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                                    >
-                                                        <option value="">All</option>
-                                                        <option value="Standard">Standard</option>
-                                                        <option value="Proforma">Proforma</option>
-                                                        <option value="Export">Export</option>
-                                                        <option value="Service">Service</option>
-                                                    </select>;
-                                                case 'status':
-                                                    return <select
-                                                        className="ae-input"
-                                                        value={filters.status_input}
-                                                        onChange={e => setFilters({ ...filters, status_input: e.target.value })}
-                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                                    >
-                                                        <option value="">All</option>
-                                                        <option value="DRAFT">Draft</option>
-                                                        <option value="PENDING_APPROVAL">Pending</option>
-                                                        <option value="APPROVED">Approved</option>
-                                                        <option value="SENT">Sent</option>
-                                                        <option value="PAID">Paid</option>
-                                                    </select>;
-                                                default:
-                                                    return null;
-                                            }
-                                        };
-
-                                        return (
-                                            <th key={key} style={{ top: '40px', zIndex: 11, backgroundColor: 'var(--bg-secondary)' }}>
-                                                <div className="ae-input-group" style={{ margin: 0 }}>
-                                                    {renderFilter()}
-                                                </div>
-                                            </th>
-                                        );
-                                    })}
-                                    <th style={{ textAlign: 'center', top: '40px', position: 'sticky', backgroundColor: 'var(--bg-secondary)', zIndex: 11, minWidth: '100px' }}>
+                                <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
+                                    {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                        <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                            <div className="ae-input-group" style={{ margin: 0 }}>
+                                                {(() => {
+                                                    switch (col.key) {
+                                                        case 'invoice_no':
+                                                            return <input
+                                                                className="ae-input"
+                                                                placeholder="Filter..."
+                                                                value={filters.invoice_no}
+                                                                onChange={e => setFilters({ ...filters, invoice_no: e.target.value })}
+                                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                            />;
+                                                        case 'deal_no':
+                                                            return <input
+                                                                className="ae-input"
+                                                                placeholder="Filter..."
+                                                                value={filters.deal_no}
+                                                                onChange={e => setFilters({ ...filters, deal_no: e.target.value })}
+                                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                            />;
+                                                        case 'customer':
+                                                            return <input
+                                                                className="ae-input"
+                                                                placeholder="Filter..."
+                                                                value={filters.customer_name}
+                                                                onChange={e => setFilters({ ...filters, customer_name: e.target.value })}
+                                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                            />;
+                                                        case 'date':
+                                                            return <input
+                                                                className="ae-input"
+                                                                placeholder="Filter..."
+                                                                value={filters.date_input}
+                                                                onChange={e => setFilters({ ...filters, date_input: e.target.value })}
+                                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                            />;
+                                                        case 'amount':
+                                                            return <input
+                                                                className="ae-input"
+                                                                placeholder="Filter..."
+                                                                value={filters.amount_input}
+                                                                onChange={e => setFilters({ ...filters, amount_input: e.target.value })}
+                                                                style={{ height: '28px', fontSize: '11px', lineHeight: '28px', boxSizing: 'border-box' }}
+                                                            />;
+                                                        case 'type':
+                                                            return <select
+                                                                className="ae-input"
+                                                                value={filters.type}
+                                                                onChange={e => setFilters({ ...filters, type: e.target.value })}
+                                                                style={{ height: '28px', fontSize: '11px', lineHeight: '28px', boxSizing: 'border-box' }}
+                                                            >
+                                                                <option value="">All</option>
+                                                                <option value="Standard">Standard</option>
+                                                                <option value="Proforma">Proforma</option>
+                                                                <option value="Export">Export</option>
+                                                                <option value="Service">Service</option>
+                                                            </select>;
+                                                        case 'status':
+                                                            return <select
+                                                                className="ae-input"
+                                                                value={filters.status_input}
+                                                                onChange={e => setFilters({ ...filters, status_input: e.target.value })}
+                                                                style={{ height: '28px', fontSize: '11px', lineHeight: '28px', boxSizing: 'border-box' }}
+                                                            >
+                                                                <option value="">All</option>
+                                                                <option value="DRAFT">Draft</option>
+                                                                <option value="PENDING_APPROVAL">Pending</option>
+                                                                <option value="APPROVED">Approved</option>
+                                                                <option value="SENT">Sent</option>
+                                                                <option value="PAID">Paid</option>
+                                                            </select>;
+                                                        default:
+                                                            return null;
+                                                    }
+                                                })()}
+                                            </div>
+                                        </th>
+                                    ))}
+                                    <th style={{
+                                        textAlign: 'center',
+                                        backgroundColor: 'var(--ae-filter-row-bg)',
+                                        borderBottom: '1px solid var(--border-secondary)'
+                                    }}>
                                         <button
                                             onClick={() => setFilters({
                                                 status: 'DRAFT', invoice_no: '', deal_no: '', customer_name: '',
                                                 type: '', date_range: '', period: '', date_input: '', amount_input: '', status_input: ''
                                             })}
-                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                         >
                                             Clear
                                         </button>
@@ -747,11 +894,18 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                 paginatedInvoices.map((inv: Invoice) => (
                                     <tr key={inv.id}>
                                         {visibleColumns.map(key => {
+                                            const cellStyle = {
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                                fontSize: '0.8rem'
+                                            } as React.CSSProperties;
+
                                             switch (key) {
                                                 case 'invoice_no':
                                                     return (
                                                         <td key={key}
-                                                            style={{ fontWeight: 700, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
+                                                            style={{ ...cellStyle, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
                                                             onClick={() => onView(inv.id)}
                                                         >
                                                             {inv.invoice_no}
@@ -759,62 +913,158 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                     );
                                                 case 'deal_no':
                                                     return <td key={key}
-                                                        style={{ fontWeight: 700, color: 'var(--ae-blue)', cursor: 'pointer', textDecoration: 'underline' }}
+                                                        style={{ ...cellStyle, color: 'var(--ae-blue)', cursor: 'pointer', textDecoration: 'underline' }}
                                                         onClick={() => navigate(`/deal?id=${inv.deal}`)}
                                                     >
                                                         {inv.deal_no}
                                                     </td>;
                                                 case 'customer':
-                                                    return <td key={key}>{inv.customer_name}</td>;
+                                                    return <td key={key} style={cellStyle}>{inv.customer_name}</td>;
                                                 case 'date':
-                                                    return <td key={key}>{inv.invoice_date ? formatToAppDate(inv.invoice_date) : '---'}</td>;
+                                                    return <td key={key} style={cellStyle}>{inv.invoice_date ? formatToAppDate(inv.invoice_date) : '---'}</td>;
                                                 case 'amount':
-                                                    return <td key={key} style={{ fontWeight: 600, textAlign: 'right' }}>{inv.currency} {inv.total_amount.toLocaleString()}</td>;
+                                                    return <td key={key} style={{ ...cellStyle, textAlign: 'right' }}>{inv.currency} {inv.total_amount.toLocaleString()}</td>;
                                                 case 'type':
-                                                    return <td key={key}>
+                                                    return <td key={key} style={cellStyle}>
                                                         <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
                                                             {inv.invoice_type}
                                                         </span>
                                                     </td>;
                                                 case 'status':
-                                                    return <td key={key}>
+                                                    const style = getStatusStyle(inv.status);
+                                                    return <td key={key} style={cellStyle}>
                                                         <span style={{
-                                                            fontSize: '0.7rem',
+                                                            fontSize: '10px',
                                                             padding: '4px 10px',
-                                                            borderRadius: '20px',
-                                                            fontWeight: 800,
-                                                            letterSpacing: '0.5px',
+                                                            borderRadius: '6px',
+                                                            fontWeight: 700,
                                                             textTransform: 'uppercase',
-                                                            ...getStatusStyle(inv.status)
+                                                            background: style.bg,
+                                                            color: style.color
                                                         }}>
-                                                            {inv.status.replace('_', ' ')}
+                                                            {style.label}
                                                         </span>
                                                     </td>;
                                                 default:
                                                     return null;
                                             }
                                         })}
-                                        <td>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                                <button onClick={() => handleDownload(inv.id, inv.invoice_no)} title="Download PDF" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
-                                                    <Download size={16} />
-                                                </button>
-                                                <button onClick={() => onView(inv.id)} title="View Invoice" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
+                                        <td style={{ verticalAlign: 'middle' }}>
+                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                                <button
+                                                    onClick={() => onView(inv.id)}
+                                                    title="View Invoice"
+                                                    style={{
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        borderRadius: '6px',
+                                                        background: 'var(--theme-primary)',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary-dark, #cc4400)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; }}
+                                                >
                                                     <Eye size={16} />
                                                 </button>
+
+                                                <button
+                                                    onClick={() => handleDownload(inv.id, inv.invoice_no)}
+                                                    title="Download PDF"
+                                                    style={{
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        borderRadius: '6px',
+                                                        background: 'white',
+                                                        color: 'var(--theme-primary)',
+                                                        border: '1px solid rgba(255,107,0,0.25)',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--theme-primary)'; }}
+                                                >
+                                                    <Download size={16} />
+                                                </button>
+
                                                 {inv.status === 'PENDING_APPROVAL' && (
                                                     <>
-                                                        <button onClick={() => handleAction(inv.id, 'approve')} title="Approve" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--semantic-success)' }}>
+                                                        <button
+                                                            onClick={() => handleAction(inv.id, 'approve')}
+                                                            title="Approve"
+                                                            style={{
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                borderRadius: '6px',
+                                                                background: 'white',
+                                                                color: '#16A34A',
+                                                                border: '1px solid rgba(22,163,74,0.3)',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseEnter={(e) => { e.currentTarget.style.background = '#16A34A'; e.currentTarget.style.color = 'white'; }}
+                                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#16A34A'; }}
+                                                        >
                                                             <CheckCircle size={16} />
                                                         </button>
-                                                        <button onClick={() => handleAction(inv.id, 'reject')} title="Reject" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--semantic-error)' }}>
+                                                        <button
+                                                            onClick={() => handleAction(inv.id, 'reject')}
+                                                            title="Reject"
+                                                            style={{
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                borderRadius: '6px',
+                                                                background: 'white',
+                                                                color: '#DC2626',
+                                                                border: '1px solid rgba(220,38,38,0.3)',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseEnter={(e) => { e.currentTarget.style.background = '#DC2626'; e.currentTarget.style.color = 'white'; }}
+                                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#DC2626'; }}
+                                                        >
                                                             <XCircle size={16} />
                                                         </button>
                                                     </>
                                                 )}
-                                                {inv.status === 'APPROVED' && <button onClick={() => handleSendEmail(inv.id)} title="Send Email" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
-                                                    <Mail size={16} />
-                                                </button>}
+
+                                                {inv.status === 'APPROVED' && (
+                                                    <button
+                                                        onClick={() => handleSendEmail(inv.id)}
+                                                        title="Send Email"
+                                                        style={{
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            borderRadius: '6px',
+                                                            background: 'white',
+                                                            color: 'var(--theme-primary)',
+                                                            border: '1px solid rgba(255,107,0,0.25)',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--theme-primary)'; }}
+                                                    >
+                                                        <Mail size={16} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -849,22 +1099,22 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                 }}>
                     <div style={{
                         background: 'white',
-                        borderRadius: '16px',
-                        width: '500px',
+                        borderRadius: '12px',
+                        width: reportModal.type === 'tax' ? '400px' : '500px',
                         maxWidth: '95%',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
                         overflow: 'hidden',
                         animation: 'fadeIn 0.2s ease-out'
                     }}>
                         <div style={{
-                            padding: '20px',
+                            padding: '16px 20px',
                             borderBottom: '1px solid var(--border-primary)',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            background: 'var(--bg-secondary)'
+                            background: 'var(--ae-table-header-bg)'
                         }}>
-                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                                 {reportModal.title}
                             </h3>
                             <button
@@ -875,9 +1125,9 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                             </button>
                         </div>
 
-                        <div style={{ padding: '24px' }}>
+                        <div style={{ padding: '20px' }}>
                             {reportModal.type === 'tax' && reportModal.data && (
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                     {[
                                         { label: 'CGST', value: reportModal.data.total_cgst },
                                         { label: 'SGST', value: reportModal.data.total_sgst },
@@ -885,13 +1135,13 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                         { label: 'Sales Tax', value: reportModal.data.total_sales_tax }
                                     ].map((item, index) => (
                                         <div key={index} style={{
-                                            padding: '16px',
-                                            borderRadius: '12px',
-                                            background: 'var(--bg-secondary)',
+                                            padding: '12px 16px',
+                                            borderRadius: '8px',
+                                            background: 'white',
                                             border: '1px solid var(--border-primary)'
                                         }}>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>{item.label}</div>
-                                            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--theme-primary)' }}>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 500 }}>{item.label}</div>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--theme-primary)' }}>
                                                 ₹{(item.value || 0).toLocaleString()}
                                             </div>
                                         </div>
@@ -900,23 +1150,23 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                             )}
 
                             {reportModal.type === 'billing' && reportModal.data && (
-                                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                                    <table className="ae-table" style={{ width: '100%' }}>
+                                <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid var(--border-secondary)', borderRadius: '8px' }}>
+                                    <table className="ae-table" style={{ width: '100%', margin: 0 }}>
                                         <thead>
                                             <tr>
-                                                <th style={{ background: 'var(--bg-secondary)', fontSize: '0.75rem' }}>Customer</th>
-                                                <th style={{ background: 'var(--bg-secondary)', fontSize: '0.75rem', textAlign: 'right' }}>Inv</th>
-                                                <th style={{ background: 'var(--bg-secondary)', fontSize: '0.75rem', textAlign: 'right' }}>Billed</th>
-                                                <th style={{ background: 'var(--bg-secondary)', fontSize: '0.75rem', textAlign: 'right' }}>Outstanding</th>
+                                                <th style={{ background: 'var(--ae-table-header-bg)', fontSize: '0.75rem', position: 'sticky', top: 0, zIndex: 10 }}>Customer</th>
+                                                <th style={{ background: 'var(--ae-table-header-bg)', fontSize: '0.75rem', textAlign: 'right', position: 'sticky', top: 0, zIndex: 10 }}>Inv</th>
+                                                <th style={{ background: 'var(--ae-table-header-bg)', fontSize: '0.75rem', textAlign: 'right', position: 'sticky', top: 0, zIndex: 10 }}>Billed</th>
+                                                <th style={{ background: 'var(--ae-table-header-bg)', fontSize: '0.75rem', textAlign: 'right', position: 'sticky', top: 0, zIndex: 10 }}>Outstanding</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {reportModal.data.map((c: any, i: number) => (
                                                 <tr key={i}>
-                                                    <td style={{ fontWeight: 600 }}>{c.customer_name}</td>
-                                                    <td style={{ textAlign: 'right' }}>{c.total_invoices}</td>
-                                                    <td style={{ textAlign: 'right' }}>₹{c.total_billed.toLocaleString()}</td>
-                                                    <td style={{ textAlign: 'right', color: c.total_outstanding > 0 ? '#E53E3E' : 'inherit' }}>
+                                                    <td style={{ fontWeight: 600, fontSize: '0.8rem' }}>{c.customer_name}</td>
+                                                    <td style={{ textAlign: 'right', fontSize: '0.8rem' }}>{c.total_invoices}</td>
+                                                    <td style={{ textAlign: 'right', fontSize: '0.8rem' }}>₹{c.total_billed.toLocaleString()}</td>
+                                                    <td style={{ textAlign: 'right', color: c.total_outstanding > 0 ? '#E53E3E' : 'inherit', fontSize: '0.8rem' }}>
                                                         ₹{c.total_outstanding.toLocaleString()}
                                                     </td>
                                                 </tr>
@@ -925,22 +1175,6 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     </table>
                                 </div>
                             )}
-                        </div>
-
-                        <div style={{
-                            padding: '16px 24px',
-                            borderTop: '1px solid var(--border-primary)',
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            background: '#F7FAFC'
-                        }}>
-                            <button
-                                onClick={() => setReportModal({ ...reportModal, show: false })}
-                                className="ae-btn-secondary"
-                                style={{ padding: '8px 24px' }}
-                            >
-                                Close
-                            </button>
                         </div>
                     </div>
                 </div>
