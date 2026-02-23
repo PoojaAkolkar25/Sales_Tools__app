@@ -783,7 +783,16 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
 
                                                 switch (key) {
                                                     case 'milestone_no':
-                                                        return <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)', fontFamily: 'monospace' }}>{m.milestone_no}</td>;
+                                                        return (
+                                                            <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)', fontFamily: 'monospace' }}>
+                                                                <span
+                                                                    onClick={() => onView && onView(m.id)}
+                                                                    style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                                                >
+                                                                    {m.milestone_no}
+                                                                </span>
+                                                            </td>
+                                                        );
                                                     case 'deal':
                                                         return <td key={key} style={cellStyle}>
                                                             {m.sales_order_details?.deal ? (
@@ -796,7 +805,18 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                             ) : '—'}
                                                         </td>;
                                                     case 'sales_order':
-                                                        return <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--ae-blue)', fontSize: '0.8rem' }}>{m.sales_order_details?.so_number}</td>;
+                                                        return (
+                                                            <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--ae-blue)', fontSize: '0.8rem' }}>
+                                                                {m.sales_order ? (
+                                                                    <span
+                                                                        onClick={() => navigate(`/sales-order?id=${m.sales_order}`)}
+                                                                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                                                    >
+                                                                        {m.sales_order_details?.so_number}
+                                                                    </span>
+                                                                ) : (m.sales_order_details?.so_number || '—')}
+                                                            </td>
+                                                        );
                                                     case 'customer':
                                                         return <td key={key} style={{ ...cellStyle, fontWeight: 500 }}>{m.sales_order_details?.customer_name}</td>;
                                                     case 'description':
@@ -820,7 +840,18 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                             </span>
                                                         </td>;
                                                     case 'invoice_no':
-                                                        return <td key={key} style={{ ...cellStyle, fontWeight: 700, color: '#00C853' }}>{m.invoice_details?.invoice_no || '—'}</td>;
+                                                        return (
+                                                            <td key={key} style={{ ...cellStyle, fontWeight: 700, color: '#00C853' }}>
+                                                                {m.invoice ? (
+                                                                    <span
+                                                                        onClick={() => navigate(`/invoice?id=${m.invoice}`)}
+                                                                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                                                    >
+                                                                        {m.invoice_details?.invoice_no}
+                                                                    </span>
+                                                                ) : (m.invoice_details?.invoice_no || '—')}
+                                                            </td>
+                                                        );
                                                     default:
                                                         return null;
                                                 }

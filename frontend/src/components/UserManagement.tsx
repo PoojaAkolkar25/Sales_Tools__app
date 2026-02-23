@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { UserPlus, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search, LayoutDashboard, PlusCircle, Paperclip, FileText, Eye, Download, ChevronLeft, ChevronRight, Columns, ChevronDown } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { Country, State, City } from 'country-state-city';
 
 const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: string }[]> = {
     user: [
@@ -336,6 +337,127 @@ const UserManagement: React.FC = () => {
 
     const getColWidth = (key: string) => colWidths[key] ?? 150;
 
+    const handleEditClick = (mode: string, item: any) => {
+        setEditingId(item.id);
+        if (mode === 'user') {
+            setFormData({
+                username: item.username || '',
+                email: item.email || '',
+                password: '',
+                first_name: item.first_name || '',
+                last_name: item.last_name || '',
+                role: item.role || 'app_user',
+                mobile: item.mobile || '',
+                department: item.department || '',
+                region: item.region || '',
+                reporting_to: item.reporting_to || '',
+                employee_id: item.employee_id || '',
+            });
+        } else if (mode === 'partner') {
+            setPartnerFormData({
+                name: item.name || '',
+                contact_person: item.contact_person || '',
+                logo: item.logo || null,
+                address_line_1: item.address_line_1 || '',
+                country: item.country || 'India',
+                state: states.find((s: any) => s.id === item.state)?.name || item.state || '',
+                city: item.city || '',
+                pincode: item.pincode || '',
+                phone_number: item.phone_number || '',
+                mobile: item.mobile || '',
+                email: item.email || '',
+                website_url: item.website_url || '',
+                primary_contact: item.primary_contact || '',
+                base_currency: item.base_currency || 'INR',
+                currency_symbol: item.currency_symbol || '? / INR',
+                decimal_places: item.decimal_places || 2,
+                is_gst_applicable: item.is_gst_applicable !== undefined ? item.is_gst_applicable : true,
+                gstin: item.gstin || '',
+                state_code: item.state_code || '',
+                msme_registered: item.msme_registered || false,
+                msme_number: item.msme_number || '',
+                pan: item.pan || '',
+                tan: item.tan || '',
+                cin: item.cin || '',
+                status: item.status || 'ACTIVE',
+                payment_terms: item.payment_terms || 'NET_30'
+            });
+        } else if (mode === 'end_customer') {
+            setEndCustomerFormData({
+                end_customer_code: item.end_customer_code || '',
+                name: item.name || '',
+                linked_partner: item.linked_partner || '',
+                industry: item.industry || '',
+                location: item.location || '',
+                contact_person: item.contact_person || '',
+                email: item.email || '',
+                phone: item.phone || '',
+                status: item.status || 'ACTIVE'
+            });
+        } else if (mode === 'company') {
+            setCompanyFormData({
+                name: item.name || '',
+                entity: item.entity || 'AE_IND',
+                customer_id: item.customer_id || '',
+                region: item.region || '',
+                contact_person: item.contact_person || '',
+                alias_name: item.alias_name || '',
+                logo: item.logo || null,
+                address_line_1: item.address_line_1 || '',
+                country: item.country || 'India',
+                state: states.find((s: any) => s.id === item.state)?.name || item.state || '',
+                city: item.city || '',
+                pincode: item.pincode || '',
+                phone_number: item.phone_number || '',
+                mobile_number: item.mobile_number || '',
+                email: item.email || '',
+                website_url: item.website_url || '',
+                linked_company_profile: item.linked_company_profile || '',
+                industry: item.industry || '',
+                type: item.type || 'CUSTOMER',
+                payment_terms: item.payment_terms || 'NET_30',
+                base_currency: item.base_currency || 'INR',
+                currency_symbol: item.currency_symbol || '? / INR',
+                decimal_places: item.decimal_places || 2,
+                is_gst_applicable: item.is_gst_applicable !== undefined ? item.is_gst_applicable : true,
+                gstin: item.gstin || '',
+                state_code: item.state_code || '',
+                msme_registered: item.msme_registered || false,
+                msme_number: item.msme_number || '',
+                pan: item.pan || '',
+                tan: item.tan || '',
+                cin: item.cin || ''
+            });
+        } else if (mode === 'financial_year') {
+            setFyFormData({
+                code: item.code || '',
+                start_date: item.start_date || '',
+                end_date: item.end_date || '',
+                label: item.label || '',
+                status: item.status || 'ACTIVE',
+                is_current_fy: item.is_current_fy || false,
+                first_month_of_fiscal_year: item.first_month_of_fiscal_year || 'April',
+                first_month_of_tax_year: item.first_month_of_tax_year || 'Same as fiscal year',
+                fy_year: item.fy_year || new Date().getFullYear()
+            });
+        } else if (mode === 'product') {
+            setProductFormData({
+                product_code: item.product_code || '',
+                name: item.name || '',
+                category: item.category || 'SOFTWARE',
+                subcategory: item.subcategory || '',
+                description: item.description || '',
+                uom: item.uom || '',
+                standard_price: item.standard_price || '',
+                tax_percentage: item.tax_percentage || '',
+                hsn_sac_code: item.hsn_sac_code || '',
+                currency: item.currency || 'INR',
+                status: item.status || 'ACTIVE'
+            });
+        }
+        setShowForm(true);
+    };
+
     const renderUserCell = (user: any, colKey: string) => {
         switch (colKey) {
             case 'username':
@@ -344,8 +466,8 @@ const UserManagement: React.FC = () => {
                         <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
                             <UserIcon size={20} />
                         </div>
-                        <div className="ml-4">
-                            <div style={{ fontSize: '0.85rem', fontWeight: 400, color: '#1a1f36' }}>{user.username}</div>
+                        <div className="ml-4" style={{ cursor: 'pointer' }} onClick={() => handleEditClick('user', user)}>
+                            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ae-blue)', textDecoration: 'underline' }}>{user.username}</div>
                         </div>
                     </div>
                 );
@@ -377,8 +499,8 @@ const UserManagement: React.FC = () => {
                         <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
                             <Shield size={20} />
                         </div>
-                        <div className="ml-4">
-                            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>{p.name}</div>
+                        <div className="ml-4" style={{ cursor: 'pointer' }} onClick={() => handleEditClick('partner', p)}>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ae-blue)', textDecoration: 'underline' }}>{p.name}</div>
                             <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.code}</div>
                         </div>
                     </div>
@@ -413,8 +535,8 @@ const UserManagement: React.FC = () => {
                         <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
                             <Users size={20} />
                         </div>
-                        <div className="ml-4">
-                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{ec.name}</div>
+                        <div className="ml-4" style={{ cursor: 'pointer' }} onClick={() => handleEditClick('end_customer', ec)}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ae-blue)', textDecoration: 'underline' }}>{ec.name}</div>
                             <div style={{ fontSize: '0.65rem', color: '#718096' }}>{ec.end_customer_code}</div>
                         </div>
                     </div>
@@ -442,8 +564,8 @@ const UserManagement: React.FC = () => {
             case 'name':
                 return (
                     <div className="flex items-center">
-                        <div className="ml-4">
-                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{c.name}</div>
+                        <div className="ml-4" style={{ cursor: 'pointer' }} onClick={() => handleEditClick('company', c)}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ae-blue)', textDecoration: 'underline' }}>{c.name}</div>
                             <div style={{ fontSize: '0.65rem', color: '#718096' }}>{c.customer_id}</div>
                         </div>
                     </div>
@@ -476,7 +598,7 @@ const UserManagement: React.FC = () => {
 
     const renderFYCell = (fy: any, colKey: string) => {
         switch (colKey) {
-            case 'label': return <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{fy.label}</div>;
+            case 'label': return <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ae-blue)', textDecoration: 'underline', cursor: 'pointer' }} onClick={() => handleEditClick('financial_year', fy)}>{fy.label}</div>;
             case 'code': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{fy.code}</div>;
             case 'fy_year': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{fy.fy_year}</div>;
             case 'start_date': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{fy.start_date}</div>;
@@ -505,8 +627,8 @@ const UserManagement: React.FC = () => {
             case 'name':
                 return (
                     <div className="flex items-center">
-                        <div className="ml-4">
-                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{product.name}</div>
+                        <div className="ml-4" style={{ cursor: 'pointer' }} onClick={() => handleEditClick('product', product)}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ae-blue)', textDecoration: 'underline' }}>{product.name}</div>
                             <div style={{ fontSize: '0.65rem', color: '#718096' }}>{product.product_code}</div>
                         </div>
                     </div>
@@ -698,7 +820,14 @@ const UserManagement: React.FC = () => {
                         if (value instanceof File) {
                             formData.append(key, value);
                         }
-                        // If it's a string (existing URL) or null, don't append (backend preserves existing unless explicit delete handling is added)
+                    } else if (key === 'state') {
+                        // Find the matching state ID from the backend's states array
+                        const matchedState = states.find((s: any) => s.name?.toLowerCase() === (value as string)?.toLowerCase());
+                        if (matchedState) {
+                            formData.append(key, matchedState.id);
+                        } else {
+                            formData.append(key, '');
+                        }
                     } else {
                         formData.append(key, value as any);
                     }
@@ -754,6 +883,14 @@ const UserManagement: React.FC = () => {
                     if (key === 'logo') {
                         if (value instanceof File) {
                             formData.append(key, value);
+                        }
+                    } else if (key === 'state') {
+                        // Find the matching state ID from the backend's states array
+                        const matchedState = states.find((s: any) => s.name?.toLowerCase() === (value as string)?.toLowerCase());
+                        if (matchedState) {
+                            formData.append(key, matchedState.id);
+                        } else {
+                            formData.append(key, '');
                         }
                     } else {
                         formData.append(key, value as any);
@@ -1262,6 +1399,12 @@ const UserManagement: React.FC = () => {
             </div>
         );
     }
+
+    const partnerCountryIso = Country.getAllCountries().find(c => c.name === partnerFormData.country)?.isoCode;
+    const partnerStateIso = partnerCountryIso ? State.getStatesOfCountry(partnerCountryIso).find(s => s.name === partnerFormData.state)?.isoCode : undefined;
+
+    const companyCountryIso = Country.getAllCountries().find(c => c.name === companyFormData.country)?.isoCode;
+    const companyStateIso = companyCountryIso ? State.getStatesOfCountry(companyCountryIso).find(s => s.name === companyFormData.state)?.isoCode : undefined;
 
     return (
         <div style={{
@@ -1947,13 +2090,16 @@ const UserManagement: React.FC = () => {
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Country
                                                 </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Country"
+                                                <select
                                                     value={partnerFormData.country}
-                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, country: e.target.value })}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, country: e.target.value, state: '', city: '' })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                />
+                                                >
+                                                    <option value="">Select Country</option>
+                                                    {Country.getAllCountries().map(c => (
+                                                        <option key={c.isoCode} value={c.name}>{c.name}</option>
+                                                    ))}
+                                                </select>
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -1961,12 +2107,13 @@ const UserManagement: React.FC = () => {
                                                 </label>
                                                 <select
                                                     value={partnerFormData.state}
-                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, state: e.target.value })}
+                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, state: e.target.value, city: '' })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    disabled={!partnerCountryIso}
                                                 >
                                                     <option value="">Select State</option>
-                                                    {states.map(state => (
-                                                        <option key={state.id} value={state.id}>{state.name}</option>
+                                                    {partnerCountryIso && State.getStatesOfCountry(partnerCountryIso).map(s => (
+                                                        <option key={s.isoCode} value={s.name}>{s.name}</option>
                                                     ))}
                                                 </select>
                                             </div>
@@ -1974,13 +2121,17 @@ const UserManagement: React.FC = () => {
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     City
                                                 </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="City"
+                                                <select
                                                     value={partnerFormData.city}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, city: e.target.value })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                />
+                                                    disabled={!partnerStateIso}
+                                                >
+                                                    <option value="">Select City</option>
+                                                    {partnerCountryIso && partnerStateIso && City.getCitiesOfState(partnerCountryIso, partnerStateIso).map(c => (
+                                                        <option key={c.name} value={c.name}>{c.name}</option>
+                                                    ))}
+                                                </select>
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -2556,6 +2707,20 @@ const UserManagement: React.FC = () => {
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Entity <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                                </label>
+                                                <select
+                                                    value={companyFormData.entity}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, entity: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    required
+                                                >
+                                                    <option value="AE_IND">AE India</option>
+                                                    <option value="AE_USA">AE USA</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Company Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
@@ -2565,6 +2730,18 @@ const UserManagement: React.FC = () => {
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                    Alias Name
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Alias Name"
+                                                    value={companyFormData.alias_name}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, alias_name: e.target.value })}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -2649,18 +2826,7 @@ const UserManagement: React.FC = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Primary Contact Name
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Primary Contact Name"
-                                                    value={companyFormData.alias_name}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, alias_name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                />
-                                            </div>
+
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Email Address
@@ -2709,19 +2875,7 @@ const UserManagement: React.FC = () => {
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Linked Company Profile
-                                                </label>
-                                                <select
-                                                    value={companyFormData.linked_company_profile}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, linked_company_profile: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                >
-                                                    <option value="">Select Company</option>
-                                                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                                </select>
-                                            </div>
+
 
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -2748,20 +2902,7 @@ const UserManagement: React.FC = () => {
                                                 </select>
                                             </div>
 
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Entity <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                                </label>
-                                                <select
-                                                    value={companyFormData.entity}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, entity: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                    required
-                                                >
-                                                    <option value="AE_IND">AE India</option>
-                                                    <option value="AE_USA">AE USA</option>
-                                                </select>
-                                            </div>
+
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Customer ID
@@ -2824,13 +2965,16 @@ const UserManagement: React.FC = () => {
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Country
                                                 </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Country"
+                                                <select
                                                     value={companyFormData.country}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, country: e.target.value })}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, country: e.target.value, state: '', city: '' })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                />
+                                                >
+                                                    <option value="">Select Country</option>
+                                                    {Country.getAllCountries().map(c => (
+                                                        <option key={c.isoCode} value={c.name}>{c.name}</option>
+                                                    ))}
+                                                </select>
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -2838,12 +2982,13 @@ const UserManagement: React.FC = () => {
                                                 </label>
                                                 <select
                                                     value={companyFormData.state}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, state: e.target.value })}
+                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, state: e.target.value, city: '' })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    disabled={!companyCountryIso}
                                                 >
                                                     <option value="">Select State</option>
-                                                    {states.map(state => (
-                                                        <option key={state.id} value={state.id}>{state.name}</option>
+                                                    {companyCountryIso && State.getStatesOfCountry(companyCountryIso).map(s => (
+                                                        <option key={s.isoCode} value={s.name}>{s.name}</option>
                                                     ))}
                                                 </select>
                                             </div>
@@ -2851,13 +2996,17 @@ const UserManagement: React.FC = () => {
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     City
                                                 </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="City"
+                                                <select
                                                     value={companyFormData.city}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, city: e.target.value })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                />
+                                                    disabled={!companyStateIso}
+                                                >
+                                                    <option value="">Select City</option>
+                                                    {companyCountryIso && companyStateIso && City.getCitiesOfState(companyCountryIso, companyStateIso).map(c => (
+                                                        <option key={c.name} value={c.name}>{c.name}</option>
+                                                    ))}
+                                                </select>
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
