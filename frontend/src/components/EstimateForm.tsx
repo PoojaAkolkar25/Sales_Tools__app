@@ -1119,13 +1119,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 <th style={{
                                     padding: '6px 8px',
                                     textAlign: 'center',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
                                     color: 'black',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',
                                     borderBottom: '2px solid #E0E6ED',
-                                    whiteSpace: 'nowrap'
+                                    whiteSpace: 'nowrap',
+                                    width: '60px'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                                         {editingColumn === 'sr_no' ? (
@@ -1149,8 +1150,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 <th style={{
                                     padding: '6px 8px',
                                     textAlign: 'left',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
                                     color: 'black',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',
@@ -1179,8 +1180,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 <th style={{
                                     padding: '6px 8px',
                                     textAlign: 'left',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
                                     color: 'black',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',
@@ -1209,8 +1210,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 <th style={{
                                     padding: '6px 8px',
                                     textAlign: 'left',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
                                     color: 'black',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',
@@ -1240,8 +1241,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 <th style={{
                                     padding: '6px 8px',
                                     textAlign: 'left',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
                                     color: 'black',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',
@@ -1271,13 +1272,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 <th style={{
                                     padding: '6px 8px',
                                     textAlign: 'center',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
                                     color: 'black',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',
                                     borderBottom: '2px solid #E0E6ED',
-                                    whiteSpace: 'nowrap'
+                                    whiteSpace: 'nowrap',
+                                    width: '100px'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                                         {editingColumn === 'qty' ? (
@@ -1301,13 +1303,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 <th style={{
                                     padding: '6px 8px',
                                     textAlign: 'right',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
                                     color: 'black',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',
                                     borderBottom: '2px solid #E0E6ED',
-                                    whiteSpace: 'nowrap'
+                                    whiteSpace: 'nowrap',
+                                    width: '150px'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                                         {editingColumn === 'rate' ? (
@@ -1331,13 +1334,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 <th style={{
                                     padding: '6px 8px',
                                     textAlign: 'right',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
                                     color: 'black',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',
                                     borderBottom: '2px solid #E0E6ED',
-                                    whiteSpace: 'nowrap'
+                                    whiteSpace: 'nowrap',
+                                    width: '100px'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                                         {editingColumn === 'discount' ? (
@@ -1361,8 +1365,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 <th style={{
                                     padding: '6px 8px',
                                     textAlign: 'right',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
                                     color: 'black',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',
@@ -1417,7 +1421,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             </button>
                                         )}
                                     </td>
-                                    <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>
+                                    <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.95rem', color: '#4A5568', fontWeight: 600 }}>
                                         {index + 1}
                                     </td>
                                     <td style={{ padding: '8px' }}>
@@ -1499,7 +1503,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         <input
                                             type="number"
                                             className="ae-input"
-                                            style={{ height: '36px', padding: '4px 8px', textAlign: 'center', width: '100%' }}
+                                            style={{ height: '36px', padding: '4px 8px', textAlign: 'center', width: '100%', fontSize: '0.95rem', fontWeight: 600 }}
                                             value={item.qty || ''}
                                             placeholder="0"
                                             onChange={(e) => handleItemChange(item.id, 'qty', e.target.value)}
@@ -1508,11 +1512,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     </td>
                                     <td style={{ padding: '8px' }}>
                                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                            <span style={{ position: 'absolute', left: '8px', fontSize: '0.8rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
+                                            <span style={{ position: 'absolute', left: '8px', fontSize: '0.95rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
                                             <input
                                                 type="number"
                                                 className="ae-input"
-                                                style={{ height: '36px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%' }}
+                                                style={{ height: '36px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%', fontSize: '0.95rem', fontWeight: 600 }}
                                                 value={item.rate || ''}
                                                 placeholder="0"
                                                 onChange={(e) => handleItemChange(item.id, 'rate', e.target.value)}
@@ -1528,11 +1532,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     </td>
                                     <td style={{ padding: '8px' }}>
                                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                            <span style={{ position: 'absolute', left: '8px', fontSize: '0.8rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
+                                            <span style={{ position: 'absolute', left: '8px', fontSize: '0.95rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
                                             <input
                                                 type="number"
                                                 className="ae-input"
-                                                style={{ height: '36px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%' }}
+                                                style={{ height: '36px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%', fontSize: '0.95rem', fontWeight: 600 }}
                                                 value={item.discount || ''}
                                                 placeholder="0"
                                                 onChange={(e) => handleItemChange(item.id, 'discount', e.target.value)}
@@ -1546,7 +1550,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             />
                                         </div>
                                     </td>
-                                    <td style={{ padding: '8px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>
+                                    <td style={{ padding: '8px', textAlign: 'right', fontSize: '0.95rem', fontWeight: 800, color: '#1a1f36' }}>
                                         {getCurrencySymbol(formData.currency || 'INR')}{item.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}
                                     </td>
                                     <td style={{ padding: '8px', textAlign: 'center' }}>
@@ -1580,7 +1584,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                         <tfoot>
                             <tr style={{ background: '#F8FAFC' }}>
                                 <td colSpan={isReadOnly ? 8 : 9} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total:</td>
-                                <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.95rem', fontWeight: 800, color: 'var(--theme-primary)' }}>
+                                <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: 'var(--theme-primary)' }}>
                                     {getCurrencySymbol(formData.currency || 'INR')}{calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </td>
                                 <td></td>

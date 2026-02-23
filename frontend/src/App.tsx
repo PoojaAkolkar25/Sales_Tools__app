@@ -1072,6 +1072,42 @@ const AppContent: React.FC = () => {
                     >
                       <LayoutDashboard size={18} /> Dashboard
                     </button>
+                    <button
+                      onClick={() => {
+                        setEditingSalesOrderId(null);
+                        setSalesOrderView('form');
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: (salesOrderView === 'form' && !editingSalesOrderId) ? 'var(--theme-primary)' : 'transparent',
+                        color: (salesOrderView === 'form' && !editingSalesOrderId) ? 'white' : 'var(--text-secondary)',
+                        boxShadow: (salesOrderView === 'form' && !editingSalesOrderId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (salesOrderView !== 'form' || editingSalesOrderId) {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (salesOrderView !== 'form' || editingSalesOrderId) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
+                    >
+                      <PlusCircle size={18} /> Create New
+                    </button>
                     <label style={{
                       display: 'flex',
                       alignItems: 'center',

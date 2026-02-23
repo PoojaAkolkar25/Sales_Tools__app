@@ -580,16 +580,16 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 <thead>
                                     <tr style={{ background: '#F8FAFC' }}>
                                         <th style={{ padding: '12px 8px', width: '40px' }}></th>
-                                        <th style={{ width: '60px', padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Sr.No.</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '130px' }}>Type</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '20%' }}>Product</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '20%' }}>Description</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '140px' }}>Start Date</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '140px' }}>End Date</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '80px' }}>Qty</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '120px' }}>Rate</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '80px' }}>Disc%</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Total</th>
+                                        <th style={{ width: '60px', padding: '12px 8px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Sr.No.</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '180px' }}>Type</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '250px' }}>Product</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '250px' }}>Description</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '140px' }}>Start Date</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '140px' }}>End Date</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '120px' }}>Qty</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '180px' }}>Rate</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '120px' }}>Disc%</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Total</th>
                                         {!isSubmitted && <th style={{ padding: '12px 16px', borderBottom: '1px solid #E0E6ED', width: '40px' }}></th>}
                                     </tr>
                                 </thead>
@@ -620,20 +620,22 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                 )}
                                             </td>
                                             <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{index + 1}</td>
-                                            <td style={{ padding: '8px 16px', minWidth: '120px' }}>
-                                                <SearchableDropdown
-                                                    options={[
-                                                        { value: 'LICENSE', label: 'License' },
-                                                        { value: 'SERVICES', label: 'Services' },
-                                                    ]}
-                                                    value={item.item_type || ''}
-                                                    onChange={(val) => handleItemChange(index, 'item_type', val as string)}
-                                                    placeholder="Type"
-                                                    className="w-full"
-                                                    disabled={isSubmitted}
-                                                />
+                                            <td style={{ padding: '8px 8px', minWidth: '180px' }}>
+                                                <div style={{ width: '180px' }}>
+                                                    <SearchableDropdown
+                                                        options={[
+                                                            { value: 'LICENSE', label: 'License' },
+                                                            { value: 'SERVICES', label: 'Services' },
+                                                        ]}
+                                                        value={item.item_type || ''}
+                                                        onChange={(val) => handleItemChange(index, 'item_type', val as string)}
+                                                        placeholder="Type"
+                                                        className="w-full"
+                                                        disabled={isSubmitted}
+                                                    />
+                                                </div>
                                             </td>
-                                            <td style={{ padding: '8px 16px' }}>
+                                            <td style={{ padding: '8px 8px', minWidth: '250px' }}>
                                                 <textarea
                                                     value={item.product_name || item.product || ''}
                                                     onChange={(e) => handleItemChange(index, 'product_name', e.target.value)}
@@ -656,7 +658,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     disabled={isSubmitted}
                                                 />
                                             </td>
-                                            <td style={{ padding: '8px 16px' }}>
+                                            <td style={{ padding: '8px 8px', minWidth: '250px' }}>
                                                 <textarea
                                                     value={item.description || ''}
                                                     onChange={(e) => handleItemChange(index, 'description', e.target.value)}
@@ -744,40 +746,42 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     </div>
                                                 )}
                                             </td>
-                                            <td style={{ padding: '8px 16px', textAlign: 'center' }}>
-                                                <input
-                                                    type="number"
-                                                    value={item.qty || ''}
-                                                    onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
-                                                    className="ae-input"
-                                                    style={{ width: '100%', padding: '6px 10px', fontSize: '0.85rem', textAlign: 'center' }}
-                                                    min="1"
-                                                    disabled={isSubmitted}
-                                                />
+                                            <td style={{ padding: '8px 8px', textAlign: 'center', minWidth: '140px' }}>
+                                                <div style={{ width: '120px', margin: '0 auto' }}>
+                                                    <input
+                                                        type="number"
+                                                        value={item.qty || ''}
+                                                        onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
+                                                        className="ae-input"
+                                                        style={{ width: '100%', padding: '8px 10px', fontSize: '0.95rem', textAlign: 'center', fontWeight: 600 }}
+                                                        min="1"
+                                                        disabled={isSubmitted}
+                                                    />
+                                                </div>
                                             </td>
-                                            <td style={{ padding: '8px 16px' }}>
-                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                            <td style={{ padding: '8px 8px', minWidth: '200px' }}>
+                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '180px' }}>
                                                     <span style={{ position: 'absolute', left: '10px', color: '#718096', fontSize: '0.85rem', fontWeight: 600 }}>{getCurrencySymbol(salesOrder.currency)}</span>
                                                     <input
                                                         type="number"
                                                         value={item.rate || ''}
                                                         onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
                                                         className="ae-input"
-                                                        style={{ width: '100%', padding: '6px 10px 6px 24px', fontSize: '0.85rem' }}
+                                                        style={{ width: '100%', padding: '8px 10px 8px 24px', fontSize: '0.95rem', fontWeight: 600 }}
                                                         min="0"
                                                         step="0.01"
                                                         disabled={isSubmitted}
                                                     />
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '8px 16px', textAlign: 'center' }}>
-                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                            <td style={{ padding: '8px 8px', textAlign: 'center', minWidth: '140px' }}>
+                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '120px', margin: '0 auto' }}>
                                                     <input
                                                         type="number"
                                                         value={item.discount_percent || 0}
                                                         onChange={(e) => handleItemChange(index, 'discount_percent', e.target.value)}
                                                         className="ae-input"
-                                                        style={{ width: '100%', padding: '6px 10px', fontSize: '0.85rem', color: '#C53030', textAlign: 'center' }}
+                                                        style={{ width: '100%', padding: '8px 10px', fontSize: '0.95rem', color: '#C53030', textAlign: 'center', fontWeight: 600 }}
                                                         min="0"
                                                         max="100"
                                                         step="0.01"
@@ -786,7 +790,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     <span style={{ position: 'absolute', right: '10px', color: '#C53030', fontSize: '0.85rem', pointerEvents: 'none' }}>%</span>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                            <td style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                                                 {getCurrencySymbol(salesOrder.currency)} {((parseFloat(item.qty as unknown as string) || 0) * (parseFloat(item.rate as unknown as string) || 0) * (1 - (parseFloat(item.discount_percent as unknown as string) || 0) / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </td>
                                             {!isSubmitted && (
