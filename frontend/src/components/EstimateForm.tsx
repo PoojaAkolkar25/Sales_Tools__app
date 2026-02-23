@@ -62,7 +62,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const [estimate, setEstimate] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [activeAction, setActiveAction] = useState<'save' | 'submit' | 'cancel' | null>('submit');
+    const [activeAction, setActiveAction] = useState<'save' | 'submit' | 'cancel' | 'preview' | null>('submit');
     const [isConfirmingExit, setIsConfirmingExit] = useState(false);
     const [formData, setFormData] = useState<any>(getInitialFormData());
 
@@ -1500,7 +1500,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             type="number"
                                             className="ae-input"
                                             style={{ height: '36px', padding: '4px 8px', textAlign: 'center', width: '100%' }}
-                                            value={item.qty || 0}
+                                            value={item.qty || ''}
+                                            placeholder="0"
                                             onChange={(e) => handleItemChange(item.id, 'qty', e.target.value)}
                                             disabled={isReadOnly}
                                         />
@@ -1512,7 +1513,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                 type="number"
                                                 className="ae-input"
                                                 style={{ height: '36px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%' }}
-                                                value={item.rate || 0}
+                                                value={item.rate || ''}
+                                                placeholder="0"
                                                 onChange={(e) => handleItemChange(item.id, 'rate', e.target.value)}
                                                 disabled={isReadOnly}
                                                 onKeyDown={(e) => {
@@ -1531,7 +1533,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                 type="number"
                                                 className="ae-input"
                                                 style={{ height: '36px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%' }}
-                                                value={item.discount || 0}
+                                                value={item.discount || ''}
+                                                placeholder="0"
                                                 onChange={(e) => handleItemChange(item.id, 'discount', e.target.value)}
                                                 disabled={isReadOnly}
                                                 onKeyDown={(e) => {
@@ -1612,7 +1615,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
             </div >
 
             {/* Footer Actions (Outside Scroll Area) - Matching CostSheetForm floating pill style */}
-            < div style={{
+            <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -1634,12 +1637,29 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {id && isReadOnly && estimate?.approval_status !== 'PENDING' && (
+                    {id && (
                         <button
                             onClick={handlePreview}
-                            className="ae-btn-secondary"
+                            onMouseEnter={() => !isConfirmingExit && setActiveAction('preview')}
+                            style={{
+                                height: '38px',
+                                padding: '0 18px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                border: 'none',
+                                background: activeAction === 'preview' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeAction === 'preview' ? 'white' : 'var(--text-secondary)',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer',
+                                boxShadow: activeAction === 'preview' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                            }}
                         >
-                            <Eye size={18} /> Preview
+                            <Eye size={18} />
+                            <span>Preview</span>
                         </button>
                     )}
                     {!isReadOnly && (

@@ -985,39 +985,6 @@ const AppContent: React.FC = () => {
                       <PlusCircle size={18} /> Create New
                     </button>
                   </div>
-                  {estimateView === 'form' && editingEstimateId && (
-                    <button
-                      onClick={() => window.open(`${api.defaults.baseURL}/estimates/${editingEstimateId}/preview_pdf/`, '_blank')}
-                      className="ae-btn-secondary"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        fontSize: '0.85rem',
-                        height: '32px',
-                        borderRadius: '8px',
-                        color: '#718096',
-                        border: '1px solid #E2E8F0',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: 'transparent'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                        e.currentTarget.style.color = 'var(--ae-orange)';
-                        e.currentTarget.style.borderColor = 'var(--ae-orange)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = '#718096';
-                        e.currentTarget.style.borderColor = '#E2E8F0';
-                      }}
-                    >
-                      <Eye size={16} /> Preview
-                    </button>
-                  )}
                 </div>
 
                 {estimateView === 'form' ? (

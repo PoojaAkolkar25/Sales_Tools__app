@@ -41,17 +41,6 @@ const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: stri
         { key: 'msme_number', label: 'MSME No', shortLabel: 'MSME' },
         { key: 'payment_terms', label: 'Payment Terms', shortLabel: 'Terms' },
     ],
-    end_customer: [
-        { key: 'end_customer_code', label: 'Code', shortLabel: 'Code' },
-        { key: 'name', label: 'End user Name', shortLabel: 'Name' },
-        { key: 'linked_partner_name', label: 'Linked Partner', shortLabel: 'Part' },
-        { key: 'industry', label: 'Industry', shortLabel: 'Ind' },
-        { key: 'location', label: 'Location', shortLabel: 'Loc' },
-        { key: 'contact_person', label: 'Contact Person', shortLabel: 'Cont' },
-        { key: 'email', label: 'Email', shortLabel: 'Mail' },
-        { key: 'phone', label: 'Phone', shortLabel: 'Ph' },
-        { key: 'status', label: 'Status', shortLabel: 'Stat' },
-    ],
     company: [
         { key: 'name', label: 'Customer Name', shortLabel: 'Co' },
         { key: 'entity', label: 'Entity', shortLabel: 'Ent' },
@@ -76,6 +65,17 @@ const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: stri
         { key: 'tan', label: 'TAN', shortLabel: 'TAN' },
         { key: 'cin', label: 'CIN', shortLabel: 'CIN' },
         { key: 'msme_number', label: 'MSME No', shortLabel: 'MSME' },
+    ],
+    end_customer: [
+        { key: 'end_customer_code', label: 'Code', shortLabel: 'Code' },
+        { key: 'name', label: 'End user Name', shortLabel: 'Name' },
+        { key: 'linked_partner_name', label: 'Linked Partner', shortLabel: 'Part' },
+        { key: 'industry', label: 'Industry', shortLabel: 'Ind' },
+        { key: 'location', label: 'Location', shortLabel: 'Loc' },
+        { key: 'contact_person', label: 'Contact Person', shortLabel: 'Cont' },
+        { key: 'email', label: 'Email', shortLabel: 'Mail' },
+        { key: 'phone', label: 'Phone', shortLabel: 'Ph' },
+        { key: 'status', label: 'Status', shortLabel: 'Stat' },
     ],
     financial_year: [
         { key: 'label', label: 'Financial Year', shortLabel: 'FY' },
@@ -1430,10 +1430,15 @@ const UserManagement: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                        {showForm ? `${editingId ? 'Edit' : 'Create New'} ${viewMode === 'user' ? 'User' :
-                            viewMode === 'partner' ? 'Company' :
-                                viewMode === 'end_customer' ? 'End user Name' : 'Customer'
-                            }` : (
+                        {showForm ? (
+                            viewMode === 'financial_year' ? 'Financial Year' :
+                                `${editingId ? 'Edit' : 'Create New'} ${viewMode === 'user' ? 'User' :
+                                    viewMode === 'partner' ? 'Company' :
+                                        viewMode === 'end_customer' ? 'End user Name' :
+                                            viewMode === 'product' ? 'Product / Service' :
+                                                'Customer'
+                                }`
+                        ) : (
                             viewMode === 'user' ? 'User Management' :
                                 viewMode === 'partner' ? 'Company Management' :
                                     viewMode === 'end_customer' ? 'End user Name Management' :
@@ -1598,25 +1603,6 @@ const UserManagement: React.FC = () => {
                                 <Shield size={14} /> Company
                             </button>
                             <button
-                                onClick={() => { setViewMode('end_customer'); setColumnFilters({}); }}
-                                style={{
-                                    padding: '6px 20px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    background: viewMode === 'end_customer' ? 'var(--theme-primary)' : 'transparent',
-                                    color: viewMode === 'end_customer' ? 'white' : 'var(--text-secondary)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px'
-                                }}
-                            >
-                                <Users size={14} /> End user Name
-                            </button>
-                            <button
                                 onClick={() => { setViewMode('company'); setColumnFilters({}); }}
                                 style={{
                                     padding: '6px 20px',
@@ -1634,6 +1620,25 @@ const UserManagement: React.FC = () => {
                                 }}
                             >
                                 <Users size={14} /> Customer
+                            </button>
+                            <button
+                                onClick={() => { setViewMode('end_customer'); setColumnFilters({}); }}
+                                style={{
+                                    padding: '6px 20px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    background: viewMode === 'end_customer' ? 'var(--theme-primary)' : 'transparent',
+                                    color: viewMode === 'end_customer' ? 'white' : 'var(--text-secondary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}
+                            >
+                                <Users size={14} /> End user Name
                             </button>
                             <button
                                 onClick={() => { setViewMode('financial_year'); setColumnFilters({}); }}
@@ -2075,18 +2080,7 @@ const UserManagement: React.FC = () => {
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
-                                            <div>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Phone Number
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Phone Number"
-                                                    value={partnerFormData.phone_number}
-                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, phone_number: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                                />
-                                            </div>
+
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Mobile Number
