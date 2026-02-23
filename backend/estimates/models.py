@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from decimal import Decimal
 from cost_sheets.models import CostSheet
 from deals.models import Deal
 
@@ -99,14 +100,19 @@ class EstimateItem(models.Model):
     subscription_from = models.DateField(null=True, blank=True)
     subscription_to = models.DateField(null=True, blank=True)
     hsn_sac = models.CharField(max_length=20, blank=True, default='', verbose_name="HSN/SAC")
-    qty = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    qty = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
     unit = models.CharField(max_length=20, default='Nos')
-    rate = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
-    discount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
-    amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    rate = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
+    discount = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
+    amount = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
     
     def save(self, *args, **kwargs):
-        self.amount = (self.qty * self.rate) - self.discount
+        # Ensure values are Decimal before calculation to avoid TypeError with floats
+        qty = Decimal(str(self.qty)) if self.qty is not None else Decimal('0.00')
+        rate = Decimal(str(self.rate)) if self.rate is not None else Decimal('0.00')
+        discount = Decimal(str(self.discount)) if self.discount is not None else Decimal('0.00')
+        
+        self.amount = (qty * rate) - discount
         super().save(*args, **kwargs)
 
     def __str__(self):

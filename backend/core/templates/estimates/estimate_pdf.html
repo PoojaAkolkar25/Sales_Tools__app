@@ -163,6 +163,34 @@
         .blue {
             color: #003399;
         }
+
+        .col-sr {
+            width: 5%;
+        }
+
+        .col-description {
+            width: 45%;
+        }
+
+        .col-qty {
+            width: 10%;
+        }
+
+        .col-rate {
+            width: 20%;
+        }
+
+        .col-discount {
+            width: 10%;
+        }
+
+        .col-amount {
+            width: 20%;
+        }
+
+        .has-discount .col-description {
+            width: 35%;
+        }
     </style>
 </head>
 {% load date_filters %}
@@ -248,10 +276,8 @@
                 <div><span class="bold">PAN/TIN No.:</span> {{ estimate.deal.customer.pan }}</div>
                 {% endif %}
                 {% if estimate.deal.customer.state %}
-                <div><span class="bold">State Name:</span> {{
-          estimate.deal.customer.state.name|default:estimate.deal.customer.state }}, <span
-                        class="bold">Code:</span> {{
-          estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
+                <div><span class="bold">State Name:</span> {{ estimate.deal.customer.state.name|default:estimate.deal.customer.state }}, <span
+                        class="bold">Code:</span> {{ estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
                 {% endif %}
             </td>
             <td class="address-col">
@@ -266,10 +292,8 @@
                 <div><span class="bold">PAN/TIN No.:</span> {{ estimate.deal.customer.pan }}</div>
                 {% endif %}
                 {% if estimate.deal.customer.state %}
-                <div><span class="bold">State Name:</span> {{
-          estimate.deal.customer.state.name|default:estimate.deal.customer.state }}, <span
-                        class="bold">Code:</span> {{
-          estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
+                <div><span class="bold">State Name:</span> {{ estimate.deal.customer.state.name|default:estimate.deal.customer.state }}, <span
+                        class="bold">Code:</span> {{ estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
                 {% endif %}
             </td>
         </tr>
@@ -277,14 +301,17 @@
     <div class="dashed-divider" style="margin-top: 5px;"></div>
 
     <!-- Items Table -->
-    <table class="items-table">
+    <table class="items-table {% if has_discount %}has-discount{% endif %}">
         <thead>
             <tr>
-                <th style="width: 5%;" class="text-center">SR.NO.</th>
-                <th style="width: 45%;">DESCRIPTION</th>
-                <th style="width: 10%;" class="text-center">QTY</th>
-                <th style="width: 20%;" class="text-right">RATE</th>
-                <th style="width: 20%;" class="text-right">AMOUNT</th>
+                <th class="text-center col-sr">SR.NO.</th>
+                <th class="col-description">DESCRIPTION</th>
+                <th class="text-center col-qty">QTY</th>
+                <th class="text-right col-rate">RATE</th>
+                {% if has_discount %}
+                <th class="text-right col-discount">DISCOUNT</th>
+                {% endif %}
+                <th class="text-right col-amount">AMOUNT</th>
             </tr>
         </thead>
         <tbody>
@@ -296,24 +323,23 @@
                     <div style="font-size: 7.5pt; color: #555;">{{ item.description|linebreaksbr }}</div>
                     {% if item.subscription_from or item.subscription_to %}
                     <div style="font-size: 7pt; color: #777;">
-                        Period: {{ item.subscription_from|date:"d/m/Y"|default:"-" }} to {{
-            item.subscription_to|date:"d/m/Y"|default:"-" }}
+                        Period: {{ item.subscription_from|date:"d/m/Y"|default:"-" }} to {{ item.subscription_to|date:"d/m/Y"|default:"-" }}
                     </div>
                     {% endif %}
                 </td>
                 <td class="text-center">{{ item.qty|floatformat:0 }} {{ item.unit|default:"" }}</td>
                 <td class="text-right">{{ currency_symbol }} {{ item.rate|floatformat:2 }}</td>
-                <td class="text-right bold">
-                    {% if has_discount and item.discount > 0 %}<span style="color: #c53030; font-size: 7pt;">(Disc: {{
-            item.discount }}) </span>{% endif %}
-                    {{ currency_symbol }} {{ item.amount|floatformat:2 }}
-                </td>
+                {% if has_discount %}
+                <td class="text-right">{{ currency_symbol }} {{ item.discount|default:0|floatformat:2 }}</td>
+                {% endif %}
+                <td class="text-right bold">{{ currency_symbol }} {{ item.amount|floatformat:2 }}</td>
             </tr>
             {% endfor %}
             <tr class="total-row">
                 <td colspan="2" style="text-align: right; padding-right: 15px;">TOTAL</td>
                 <td class="text-center">{{ estimate.total_qty|floatformat:0 }}</td>
                 <td class="text-right"></td>
+                {% if has_discount %}<td class="text-right"></td>{% endif %}
                 <td class="text-right bold">{{ currency_symbol }} {{ estimate.total_price|floatformat:2 }}</td>
             </tr>
         </tbody>
@@ -356,6 +382,7 @@
                     {% else %}
                     No primary bank details found.
                     {% endif %}
+                </div>
             </td>
             <td style="width: 50%; text-align: right;">
                 <div class="bold blue" style="text-transform: uppercase; font-size: 10pt;">{{ company.name }}</div>
