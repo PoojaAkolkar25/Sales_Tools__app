@@ -17,6 +17,7 @@ interface SearchableDropdownProps {
     className?: string;
     disabled?: boolean;
     allowCustom?: boolean;
+    required?: boolean;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -29,7 +30,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     addNewLabel = 'Add New',
     className = '',
     disabled = false,
-    allowCustom = false
+    allowCustom = false,
+    required = false
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [inputText, setInputText] = useState('');
@@ -114,7 +116,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         <div className={`ae-searchable-dropdown ${className}`} ref={containerRef}>
             {label && (
                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
-                    {label}
+                    {label} {required && <span style={{ color: 'var(--theme-primary)' }}>*</span>}
                 </label>
             )}
 

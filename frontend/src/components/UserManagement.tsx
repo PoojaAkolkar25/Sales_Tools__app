@@ -215,7 +215,7 @@ const UserManagement: React.FC = () => {
         type: 'CUSTOMER',
         payment_terms: 'NET_30',
         base_currency: 'INR',
-        currency_symbol: '? / INR',
+        currency_symbol: '₹ / INR',
         decimal_places: '' as any, // Initialize as empty string for placeholder
         is_gst_applicable: true,
         gstin: '',
@@ -241,7 +241,7 @@ const UserManagement: React.FC = () => {
         website_url: '',
         primary_contact: '',
         base_currency: 'INR',
-        currency_symbol: '? / INR',
+        currency_symbol: '₹ / INR',
         decimal_places: 2 as any,
         is_gst_applicable: true,
         gstin: '',
