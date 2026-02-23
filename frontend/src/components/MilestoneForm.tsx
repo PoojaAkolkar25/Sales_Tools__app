@@ -255,9 +255,10 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                 }))
             };
 
-            await api.post('/milestones/bulk_save/', payload);
+            const response = await api.post('/milestones/bulk_save/', payload);
 
-            showNotification('Milestones saved and draft invoices generated successfully', 'success');
+            const msg = response.data?.message || 'Milestones saved and draft invoices generated successfully';
+            showNotification(msg, 'success');
             onBack();
         } catch (error: any) {
             showNotification(error.response?.data?.error || 'Failed to save milestones', 'error');

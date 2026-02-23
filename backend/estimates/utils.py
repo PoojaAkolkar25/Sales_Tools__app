@@ -4,7 +4,8 @@ from django.conf import settings
 from xhtml2pdf import pisa
 from pypdf import PdfWriter, PdfReader
 import logging
-from finance.models import CompanyProfile
+from datetime import date
+from finance.models import CompanyProfile, BankConnection
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +20,50 @@ def generate_estimate_pdf(estimate):
         items = estimate.items.all().order_by('sr_no')
         has_discount = any(float(item.discount or 0) > 0 for item in items)
         
+        from finance.services import InvoiceService
+        
+        # Map currency codes to PDF-safe display symbols
+        currency_symbols = {
+            'INR': 'Rs.',
+            'USD': '$',
+            'EUR': 'EUR',
+            'GBP': 'GBP',
+            'AED': 'AED',
+            'SGD': 'S$',
+        }
+        currency_code = getattr(estimate.deal, 'currency', 'INR')
+        currency_symbol = currency_symbols.get(currency_code, currency_code)
+        
+        # Calculate grand total words (strip commas for clean display)
+        grand_total_words = InvoiceService.number_to_words(estimate.total_price, currency_code).replace(',', '')
+
+        bank = BankConnection.objects.filter(is_primary_for_invoices=True).first()
+        if not bank:
+            bank = BankConnection.objects.filter(is_active=True).first()
+        
+        # Determine PO Number and Date
+        po_number = getattr(estimate, 'po_number', None)
+        po_date = getattr(estimate, 'po_date', None)
+        
+        # If not on estimate, try to pull from deal/SO if exists (mirroring invoice logic)
+        if not po_number and estimate.deal:
+            from sales_orders.models import SalesOrder
+            so = SalesOrder.objects.filter(customer=estimate.deal.customer).order_by('-created_at').first()
+            if so:
+                po_number = so.po_number
+                po_date = so.po_date
+
         context = {
             'estimate': estimate,
             'items': items,
             'company': company,
+            'bank': bank,
+            'po_number': po_number,
+            'po_date': po_date,
             'has_discount': has_discount,
+            'currency_symbol': currency_symbol,
+            'grand_total_words': grand_total_words,
+            'now': date.today()
         }
         
         # Render HTML

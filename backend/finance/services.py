@@ -159,13 +159,17 @@ class InvoiceService:
     def number_to_words(number, currency='INR'):
         """
         Simple number to words converter for INR and USD.
+        Commas are stripped so the output reads cleanly (e.g. "Twenty Six Lakh" not "Twenty-Six Lakh,").
         """
         try:
             from num2words import num2words
             if currency == 'INR':
-                return num2words(int(number), lang='en_IN').title() + " Only"
+                words = num2words(int(number), lang='en_IN').title()
             else:
-                return num2words(int(number), lang='en').title() + " Only"
+                words = num2words(int(number), lang='en').title()
+            # Remove commas from the words output
+            words = words.replace(',', '')
+            return words + " Only"
         except ImportError:
             return f"{number} Only"
 
@@ -197,6 +201,21 @@ class InvoiceService:
                 po_number = so.po_number
                 po_date = so.po_date
 
+        # Map currency codes to PDF-safe display symbols
+        # Note: xhtml2pdf default fonts do not support ₹ (U+20B9) — use 'Rs.' instead
+        currency_symbols = {
+            'INR': 'Rs.',
+            'USD': '$',
+            'EUR': 'EUR',
+            'GBP': 'GBP',
+            'AED': 'AED',
+            'SGD': 'S$',
+        }
+        currency_symbol = currency_symbols.get(invoice.currency, invoice.currency)
+
+        # Strip commas from grand_total_words (DB may have old values with commas)
+        grand_total_words_clean = (invoice.grand_total_words or '').replace(',', '')
+
         context = {
             'invoice': invoice,
             'items': items,
@@ -204,7 +223,9 @@ class InvoiceService:
             'bank': bank,
             'po_number': po_number,
             'po_date': po_date,
-            'now': date.today()
+            'now': date.today(),
+            'currency_symbol': currency_symbol,
+            'grand_total_words': grand_total_words_clean,
         }
         
         html_string = render_to_string('finance/invoice_pdf.html', context)

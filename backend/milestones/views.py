@@ -250,6 +250,9 @@ class MilestoneViewSet(viewsets.ModelViewSet):
         Milestone.objects.filter(id__in=to_delete).delete()
 
         saved_milestones = []
+        invoices_created = 0
+        already_invoiced = False
+
         for m_data in milestones_data:
             milestone_id = m_data.get('id')
             
@@ -274,12 +277,27 @@ class MilestoneViewSet(viewsets.ModelViewSet):
                 milestone = Milestone.objects.create(**payload)
 
             # 3. Create invoice if pending and not already invoiced
-            if milestone.status == MilestoneStatus.PENDING and not milestone.invoice:
+            if (milestone.status == MilestoneStatus.PENDING or milestone.status == 'PENDING') and not milestone.invoice:
                 self._internal_create_invoice(milestone)
+                invoices_created += 1
+            elif getattr(milestone, 'invoice', None) or milestone.status == MilestoneStatus.INVOICED or milestone.status == 'INVOICED':
+                already_invoiced = True
             
             saved_milestones.append(milestone)
 
-        return Response(MilestoneSerializer(saved_milestones, many=True).data)
+        if invoices_created > 0:
+            msg = f"Milestones saved. {invoices_created} draft invoice(s) generated successfully."
+            if already_invoiced:
+                 msg += " Some milestones were already invoiced."
+        elif already_invoiced:
+            msg = "Milestones saved. Note: Invoices were already created for these milestones."
+        else:
+            msg = "Milestones saved successfully."
+
+        return Response({
+            "message": msg,
+            "data": MilestoneSerializer(saved_milestones, many=True).data
+        })
 
     def _internal_create_invoice(self, milestone):
         """
@@ -301,7 +319,7 @@ class MilestoneViewSet(viewsets.ModelViewSet):
             'description': f"{milestone.milestone_no}: {milestone.description}",
             'hsn_sac': '998311',
             'quantity': milestone.qty or 1,
-            'rate': milestone.rate or 0,
+            'rate': milestone.amount or 0,
             'discount': 0,
             'gst_rate': 18
         }]
