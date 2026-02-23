@@ -482,8 +482,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
             return;
         }
 
-        if (!formData.subscription_from || !formData.subscription_to) {
-            showNotification('Subscription Period (From and To) is mandatory.', 'error');
+        const validFromDates = formData.items.map((i: any) => i.subscription_from).filter(Boolean).sort();
+        const earliestFrom = validFromDates.length > 0 ? validFromDates[0] : '';
+
+        const validToDates = formData.items.map((i: any) => i.subscription_to).filter(Boolean).sort().reverse();
+        const latestTo = validToDates.length > 0 ? validToDates[0] : '';
+
+        if (!earliestFrom || !latestTo) {
+            showNotification('Subscription Period (From and To) is mandatory on at least one item.', 'error');
             return;
         }
 
@@ -491,6 +497,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         // Prepare data for saving
         const payload = {
             ...formData,
+            subscription_from: earliestFrom,
+            subscription_to: latestTo,
             // Ensure qty and rate are numeric
             items: formData.items.map((item: any) => ({
                 ...item,
@@ -892,6 +900,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         setEstimate({
                                             customer_name: csData.customer_name,
                                             cost_sheet_no: csData.cost_sheet_no,
+                                            cost_sheet_price: csData.total_estimated_price, // Total Est. Price from cost sheet
                                             deal_id: csData.deal_no,
                                             deal_amount: csData.deal_amount,
                                             total_price: csData.total_estimated_price // For validation

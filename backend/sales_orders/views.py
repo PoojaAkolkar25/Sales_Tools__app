@@ -211,6 +211,10 @@ class PurchaseOrderFileViewSet(viewsets.ModelViewSet):
         if not file:
             return Response({"error": "File is required."}, status=status.HTTP_400_BAD_REQUEST)
             
+        from .vertex_model import is_model_ready
+        if not is_model_ready():
+            return Response({"error": "Vertex AI key is not valid or configuration is missing."}, status=status.HTTP_400_BAD_REQUEST)
+            
         po_file = PurchaseOrderFile.objects.create(file=file)
         
         # Trigger Extraction using the new service

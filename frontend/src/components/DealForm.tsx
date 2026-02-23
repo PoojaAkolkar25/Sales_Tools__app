@@ -15,6 +15,14 @@ import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
 import SearchableDropdown from './SearchableDropdown';
+import {
+    insideSalespersonNames,
+    insideSalesHeads,
+    salespersonNames,
+    salesHeads,
+    projectManagers,
+    projectManagerHeads
+} from '../data/dealTeamSampleData';
 
 interface DealFormProps {
     id: number | null;
@@ -461,9 +469,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
             delete (dataToSubmit as any).created_at;
             delete (dataToSubmit as any).updated_at;
 
-            let finalId = id;
-            if (id) {
-                await api.put(`/deals/${id}/`, dataToSubmit);
+            let finalId = localId;
+            if (localId) {
+                await api.put(`/deals/${localId}/`, dataToSubmit);
                 if (!isAutoSave) showNotification('Deal updated successfully', 'success');
             } else {
                 const res = await api.post('/deals/', dataToSubmit);
@@ -839,7 +847,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
                                     label="Inside Salesperson Name"
-                                    options={[]}
+                                    options={insideSalespersonNames}
                                     value={formData.inside_salesperson}
                                     onChange={(val) => handleInputChange({ target: { name: 'inside_salesperson', value: val } } as any)}
                                     placeholder="Inside Salesperson Name"
@@ -849,7 +857,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
                                     label="Inside Sales Head"
-                                    options={[]}
+                                    options={insideSalesHeads}
                                     value={formData.inside_sales_head}
                                     onChange={(val) => handleInputChange({ target: { name: 'inside_sales_head', value: val } } as any)}
                                     placeholder="Inside Sales Head"
@@ -859,7 +867,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
                                     label="Salesperson Name"
-                                    options={[]}
+                                    options={salespersonNames}
                                     value={formData.salesperson_name}
                                     onChange={(val) => handleInputChange({ target: { name: 'salesperson_name', value: val } } as any)}
                                     placeholder="Salesperson Name"
@@ -869,7 +877,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
                                     label="Sales Head"
-                                    options={[]}
+                                    options={salesHeads}
                                     value={formData.sales_head}
                                     onChange={(val) => handleInputChange({ target: { name: 'sales_head', value: val } } as any)}
                                     placeholder="Sales Head"
@@ -882,7 +890,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
                                     label="Project Manager"
-                                    options={[]}
+                                    options={projectManagers}
                                     value={formData.project_manager}
                                     onChange={(val) => handleInputChange({ target: { name: 'project_manager', value: val } } as any)}
                                     placeholder="Project Manager"
@@ -892,7 +900,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
                                     label="Project Manager Head"
-                                    options={[]}
+                                    options={projectManagerHeads}
                                     value={formData.project_manager_head}
                                     onChange={(val) => handleInputChange({ target: { name: 'project_manager_head', value: val } } as any)}
                                     placeholder="Project Manager Head"
