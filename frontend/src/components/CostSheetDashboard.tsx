@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Search, FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw, ChevronLeft, ChevronRight, Plus, Minus, Save, PlusCircle, X } from 'lucide-react';
+import { Eye, Search, FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw, ChevronLeft, ChevronRight, Plus, Minus, PlusCircle, X } from 'lucide-react';
 import api from '../api';
 import { formatToAppDate } from '../utils/dateUtils';
 import Pagination from './Pagination';
@@ -411,15 +411,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                 matchesStatus && matchesDateStr && matchesPeriod &&
                 matchesStatusStr && matchesMargin && matchesEstMargin && matchesTotalPrice;
         }).sort((a, b) => {
-            // Priority 1: SUBMITTED (Pending Approval) items at the absolute top
-            if (a.status === 'SUBMITTED' && b.status !== 'SUBMITTED') return -1;
-            if (a.status !== 'SUBMITTED' && b.status === 'SUBMITTED') return 1;
-
-            // Priority 2: PENDING (Draft) items at the absolute bottom
-            if (a.status === 'PENDING' && b.status !== 'PENDING') return 1;
-            if (a.status !== 'PENDING' && b.status === 'PENDING') return -1;
-
-            // Priority 3: Newest first for everything
+            // Newest first for everything (descending order)
             const dateA = new Date(a.cost_sheet_date || a.created_at).getTime();
             const dateB = new Date(b.cost_sheet_date || b.created_at).getTime();
 
@@ -1143,24 +1135,14 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                                             boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                                                                         }}>
                                                                             {(cs.status === 'PENDING' || cs.status === 'REVERTED') && (
-                                                                                <>
-                                                                                    <button
-                                                                                        onClick={() => handleQuickStatusUpdate(cs.id, 'PENDING')}
-                                                                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '10px', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-                                                                                        onMouseOver={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-                                                                                        onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                                                                                    >
-                                                                                        <Save size={14} /> Save as Draft
-                                                                                    </button>
-                                                                                    <button
-                                                                                        onClick={() => handleQuickStatusUpdate(cs.id, 'SUBMITTED')}
-                                                                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 20px', borderRadius: '10px', border: 'none', background: 'var(--theme-primary)', color: 'white', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-                                                                                        onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 10px rgba(255,107,0,0.3)'; }}
-                                                                                        onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-                                                                                    >
-                                                                                        <PlusCircle size={16} /> Submit for Approval
-                                                                                    </button>
-                                                                                </>
+                                                                                <button
+                                                                                    onClick={() => handleQuickStatusUpdate(cs.id, 'SUBMITTED')}
+                                                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 20px', borderRadius: '10px', border: 'none', background: 'var(--theme-primary)', color: 'white', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                                    onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 10px rgba(255,107,0,0.3)'; }}
+                                                                                    onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                                                                                >
+                                                                                    <PlusCircle size={16} /> Submit for Approval
+                                                                                </button>
                                                                             )}
                                                                             <button
                                                                                 onClick={() => toggleRow(cs.id)}
