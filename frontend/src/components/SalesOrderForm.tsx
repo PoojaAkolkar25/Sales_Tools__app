@@ -340,46 +340,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 </h2>
             </div>
             {extra}
-            {(salesOrder.status === 'PENDING_APPROVAL' || salesOrder.status === 'SUBMITTED') && title === 'Basic Order Information' && (
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button
-                        onClick={handleApprove}
-                        disabled={saving}
-                        style={{
-                            padding: '6px 16px',
-                            borderRadius: '6px',
-                            background: '#48BB78',
-                            color: 'white',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}
-                    >
-                        <CheckCircle2 size={16} /> Approve
-                    </button>
-                    <button
-                        onClick={handleReject}
-                        disabled={saving}
-                        style={{
-                            padding: '6px 16px',
-                            borderRadius: '6px',
-                            background: '#F56565',
-                            color: 'white',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}
-                    >
-                        <X size={16} /> Reject
-                    </button>
-                </div>
-            )}
+
             {salesOrder.status === 'APPROVED' && title === 'Basic Order Information' && (
                 <div style={{
                     padding: '6px 16px',
@@ -1026,6 +987,59 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                         >
                             <PlusCircle size={18} />
                             <span>Submit for Approval</span>
+                        </button>
+                    </>
+                )}
+
+                {(salesOrder.status === 'PENDING_APPROVAL' || salesOrder.status === 'SUBMITTED') && (
+                    <>
+                        <button
+                            onClick={handleApprove}
+                            disabled={saving}
+                            style={{
+                                height: '38px',
+                                padding: '0 18px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                border: 'none',
+                                background: hoveredBtn === 'approve' ? '#48BB78' : 'transparent',
+                                color: hoveredBtn === 'approve' ? 'white' : 'var(--text-secondary)',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer',
+                                boxShadow: hoveredBtn === 'approve' ? '0 2px 8px rgba(72, 187, 120, 0.2)' : 'none'
+                            }}
+                            onMouseEnter={() => !isConfirmingExit && setHoveredBtn('approve')}
+                        >
+                            <CheckCircle2 size={16} />
+                            <span>Approve</span>
+                        </button>
+                        <button
+                            onClick={handleReject}
+                            disabled={saving}
+                            style={{
+                                height: '38px',
+                                padding: '0 18px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                border: 'none',
+                                background: hoveredBtn === 'reject' ? '#F56565' : 'transparent',
+                                color: hoveredBtn === 'reject' ? 'white' : 'var(--text-secondary)',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer',
+                                boxShadow: hoveredBtn === 'reject' ? '0 2px 8px rgba(245, 101, 101, 0.2)' : 'none'
+                            }}
+                            onMouseEnter={() => !isConfirmingExit && setHoveredBtn('reject')}
+                        >
+                            <X size={16} />
+                            <span>Reject</span>
                         </button>
                     </>
                 )}
