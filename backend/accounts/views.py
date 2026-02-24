@@ -10,6 +10,8 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
+from deals.models import AuditTrail
 from .serializers import UserSerializer
 import logging
 
@@ -192,14 +194,38 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         try:
-            serializer.save()
+            user = serializer.save()
+            
+            # Log audit trail for user creation
+            content_type = ContentType.objects.get_for_model(User)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=user.id,
+                user=self.request.user,
+                action_type='CREATE',
+                field_name='created',
+                old_value='',
+                new_value=f'User {user.username} created'
+            )
         except Exception as e:
             logger.error(f"Error creating user: {str(e)}", exc_info=True)
             raise
 
     def perform_update(self, serializer):
         try:
-            serializer.save()
+            user = serializer.save()
+            
+            # Log audit trail for user update
+            content_type = ContentType.objects.get_for_model(User)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=user.id,
+                user=self.request.user,
+                action_type='UPDATE',
+                field_name='username',
+                old_value=user.username,
+                new_value=f'User profile for {user.username} updated'
+            )
         except Exception as e:
             logger.error(f"Error updating user: {str(e)}", exc_info=True)
             raise
@@ -208,8 +234,22 @@ class UserViewSet(viewsets.ModelViewSet):
     def toggle_status(self, request, pk=None):
         try:
             user = self.get_object()
+            old_status = user.is_active
             user.is_active = not user.is_active
             user.save()
+            
+            # Log audit trail for status toggle
+            content_type = ContentType.objects.get_for_model(User)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=user.id,
+                user=request.user,
+                action_type='UPDATE',
+                field_name='is_active',
+                old_value=str(old_status),
+                new_value=str(user.is_active)
+            )
+            
             return Response({
                 'status': 'success',
                 'is_active': user.is_active,

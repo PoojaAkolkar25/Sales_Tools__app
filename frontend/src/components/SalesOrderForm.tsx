@@ -23,10 +23,37 @@ interface SalesOrderFormProps {
     isExtractingSO?: boolean;
 }
 
-const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) => {
+const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onUploadPO, isExtractingSO }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [salesOrder, setSalesOrder] = useState<any>(null);
+    const [salesOrder, setSalesOrder] = useState<any>(id ? null : {
+        so_number: '',
+        customer_name: '',
+        customer_code: '',
+        po_number: '',
+        po_date: '',
+        po_from_date: '',
+        po_to_date: '',
+        currency: 'INR',
+        order_date: new Date().toISOString().split('T')[0],
+        billing_address: '',
+        shipping_address: '',
+        items: [{
+            item_type: 'LICENSE',
+            product: '',
+            product_name: '',
+            description: '',
+            start_date: '',
+            end_date: '',
+            qty: 1,
+            rate: 0,
+            tax: 0,
+            discount: 0,
+            amount: 0
+        }],
+        total_amount: 0,
+        status: 'DRAFT'
+    });
 
 
     const [hoveredBtn, setHoveredBtn] = useState<string | null>('submit');
@@ -170,8 +197,13 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 }))
             };
 
-            await api.patch(`/sales-orders/${id}/`, payload);
-            showNotification('Sales Order updated successfully', 'success');
+            if (id) {
+                await api.patch(`/sales-orders/${id}/`, payload);
+                showNotification('Sales Order updated successfully', 'success');
+            } else {
+                await api.post('/sales-orders/', payload);
+                showNotification('Sales Order created successfully', 'success');
+            }
             onSave();
         } catch (error: any) {
             console.error('Save Error:', error);
@@ -233,10 +265,16 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 }))
             };
 
-            await api.patch(`/sales-orders/${id}/`, payload);
+            let currentId = id;
+            if (id) {
+                await api.patch(`/sales-orders/${id}/`, payload);
+            } else {
+                const response = await api.post('/sales-orders/', payload);
+                currentId = response.data.id;
+            }
 
             // Then, trigger the submit action
-            await api.post(`/sales-orders/${id}/submit/`);
+            await api.post(`/sales-orders/${currentId}/submit/`);
             showNotification('Sales Order submitted successfully', 'success');
             onSave();
         } catch (error: any) {
@@ -874,44 +912,46 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                     </section>
 
                     {/* 4. Source Document Section */}
-                    <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
-                        <SectionHeader title="Source Document" />
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '16px 24px',
-                            background: '#F8FAFC',
-                            borderRadius: '8px',
-                            border: '1px solid #E2E8F0'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <FileText size={40} style={{ color: 'var(--theme-primary)' }} />
-                                <div>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>{salesOrder.po_file_name || 'PurchaseOrder.pdf'}</p>
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: 0 }}>PDF document uploaded via Extraction Engine</p>
+                    {salesOrder.po_file_url && (
+                        <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                            <SectionHeader title="Source Document" />
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '16px 24px',
+                                background: '#F8FAFC',
+                                borderRadius: '8px',
+                                border: '1px solid #E2E8F0'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    <FileText size={40} style={{ color: 'var(--theme-primary)' }} />
+                                    <div>
+                                        <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>{salesOrder.po_file_name || 'PurchaseOrder.pdf'}</p>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: 0 }}>PDF document uploaded via Extraction Engine</p>
+                                    </div>
                                 </div>
+                                <button
+                                    onClick={handleViewPDF}
+                                    style={{
+                                        padding: '8px 20px',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--border-primary)',
+                                        background: 'white',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        color: 'var(--text-secondary)'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                >
+                                    View PDF
+                                </button>
                             </div>
-                            <button
-                                onClick={handleViewPDF}
-                                style={{
-                                    padding: '8px 20px',
-                                    borderRadius: '6px',
-                                    border: '1px solid var(--border-primary)',
-                                    background: 'white',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    color: 'var(--text-secondary)'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                            >
-                                View PDF
-                            </button>
-                        </div>
-                    </section>
+                        </section>
+                    )}
                 </div>
             </div>
 

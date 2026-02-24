@@ -133,7 +133,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                         {/* Company Name */}
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                Company Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                Entity <span style={{ color: 'var(--theme-primary)' }}>*</span>
                             </label>
                             <SearchableDropdown
                                 options={[

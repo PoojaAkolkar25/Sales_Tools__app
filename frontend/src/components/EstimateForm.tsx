@@ -42,10 +42,11 @@ const getInitialFormData = () => ({
     deal: '',
     cost_sheet: '',
     items: [
-        { id: Date.now(), sr_no: 1, particulars: '', description: '', subscription_from: '', subscription_to: '', qty: 0, rate: 0, discount: 0, amount: 0 }
+        { id: Date.now(), sr_no: 1, item_type: 'License', particulars: '', description: '', subscription_from: '', subscription_to: '', qty: 0, rate: 0, discount: 0, amount: 0 }
     ],
     column_labels: {
         sr_no: 'Sr.No.',
+        item_type: 'Type',
         particulars: 'Particulars',
         description: 'Description',
         subscription_from: 'Sub. From',
@@ -309,13 +310,15 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                 cost_sheet: response.data.cost_sheet || '',
                 items: response.data.items?.length > 0 ? response.data.items.map((item: any) => ({
                     ...item,
+                    item_type: item.item_type || 'License',
                     subscription_from: item.subscription_from || '',
                     subscription_to: item.subscription_to || ''
                 })) : [
-                    { id: Date.now(), sr_no: 1, particulars: '', description: '', subscription_from: '', subscription_to: '', qty: 0, rate: 0, discount: 0, amount: 0 }
+                    { id: Date.now(), sr_no: 1, item_type: 'License', particulars: '', description: '', subscription_from: '', subscription_to: '', qty: 0, rate: 0, discount: 0, amount: 0 }
                 ],
                 column_labels: response.data.column_labels || {
                     sr_no: 'Sr.No.',
+                    item_type: 'Type',
                     particulars: 'Particulars',
                     description: 'Description',
                     subscription_from: 'Sub. From',
@@ -338,7 +341,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         const nextSrNo = formData.items.length + 1;
         setFormData({
             ...formData,
-            items: [...formData.items, { id: Date.now(), sr_no: nextSrNo, particulars: '', description: '', subscription_from: '', subscription_to: '', qty: 0, rate: 0, discount: 0, amount: 0 }]
+            items: [...formData.items, { id: Date.now(), sr_no: nextSrNo, item_type: 'License', particulars: '', description: '', subscription_from: '', subscription_to: '', qty: 0, rate: 0, discount: 0, amount: 0 }]
         });
     };
 
@@ -833,7 +836,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     const csId = val;
                                     setFormData({ ...formData, cost_sheet: csId });
                                     if (!csId) {
-                                        setFormData({ ...formData, cost_sheet: '', deal: '', items: [{ id: Date.now(), sr_no: 1, particulars: '', description: '', qty: 0, rate: 0, amount: 0 }] });
+                                        setFormData({ ...formData, cost_sheet: '', deal: '', items: [{ id: Date.now(), sr_no: 1, item_type: 'License', particulars: '', description: '', qty: 0, rate: 0, amount: 0 }] });
                                         setEstimate(null);
                                         return;
                                     }
@@ -858,6 +861,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                 newItems.push({
                                                     id: Date.now() + srNo,
                                                     sr_no: srNo++,
+                                                    item_type: prefix === 'License' ? 'License' : 'Service',
                                                     particulars,
                                                     description,
                                                     qty,
@@ -874,7 +878,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         addItems(csData.other_items, 'Other');
 
                                         if (newItems.length === 0) {
-                                            newItems.push({ id: Date.now(), sr_no: 1, particulars: '', description: '', qty: 0, rate: 0, amount: 0 });
+                                            newItems.push({ id: Date.now(), sr_no: 1, item_type: 'License', particulars: '', description: '', qty: 0, rate: 0, amount: 0 });
                                         }
 
                                         setFormData({
@@ -1130,6 +1134,37 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             <>
                                                 <span>{formData.column_labels.sr_no || 'Sr.No.'}</span>
                                                 {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('sr_no')} />}
+                                            </>
+                                        )}
+                                    </div>
+                                </th>
+                                <th style={{
+                                    padding: '6px 8px',
+                                    textAlign: 'left',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
+                                    color: 'black',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    borderBottom: '2px solid #E0E6ED',
+                                    whiteSpace: 'nowrap',
+                                    width: '120px'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {editingColumn === 'item_type' ? (
+                                            <input
+                                                autoFocus
+                                                className="ae-input-subtle"
+                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                value={formData.column_labels.item_type}
+                                                onChange={(e) => handleHeaderChange('item_type', e.target.value)}
+                                                onBlur={() => setEditingColumn(null)}
+                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                            />
+                                        ) : (
+                                            <>
+                                                <span>{formData.column_labels.item_type || 'Type'}</span>
+                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('item_type')} />}
                                             </>
                                         )}
                                     </div>
@@ -1412,6 +1447,27 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         {index + 1}
                                     </td>
                                     <td style={{ padding: '8px' }}>
+                                        <select
+                                            disabled={isReadOnly}
+                                            value={item.item_type || 'License'}
+                                            onChange={(e) => handleItemChange(item.id, 'item_type', e.target.value)}
+                                            style={{
+                                                fontSize: '0.8rem',
+                                                padding: '4px 8px',
+                                                height: '36px',
+                                                borderRadius: '8px',
+                                                width: '100%',
+                                                cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                                                fontWeight: 600,
+                                                border: '1px solid #E2E8F0',
+                                                background: 'white'
+                                            }}
+                                        >
+                                            <option value="License">License</option>
+                                            <option value="Service">Service</option>
+                                        </select>
+                                    </td>
+                                    <td style={{ padding: '8px' }}>
                                         <input
                                             className="ae-input"
                                             style={{ height: '36px', padding: '4px 8px', width: '100%' }}
@@ -1570,7 +1626,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                         </tbody>
                         <tfoot>
                             <tr style={{ background: '#F8FAFC' }}>
-                                <td colSpan={isReadOnly ? 8 : 9} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total:</td>
+                                <td colSpan={isReadOnly ? 9 : 10} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total:</td>
                                 <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: 'var(--theme-primary)' }}>
                                     {getCurrencySymbol(formData.currency || 'INR')}{calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </td>

@@ -270,7 +270,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
         // For Company Profile, validate required fields
         if (showAddModal.type === 'customer') {
             if (!newCompanyData.name || !newCompanyData.email) {
-                showNotification('Company Name and Email are required', 'warning');
+                showNotification('Entity and Email are required', 'warning');
                 return;
             }
         } else if (!newItemName) {
@@ -443,7 +443,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
 
     const handleSave = async (isAutoSave = false) => {
         if (!formData.deal_date || !formData.company || !formData.deal_name) {
-            if (!isAutoSave) showNotification('Please fill in required fields: Deal Date, Company Name, and Project Name', 'warning');
+            if (!isAutoSave) showNotification('Please fill in required fields: Deal Date, Entity, and Project Name', 'warning');
             return null;
         }
 
@@ -608,7 +608,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Company Name *</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Entity *</label>
                                 <input
                                     type="text"
                                     value={formData.company}
@@ -1213,13 +1213,13 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
                     <div style={{ background: 'white', padding: '32px', borderRadius: '12px', width: showAddModal.type === 'customer' ? '600px' : '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
                         <h3 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 800 }}>
-                            {showAddModal.type === 'customer' ? 'Add New Company Profile' : `Add New ${showAddModal.type.replace('_', ' ').toUpperCase()}`}
+                            {showAddModal.type === 'customer' ? 'Add New Entity' : `Add New ${showAddModal.type.replace('_', ' ').toUpperCase()}`}
                         </h3>
 
                         {showAddModal.type === 'customer' ? (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Company Name *</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Entity *</label>
                                     <input
                                         type="text"
                                         className="ae-input"

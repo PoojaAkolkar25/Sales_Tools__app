@@ -10,6 +10,8 @@ import io
 import xlsxwriter
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
+from django.contrib.contenttypes.models import ContentType
+from deals.models import AuditTrail
 import logging
 
 logger = logging.getLogger(__name__)
@@ -29,6 +31,71 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(status=status_filter)
         
         return queryset
+    
+    def perform_create(self, serializer):
+        """Create sales order and log audit trail"""
+        try:
+            sales_order = serializer.save()
+            
+            # Create audit log for creation
+            content_type = ContentType.objects.get_for_model(SalesOrder)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=sales_order.id,
+                user=self.request.user,
+                action_type='CREATE',
+                field_name='created',
+                old_value='',
+                new_value=f'Sales Order {sales_order.so_number or sales_order.id} created'
+            )
+        except Exception as e:
+            logger.error(f"Error in perform_create (SalesOrderViewSet): {str(e)}", exc_info=True)
+            raise
+
+    def update(self, request, *args, **kwargs):
+        """Update sales order and log field changes"""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        # Track original values for key fields
+        original_data = {
+            'po_number': instance.po_number or '',
+            'customer_name': instance.customer_name or '',
+            'customer_code': instance.customer_code or '',
+            'total_amount': str(instance.total_amount),
+            'currency': instance.currency,
+            'status': instance.status,
+        }
+        
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        # Log changes
+        content_type = ContentType.objects.get_for_model(SalesOrder)
+        new_data = {
+            'po_number': instance.po_number or '',
+            'customer_name': instance.customer_name or '',
+            'customer_code': instance.customer_code or '',
+            'total_amount': str(instance.total_amount),
+            'currency': instance.currency,
+            'status': instance.status,
+        }
+        
+        for field, old_value in original_data.items():
+            new_value = new_data[field]
+            if str(old_value) != str(new_value):
+                AuditTrail.objects.create(
+                    content_type=content_type,
+                    object_id=instance.id,
+                    user=request.user,
+                    action_type='UPDATE',
+                    field_name=field,
+                    old_value=str(old_value),
+                    new_value=str(new_value)
+                )
+        
+        return Response(serializer.data)
 
     @decorators.action(detail=True, methods=['post'])
     def submit(self, request, pk=None):
@@ -69,6 +136,18 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
             sales_order.status = 'PENDING_APPROVAL'
             sales_order.save() # save method handles SO number generation
             
+            # Log audit trail for submission
+            content_type = ContentType.objects.get_for_model(SalesOrder)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=sales_order.id,
+                user=request.user,
+                action_type='UPDATE',
+                field_name='status',
+                old_value='DRAFT',
+                new_value='PENDING_APPROVAL'
+            )
+            
             return Response(SalesOrderSerializer(sales_order).data)
         except Exception as e:
             logger.error(f"Error in submit (SalesOrderViewSet): {str(e)}", exc_info=True)
@@ -83,6 +162,19 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         try:
             sales_order.status = 'APPROVED'
             sales_order.save()
+            
+            # Log audit trail for approval
+            content_type = ContentType.objects.get_for_model(SalesOrder)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=sales_order.id,
+                user=request.user,
+                action_type='UPDATE',
+                field_name='status',
+                old_value='PENDING_APPROVAL',
+                new_value='APPROVED'
+            )
+            
             return Response(SalesOrderSerializer(sales_order).data)
         except Exception as e:
             logger.error(f"Error in approve (SalesOrderViewSet): {str(e)}", exc_info=True)
@@ -97,6 +189,19 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         try:
             sales_order.status = 'REJECTED'
             sales_order.save()
+            
+            # Log audit trail for rejection
+            content_type = ContentType.objects.get_for_model(SalesOrder)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=sales_order.id,
+                user=request.user,
+                action_type='UPDATE',
+                field_name='status',
+                old_value='PENDING_APPROVAL',
+                new_value='REJECTED'
+            )
+            
             return Response(SalesOrderSerializer(sales_order).data)
         except Exception as e:
             logger.error(f"Error in reject (SalesOrderViewSet): {str(e)}", exc_info=True)
@@ -247,7 +352,16 @@ class PurchaseOrderFileViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_201_CREATED)
         except Exception as e:
             logger.error(f"Automated PO extraction failed in process_po: {str(e)}", exc_info=True)
-            # Fallback: Create a blank draft if extraction fails completely
+            
+            # Specific handling for duplicate POs
+            error_str = str(e)
+            if "already exists" in error_str.lower():
+                return Response({
+                    "error": error_str,
+                    "message": "PO Number already exists. Please check if this PO has already been uploaded."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Fallback: Create a blank draft if extraction fails completely for other reasons
             from .models import SalesOrder, SalesOrderStatus
             draft_so = SalesOrder.objects.create(
                 po_file=po_file,
@@ -257,7 +371,7 @@ class PurchaseOrderFileViewSet(viewsets.ModelViewSet):
             )
             return Response({
                 "message": "PO uploaded, but automated extraction failed. A blank draft has been created for manual entry.",
-                "error": str(e),
+                "error": error_str,
                 "file_id": po_file.id,
                 "so_id": draft_so.id
             }, status=status.HTTP_201_CREATED)
