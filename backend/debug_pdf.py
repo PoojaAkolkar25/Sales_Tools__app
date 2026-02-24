@@ -7,9 +7,13 @@ try:
     deals = Deal.objects.all()
     html = render_to_string("deals/report_pdf.html", {"deals": deals, "now": timezone.now()})
     print("Template rendered successfully. String length:", len(html))
-    import weasyprint
-    weasyprint.HTML(string=html).write_pdf("debug_deals.pdf")
-    print("Weasyprint generated PDF successfully.")
+    from xhtml2pdf import pisa
+    import io
+    result = io.BytesIO()
+    pisa.pisaDocument(io.StringIO(html), result)
+    with open("debug_deals.pdf", "wb") as f:
+        f.write(result.getvalue())
+    print("xhtml2pdf generated PDF successfully.")
 except Exception as e:
     with open("debug_error.log", "w") as f:
         traceback.print_exc(file=f)

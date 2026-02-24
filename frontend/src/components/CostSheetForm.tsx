@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, ArrowLeft, Eye, Calendar } from 'lucide-react';
+import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, ArrowLeft, Eye, Calendar, RotateCcw } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
@@ -1900,19 +1900,21 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 padding: '0 20px',
                                 fontSize: '0.85rem',
                                 fontWeight: 700,
-                                borderRadius: '8px',
+                                borderRadius: '10px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
                                 background: '#00C853',
                                 color: 'white',
                                 border: 'none',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                cursor: 'pointer'
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = '#00ad48'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = '#00C853'}
+                            onMouseOver={(e) => { e.currentTarget.style.background = '#00ad48'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.background = '#00C853'; }}
+                            title="Approve this cost sheet"
                         >
-                            <CheckCircle size={18} />
+                            <CheckCircle size={15} />
                             <span>Approve</span>
                         </button>
 
@@ -1924,19 +1926,21 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 padding: '0 20px',
                                 fontSize: '0.85rem',
                                 fontWeight: 700,
-                                borderRadius: '8px',
+                                borderRadius: '10px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                background: '#FFFBEB',
-                                color: '#D89614',
-                                border: '1px solid rgba(216, 150, 20, 0.2)',
-                                transition: 'all 0.2s'
+                                background: 'rgba(214,158,46,0.08)',
+                                color: '#B7791F',
+                                border: '1px solid #D69E2E',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer'
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = '#FEF3C7'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = '#FFFBEB'}
+                            onMouseOver={(e) => { e.currentTarget.style.background = '#D69E2E'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#D69E2E'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(214,158,46,0.08)'; e.currentTarget.style.color = '#B7791F'; e.currentTarget.style.borderColor = '#D69E2E'; }}
+                            title="Revert this cost sheet"
                         >
-                            <ArrowLeft size={18} />
+                            <RotateCcw size={14} />
                             <span>Revert</span>
                         </button>
 
@@ -1948,19 +1952,21 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 padding: '0 20px',
                                 fontSize: '0.85rem',
                                 fontWeight: 700,
-                                borderRadius: '8px',
+                                borderRadius: '10px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                background: '#fef2f2',
-                                color: '#dc2626',
-                                border: '1px solid rgba(220, 38, 38, 0.2)',
-                                transition: 'all 0.2s'
+                                background: 'rgba(229,62,62,0.06)',
+                                color: '#E53E3E',
+                                border: '1px solid rgba(229,62,62,0.4)',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer'
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = '#fef2f2'}
+                            onMouseOver={(e) => { e.currentTarget.style.background = '#E53E3E'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#E53E3E'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(229,62,62,0.06)'; e.currentTarget.style.color = '#E53E3E'; e.currentTarget.style.borderColor = 'rgba(229,62,62,0.4)'; }}
+                            title="Reject this cost sheet"
                         >
-                            <XCircle size={18} />
+                            <XCircle size={15} />
                             <span>Reject</span>
                         </button>
                     </>
@@ -2130,194 +2136,101 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     <div
                         style={{
                             position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.4)',
+                            backdropFilter: 'blur(8px)',
+                            WebkitBackdropFilter: 'blur(8px)',
+                            zIndex: 10000,
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 10000,
-                            background: 'rgba(0, 0, 0, 0.45)',
-                            backdropFilter: 'blur(12px)',
-                            WebkitBackdropFilter: 'blur(12px)',
-                            padding: '24px',
+                            justifyContent: 'center'
                         }}
+                        onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
                     >
                         <div
                             style={{
                                 background: 'var(--bg-primary)',
-                                width: '100%',
-                                maxWidth: '400px',
-                                borderRadius: '24px',
-                                boxShadow: 'var(--shadow-xl)',
-                                overflow: 'hidden',
-                                position: 'relative',
+                                borderRadius: '16px',
+                                padding: '28px 32px',
+                                minWidth: '380px',
+                                maxWidth: '480px',
+                                boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
                             }}
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={e => e.stopPropagation()}
                         >
-                            {/* Orange Header Section */}
-                            <div style={{
-                                background: 'var(--theme-primary)',
-                                padding: '28px 24px 24px',
-                                position: 'relative',
-                            }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                                {showRevertModal ? (
+                                    <RotateCcw size={20} color='#D69E2E' />
+                                ) : (
+                                    <XCircle size={20} color='#E53E3E' />
+                                )}
+                                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                    {showRevertModal ? 'Revert Cost Sheet' : 'Reject Cost Sheet'}
+                                </h3>
+                            </div>
+                            <p style={{ margin: '0 0 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                Please provide a reason for {showRevertModal ? 'reverting' : 'rejection'}:
+                            </p>
+                            <textarea
+                                autoFocus
+                                value={showRevertModal ? revertComment : rejectComment}
+                                onChange={e => showRevertModal ? setRevertComment(e.target.value) : setRejectComment(e.target.value)}
+                                placeholder={showRevertModal ? "Enter revert comments..." : "Enter rejection comments..."}
+                                rows={3}
+                                style={{
+                                    width: '100%',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border-primary)',
+                                    padding: '10px 12px',
+                                    fontSize: '0.82rem',
+                                    resize: 'vertical',
+                                    fontFamily: 'inherit',
+                                    outline: 'none',
+                                    boxSizing: 'border-box'
+                                }}
+                            />
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
                                 <button
                                     onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
                                     style={{
-                                        position: 'absolute',
-                                        top: '16px',
-                                        right: '16px',
-                                        width: '24px',
-                                        height: '24px',
-                                        borderRadius: '50%',
+                                        padding: '8px 18px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border-primary)',
                                         background: 'transparent',
-                                        border: 'none',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 600,
                                         cursor: 'pointer',
-                                        color: 'white',
-                                        opacity: 0.7,
-                                        transition: 'all 0.2s',
+                                        color: 'var(--text-secondary)'
                                     }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'transparent'; }}
-                                >
-                                    <X size={16} strokeWidth={3} />
-                                </button>
-
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                                    <div style={{
-                                        width: '36px',
-                                        height: '36px',
-                                        background: 'rgba(255,255,255,0.2)',
-                                        borderRadius: '10px',
+                                >Cancel</button>
+                                <button
+                                    onClick={showRevertModal ? handleRevert : handleReject}
+                                    style={{
+                                        padding: '8px 20px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: showRevertModal ? '#D69E2E' : '#E53E3E',
+                                        color: 'white',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
-                                        flexShrink: 0
-                                    }}>
-                                        <Sparkles size={18} color="white" />
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <h3 style={{
-                                            fontSize: '1.25rem',
-                                            fontWeight: 800,
-                                            color: 'white',
-                                            margin: '0 0 4px 0',
-                                            lineHeight: 1.2
-                                        }}>
-                                            {showRevertModal ? 'Revert Cost Sheet' : 'Reject Cost Sheet'}
-                                        </h3>
-                                        <p style={{
-                                            margin: 0,
-                                            color: 'rgba(255,255,255,0.95)',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 500,
-                                            lineHeight: 1.4
-                                        }}>
-                                            {showRevertModal
-                                                ? 'Provide a reason for reverting this cost sheet back to the creator.'
-                                                : 'Provide a reason for rejecting this cost sheet for the records.'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* White Input Section */}
-                            <div style={{ padding: '24px' }}>
-                                <div style={{ marginBottom: '20px' }}>
-                                    <label style={{
-                                        display: 'block',
-                                        fontSize: '0.85rem',
-                                        fontWeight: 700,
-                                        color: '#1e293b',
-                                        marginBottom: '8px'
-                                    }}>
-                                        {showRevertModal ? 'Reversion Reason' : 'Rejection Reason'}
-                                    </label>
-                                    <textarea
-                                        value={showRevertModal ? revertComment : rejectComment}
-                                        onChange={e => showRevertModal ? setRevertComment(e.target.value) : setRejectComment(e.target.value)}
-                                        placeholder={showRevertModal ? "Type your reason here..." : "Type your reason here..."}
-                                        autoFocus
-                                        style={{
-                                            width: '100%',
-                                            height: '90px',
-                                            background: '#f8fafc',
-                                            border: '1.5px solid #e2e8f0',
-                                            borderRadius: '12px',
-                                            padding: '12px 16px',
-                                            fontSize: '0.9rem',
-                                            color: '#1e293b',
-                                            outline: 'none',
-                                            resize: 'none',
-                                            transition: 'all 0.2s',
-                                            fontWeight: 500
-                                        }}
-                                        onFocus={(e) => {
-                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                            e.currentTarget.style.background = 'white';
-                                            e.currentTarget.style.boxShadow = '0 0 0 4px rgba(187, 77, 0, 0.08)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.currentTarget.style.borderColor = '#e2e8f0';
-                                            e.currentTarget.style.background = '#f8fafc';
-                                            e.currentTarget.style.boxShadow = 'none';
-                                        }}
-                                    />
-                                </div>
-
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'flex-end',
-                                    gap: '10px'
-                                }}>
-                                    <button
-                                        onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
-                                        style={{
-                                            padding: '10px 20px',
-                                            borderRadius: '12px',
-                                            background: '#f1f5f9',
-                                            color: '#475569',
-                                            fontWeight: 700,
-                                            fontSize: '0.85rem',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
-                                        onMouseLeave={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={showRevertModal ? handleRevert : handleReject}
-                                        style={{
-                                            padding: '10px 24px',
-                                            borderRadius: '12px',
-                                            background: 'var(--theme-primary)',
-                                            color: 'white',
-                                            fontWeight: 700,
-                                            fontSize: '0.85rem',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                            boxShadow: '0 4px 12px rgba(187, 77, 0, 0.2)'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(-1px)';
-                                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(187, 77, 0, 0.3)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(0)';
-                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(187, 77, 0, 0.2)';
-                                        }}
-                                    >
-                                        {showRevertModal ? 'Revert' : 'Reject'}
-                                    </button>
-                                </div>
+                                        gap: '6px'
+                                    }}
+                                >
+                                    {showRevertModal ? (
+                                        <>
+                                            <RotateCcw size={14} />
+                                            Revert
+                                        </>
+                                    ) : (
+                                        <>
+                                            <XCircle size={14} />
+                                            Reject
+                                        </>
+                                    )}
+                                </button>
                             </div>
                         </div>
                     </div>,

@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Save,
-    Plus,
-    X,
-    CheckCircle2,
-    FileText,
-    Loader2,
     Trash2,
+    Save,
+    CheckCircle,
+    XCircle,
+    Clock,
+    File,
+    Paperclip,
+    X,
+    Download,
     PlusCircle,
-    Calendar
+    Sparkles,
+    Plus,
+    Eye,
+    Calendar,
+    ChevronDown,
+    FileText,
+    Loader2
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -260,6 +268,21 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
             const baseUrl = api.defaults.baseURL?.replace('/api', '').replace(/\/$/, '') || '';
             const fullUrl = `${baseUrl}${salesOrder.po_file_url}`;
             window.open(fullUrl, '_blank');
+        } else {
+            showNotification('PDF file URL not found', 'error');
+        }
+    };
+
+    const handleDownloadPDF = () => {
+        if (salesOrder.po_file_url) {
+            const baseUrl = api.defaults.baseURL?.replace('/api', '').replace(/\/$/, '') || '';
+            const fullUrl = `${baseUrl}${salesOrder.po_file_url}`;
+            const link = document.createElement('a');
+            link.href = fullUrl;
+            link.download = salesOrder.po_file_name || 'PurchaseOrder.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         } else {
             showNotification('PDF file URL not found', 'error');
         }
@@ -871,39 +894,84 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                     <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                         <SectionHeader title="Source Document" />
                         <div style={{
-                            display: 'flex',
+                            display: 'inline-flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '16px 24px',
+                            gap: '12px',
+                            padding: '10px 16px',
                             background: '#F8FAFC',
-                            borderRadius: '8px',
-                            border: '1px solid #E2E8F0'
+                            borderRadius: '16px',
+                            border: '1px solid #E2E8F0',
+                            maxWidth: '100%',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <FileText size={40} style={{ color: 'var(--theme-primary)' }} />
-                                <div>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>{salesOrder.po_file_name || 'PurchaseOrder.pdf'}</p>
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: 0 }}>PDF document uploaded via Extraction Engine</p>
-                                </div>
+                            <div style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                background: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid #EDF2F7',
+                                flexShrink: 0
+                            }}>
+                                <FileText size={18} style={{ color: 'var(--theme-primary)', margin: '0 auto' }} />
                             </div>
-                            <button
-                                onClick={handleViewPDF}
-                                style={{
-                                    padding: '8px 20px',
-                                    borderRadius: '6px',
-                                    border: '1px solid var(--border-primary)',
-                                    background: 'white',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    color: 'var(--text-secondary)'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#F7FAFC'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                            >
-                                View PDF
-                            </button>
+
+                            <span style={{
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                color: '#2D3748',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                maxWidth: '300px'
+                            }}>
+                                {salesOrder.po_file_name || 'PurchaseOrder.pdf'}
+                            </span>
+
+                            <div style={{ display: 'flex', gap: '6px', marginLeft: '8px' }}>
+                                <button
+                                    onClick={handleViewPDF}
+                                    style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        background: '#EBF8FF',
+                                        color: '#3182CE',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    className="hover:bg-[#BEE3F8]"
+                                    title="View PDF"
+                                >
+                                    <Eye size={16} />
+                                </button>
+                                <button
+                                    onClick={handleDownloadPDF}
+                                    style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        background: '#F7FAFC',
+                                        color: '#718096',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        border: '1px solid #E2E8F0'
+                                    }}
+                                    className="hover:bg-[#EDF2F7]"
+                                    title="Download PDF"
+                                >
+                                    <Download size={16} />
+                                </button>
+                            </div>
                         </div>
                     </section>
                 </div>
@@ -992,23 +1060,23 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             disabled={saving}
                             style={{
                                 height: '38px',
-                                padding: '0 18px',
+                                padding: '0 20px',
                                 fontSize: '0.85rem',
                                 fontWeight: 700,
-                                borderRadius: '8px',
+                                borderRadius: '10px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
                                 border: 'none',
-                                background: hoveredBtn === 'approve' ? '#48BB78' : 'transparent',
-                                color: hoveredBtn === 'approve' ? 'white' : 'var(--text-secondary)',
+                                background: '#00C853',
+                                color: 'white',
                                 transition: 'all 0.2s',
-                                cursor: 'pointer',
-                                boxShadow: hoveredBtn === 'approve' ? '0 2px 8px rgba(72, 187, 120, 0.2)' : 'none'
+                                cursor: 'pointer'
                             }}
-                            onMouseEnter={() => !isConfirmingExit && setHoveredBtn('approve')}
+                            onMouseOver={(e) => { e.currentTarget.style.background = '#00ad48'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.background = '#00C853'; }}
                         >
-                            <CheckCircle2 size={16} />
+                            <CheckCircle size={15} />
                             <span>Approve</span>
                         </button>
                         <button
@@ -1016,23 +1084,23 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             disabled={saving}
                             style={{
                                 height: '38px',
-                                padding: '0 18px',
+                                padding: '0 20px',
                                 fontSize: '0.85rem',
                                 fontWeight: 700,
-                                borderRadius: '8px',
+                                borderRadius: '10px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                border: 'none',
-                                background: hoveredBtn === 'reject' ? '#F56565' : 'transparent',
-                                color: hoveredBtn === 'reject' ? 'white' : 'var(--text-secondary)',
+                                background: 'rgba(229,62,62,0.06)',
+                                color: '#E53E3E',
+                                border: '1px solid rgba(229,62,62,0.4)',
                                 transition: 'all 0.2s',
-                                cursor: 'pointer',
-                                boxShadow: hoveredBtn === 'reject' ? '0 2px 8px rgba(245, 101, 101, 0.2)' : 'none'
+                                cursor: 'pointer'
                             }}
-                            onMouseEnter={() => !isConfirmingExit && setHoveredBtn('reject')}
+                            onMouseOver={(e) => { e.currentTarget.style.background = '#E53E3E'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#E53E3E'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(229,62,62,0.06)'; e.currentTarget.style.color = '#E53E3E'; e.currentTarget.style.borderColor = 'rgba(229,62,62,0.4)'; }}
                         >
-                            <X size={16} />
+                            <XCircle size={15} />
                             <span>Reject</span>
                         </button>
                     </>
@@ -1046,7 +1114,6 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             onConfirm: () => onBack(),
                             onCancel: () => setIsConfirmingExit(false)
                         });
-                        setHoveredBtn('cancel');
                     }}
                     style={{
                         height: '38px',
@@ -1056,17 +1123,17 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                         borderRadius: '8px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        background: hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
-                        color: hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        gap: '8px',
                         border: 'none',
+                        background: hoveredBtn === 'cancel' ? 'rgba(0,0,0,0.05)' : 'transparent',
+                        color: 'var(--text-secondary)',
                         transition: 'all 0.2s',
-                        cursor: 'pointer',
-                        boxShadow: hoveredBtn === 'cancel' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                        cursor: 'pointer'
                     }}
                     onMouseEnter={() => !isConfirmingExit && setHoveredBtn('cancel')}
+                    onMouseLeave={() => setHoveredBtn('')}
                 >
-                    <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
+                    <X size={18} />
                     <span>Cancel</span>
                 </button>
             </div>

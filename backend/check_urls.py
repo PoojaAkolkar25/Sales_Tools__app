@@ -1,19 +1,16 @@
 import os
 import django
-import sys
+from django.urls import get_resolver
 
-# Set up Django environment
-sys.path.append(os.getcwd())
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 django.setup()
 
-from cost_sheets.models import CostSheetAttachment
-from deals.models import DealAttachment
+def list_urls(lis, prefix=''):
+    for entry in lis:
+        if hasattr(entry, 'url_patterns'):
+            list_urls(entry.url_patterns, prefix + entry.pattern.regex.pattern.replace('^', '').replace('\\', ''))
+        else:
+            print(prefix + entry.pattern.regex.pattern.replace('^', '').replace('\\', '').replace('$', ''))
 
-print("--- Cost Sheet Attachments ---")
-for att in CostSheetAttachment.objects.all():
-    print(f"ID: {att.id}, File: {att.file.url}, Filename: {att.filename}")
-
-print("\n--- Deal Attachments ---")
-for att in DealAttachment.objects.all():
-    print(f"ID: {att.id}, File: {att.file.url}, Filename: {att.filename}")
+resolver = get_resolver()
+list_urls(resolver.url_patterns)
