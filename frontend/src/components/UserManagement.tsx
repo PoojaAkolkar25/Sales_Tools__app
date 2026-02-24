@@ -784,6 +784,12 @@ const UserManagement: React.FC = () => {
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        if (!formData.username || !formData.email || !formData.first_name || !formData.role) {
+            showNotification('Please fill in all required fields (Username, Email, First Name, Role)', 'error');
+            return;
+        }
+
         try {
             const cleanedData = {
                 ...formData,
@@ -799,9 +805,18 @@ const UserManagement: React.FC = () => {
             fetchUsers();
             setShowForm(false);
         } catch (err: any) {
-            const errData = err.response?.data;
-            const msg = errData?.username?.[0] || errData?.email?.[0] || errData?.mobile?.[0] || errData?.department?.[0] || errData?.region?.[0] || errData?.reporting_to?.[0] || (typeof errData === 'string' ? errData : JSON.stringify(errData)) || 'Error creating user';
-            setError(msg);
+            console.error('Error saving user', err);
+            const errorData = err.response?.data;
+            if (errorData && typeof errorData === 'object') {
+                const errorMessages = Object.entries(errorData)
+                    .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+                    .join(' | ');
+                setError(errorMessages || 'Error saving user');
+                showNotification(errorMessages || 'Error saving user', 'error');
+            } else {
+                setError(err.response?.data?.message || 'Error saving user');
+                showNotification(err.response?.data?.message || 'Error saving user', 'error');
+            }
         }
     };
 
@@ -812,6 +827,12 @@ const UserManagement: React.FC = () => {
     const handleCreateCompany = async (e: React.FormEvent) => {
         e.preventDefault();
         setCompanyError('');
+
+        if (!companyFormData.name || !companyFormData.entity || !companyFormData.base_currency) {
+            showNotification('Please fill in all required fields (Company Name, Entity, Currency)', 'error');
+            return;
+        }
+
         try {
             const formData = new FormData();
             Object.entries(companyFormData).forEach(([key, value]) => {
@@ -869,14 +890,22 @@ const UserManagement: React.FC = () => {
                     .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
                     .join(' | ');
                 setCompanyError(errorMessages || 'Error saving customer');
+                showNotification(errorMessages || 'Error saving customer', 'error');
             } else {
                 setCompanyError(err.response?.data?.message || 'Error saving customer');
+                showNotification(err.response?.data?.message || 'Error saving customer', 'error');
             }
         }
     };
 
     const handleCreatePartner = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!partnerFormData.name || !partnerFormData.base_currency) {
+            showNotification('Please fill in all required fields (Company Name, Currency)', 'error');
+            return;
+        }
+
         try {
             const formData = new FormData();
             Object.entries(partnerFormData).forEach(([key, value]) => {
@@ -927,12 +956,26 @@ const UserManagement: React.FC = () => {
             setShowForm(false);
         } catch (err: any) {
             console.error('Error saving company', err);
-            showNotification('Error saving Company', 'error');
+            const errorData = err.response?.data;
+            if (errorData && typeof errorData === 'object') {
+                const errorMessages = Object.entries(errorData)
+                    .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+                    .join(' | ');
+                showNotification(errorMessages || 'Error saving Company', 'error');
+            } else {
+                showNotification(err.response?.data?.message || 'Error saving Company', 'error');
+            }
         }
     };
 
     const handleCreateEndCustomer = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!endCustomerFormData.name) {
+            showNotification('Please fill in all required fields (End user Name)', 'error');
+            return;
+        }
+
         try {
             if (editingId) {
                 await api.patch(`finance/end-customers/${editingId}/`, endCustomerFormData);
@@ -952,7 +995,15 @@ const UserManagement: React.FC = () => {
             setShowForm(false);
         } catch (err: any) {
             console.error('Error saving end customer', err);
-            showNotification('Error saving End Customer', 'error');
+            const errorData = err.response?.data;
+            if (errorData && typeof errorData === 'object') {
+                const errorMessages = Object.entries(errorData)
+                    .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+                    .join(' | ');
+                showNotification(errorMessages || 'Error saving End Customer', 'error');
+            } else {
+                showNotification(err.response?.data?.message || 'Error saving End Customer', 'error');
+            }
         }
     };
 
@@ -986,6 +1037,12 @@ const UserManagement: React.FC = () => {
 
     const handleCreateFinancialYear = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!fyFormData.code || !fyFormData.start_date || !fyFormData.end_date || !fyFormData.label) {
+            showNotification('Please fill in all required fields (Code, Start Date, End Date, Label)', 'error');
+            return;
+        }
+
         if (!editingId && financialYears.some(fy => fy.code === fyFormData.code)) {
             showNotification(`Financial Year ${fyFormData.code} already exists`, 'error');
             return;
@@ -1023,12 +1080,26 @@ const UserManagement: React.FC = () => {
             setShowForm(false);
         } catch (err: any) {
             console.error('Error saving financial year', err);
-            showNotification(err.response?.data?.message || 'Error saving Financial Year', 'error');
+            const errorData = err.response?.data;
+            if (errorData && typeof errorData === 'object') {
+                const errorMessages = Object.entries(errorData)
+                    .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+                    .join(' | ');
+                showNotification(errorMessages || 'Error saving Financial Year', 'error');
+            } else {
+                showNotification(err.response?.data?.message || 'Error saving Financial Year', 'error');
+            }
         }
     };
 
     const handleCreateProduct = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!productFormData.name || !productFormData.category || !productFormData.uom) {
+            showNotification('Please fill in all required fields (Product Name, Category, UOM)', 'error');
+            return;
+        }
+
         try {
             if (editingId) {
                 await api.patch(`products/${editingId}/`, productFormData);
@@ -1047,7 +1118,15 @@ const UserManagement: React.FC = () => {
             setShowForm(false);
         } catch (err: any) {
             console.error('Error saving product', err);
-            showNotification('Error saving Product/Service', 'error');
+            const errorData = err.response?.data;
+            if (errorData && typeof errorData === 'object') {
+                const errorMessages = Object.entries(errorData)
+                    .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+                    .join(' | ');
+                showNotification(errorMessages || 'Error saving Product/Service', 'error');
+            } else {
+                showNotification(err.response?.data?.message || 'Error saving Product/Service', 'error');
+            }
         }
     };
 
