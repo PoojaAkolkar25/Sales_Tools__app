@@ -614,20 +614,22 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                 <Download size={16} /> Export <ChevronDown size={14} />
                             </button>
                             {showExportMenu && (
-                                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
-                                    <button
-                                        onClick={() => { exportToExcel(); setShowExportMenu(false); }}
-                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                                        className="hover:bg-gray-50"
-                                    >
-                                        <FileSpreadsheet size={16} className="text-green-600" /> Excel Report
-                                    </button>
+                                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-primary)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                     <button
                                         onClick={() => { exportToPDF(); setShowExportMenu(false); }}
-                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                                        className="hover:bg-gray-50"
+                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                     >
-                                        <FileText size={16} className="text-red-600" /> PDF Report
+                                        <FileSpreadsheet size={16} style={{ color: '#DC2626' }} /> PDF Report
+                                    </button>
+                                    <button
+                                        onClick={() => { exportToExcel(); setShowExportMenu(false); }}
+                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                    >
+                                        <FileSpreadsheet size={16} style={{ color: '#2563EB' }} /> Excel Report
                                     </button>
                                 </div>
                             )}

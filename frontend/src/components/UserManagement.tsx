@@ -1102,10 +1102,10 @@ const UserManagement: React.FC = () => {
 
         try {
             if (editingId) {
-                await api.patch(`deals/products/${editingId}/`, productFormData);
+                await api.patch(`products/${editingId}/`, productFormData);
                 showNotification('Product/Service updated successfully', 'success');
             } else {
-                await api.post('deals/products/', productFormData);
+                await api.post('products/', productFormData);
                 showNotification('Product/Service created successfully', 'success');
             }
             setProductFormData({
@@ -1540,32 +1540,45 @@ const UserManagement: React.FC = () => {
             }}>
                 <div style={{
                     display: 'flex',
+                    gap: '4px',
                     alignItems: 'center',
-                    background: 'white',
+                    background: 'var(--bg-primary)',
                     padding: '6px',
                     borderRadius: '12px',
-                    border: '1px solid var(--border-primary)',
-                    boxShadow: 'var(--shadow-sm)',
-                    gap: '8px'
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
                 }}>
                     <button
                         onClick={() => setShowForm(false)}
                         style={{
-                            padding: '6px 20px',
-                            borderRadius: '8px',
-                            fontSize: '0.8rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            transition: 'all 0.23s',
-                            background: !showForm ? 'var(--theme-primary)' : '#f8fafc',
-                            color: !showForm ? 'white' : '#64748b',
-                            border: !showForm ? 'none' : '1px solid #e2e8f0',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px'
+                            gap: '8px',
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: !showForm ? 'var(--theme-primary)' : 'transparent',
+                            color: !showForm ? 'white' : 'var(--text-secondary)',
+                            boxShadow: !showForm ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (showForm) {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                e.currentTarget.style.color = 'var(--ae-orange)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (showForm) {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
+                            }
                         }}
                     >
-                        <LayoutDashboard size={14} /> Dashboard
+                        <LayoutDashboard size={18} /> Dashboard
                     </button>
                     <button
                         onClick={() => {
@@ -1608,21 +1621,35 @@ const UserManagement: React.FC = () => {
                             setShowForm(true);
                         }}
                         style={{
-                            padding: '6px 20px',
-                            borderRadius: '8px',
-                            fontSize: '0.8rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            transition: 'all 0.23s',
-                            background: showForm && !editingId ? 'var(--theme-primary)' : '#f8fafc',
-                            color: showForm && !editingId ? 'white' : '#64748b',
-                            border: showForm && !editingId ? 'none' : '1px solid #e2e8f0',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px'
+                            gap: '8px',
+                            padding: '6px 16px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: showForm && !editingId ? 'var(--theme-primary)' : 'transparent',
+                            color: showForm && !editingId ? 'white' : 'var(--text-secondary)',
+                            boxShadow: showForm && !editingId ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!showForm || editingId) {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                e.currentTarget.style.color = 'var(--ae-orange)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!showForm || editingId) {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
+                            }
                         }}
                     >
-                        <PlusCircle size={14} /> Create New
+                        <PlusCircle size={18} /> Create New
                     </button>
                 </div>
             </div>
@@ -1861,6 +1888,11 @@ const UserManagement: React.FC = () => {
                         }}>
                             {viewMode === 'user' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                    {error && (
+                                        <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem', gridColumn: '1 / -1' }}>
+                                            {error}
+                                        </div>
+                                    )}
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Username <span style={{ color: 'var(--theme-primary)' }}>*</span>

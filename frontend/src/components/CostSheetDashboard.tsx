@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Search, FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw, ChevronLeft, ChevronRight, Plus, Minus, PlusCircle, X } from 'lucide-react';
+import { Eye, Search, FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw, ChevronLeft, ChevronRight, Plus, Minus, PlusCircle, X, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
 import api from '../api';
 import { formatToAppDate } from '../utils/dateUtils';
 import Pagination from './Pagination';
@@ -108,6 +108,12 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
         totalPriceStr: ''
     });
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+    // Reject / Revert modal state
+    const [rejectModal, setRejectModal] = useState<{ id: number } | null>(null);
+    const [rejectComment, setRejectComment] = useState('');
+    const [revertModal, setRevertModal] = useState<{ id: number } | null>(null);
+    const [revertComment, setRevertComment] = useState('');
 
     const [isDownloading, setIsDownloading] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
@@ -249,6 +255,41 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
         }
     };
 
+    const handleApprove = async (id: number) => {
+        try {
+            await api.post(`/cost-sheets/${id}/approve/`);
+            fetchCostSheets();
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'Failed to approve cost sheet.');
+        }
+    };
+
+    const handleReject = async () => {
+        if (!rejectModal) return;
+        if (!rejectComment.trim()) { alert('Please provide rejection comments.'); return; }
+        try {
+            await api.post(`/cost-sheets/${rejectModal.id}/reject/`, { comments: rejectComment });
+            setRejectModal(null);
+            setRejectComment('');
+            fetchCostSheets();
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'Failed to reject cost sheet.');
+        }
+    };
+
+    const handleRevert = async () => {
+        if (!revertModal) return;
+        if (!revertComment.trim()) { alert('Please provide revert comments.'); return; }
+        try {
+            await api.post(`/cost-sheets/${revertModal.id}/revert/`, { comments: revertComment });
+            setRevertModal(null);
+            setRevertComment('');
+            fetchCostSheets();
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'Failed to revert cost sheet.');
+        }
+    };
+
     const getExportQueryParams = () => {
         const params = new URLSearchParams();
         params.append('period', filters.period);
@@ -265,25 +306,25 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
         return params.toString();
     };
 
-    const exportToCSV = async () => {
+    const exportToPDF = async () => {
         setIsDownloading(true);
         try {
             const queryParams = getExportQueryParams();
-            const response = await api.get(`/cost-sheets/export_report/?${queryParams}`, {
+            const response = await api.get(`/cost-sheets/export_pdf/?${queryParams}`, {
                 responseType: 'blob'
             });
 
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `Cost_Sheets_Report_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute('download', `Cost_Sheets_Report_${new Date().toISOString().split('T')[0]}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error: any) {
-            console.error('Error downloading CSV report:', error);
-            alert('Failed to download CSV report. Please try again.');
+            console.error('Error downloading PDF report:', error);
+            alert('Failed to download PDF report. Please try again.');
         } finally {
             setIsDownloading(false);
         }
@@ -557,12 +598,12 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-primary)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                     <button
                                         disabled={isDownloading}
-                                        onClick={() => { exportToCSV(); setShowExportMenu(false); }}
+                                        onClick={() => { exportToPDF(); setShowExportMenu(false); }}
                                         style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                     >
-                                        <FileSpreadsheet size={16} style={{ color: '#059669' }} /> CSV Report
+                                        <FileSpreadsheet size={16} style={{ color: '#DC2626' }} /> PDF Report
                                     </button>
                                     <button
                                         disabled={isDownloading}
@@ -1144,6 +1185,40 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                                                     <PlusCircle size={16} /> Submit for Approval
                                                                                 </button>
                                                                             )}
+                                                                            {cs.status === 'SUBMITTED' && (
+                                                                                <>
+                                                                                    {/* Approve */}
+                                                                                    <button
+                                                                                        onClick={() => handleApprove(cs.id)}
+                                                                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 20px', borderRadius: '10px', border: 'none', background: '#00C853', color: 'white', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                                        onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 10px rgba(0,200,83,0.35)'; }}
+                                                                                        onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                                                                                        title="Approve this cost sheet"
+                                                                                    >
+                                                                                        <CheckCircle size={15} /> Approve
+                                                                                    </button>
+                                                                                    {/* Revert */}
+                                                                                    <button
+                                                                                        onClick={() => { setRevertModal({ id: cs.id }); setRevertComment(''); }}
+                                                                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 18px', borderRadius: '10px', border: '1px solid #D69E2E', background: 'rgba(214,158,46,0.08)', color: '#B7791F', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                                        onMouseOver={(e) => { e.currentTarget.style.background = '#D69E2E'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#D69E2E'; }}
+                                                                                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(214,158,46,0.08)'; e.currentTarget.style.color = '#B7791F'; e.currentTarget.style.borderColor = '#D69E2E'; }}
+                                                                                        title="Revert this cost sheet"
+                                                                                    >
+                                                                                        <RotateCcw size={14} /> Revert
+                                                                                    </button>
+                                                                                    {/* Reject */}
+                                                                                    <button
+                                                                                        onClick={() => { setRejectModal({ id: cs.id }); setRejectComment(''); }}
+                                                                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 18px', borderRadius: '10px', border: '1px solid rgba(229,62,62,0.4)', background: 'rgba(229,62,62,0.06)', color: '#E53E3E', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                                        onMouseOver={(e) => { e.currentTarget.style.background = '#E53E3E'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#E53E3E'; }}
+                                                                                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(229,62,62,0.06)'; e.currentTarget.style.color = '#E53E3E'; e.currentTarget.style.borderColor = 'rgba(229,62,62,0.4)'; }}
+                                                                                        title="Reject this cost sheet"
+                                                                                    >
+                                                                                        <XCircle size={15} /> Reject
+                                                                                    </button>
+                                                                                </>
+                                                                            )}
                                                                             <button
                                                                                 onClick={() => toggleRow(cs.id)}
                                                                                 style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '10px', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
@@ -1176,6 +1251,76 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                 itemsPerPage={ITEMS_PER_PAGE}
                 onPageChange={setCurrentPage}
             />
+
+            {/* Reject Comment Modal */}
+            {rejectModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    onClick={() => setRejectModal(null)}
+                >
+                    <div style={{ background: 'var(--bg-primary)', borderRadius: '16px', padding: '28px 32px', minWidth: '380px', maxWidth: '480px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                            <XCircle size={20} color='#E53E3E' />
+                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Reject Cost Sheet</h3>
+                        </div>
+                        <p style={{ margin: '0 0 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Please provide a reason for rejection:</p>
+                        <textarea
+                            autoFocus
+                            value={rejectComment}
+                            onChange={e => setRejectComment(e.target.value)}
+                            placeholder="Enter rejection comments..."
+                            rows={3}
+                            style={{ width: '100%', borderRadius: '8px', border: '1px solid var(--border-primary)', padding: '10px 12px', fontSize: '0.82rem', resize: 'vertical', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+                            <button
+                                onClick={() => setRejectModal(null)}
+                                style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid var(--border-primary)', background: 'transparent', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', color: 'var(--text-secondary)' }}
+                            >Cancel</button>
+                            <button
+                                onClick={handleReject}
+                                style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#E53E3E', color: 'white', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                            ><XCircle size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />Reject</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Revert Comment Modal */}
+            {revertModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    onClick={() => setRevertModal(null)}
+                >
+                    <div style={{ background: 'var(--bg-primary)', borderRadius: '16px', padding: '28px 32px', minWidth: '380px', maxWidth: '480px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                            <RotateCcw size={20} color='#D69E2E' />
+                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Revert Cost Sheet</h3>
+                        </div>
+                        <p style={{ margin: '0 0 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Please provide a reason for reverting:</p>
+                        <textarea
+                            autoFocus
+                            value={revertComment}
+                            onChange={e => setRevertComment(e.target.value)}
+                            placeholder="Enter revert comments..."
+                            rows={3}
+                            style={{ width: '100%', borderRadius: '8px', border: '1px solid var(--border-primary)', padding: '10px 12px', fontSize: '0.82rem', resize: 'vertical', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+                            <button
+                                onClick={() => setRevertModal(null)}
+                                style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid var(--border-primary)', background: 'transparent', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', color: 'var(--text-secondary)' }}
+                            >Cancel</button>
+                            <button
+                                onClick={handleRevert}
+                                style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#D69E2E', color: 'white', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                            ><RotateCcw size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />Revert</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 };

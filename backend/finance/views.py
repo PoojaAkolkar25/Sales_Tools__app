@@ -400,6 +400,84 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         
         return Response(data)
 
+    @action(detail=False, methods=['get'])
+    def export_excel(self, request):
+        import xlsxwriter
+        from django.http import HttpResponse
+        
+        invoices = self.filter_queryset(self.get_queryset())
+        today = timezone.now().date()
+        
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output)
+        worksheet = workbook.add_worksheet("Invoices Report")
+
+        header_format = workbook.add_format({
+            'bold': True,
+            'bg_color': '#2F855A',
+            'font_color': 'white',
+            'border': 1
+        })
+
+        headers = ['Invoice No', 'Date', 'Due Date', 'Customer Name', 'Status', 'Total Amount', 'Open Balance']
+        for col, header in enumerate(headers):
+            worksheet.write(0, col, header, header_format)
+
+        for row, inv in enumerate(invoices, start=1):
+            customer_name = ""
+            if inv.lead:
+                customer_name = inv.lead.customer_name
+            elif inv.deal and inv.deal.customer:
+                customer_name = inv.deal.customer.name
+                
+            worksheet.write(row, 0, inv.invoice_no)
+            worksheet.write(row, 1, str(inv.invoice_date) if inv.invoice_date else '—')
+            worksheet.write(row, 2, str(inv.due_date) if inv.due_date else '—')
+            worksheet.write(row, 3, customer_name or '—')
+            worksheet.write(row, 4, inv.status)
+            worksheet.write(row, 5, float(inv.total_amount) if inv.total_amount else 0)
+            worksheet.write(row, 6, float(inv.open_balance) if inv.open_balance else 0)
+
+        workbook.close()
+        output.seek(0)
+        
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="invoices_report_{today}.xlsx"'
+        return response
+
+    @action(detail=False, methods=['get'])
+    def export_pdf(self, request):
+        try:
+            from django.template.loader import render_to_string
+            from django.http import HttpResponse
+            from xhtml2pdf import pisa
+            import io
+            
+            invoices = self.filter_queryset(self.get_queryset())
+            html_string = render_to_string('finance/report_pdf.html', {'invoices': invoices, 'now': timezone.now()})
+            
+            result = io.BytesIO()
+            pdf = pisa.pisaDocument(io.StringIO(html_string), result)
+            
+            if not pdf.err:
+                response = HttpResponse(result.getvalue(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="Invoices_Report_{timezone.now().strftime("%Y%m%d")}.pdf"'
+                return response
+            else:
+                return Response({
+                    "status": "error",
+                    "message": "PDF generation errors occurred."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": f"PDF export failed: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class BankConnectionViewSet(viewsets.ModelViewSet):
     queryset = BankConnection.objects.all()
     serializer_class = BankConnectionSerializer

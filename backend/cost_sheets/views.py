@@ -157,102 +157,109 @@ class CostSheetViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Attachment not found'}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['get'])
-    def export_report(self, request):
-        period = request.query_params.get('period')
-        start_date_str = request.query_params.get('start_date')
-        end_date_str = request.query_params.get('end_date')
-
-        # Filters
-        cs_number = request.query_params.get('cs_number')
-        lead_no = request.query_params.get('lead_no')
-        deal_no = request.query_params.get('deal_no')
-        customer_name = request.query_params.get('customer_name')
-        project_name = request.query_params.get('project_name')
-        status_filter = request.query_params.get('status')
-
-        today = timezone.now().date()
-        start_date = None
-        end_date = None
-
-        if period == 'last_month':
-            first_of_this_month = today.replace(day=1)
-            end_date = first_of_this_month - timedelta(days=1)
-            start_date = end_date.replace(day=1)
-        elif period == 'last_3_months':
-            first_of_this_month = today.replace(day=1)
-            end_date = first_of_this_month - timedelta(days=1)
-            temp_date = end_date - timedelta(days=60)
-            start_date = temp_date.replace(day=1)
-        elif period == 'last_6_months':
-            first_of_this_month = today.replace(day=1)
-            end_date = first_of_this_month - timedelta(days=1)
-            temp_date = end_date - timedelta(days=150)
-            start_date = temp_date.replace(day=1)
-        elif period == 'last_year':
-            last_year = today.year - 1
-            start_date = datetime(last_year, 1, 1).date()
-            end_date = datetime(last_year, 12, 31).date()
-        elif period == 'last_financial_year':
-            if today.month >= 4:
-                start_year = today.year - 1
-            else:
-                start_year = today.year - 2
-            start_date = datetime(start_year, 4, 1).date()
-            end_date = datetime(start_year + 1, 3, 31).date()
-        elif start_date_str and end_date_str:
-            try:
-                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            except ValueError:
-                return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=400)
-
-        queryset = self.queryset.select_related('lead', 'deal')
-        
-        # Apply Date Filters
-        if start_date:
-            queryset = queryset.filter(cost_sheet_date__gte=start_date)
-        if end_date:
-            queryset = queryset.filter(cost_sheet_date__lte=end_date)
+    def export_pdf(self, request):
+        try:
+            from django.template.loader import render_to_string
+            from xhtml2pdf import pisa
             
-        # Apply Text Filters
-        if cs_number:
-            queryset = queryset.filter(cost_sheet_no__icontains=cs_number)
-        if lead_no:
-            queryset = queryset.filter(lead__lead_no__icontains=lead_no)
-        if deal_no:
-            queryset = queryset.filter(deal__deal_id__icontains=deal_no)
-        if customer_name:
-            queryset = queryset.filter(lead__customer_name__icontains=customer_name)
-        if project_name:
-            queryset = queryset.filter(lead__project_name__icontains=project_name)
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
+            period = request.query_params.get('period')
+            start_date_str = request.query_params.get('start_date')
+            end_date_str = request.query_params.get('end_date')
 
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="cost_sheets_report_{today}.csv"'
+            # Filters
+            cs_number = request.query_params.get('cs_number')
+            lead_no = request.query_params.get('lead_no')
+            deal_no = request.query_params.get('deal_no')
+            customer_name = request.query_params.get('customer_name')
+            project_name = request.query_params.get('project_name')
+            status_filter = request.query_params.get('status')
 
-        writer = csv.writer(response)
-        writer.writerow(['Lead Number', 'Deal No.', 'Customer Name', 'Project Name', 'Cost Sheet No.', 'Date', 'Status', 'Margin %', 'Est. Margin', 'Total Price'])
-        
-        for cs in queryset:
-            margin_pct = 0
-            if cs.total_estimated_price and cs.total_estimated_price > 0:
-                margin_pct = round((cs.total_estimated_margin / cs.total_estimated_price) * 100, 2)
+            today = timezone.now().date()
+            start_date = None
+            end_date = None
 
-            writer.writerow([
-                cs.lead.lead_no if cs.lead else '—',
-                cs.deal.deal_id if cs.deal else '—',
-                cs.lead.customer_name if cs.lead else '—',
-                cs.lead.project_name if cs.lead else '—',
-                cs.cost_sheet_no,
-                cs.cost_sheet_date.strftime('%Y-%m-%d') if cs.cost_sheet_date else '—',
-                cs.status,
-                f"{margin_pct}%",
-                cs.total_estimated_margin,
-                cs.total_estimated_price
-            ])
+            if period == 'last_month':
+                first_of_this_month = today.replace(day=1)
+                end_date = first_of_this_month - timedelta(days=1)
+                start_date = end_date.replace(day=1)
+            elif period == 'last_3_months':
+                first_of_this_month = today.replace(day=1)
+                end_date = first_of_this_month - timedelta(days=1)
+                temp_date = end_date - timedelta(days=60)
+                start_date = temp_date.replace(day=1)
+            elif period == 'last_6_months':
+                first_of_this_month = today.replace(day=1)
+                end_date = first_of_this_month - timedelta(days=1)
+                temp_date = end_date - timedelta(days=150)
+                start_date = temp_date.replace(day=1)
+            elif period == 'last_year':
+                last_year = today.year - 1
+                start_date = datetime(last_year, 1, 1).date()
+                end_date = datetime(last_year, 12, 31).date()
+            elif period == 'last_financial_year':
+                if today.month >= 4:
+                    start_year = today.year - 1
+                else:
+                    start_year = today.year - 2
+                start_date = datetime(start_year, 4, 1).date()
+                end_date = datetime(start_year + 1, 3, 31).date()
+            elif start_date_str and end_date_str:
+                try:
+                    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=400)
+
+            queryset = self.queryset.select_related('lead', 'deal')
             
-        return response
+            # Apply Date Filters
+            if start_date:
+                queryset = queryset.filter(cost_sheet_date__gte=start_date)
+            if end_date:
+                queryset = queryset.filter(cost_sheet_date__lte=end_date)
+                
+            # Apply Text Filters
+            if cs_number:
+                queryset = queryset.filter(cost_sheet_no__icontains=cs_number)
+            if lead_no:
+                queryset = queryset.filter(lead__lead_no__icontains=lead_no)
+            if deal_no:
+                queryset = queryset.filter(deal__deal_id__icontains=deal_no)
+            if customer_name:
+                queryset = queryset.filter(lead__customer_name__icontains=customer_name)
+            if project_name:
+                queryset = queryset.filter(lead__project_name__icontains=project_name)
+            if status_filter:
+                queryset = queryset.filter(status=status_filter)
+
+            # Calculate margin pct for the template context
+            cost_sheets = []
+            for cs in queryset:
+                margin_pct = 0
+                if cs.total_estimated_price and cs.total_estimated_price > 0:
+                    margin_pct = round((cs.total_estimated_margin / cs.total_estimated_price) * 100, 2)
+                cs.margin_pct = margin_pct
+                cost_sheets.append(cs)
+
+            html_string = render_to_string('cost_sheets/report_pdf.html', {'cost_sheets': cost_sheets, 'now': timezone.now()})
+            
+            result = io.BytesIO()
+            pisa_status = pisa.CreatePDF(html_string, dest=result)
+            
+            if pisa_status.err:
+                return Response({
+                    "status": "error",
+                    "message": "PDF generation error occurred."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="cost_sheets_report_{today}.pdf"'
+            return response
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": f"PDF export failed: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['get'])
     def export_excel(self, request):

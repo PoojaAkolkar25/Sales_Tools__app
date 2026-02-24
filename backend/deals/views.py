@@ -152,7 +152,7 @@ class DealViewSet(viewsets.ModelViewSet):
             worksheet.write(row, 8, deal.deal_type)
             worksheet.write(row, 9, deal.customer.name if deal.customer else "N/A")
             worksheet.write(row, 10, deal.customer_email)
-            worksheet.write(row, 11, deal.end_user_name)
+            worksheet.write(row, 11, deal.end_customer)
             worksheet.write(row, 12, deal.client_type)
             worksheet.write(row, 13, deal.inside_salesperson)
             worksheet.write(row, 14, deal.inside_sales_head)
@@ -178,20 +178,26 @@ class DealViewSet(viewsets.ModelViewSet):
     def export_pdf(self, request):
         try:
             from django.template.loader import render_to_string
-            import weasyprint
+            from django.http import HttpResponse
+            from xhtml2pdf import pisa
+            import io
             
             deals = self.get_queryset()
             html_string = render_to_string('deals/report_pdf.html', {'deals': deals, 'now': timezone.now()})
-            pdf_file = weasyprint.HTML(string=html_string).write_pdf()
             
-            response = HttpResponse(pdf_file, content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="Deals_Report_{timezone.now().strftime("%Y%m%d")}.pdf"'
-            return response
-        except ImportError:
-             return Response({
-                "status": "error",
-                "message": "PDF export failed: WeasyPrint not installed or properly configured in this environment."
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            result = io.BytesIO()
+            pdf = pisa.pisaDocument(io.StringIO(html_string), result)
+            
+            if not pdf.err:
+                response = HttpResponse(result.getvalue(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="Deals_Report_{timezone.now().strftime("%Y%m%d")}.pdf"'
+                return response
+            else:
+                return Response({
+                    "status": "error",
+                    "message": "PDF generation errors occurred."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
         except Exception as e:
             return Response({
                 "status": "error",
@@ -231,7 +237,7 @@ class DealViewSet(viewsets.ModelViewSet):
                 deal.deal_type,
                 deal.customer.name if deal.customer else "N/A",
                 deal.customer_email,
-                deal.end_user_name,
+                deal.end_customer,
                 deal.client_type,
                 deal.inside_salesperson,
                 deal.inside_sales_head,

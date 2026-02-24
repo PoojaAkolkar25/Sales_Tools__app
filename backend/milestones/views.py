@@ -101,7 +101,37 @@ class MilestoneViewSet(viewsets.ModelViewSet):
         return queryset
 
     @action(detail=False, methods=['get'])
-    def export_report(self, request):
+    def export_pdf(self, request):
+        try:
+            from django.template.loader import render_to_string
+            from django.http import HttpResponse
+            from xhtml2pdf import pisa
+            import io
+            
+            queryset = self._apply_filters(request)
+            html_string = render_to_string('milestones/report_pdf.html', {'milestones': queryset, 'now': timezone.now()})
+            
+            result = io.BytesIO()
+            pdf = pisa.pisaDocument(io.StringIO(html_string), result)
+            
+            if not pdf.err:
+                response = HttpResponse(result.getvalue(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="Milestones_Report_{timezone.now().strftime("%Y%m%d")}.pdf"'
+                return response
+            else:
+                return Response({
+                    "status": "error",
+                    "message": "PDF generation errors occurred."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": f"PDF export failed: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'])
+    def export_csv(self, request):
         queryset = self._apply_filters(request)
         today = timezone.now().date()
         

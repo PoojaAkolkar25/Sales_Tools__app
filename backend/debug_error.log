@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "D:\SalesEdge\Sales_Tools__app\backend\debug_pdf.py", line 10, in <module>
+    import weasyprint
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\weasyprint\__init__.py", line 419, in <module>
+    from .css import preprocess_stylesheet  # noqa: I001, E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\weasyprint\css\__init__.py", line 28, in <module>
+    from .computed_values import COMPUTER_FUNCTIONS
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\weasyprint\css\computed_values.py", line 9, in <module>
+    from ..text.ffi import ffi, pango, units_to_double
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\weasyprint\text\ffi.py", line 431, in <module>
+    gobject = _dlopen(
+              ^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\weasyprint\text\ffi.py", line 420, in _dlopen
+    return ffi.dlopen(names[0])  # pragma: no cover
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\cffi\api.py", line 150, in dlopen
+    lib, function_cache = _make_ffi_library(self, name, flags)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\cffi\api.py", line 834, in _make_ffi_library
+    backendlib = _load_backend_lib(backend, libname, flags)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\cffi\api.py", line 829, in _load_backend_lib
+    raise OSError(msg)
+OSError: cannot load library 'gobject-2.0-0': error 0x7e.  Additionally, ctypes.util.find_library() did not manage to locate a library called 'gobject-2.0-0'
