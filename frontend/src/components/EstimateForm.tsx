@@ -554,27 +554,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                     errorMsg = errorData;
                 } else if (errorData.error) {
                     errorMsg = errorData.error;
-                } else if (errorData.items) {
-                    // Handle nested items errors
-                    if (Array.isArray(errorData.items)) {
-                        const firstError = errorData.items.find((item: any) => item && Object.keys(item).length > 0);
-                        if (firstError) {
-                            const field = Object.keys(firstError)[0];
-                            const message = firstError[field];
-                            errorMsg = `Item error (${field}): ${Array.isArray(message) ? message[0] : message}`;
-                        } else if (typeof errorData.items[0] === 'string') {
-                            errorMsg = errorData.items[0];
-                        }
-                    } else if (typeof errorData.items === 'string') {
-                        errorMsg = errorData.items;
+                } else if (typeof errorData === 'object') {
+                    const errors = [];
+                    for (const [key, value] of Object.entries(errorData)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
                     }
-                } else if (errorData.proposals) {
-                    errorMsg = Array.isArray(errorData.proposals) ? errorData.proposals[0] : errorData.proposals;
-                } else {
-                    // Fallback: extract first available error message
-                    const firstKey = Object.keys(errorData)[0];
-                    const firstVal = errorData[firstKey];
-                    errorMsg = `${firstKey}: ${Array.isArray(firstVal) ? firstVal[0] : firstVal}`;
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
+                    else errorMsg = JSON.stringify(errorData);
                 }
             }
 

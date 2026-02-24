@@ -77,7 +77,20 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
             onSave();
         } catch (error: any) {
             console.error('Error saving lead', error);
-            const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : 'Error saving lead';
+            let errorMsg = 'Error saving lead';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+                else if (typeof data === 'object') {
+                    const errors = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    }
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
+                    else errorMsg = JSON.stringify(data);
+                }
+            }
             showNotification(errorMsg, 'error');
         } finally {
             setSaving(false);

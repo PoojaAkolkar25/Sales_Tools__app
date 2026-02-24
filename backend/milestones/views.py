@@ -7,6 +7,7 @@ from .models import Milestone, MilestoneStatus
 from .serializers import MilestoneSerializer
 from finance.models import Invoice, InvoiceStatus
 from sales_orders.models import SalesOrder
+import logging
 import datetime
 import io
 import csv
@@ -15,6 +16,8 @@ from django.http import HttpResponse
 from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
+
+logger = logging.getLogger(__name__)
 
 class MilestoneViewSet(viewsets.ModelViewSet):
     queryset = Milestone.objects.all()
@@ -125,6 +128,7 @@ class MilestoneViewSet(viewsets.ModelViewSet):
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 
         except Exception as e:
+            logger.error(f"Error in export_pdf: {str(e)}", exc_info=True)
             return Response({
                 "status": "error",
                 "message": f"PDF export failed: {str(e)}"
@@ -235,6 +239,7 @@ class MilestoneViewSet(viewsets.ModelViewSet):
                     
             return super().create(request, *args, **kwargs)
         except Exception as e:
+            logger.error(f"Error in create milestone: {str(e)}", exc_info=True)
             return Response({"error": f"Internal Server Error during creation: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def update(self, request, *args, **kwargs):
@@ -249,6 +254,7 @@ class MilestoneViewSet(viewsets.ModelViewSet):
                 
             return super().update(request, *args, **kwargs)
         except Exception as e:
+            logger.error(f"Error in update milestone: {str(e)}", exc_info=True)
             return Response({"error": f"Internal Server Error during update: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @transaction.atomic
@@ -480,6 +486,7 @@ class MilestoneViewSet(viewsets.ModelViewSet):
             self._internal_create_invoice(milestone)
             return Response(MilestoneSerializer(milestone).data)
         except Exception as e:
+            logger.error(f"Error in create_invoice action: {str(e)}", exc_info=True)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     @action(detail=True, methods=['get'])
     def download_pdf(self, request, pk=None):

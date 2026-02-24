@@ -442,8 +442,19 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
     };
 
     const handleSave = async (isAutoSave = false) => {
-        if (!formData.deal_name || !formData.deal_amount) {
-            if (!isAutoSave) showNotification('Please fill in required fields (Project Name and Amount)', 'warning');
+        if (!formData.deal_date || !formData.company || !formData.deal_name) {
+            if (!isAutoSave) showNotification('Please fill in required fields: Deal Date, Company Name, and Project Name', 'warning');
+            return null;
+        }
+
+        const hasInvalidTypes = (formData.deal_types || []).some((item: any) => !item.type);
+        if (hasInvalidTypes && !isAutoSave) {
+            showNotification('Please select a Type for all Deal Value rows', 'warning');
+            return null;
+        }
+
+        if (!formData.deal_amount || parseFloat(formData.deal_amount) <= 0) {
+            if (!isAutoSave) showNotification('Deal Value must be greater than 0', 'warning');
             return null;
         }
 
@@ -481,9 +492,19 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                 if (!isAutoSave) showNotification('Deal created successfully', 'success');
             }
             return finalId;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving deal', error);
-            if (!isAutoSave) showNotification('Error saving deal', 'error');
+            if (!isAutoSave) {
+                const errorData = error.response?.data;
+                if (errorData && typeof errorData === 'object') {
+                    const errorMessages = Object.entries(errorData)
+                        .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : JSON.stringify(value)}`)
+                        .join(' | ');
+                    showNotification(errorMessages || 'Error saving deal', 'error');
+                } else {
+                    showNotification(error.response?.data?.message || 'Error saving deal', 'error');
+                }
+            }
             return null;
         }
     };

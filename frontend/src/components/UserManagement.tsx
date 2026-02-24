@@ -190,6 +190,25 @@ const UserManagement: React.FC = () => {
     const [error, setError] = useState('');
     const [companyError, setCompanyError] = useState('');
 
+    const parseError = (err: any, fallback: string) => {
+        console.error(fallback, err);
+        const errorData = err.response?.data;
+        if (errorData) {
+            if (typeof errorData === 'string') return errorData;
+            if (errorData.error) return errorData.error;
+            if (typeof errorData === 'object') {
+                const errors = [];
+                for (const [key, value] of Object.entries(errorData)) {
+                    if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                    else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    else errors.push(`${key}: ${JSON.stringify(value)}`);
+                }
+                return errors.length > 0 ? errors.join(' | ') : JSON.stringify(errorData);
+            }
+        }
+        return err.response?.data?.message || fallback;
+    };
+
     const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -795,28 +814,25 @@ const UserManagement: React.FC = () => {
                 ...formData,
                 reporting_to: formData.reporting_to || null
             };
-            await api.post('auth/users/', cleanedData);
-            showNotification('User created successfully', 'success');
+            if (editingId) {
+                await api.patch(`auth/users/${editingId}/`, cleanedData);
+                showNotification('User updated successfully', 'success');
+            } else {
+                await api.post('auth/users/', cleanedData);
+                showNotification('User created successfully', 'success');
+            }
             setFormData({
                 username: '', email: '', password: '',
                 first_name: '', last_name: '', role: 'app_user',
                 mobile: '', department: '', region: '', reporting_to: '', employee_id: ''
             });
+            setEditingId(null);
             fetchUsers();
             setShowForm(false);
         } catch (err: any) {
-            console.error('Error saving user', err);
-            const errorData = err.response?.data;
-            if (errorData && typeof errorData === 'object') {
-                const errorMessages = Object.entries(errorData)
-                    .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-                    .join(' | ');
-                setError(errorMessages || 'Error saving user');
-                showNotification(errorMessages || 'Error saving user', 'error');
-            } else {
-                setError(err.response?.data?.message || 'Error saving user');
-                showNotification(err.response?.data?.message || 'Error saving user', 'error');
-            }
+            const errorMsg = parseError(err, 'Failed to save user');
+            setError(errorMsg);
+            showNotification(errorMsg, 'error');
         }
     };
 
@@ -837,13 +853,11 @@ const UserManagement: React.FC = () => {
             const formData = new FormData();
             Object.entries(companyFormData).forEach(([key, value]) => {
                 if (value !== null && value !== undefined) {
-                    // Special handling for logo: only append if it's a File (new upload)
                     if (key === 'logo') {
                         if (value instanceof File) {
                             formData.append(key, value);
                         }
                     } else if (key === 'state') {
-                        // Find the matching state ID from the backend's states array
                         const matchedState = states.find((s: any) => s.name?.toLowerCase() === (value as string)?.toLowerCase());
                         if (matchedState) {
                             formData.append(key, matchedState.id);
@@ -875,7 +889,7 @@ const UserManagement: React.FC = () => {
                 mobile_number: '', email: '', website_url: '', linked_company_profile: '',
                 industry: '', type: 'CUSTOMER',
                 payment_terms: 'NET_30',
-                base_currency: 'INR', currency_symbol: '? / INR', decimal_places: 2,
+                base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
                 is_gst_applicable: true, gstin: '', state_code: '',
                 msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
             });
@@ -883,23 +897,15 @@ const UserManagement: React.FC = () => {
             fetchCompanies();
             setShowForm(false);
         } catch (err: any) {
-            console.error('Error saving company', err);
-            const errorData = err.response?.data;
-            if (errorData && typeof errorData === 'object') {
-                const errorMessages = Object.entries(errorData)
-                    .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-                    .join(' | ');
-                setCompanyError(errorMessages || 'Error saving customer');
-                showNotification(errorMessages || 'Error saving customer', 'error');
-            } else {
-                setCompanyError(err.response?.data?.message || 'Error saving customer');
-                showNotification(err.response?.data?.message || 'Error saving customer', 'error');
-            }
+            const errorMsg = parseError(err, 'Failed to save Customer');
+            setCompanyError(errorMsg);
+            showNotification(errorMsg, 'error');
         }
     };
 
     const handleCreatePartner = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
 
         if (!partnerFormData.name || !partnerFormData.base_currency) {
             showNotification('Please fill in all required fields (Company Name, Currency)', 'error');
@@ -915,7 +921,6 @@ const UserManagement: React.FC = () => {
                             formData.append(key, value);
                         }
                     } else if (key === 'state') {
-                        // Find the matching state ID from the backend's states array
                         const matchedState = states.find((s: any) => s.name?.toLowerCase() === (value as string)?.toLowerCase());
                         if (matchedState) {
                             formData.append(key, matchedState.id);
@@ -946,7 +951,7 @@ const UserManagement: React.FC = () => {
                 phone_number: '', mobile: '', email: '', website_url: '',
                 primary_contact: '',
                 base_currency: 'INR',
-                currency_symbol: '? / INR', decimal_places: 2,
+                currency_symbol: '₹ / INR', decimal_places: 2,
                 is_gst_applicable: true, gstin: '', state_code: '',
                 msme_registered: false, msme_number: '', pan: '',
                 tan: '', cin: '', status: 'ACTIVE', payment_terms: 'NET_30'
@@ -955,21 +960,15 @@ const UserManagement: React.FC = () => {
             fetchPartners();
             setShowForm(false);
         } catch (err: any) {
-            console.error('Error saving company', err);
-            const errorData = err.response?.data;
-            if (errorData && typeof errorData === 'object') {
-                const errorMessages = Object.entries(errorData)
-                    .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-                    .join(' | ');
-                showNotification(errorMessages || 'Error saving Company', 'error');
-            } else {
-                showNotification(err.response?.data?.message || 'Error saving Company', 'error');
-            }
+            const errorMsg = parseError(err, 'Failed to save Company');
+            setError(errorMsg);
+            showNotification(errorMsg, 'error');
         }
     };
 
     const handleCreateEndCustomer = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
 
         if (!endCustomerFormData.name) {
             showNotification('Please fill in all required fields (End user Name)', 'error');
@@ -994,16 +993,9 @@ const UserManagement: React.FC = () => {
             fetchEndCustomers();
             setShowForm(false);
         } catch (err: any) {
-            console.error('Error saving end customer', err);
-            const errorData = err.response?.data;
-            if (errorData && typeof errorData === 'object') {
-                const errorMessages = Object.entries(errorData)
-                    .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-                    .join(' | ');
-                showNotification(errorMessages || 'Error saving End Customer', 'error');
-            } else {
-                showNotification(err.response?.data?.message || 'Error saving End Customer', 'error');
-            }
+            const errorMsg = parseError(err, 'Failed to save End Customer');
+            setError(errorMsg);
+            showNotification(errorMsg, 'error');
         }
     };
 
@@ -1037,6 +1029,7 @@ const UserManagement: React.FC = () => {
 
     const handleCreateFinancialYear = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
 
         if (!fyFormData.code || !fyFormData.start_date || !fyFormData.end_date || !fyFormData.label) {
             showNotification('Please fill in all required fields (Code, Start Date, End Date, Label)', 'error');
@@ -1079,21 +1072,14 @@ const UserManagement: React.FC = () => {
             fetchFinancialYears();
             setShowForm(false);
         } catch (err: any) {
-            console.error('Error saving financial year', err);
-            const errorData = err.response?.data;
-            if (errorData && typeof errorData === 'object') {
-                const errorMessages = Object.entries(errorData)
-                    .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-                    .join(' | ');
-                showNotification(errorMessages || 'Error saving Financial Year', 'error');
-            } else {
-                showNotification(err.response?.data?.message || 'Error saving Financial Year', 'error');
-            }
+            const errorMsg = parseError(err, 'Failed to save Financial Year');
+            showNotification(errorMsg, 'error');
         }
     };
 
     const handleCreateProduct = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
 
         if (!productFormData.name || !productFormData.category || !productFormData.uom) {
             showNotification('Please fill in all required fields (Product Name, Category, UOM)', 'error');
@@ -1110,23 +1096,16 @@ const UserManagement: React.FC = () => {
             }
             setProductFormData({
                 product_code: '', name: '', category: 'SOFTWARE', subcategory: '',
-                description: '', uom: '', standard_price: 0, tax_percentage: 18,
+                description: '', uom: '', standard_price: '' as any, tax_percentage: '' as any,
                 hsn_sac_code: '', currency: 'INR', status: 'ACTIVE'
             });
             setEditingId(null);
             fetchProducts();
             setShowForm(false);
         } catch (err: any) {
-            console.error('Error saving product', err);
-            const errorData = err.response?.data;
-            if (errorData && typeof errorData === 'object') {
-                const errorMessages = Object.entries(errorData)
-                    .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-                    .join(' | ');
-                showNotification(errorMessages || 'Error saving Product/Service', 'error');
-            } else {
-                showNotification(err.response?.data?.message || 'Error saving Product/Service', 'error');
-            }
+            const errorMsg = parseError(err, 'Failed to save Product/Service');
+            setError(errorMsg);
+            showNotification(errorMsg, 'error');
         }
     };
 
@@ -1140,8 +1119,7 @@ const UserManagement: React.FC = () => {
                     fetchUsers();
                     showNotification('User deleted successfully', 'success');
                 } catch (err: any) {
-                    console.error('Error deleting user', err);
-                    showNotification('Error deleting user', 'error');
+                    showNotification(parseError(err, 'Error deleting user'), 'error');
                 }
             }
         });
@@ -1149,16 +1127,15 @@ const UserManagement: React.FC = () => {
 
     const handleDeletePartner = async (id: number) => {
         showConfirm({
-            title: 'Delete Partner',
-            message: 'Are you sure you want to delete this partner? This action cannot be undone.',
+            title: 'Delete Company',
+            message: 'Are you sure you want to delete this company? This action cannot be undone.',
             onConfirm: async () => {
                 try {
                     await api.delete(`finance/customer-partners/${id}/`);
                     fetchPartners();
-                    showNotification('Partner deleted successfully', 'success');
+                    showNotification('Company deleted successfully', 'success');
                 } catch (err: any) {
-                    console.error('Error deleting partner', err);
-                    showNotification('Error deleting partner', 'error');
+                    showNotification(parseError(err, 'Error deleting company'), 'error');
                 }
             }
         });
@@ -1174,8 +1151,7 @@ const UserManagement: React.FC = () => {
                     fetchEndCustomers();
                     showNotification('End customer deleted successfully', 'success');
                 } catch (err: any) {
-                    console.error('Error deleting end customer', err);
-                    showNotification('Error deleting end customer', 'error');
+                    showNotification(parseError(err, 'Error deleting end customer'), 'error');
                 }
             }
         });
@@ -1183,7 +1159,6 @@ const UserManagement: React.FC = () => {
 
     const handleDownloadReport = async (fy: any) => {
         try {
-            // Fetch Invoice Register data for the FY period
             const response = await api.get(`finance/invoices/report_register/`, {
                 params: {
                     start_date: fy.start_date,
@@ -1197,7 +1172,6 @@ const UserManagement: React.FC = () => {
                 return;
             }
 
-            // Convert JSON to CSV
             const headers = Object.keys(data[0]);
             const csvRows = [
                 headers.join(','),
@@ -1210,7 +1184,6 @@ const UserManagement: React.FC = () => {
             ];
             const csvContent = csvRows.join('\n');
 
-            // Download as File
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -1220,9 +1193,8 @@ const UserManagement: React.FC = () => {
             link.click();
             document.body.removeChild(link);
             showNotification('Report downloaded successfully', 'success');
-        } catch (err) {
-            console.error('Error downloading report', err);
-            showNotification('Error downloading report', 'error');
+        } catch (err: any) {
+            showNotification(parseError(err, 'Error downloading report'), 'error');
         }
     };
 
@@ -1247,9 +1219,7 @@ const UserManagement: React.FC = () => {
                 method = 'patch';
                 data = { status: ec.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' };
             } else {
-                // For company profile, we don't have a status field yet, but we could add one.
-                // For now, let's just show a notification.
-                showNotification('Status toggle not implemented for Company Profile', 'info');
+                showNotification('Status toggle not implemented for Customer profile', 'info');
                 return;
             }
 
@@ -1264,9 +1234,8 @@ const UserManagement: React.FC = () => {
             else if (type === 'partner') fetchPartners();
             else if (type === 'end_customer') fetchEndCustomers();
             else fetchCompanies();
-        } catch (err) {
-            console.error('Error toggling status', err);
-            showNotification('Error updating status', 'error');
+        } catch (err: any) {
+            showNotification(parseError(err, 'Error updating status'), 'error');
         }
     };
 
@@ -2036,6 +2005,16 @@ const UserManagement: React.FC = () => {
                                 </div>
                             ) : viewMode === 'partner' ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                                    {error && (
+                                        <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem' }}>
+                                            {error}
+                                        </div>
+                                    )}
+                                    {companyError && (
+                                        <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem' }}>
+                                            {companyError}
+                                        </div>
+                                    )}
                                     <div className="section">
                                         <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
@@ -2339,7 +2318,7 @@ const UserManagement: React.FC = () => {
                                                         { value: 'NET_90', label: '90 Days' }
                                                     ]}
                                                     value={(partnerFormData as any).payment_terms || 'NET_30'}
-                                                    onChange={(val) => setPartnerFormData({ ...partnerFormData, payment_terms: val as string } as any)}
+                                                    onChange={(val) => setPartnerFormData({ ...partnerFormData, payment_terms: val as string })}
                                                     placeholder="Select Payment Terms"
                                                 />
                                             </div>
@@ -2462,6 +2441,11 @@ const UserManagement: React.FC = () => {
                                 </div>
                             ) : viewMode === 'end_customer' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                    {error && (
+                                        <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem', gridColumn: 'span 3' }}>
+                                            {error}
+                                        </div>
+                                    )}
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             End Customer Code <span style={{ fontSize: '0.7rem', color: '#A0AEC0', fontWeight: 500 }}>(Auto)</span>
@@ -2587,6 +2571,11 @@ const UserManagement: React.FC = () => {
                                 </div>
                             ) : viewMode === 'financial_year' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                    {error && (
+                                        <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem', gridColumn: 'span 3' }}>
+                                            {error}
+                                        </div>
+                                    )}
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Year <span style={{ color: 'var(--theme-primary)' }}>*</span>
@@ -2638,6 +2627,11 @@ const UserManagement: React.FC = () => {
                                 </div>
                             ) : viewMode === 'product' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                    {error && (
+                                        <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem', gridColumn: 'span 3' }}>
+                                            {error}
+                                        </div>
+                                    )}
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Product Code <span style={{ fontSize: '0.7rem', color: '#A0AEC0', fontWeight: 500 }}>(Auto)</span>
