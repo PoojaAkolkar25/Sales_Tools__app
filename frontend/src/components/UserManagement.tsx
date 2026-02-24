@@ -1031,10 +1031,10 @@ const UserManagement: React.FC = () => {
         e.preventDefault();
         try {
             if (editingId) {
-                await api.patch(`deals/products/${editingId}/`, productFormData);
+                await api.patch(`products/${editingId}/`, productFormData);
                 showNotification('Product/Service updated successfully', 'success');
             } else {
-                await api.post('deals/products/', productFormData);
+                await api.post('products/', productFormData);
                 showNotification('Product/Service created successfully', 'success');
             }
             setProductFormData({
@@ -1809,6 +1809,11 @@ const UserManagement: React.FC = () => {
                         }}>
                             {viewMode === 'user' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                    {error && (
+                                        <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem', gridColumn: '1 / -1' }}>
+                                            {error}
+                                        </div>
+                                    )}
                                     <div>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                             Username <span style={{ color: 'var(--theme-primary)' }}>*</span>
