@@ -232,7 +232,7 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                 }
                             }}
                         >
-                            FOR REVIEW
+                            For Review
                         </button>
                         <button
                             onClick={() => setActiveTab('RECONCILED')}
@@ -261,7 +261,7 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                 }
                             }}
                         >
-                            RECONCILED
+                            Reconciled
                         </button>
                     </div>
 

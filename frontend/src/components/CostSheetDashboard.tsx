@@ -265,25 +265,25 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
         return params.toString();
     };
 
-    const exportToCSV = async () => {
+    const exportToPDF = async () => {
         setIsDownloading(true);
         try {
             const queryParams = getExportQueryParams();
-            const response = await api.get(`/cost-sheets/export_report/?${queryParams}`, {
+            const response = await api.get(`/cost-sheets/export_pdf/?${queryParams}`, {
                 responseType: 'blob'
             });
 
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `Cost_Sheets_Report_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute('download', `Cost_Sheets_Report_${new Date().toISOString().split('T')[0]}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error: any) {
-            console.error('Error downloading CSV report:', error);
-            alert('Failed to download CSV report. Please try again.');
+            console.error('Error downloading PDF report:', error);
+            alert('Failed to download PDF report. Please try again.');
         } finally {
             setIsDownloading(false);
         }
@@ -557,12 +557,12 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-primary)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                     <button
                                         disabled={isDownloading}
-                                        onClick={() => { exportToCSV(); setShowExportMenu(false); }}
+                                        onClick={() => { exportToPDF(); setShowExportMenu(false); }}
                                         style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                     >
-                                        <FileSpreadsheet size={16} style={{ color: '#059669' }} /> CSV Report
+                                        <FileSpreadsheet size={16} style={{ color: '#DC2626' }} /> PDF Report
                                     </button>
                                     <button
                                         disabled={isDownloading}

@@ -7,6 +7,7 @@ import {
     Columns,
     ChevronDown,
     FileSpreadsheet,
+    FileText,
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
@@ -203,25 +204,25 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
         return params.toString();
     };
 
-    const exportToCSV = async () => {
+    const exportToPDF = async () => {
         setIsDownloading(true);
         try {
             const queryParams = getExportQueryParams();
-            const response = await api.get(`/milestones/export_report/?${queryParams}`, {
+            const response = await api.get(`/milestones/export_pdf/?${queryParams}`, {
                 responseType: 'blob'
             });
 
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `Milestones_Report_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute('download', `Milestones_Report_${new Date().toISOString().split('T')[0]}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error: any) {
-            console.error('Error downloading CSV report:', error);
-            showNotification('Failed to download CSV report.', 'error');
+            console.error('Error downloading PDF report:', error);
+            showNotification('Failed to download PDF report.', 'error');
         } finally {
             setIsDownloading(false);
         }
@@ -435,18 +436,20 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                 <Download size={16} /> Export <ChevronDown size={14} />
                             </button>
                             {showExportMenu && (
-                                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid #E2E8F0', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
+                                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-primary)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                     <button
-                                        onClick={() => { exportToCSV(); setShowExportMenu(false); }}
-                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                        disabled={isDownloading}
+                                        onClick={() => { exportToPDF(); setShowExportMenu(false); }}
+                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                     >
-                                        <FileSpreadsheet size={16} style={{ color: '#059669' }} /> CSV Report
+                                        <FileText size={16} style={{ color: '#DC2626' }} /> PDF Report
                                     </button>
                                     <button
+                                        disabled={isDownloading}
                                         onClick={() => { exportToExcel(); setShowExportMenu(false); }}
-                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                     >

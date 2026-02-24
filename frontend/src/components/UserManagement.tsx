@@ -1461,32 +1461,45 @@ const UserManagement: React.FC = () => {
             }}>
                 <div style={{
                     display: 'flex',
+                    gap: '4px',
                     alignItems: 'center',
-                    background: 'white',
+                    background: 'var(--bg-primary)',
                     padding: '6px',
                     borderRadius: '12px',
-                    border: '1px solid var(--border-primary)',
-                    boxShadow: 'var(--shadow-sm)',
-                    gap: '8px'
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
                 }}>
                     <button
                         onClick={() => setShowForm(false)}
                         style={{
-                            padding: '6px 20px',
-                            borderRadius: '8px',
-                            fontSize: '0.8rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            transition: 'all 0.23s',
-                            background: !showForm ? 'var(--theme-primary)' : '#f8fafc',
-                            color: !showForm ? 'white' : '#64748b',
-                            border: !showForm ? 'none' : '1px solid #e2e8f0',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px'
+                            gap: '8px',
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: !showForm ? 'var(--theme-primary)' : 'transparent',
+                            color: !showForm ? 'white' : 'var(--text-secondary)',
+                            boxShadow: !showForm ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (showForm) {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                e.currentTarget.style.color = 'var(--ae-orange)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (showForm) {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
+                            }
                         }}
                     >
-                        <LayoutDashboard size={14} /> Dashboard
+                        <LayoutDashboard size={18} /> Dashboard
                     </button>
                     <button
                         onClick={() => {
@@ -1529,21 +1542,35 @@ const UserManagement: React.FC = () => {
                             setShowForm(true);
                         }}
                         style={{
-                            padding: '6px 20px',
-                            borderRadius: '8px',
-                            fontSize: '0.8rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            transition: 'all 0.23s',
-                            background: showForm && !editingId ? 'var(--theme-primary)' : '#f8fafc',
-                            color: showForm && !editingId ? 'white' : '#64748b',
-                            border: showForm && !editingId ? 'none' : '1px solid #e2e8f0',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px'
+                            gap: '8px',
+                            padding: '6px 16px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: showForm && !editingId ? 'var(--theme-primary)' : 'transparent',
+                            color: showForm && !editingId ? 'white' : 'var(--text-secondary)',
+                            boxShadow: showForm && !editingId ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!showForm || editingId) {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                e.currentTarget.style.color = 'var(--ae-orange)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!showForm || editingId) {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
+                            }
                         }}
                     >
-                        <PlusCircle size={14} /> Create New
+                        <PlusCircle size={18} /> Create New
                     </button>
                 </div>
             </div>

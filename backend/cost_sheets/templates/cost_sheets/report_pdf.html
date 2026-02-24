@@ -3,11 +3,6 @@
 
 <head>
     <style>
-        @page {
-            size: A4 landscape;
-            margin: 10mm;
-        }
-
         body {
             font-family: 'Arial', sans-serif;
             color: #2D3748;
@@ -16,12 +11,12 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 2px solid #0066CC;
+            border-bottom: 2px solid #FF6B00;
             padding-bottom: 10px;
         }
 
         h1 {
-            color: #0066CC;
+            color: #FF6B00;
             margin: 0;
         }
 
@@ -35,7 +30,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
 
         th {
@@ -43,20 +38,14 @@
             color: #4A5568;
             font-weight: bold;
             text-align: left;
-            padding: 10px;
+            padding: 8px;
             border: 1px solid #E2E8F0;
         }
 
         td {
-            padding: 10px;
+            padding: 8px;
             border: 1px solid #E2E8F0;
             vertical-align: top;
-        }
-
-        .stage-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: bold;
         }
 
         .footer {
@@ -72,38 +61,42 @@
 
 <body>
     <div class="header">
-        <h1>Deals Report</h1>
+        <h1>Cost Sheets Summary Report</h1>
         <div class="date">Generated on: {{ now|date_format }}</div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th>ID</th>
+                <th>Lead Number</th>
+                <th>Deal No.</th>
+                <th>Customer Name</th>
                 <th>Project Name</th>
-                <th>Company</th>
-                <th>Lead No.</th>
-                <th>Stage</th>
-                <th>Amount</th>
-                <th>Salesperson</th>
-                <th>Close Date</th>
+                <th>Cost Sheet No.</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Margin %</th>
+                <th>Est. Margin</th>
+                <th>Total Price</th>
             </tr>
         </thead>
         <tbody>
-            {% for deal in deals %}
+            {% for cs in cost_sheets %}
             <tr>
-                <td style="font-weight: bold; color: #0066CC;">{{ deal.deal_id }}</td>
-                <td>{{ deal.deal_name }}</td>
-                <td>{{ deal.company }}</td>
-                <td>{{ deal.lead.lead_no|default:"N/A" }}</td>
-                <td>{{ deal.get_stage_display|default:deal.stage }}</td>
-                <td>{{ deal.currency }} {{ deal.deal_amount|floatformat:2 }}</td>
-                <td>{{ deal.salesperson_name|default:"N/A" }}</td>
-                <td>{{ deal.expected_close_date|date_format|default:"N/A" }}</td>
+                <td>{% if cs.lead %}{{ cs.lead.lead_no }}{% else %}—{% endif %}</td>
+                <td>{% if cs.deal %}{{ cs.deal.deal_id }}{% else %}—{% endif %}</td>
+                <td>{% if cs.lead %}{{ cs.lead.customer_name }}{% else %}—{% endif %}</td>
+                <td>{% if cs.lead %}{{ cs.lead.project_name }}{% else %}—{% endif %}</td>
+                <td style="font-weight: bold; color: #FF6B00;">{{ cs.cost_sheet_no }}</td>
+                <td>{% if cs.cost_sheet_date %}{{ cs.cost_sheet_date|date_format }}{% else %}—{% endif %}</td>
+                <td>{{ cs.status }}</td>
+                <td>{{ cs.margin_pct|default:"0" }}%</td>
+                <td>₹{{ cs.total_estimated_margin|default:"0"|floatformat:2 }}</td>
+                <td>₹{{ cs.total_estimated_price|default:"0"|floatformat:2 }}</td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" style="text-align: center; padding: 30px;">No deals found.</td>
+                <td colspan="10" style="text-align: center; padding: 30px;">No cost sheets found.</td>
             </tr>
             {% endfor %}
         </tbody>

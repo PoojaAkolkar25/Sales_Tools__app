@@ -1863,8 +1863,8 @@ option {
 
 .ae-btn-secondary:hover {
   background-color: var(--ae-gray-50);
-  color: var(--ae-primary);
-  border-color: var(--ae-gray-200);
+  color: var(--theme-primary);
+  border-color: var(--theme-primary);
 }
 
 .ae-btn-success {
