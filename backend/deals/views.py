@@ -6,12 +6,15 @@ from django.utils import timezone
 from django.http import HttpResponse
 import io
 import xlsxwriter
+import logging
 from .models import Deal, ImplementationPartner, Product, Customer, DealTypeEntry, AuditTrail, DealAttachment
 from .serializers import (
     DealSerializer, ImplementationPartnerSerializer,
     ProductSerializer, CustomerSerializer, DealTypeEntrySerializer,
     AuditTrailSerializer, DealAttachmentSerializer
 )
+
+logger = logging.getLogger(__name__)
 
 class ImplementationPartnerViewSet(viewsets.ModelViewSet):
     queryset = ImplementationPartner.objects.all().order_by('name')
@@ -23,10 +26,38 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def perform_create(self, serializer):
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error creating product: {str(e)}", exc_info=True)
+            raise
+
+    def perform_update(self, serializer):
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error updating product: {str(e)}", exc_info=True)
+            raise
+
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all().order_by('name')
     serializer_class = CustomerSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error creating customer (deals): {str(e)}", exc_info=True)
+            raise
+
+    def perform_update(self, serializer):
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error updating customer (deals): {str(e)}", exc_info=True)
+            raise
 
 class DealTypeEntryViewSet(viewsets.ModelViewSet):
     queryset = DealTypeEntry.objects.all().order_by('created_at')
@@ -108,6 +139,7 @@ class DealViewSet(viewsets.ModelViewSet):
                 "synced_at": deal.last_synced_at
             })
         except Exception as e:
+            logger.error(f"Error in sync_hubspot (DealViewSet): {str(e)}", exc_info=True)
             return Response({
                 "status": "error",
                 "message": f"HubSpot sync failed: {str(e)}"
@@ -199,6 +231,7 @@ class DealViewSet(viewsets.ModelViewSet):
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 
         except Exception as e:
+            logger.error(f"Error in export_pdf (DealViewSet): {str(e)}", exc_info=True)
             return Response({
                 "status": "error",
                 "message": f"PDF export failed: {str(e)}"
@@ -274,6 +307,7 @@ class DealViewSet(viewsets.ModelViewSet):
             serializer = DealAttachmentSerializer(attachment, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
+            logger.error(f"Error in upload_attachment (DealViewSet): {str(e)}", exc_info=True)
             return Response({
                 'error': f'File upload failed: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

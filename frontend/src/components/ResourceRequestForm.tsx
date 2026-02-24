@@ -117,7 +117,21 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
             }
             onSave();
         } catch (error: any) {
-            showNotification(error.response?.data?.error || 'Failed to save request', 'error');
+            let errorMsg = 'Failed to save request';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+                else if (typeof data === 'object') {
+                    const errors = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    }
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
+                    else errorMsg = JSON.stringify(data);
+                }
+            }
+            showNotification(errorMsg, 'error');
         } finally {
             setSaving(false);
         }
@@ -130,7 +144,21 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
             showNotification('Request submitted to IT Head', 'success');
             onSave();
         } catch (error: any) {
-            showNotification(error.response?.data?.error || 'Submission failed', 'error');
+            let errorMsg = 'Submission failed';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+                else if (typeof data === 'object') {
+                    const errors = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    }
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
+                    else errorMsg = JSON.stringify(data);
+                }
+            }
+            showNotification(errorMsg, 'error');
         } finally {
             setSaving(false);
         }
@@ -141,8 +169,22 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
             await api.post(`/inventory/requests/${id}/approve_it/`, { remarks: formData.it_head_remarks });
             showNotification('Approved by IT and sent to Finance', 'success');
             onSave();
-        } catch (error) {
-            showNotification('IT Approval failed', 'error');
+        } catch (error: any) {
+            let errorMsg = 'IT Approval failed';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+                else if (typeof data === 'object') {
+                    const errors = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    }
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
+                    else errorMsg = JSON.stringify(data);
+                }
+            }
+            showNotification(errorMsg, 'error');
         }
     };
 
@@ -151,8 +193,22 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
             await api.post(`/inventory/requests/${id}/approve_finance/`, { remarks: formData.finance_head_remarks });
             showNotification('Approved by Finance', 'success');
             onSave();
-        } catch (error) {
-            showNotification('Finance Approval failed', 'error');
+        } catch (error: any) {
+            let errorMsg = 'Finance Approval failed';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+                else if (typeof data === 'object') {
+                    const errors = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    }
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
+                    else errorMsg = JSON.stringify(data);
+                }
+            }
+            showNotification(errorMsg, 'error');
         }
     };
 
@@ -163,8 +219,22 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
             await api.post(`/inventory/requests/${id}/reject/`, { remarks });
             showNotification('Request rejected', 'success');
             onSave();
-        } catch (error) {
-            showNotification('Rejection failed', 'error');
+        } catch (error: any) {
+            let errorMsg = 'Rejection failed';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+                else if (typeof data === 'object') {
+                    const errors = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    }
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
+                    else errorMsg = JSON.stringify(data);
+                }
+            }
+            showNotification(errorMsg, 'error');
         }
     };
 
@@ -176,7 +246,21 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
             showNotification('Server issued successfully', 'success');
             onSave();
         } catch (error: any) {
-            showNotification(error.response?.data?.error || 'Issuance failed', 'error');
+            let errorMsg = 'Issuance failed';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+                else if (typeof data === 'object') {
+                    const errors = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    }
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
+                    else errorMsg = JSON.stringify(data);
+                }
+            }
+            showNotification(errorMsg, 'error');
         }
     };
 

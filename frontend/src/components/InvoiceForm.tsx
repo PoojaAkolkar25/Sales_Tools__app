@@ -366,9 +366,23 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 }
             }
             onBack();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving invoice', error);
-            showNotification('Error saving invoice', 'error');
+            let errorMsg = 'Error saving invoice';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+                else if (typeof data === 'object') {
+                    const errors = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    }
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
+                    else errorMsg = JSON.stringify(data);
+                }
+            }
+            showNotification(errorMsg, 'error');
         } finally {
             setLoading(false);
         }

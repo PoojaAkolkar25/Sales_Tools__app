@@ -180,10 +180,12 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 const data = error.response.data;
                 if (data.error) errorMsg = data.error;
                 else if (typeof data === 'object') {
-                    // Extract first error message from field-specific errors
-                    const firstKey = Object.keys(data)[0];
-                    if (Array.isArray(data[firstKey])) errorMsg = `${firstKey}: ${data[firstKey][0]}`;
-                    else if (typeof data[firstKey] === 'string') errorMsg = data[firstKey];
+                    const errors = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    }
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
                     else errorMsg = JSON.stringify(data);
                 }
             }
@@ -244,9 +246,13 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 const data = error.response.data;
                 if (data.error) errorMsg = data.error;
                 else if (typeof data === 'object') {
-                    const firstKey = Object.keys(data)[0];
-                    if (Array.isArray(data[firstKey])) errorMsg = `${firstKey}: ${data[firstKey][0]}`;
-                    else if (typeof data[firstKey] === 'string') errorMsg = data[firstKey];
+                    const errors = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    }
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
+                    else errorMsg = JSON.stringify(data);
                 }
             }
             showNotification(errorMsg, 'error');

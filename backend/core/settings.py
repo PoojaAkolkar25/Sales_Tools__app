@@ -179,3 +179,49 @@ EMAIL_HOST_PASSWORD='zwzc etkh slom fkxm'
 DEFAULT_FROM_EMAIL='pooja.haral332@gmail.com'
 FRONTEND_URL="http://localhost:5173/"
 
+
+# Logging Configuration
+LOGS_DIR = BASE_DIR / "logs"
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'level': 'WARNING',  # Capture WARNING and ERROR
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'error.log',
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB limit
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        # Catch-all logger for your own apps
+        '': {
+            'handlers': ['console', 'file'],
+            'level': 'WARNING',
+        },
+    },
+}

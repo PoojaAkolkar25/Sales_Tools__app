@@ -619,20 +619,22 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             }
             return response.data;
         } catch (error: any) {
-            console.error('Error saving cost sheet', error.response?.data);
-            let errorMsg = 'Failed to save cost sheet. Please check your inputs.';
-
+            console.error('Error saving cost sheet', error);
+            let errorMsg = 'Failed to save cost sheet';
             if (error.response?.data) {
-                if (typeof error.response.data === 'object') {
-                    errorMsg = Object.entries(error.response.data)
-                        .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : JSON.stringify(errors)}`)
-                        .join('\n');
-                } else {
-                    errorMsg = JSON.stringify(error.response.data, null, 2);
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+                else if (typeof data === 'object') {
+                    const errors = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    }
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
+                    else errorMsg = JSON.stringify(data);
                 }
             }
-
-            setCustomAlert({ message: `Validation Error:\n\n${errorMsg}`, type: 'error' });
+            setCustomAlert({ message: errorMsg, type: 'error' });
             return null;
         }
     };
@@ -643,13 +645,21 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             setCustomAlert({ message: 'Cost Sheet Approved!', type: 'success' });
             if (onBack) onBack();
         } catch (error: any) {
-            let errorMsg = error.response?.data?.error || 'Failed to approve';
-
-            if (error.response?.data?.validation_errors && Array.isArray(error.response.data.validation_errors)) {
-                const detailedErrors = error.response.data.validation_errors.join('\n• ');
-                errorMsg = `${errorMsg}\n\n• ${detailedErrors}`;
+            console.error('Approve Error:', error);
+            let errorMsg = 'Failed to approve cost sheet';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+                else if (typeof data === 'object') {
+                    const errors = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
+                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
+                    }
+                    if (errors.length > 0) errorMsg = errors.join(' | ');
+                    else errorMsg = JSON.stringify(data);
+                }
             }
-
             setCustomAlert({ message: errorMsg, type: 'error' });
         }
     };
@@ -665,7 +675,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 if (onBack) onBack();
             }, 1500);
         } catch (error: any) {
-            setCustomAlert({ message: error.response?.data?.error || 'Failed to reject', type: 'error' });
+            console.error('Reject Error:', error);
+            let errorMsg = 'Failed to reject cost sheet';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+            }
+            setCustomAlert({ message: errorMsg, type: 'error' });
         }
     };
 
@@ -680,7 +696,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 if (onBack) onBack();
             }, 1500);
         } catch (error: any) {
-            setCustomAlert({ message: error.response?.data?.error || 'Failed to revert', type: 'error' });
+            console.error('Revert Error:', error);
+            let errorMsg = 'Failed to revert cost sheet';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+            }
+            setCustomAlert({ message: errorMsg, type: 'error' });
         }
     };
 

@@ -447,6 +447,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = 'inline; filename="preview.pdf"'
             return response
         except Exception as e:
+            logger.error(f"Error in preview_pdf (EstimateViewSet): {str(e)}", exc_info=True)
             return Response({"error": str(e)}, status=500)
 
     @decorators.action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny])
@@ -469,6 +470,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             return response
         except Exception as e:
+            logger.error(f"Error in download_pdf (EstimateViewSet): {str(e)}", exc_info=True)
             return Response({"error": str(e)}, status=500)
 
     @decorators.action(detail=True, methods=['post'], permission_classes=[IsSalesHeadOrFinanceManager])
@@ -594,6 +596,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
             pisa_status = pisa.CreatePDF(html_string, dest=result)
             
             if pisa_status.err:
+                logger.error("PDF generation error occurred in export_pdf (EstimateViewSet)")
                 return Response({
                     "status": "error",
                     "message": "PDF generation error occurred."
@@ -603,6 +606,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = f'attachment; filename="Estimates_Report_{timezone.now().strftime("%Y%m%d")}.pdf"'
             return response
         except Exception as e:
+            logger.error(f"Error in export_pdf (EstimateViewSet): {str(e)}", exc_info=True)
             return Response({
                 "status": "error",
                 "message": f"PDF export failed: {str(e)}"

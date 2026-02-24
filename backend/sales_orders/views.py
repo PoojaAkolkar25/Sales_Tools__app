@@ -10,6 +10,9 @@ import io
 import xlsxwriter
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SalesOrderViewSet(viewsets.ModelViewSet):
     queryset = SalesOrder.objects.all()
@@ -62,10 +65,14 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
             customer_desc = existing.customer.name if existing.customer else existing.customer_name
             return Response({"error": f"PO Number {sales_order.po_number} already exists for this customer. Check first PO (ID: {existing.id}, Status: {status_desc})."}, status=status.HTTP_400_BAD_REQUEST)
 
-        sales_order.status = 'PENDING_APPROVAL'
-        sales_order.save() # save method handles SO number generation
-        
-        return Response(SalesOrderSerializer(sales_order).data)
+        try:
+            sales_order.status = 'PENDING_APPROVAL'
+            sales_order.save() # save method handles SO number generation
+            
+            return Response(SalesOrderSerializer(sales_order).data)
+        except Exception as e:
+            logger.error(f"Error in submit (SalesOrderViewSet): {str(e)}", exc_info=True)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @decorators.action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
@@ -73,9 +80,13 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         if sales_order.status != 'PENDING_APPROVAL':
              return Response({"error": "Only pending orders can be approved."}, status=status.HTTP_400_BAD_REQUEST)
         
-        sales_order.status = 'APPROVED'
-        sales_order.save()
-        return Response(SalesOrderSerializer(sales_order).data)
+        try:
+            sales_order.status = 'APPROVED'
+            sales_order.save()
+            return Response(SalesOrderSerializer(sales_order).data)
+        except Exception as e:
+            logger.error(f"Error in approve (SalesOrderViewSet): {str(e)}", exc_info=True)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @decorators.action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
@@ -83,9 +94,13 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         if sales_order.status != 'PENDING_APPROVAL':
              return Response({"error": "Only pending orders can be rejected."}, status=status.HTTP_400_BAD_REQUEST)
         
-        sales_order.status = 'REJECTED'
-        sales_order.save()
-        return Response(SalesOrderSerializer(sales_order).data)
+        try:
+            sales_order.status = 'REJECTED'
+            sales_order.save()
+            return Response(SalesOrderSerializer(sales_order).data)
+        except Exception as e:
+            logger.error(f"Error in reject (SalesOrderViewSet): {str(e)}", exc_info=True)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @decorators.action(detail=False, methods=['get'])
     def export_excel(self, request):
@@ -155,6 +170,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
             pisa_status = pisa.CreatePDF(html_string, dest=result)
             
             if pisa_status.err:
+                logger.error("PDF generation error occurred in export_pdf (SalesOrderViewSet)")
                 return Response({
                     "status": "error",
                     "message": "PDF generation error occurred."
@@ -164,6 +180,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = f'attachment; filename="Sales_Orders_Report_{timezone.now().strftime("%Y%m%d")}.pdf"'
             return response
         except Exception as e:
+            logger.error(f"Error in export_pdf (SalesOrderViewSet): {str(e)}", exc_info=True)
             return Response({
                 "status": "error",
                 "message": f"PDF export failed: {str(e)}"
@@ -182,6 +199,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
             pisa_status = pisa.CreatePDF(html_string, dest=result)
             
             if pisa_status.err:
+                logger.error("PDF generation error occurred in download_pdf (SalesOrderViewSet)")
                 return Response({
                     "status": "error",
                     "message": "PDF generation error occurred."
@@ -192,6 +210,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             return response
         except Exception as e:
+            logger.error(f"Error in download_pdf (SalesOrderViewSet): {str(e)}", exc_info=True)
             return Response({
                 "status": "error",
                 "message": f"Individual PDF download failed: {str(e)}"
@@ -227,6 +246,7 @@ class PurchaseOrderFileViewSet(viewsets.ModelViewSet):
                 "so_id": draft_so.id
             }, status=status.HTTP_201_CREATED)
         except Exception as e:
+            logger.error(f"Automated PO extraction failed in process_po: {str(e)}", exc_info=True)
             # Fallback: Create a blank draft if extraction fails completely
             from .models import SalesOrder, SalesOrderStatus
             draft_so = SalesOrder.objects.create(

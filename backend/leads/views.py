@@ -4,6 +4,9 @@ from django.contrib.contenttypes.models import ContentType
 from .models import Lead
 from .serializers import LeadSerializer
 from deals.models import AuditTrail
+import logging
+
+logger = logging.getLogger(__name__)
 
 class LeadViewSet(viewsets.ModelViewSet):
     queryset = Lead.objects.all().order_by('-created_at')
@@ -29,19 +32,23 @@ class LeadViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """Create lead and log audit trail"""
-        lead = serializer.save()
-        
-        # Create audit log for creation
-        content_type = ContentType.objects.get_for_model(Lead)
-        AuditTrail.objects.create(
-            content_type=content_type,
-            object_id=lead.id,
-            user=self.request.user,
-            action_type='CREATE',
-            field_name='created',
-            old_value='',
-            new_value=f'Lead {lead.lead_no} created'
-        )
+        try:
+            lead = serializer.save()
+            
+            # Create audit log for creation
+            content_type = ContentType.objects.get_for_model(Lead)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=lead.id,
+                user=self.request.user,
+                action_type='CREATE',
+                field_name='created',
+                old_value='',
+                new_value=f'Lead {lead.lead_no} created'
+            )
+        except Exception as e:
+            logger.error(f"Error in perform_create (leads): {str(e)}", exc_info=True)
+            raise e # Let DRF handle the response but ensure it's logged
     
     def update(self, request, *args, **kwargs):
         """Update lead and log field changes"""
@@ -59,33 +66,37 @@ class LeadViewSet(viewsets.ModelViewSet):
             'email': instance.email or '',
         }
         
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        
-        # Log changes
-        content_type = ContentType.objects.get_for_model(Lead)
-        new_data = {
-            'company': instance.company,
-            'lead_date': str(instance.lead_date) if instance.lead_date else '',
-            'customer_name': instance.customer_name,
-            'project_name': instance.project_name,
-            'project_manager': instance.project_manager or '',
-            'sales_person': instance.sales_person or '',
-            'email': instance.email or '',
-        }
-        
-        for field, old_value in original_data.items():
-            new_value = new_data[field]
-            if str(old_value) != str(new_value):
-                AuditTrail.objects.create(
-                    content_type=content_type,
-                    object_id=instance.id,
-                    user=request.user,
-                    action_type='UPDATE',
-                    field_name=field,
-                    old_value=str(old_value),
-                    new_value=str(new_value)
-                )
-        
-        return super().update(request, *args, **kwargs)
+        try:
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            
+            # Log changes
+            content_type = ContentType.objects.get_for_model(Lead)
+            new_data = {
+                'company': instance.company,
+                'lead_date': str(instance.lead_date) if instance.lead_date else '',
+                'customer_name': instance.customer_name,
+                'project_name': instance.project_name,
+                'project_manager': instance.project_manager or '',
+                'sales_person': instance.sales_person or '',
+                'email': instance.email or '',
+            }
+            
+            for field, old_value in original_data.items():
+                new_value = new_data[field]
+                if str(old_value) != str(new_value):
+                    AuditTrail.objects.create(
+                        content_type=content_type,
+                        object_id=instance.id,
+                        user=request.user,
+                        action_type='UPDATE',
+                        field_name=field,
+                        old_value=str(old_value),
+                        new_value=str(new_value)
+                    )
+            
+            return super().update(request, *args, **kwargs)
+        except Exception as e:
+            logger.error(f"Error in update (leads): {str(e)}", exc_info=True)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

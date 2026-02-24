@@ -21,6 +21,9 @@ from .serializers import (
 from .services import InvoiceService
 import csv
 import io
+import logging
+
+logger = logging.getLogger(__name__)
 
 class StateMasterViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StateMaster.objects.all().order_by('code')
@@ -29,6 +32,20 @@ class StateMasterViewSet(viewsets.ReadOnlyModelViewSet):
 class CompanyProfileViewSet(viewsets.ModelViewSet):
     queryset = CompanyProfile.objects.all()
     serializer_class = CompanyProfileSerializer
+
+    def perform_create(self, serializer):
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error creating company profile: {str(e)}", exc_info=True)
+            raise
+
+    def perform_update(self, serializer):
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error updating company profile: {str(e)}", exc_info=True)
+            raise
 
 class InvoiceViewSet(viewsets.ModelViewSet):
     queryset = Invoice.objects.all().order_by('-created_at')
@@ -295,6 +312,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice.invoice_no}.pdf"'
             return response
         except Exception as e:
+            logger.error(f"Error in download_pdf (finance): {str(e)}", exc_info=True)
             return Response({'error': str(e)}, status=500)
 
     @action(detail=True, methods=['post'])
@@ -338,6 +356,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             invoice.save()
             return Response({'status': 'Email sent successfully'})
         except Exception as e:
+            logger.error(f"Error in send_email (finance): {str(e)}", exc_info=True)
             return Response({'error': str(e)}, status=500)
 
     @action(detail=False, methods=['get'])
@@ -467,12 +486,14 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 response['Content-Disposition'] = f'attachment; filename="Invoices_Report_{timezone.now().strftime("%Y%m%d")}.pdf"'
                 return response
             else:
+                logger.error("PDF generation errors occurred in export_pdf (finance)")
                 return Response({
                     "status": "error",
                     "message": "PDF generation errors occurred."
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 
         except Exception as e:
+            logger.error(f"Error in export_pdf (finance): {str(e)}", exc_info=True)
             return Response({
                 "status": "error",
                 "message": f"PDF export failed: {str(e)}"
@@ -497,39 +518,43 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
         if not connections.exists():
              return Response({'error': 'No active bank connections found'}, status=status.HTTP_400_BAD_REQUEST)
              
-        today = date.today()
-        count = 0
-        for conn in connections:
-            # Create dummy transactions
-            num_transactions = random.randint(1, 3)
-            for i in range(num_transactions):
-                deposit = random.randint(5000, 50000)
-                withdrawal = 0
-                tx_date = today - timedelta(days=random.randint(0, 5))
-                
-                BankTransaction.objects.create(
-                    bank_connection=conn,
-                    transaction_date=tx_date,
-                    description=f"Payment received - REF{random.randint(1000, 9999)}",
-                    amount_received=deposit, # Keeping this for legacy compatibility
+        try:
+            today = date.today()
+            count = 0
+            for conn in connections:
+                # Create dummy transactions
+                num_transactions = random.randint(1, 3)
+                for i in range(num_transactions):
+                    deposit = random.randint(5000, 50000)
+                    withdrawal = 0
+                    tx_date = today - timedelta(days=random.randint(0, 5))
                     
-                    # New Fields
-                    transaction_id=f"TXN{random.randint(10000, 99999)}",
-                    value_date=tx_date,
-                    posted_date=tx_date,
-                    cheque_ref_no=f"CHQ{random.randint(100,999)}",
-                    transaction_remarks=f"Payment received",
-                    withdrawal_amount=withdrawal,
-                    deposit_amount=deposit,
-                    balance=random.randint(100000, 500000),
+                    BankTransaction.objects.create(
+                        bank_connection=conn,
+                        transaction_date=tx_date,
+                        description=f"Payment received - REF{random.randint(1000, 9999)}",
+                        amount_received=deposit, # Keeping this for legacy compatibility
+                        
+                        # New Fields
+                        transaction_id=f"TXN{random.randint(10000, 99999)}",
+                        value_date=tx_date,
+                        posted_date=tx_date,
+                        cheque_ref_no=f"CHQ{random.randint(100,999)}",
+                        transaction_remarks=f"Payment received",
+                        withdrawal_amount=withdrawal,
+                        deposit_amount=deposit,
+                        balance=random.randint(100000, 500000),
+                        
+                        customer_name=f"Customer {random.randint(1, 10)}", # Mock customer extraction
+                        source=BankTransactionSource.AUTO,
+                        status=BankTransactionStatus.FOR_REVIEW
+                    )
+                    count += 1
                     
-                    customer_name=f"Customer {random.randint(1, 10)}", # Mock customer extraction
-                    source=BankTransactionSource.AUTO,
-                    status=BankTransactionStatus.FOR_REVIEW
-                )
-                count += 1
-                
-        return Response({'status': 'Synced successfully', 'count': count})
+            return Response({'status': 'Synced successfully', 'count': count})
+        except Exception as e:
+            logger.error(f"Error in sync (finance): {str(e)}", exc_info=True)
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
     def upload(self, request):
@@ -758,6 +783,7 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
             return Response({'status': 'Uploaded successfully', 'count': created_count})
             
         except Exception as e:
+            logger.error(f"Error in upload (finance): {str(e)}", exc_info=True)
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -884,6 +910,20 @@ class CustomerPartnerViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'code', 'email', 'primary_contact']
     filterset_fields = ['type', 'status', 'linked_company']
 
+    def perform_create(self, serializer):
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error creating customer partner: {str(e)}", exc_info=True)
+            raise
+
+    def perform_update(self, serializer):
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error updating customer partner: {str(e)}", exc_info=True)
+            raise
+
 
 class EndCustomerViewSet(viewsets.ModelViewSet):
     queryset = EndCustomer.objects.all().order_by('-created_at')
@@ -892,9 +932,37 @@ class EndCustomerViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'code', 'email', 'contact_person']
     filterset_fields = ['linked_partner', 'status', 'deal_type']
 
+    def perform_create(self, serializer):
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error creating end customer: {str(e)}", exc_info=True)
+            raise
+
+    def perform_update(self, serializer):
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error updating end customer: {str(e)}", exc_info=True)
+            raise
+
 class FinancialYearViewSet(viewsets.ModelViewSet):
     queryset = FinancialYear.objects.all().order_by('-start_date')
     serializer_class = FinancialYearSerializer
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['code', 'label']
     filterset_fields = ['status', 'is_current_fy']
+
+    def perform_create(self, serializer):
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error creating financial year: {str(e)}", exc_info=True)
+            raise
+
+    def perform_update(self, serializer):
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error(f"Error updating financial year: {str(e)}", exc_info=True)
+            raise

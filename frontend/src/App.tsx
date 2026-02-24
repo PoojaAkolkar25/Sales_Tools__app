@@ -52,6 +52,7 @@ import CustomerDashboard from './components/CustomerDashboard';
 import ResourceDashboard from './components/ResourceDashboard';
 import ResourceRequestForm from './components/ResourceRequestForm';
 import Settings from './components/Settings';
+import ResetPassword from './components/ResetPassword';
 
 
 
@@ -295,7 +296,8 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     if (!authLoading) {
-      if (!user && location.pathname !== '/login') {
+      const publicPaths = ['/login', '/reset-password'];
+      if (!user && !publicPaths.includes(location.pathname)) {
         navigate('/login');
       } else if (user && location.pathname === '/login') {
         navigate('/');
@@ -475,6 +477,7 @@ const AppContent: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/home" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
