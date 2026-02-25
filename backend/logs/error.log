@@ -889,3 +889,27 @@ WARNING 2026-02-25 14:53:14,533 log 24024 27032 Bad Request: /api/po-files/proce
 WARNING 2026-02-25 14:53:14,533 log 24024 27032 Bad Request: /api/po-files/process_po/
 WARNING 2026-02-25 14:53:14,535 basehttp 24024 27032 "POST /api/po-files/process_po/ HTTP/1.1" 400 168
 WARNING 2026-02-25 14:53:14,535 basehttp 24024 27032 "POST /api/po-files/process_po/ HTTP/1.1" 400 168
+WARNING 2026-02-25 15:30:50,885 log 24024 11664 Bad Request: /api/sales-orders/
+WARNING 2026-02-25 15:30:50,885 log 24024 11664 Bad Request: /api/sales-orders/
+WARNING 2026-02-25 15:30:50,890 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
+WARNING 2026-02-25 15:30:50,890 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
+WARNING 2026-02-25 15:30:59,885 log 24024 11664 Bad Request: /api/sales-orders/
+WARNING 2026-02-25 15:30:59,885 log 24024 11664 Bad Request: /api/sales-orders/
+WARNING 2026-02-25 15:30:59,896 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
+WARNING 2026-02-25 15:30:59,896 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
+WARNING 2026-02-25 15:33:38,264 log 24024 11664 Bad Request: /api/sales-orders/
+WARNING 2026-02-25 15:33:38,264 log 24024 11664 Bad Request: /api/sales-orders/
+WARNING 2026-02-25 15:33:38,305 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
+WARNING 2026-02-25 15:33:38,305 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
+WARNING 2026-02-25 15:37:44,579 log 24024 11664 Bad Request: /api/sales-orders/
+WARNING 2026-02-25 15:37:44,579 log 24024 11664 Bad Request: /api/sales-orders/
+WARNING 2026-02-25 15:37:44,584 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
+WARNING 2026-02-25 15:37:44,584 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
+WARNING 2026-02-25 15:44:14,990 log 24024 11388 Bad Request: /api/sales-orders/
+WARNING 2026-02-25 15:44:14,990 log 24024 11388 Bad Request: /api/sales-orders/
+WARNING 2026-02-25 15:44:14,994 basehttp 24024 11388 "POST /api/sales-orders/ HTTP/1.1" 400 55
+WARNING 2026-02-25 15:44:14,994 basehttp 24024 11388 "POST /api/sales-orders/ HTTP/1.1" 400 55
+WARNING 2026-02-25 15:46:17,128 log 24024 11388 Bad Request: /api/sales-orders/
+WARNING 2026-02-25 15:46:17,128 log 24024 11388 Bad Request: /api/sales-orders/
+WARNING 2026-02-25 15:46:17,132 basehttp 24024 11388 "POST /api/sales-orders/ HTTP/1.1" 400 55
+WARNING 2026-02-25 15:46:17,132 basehttp 24024 11388 "POST /api/sales-orders/ HTTP/1.1" 400 55

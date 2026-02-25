@@ -3,18 +3,12 @@ import {
     Trash2,
     Save,
     CheckCircle,
-    XCircle,
-    Clock,
-    File,
-    Paperclip,
-    X,
+    XCircle, X,
     Download,
     PlusCircle,
-    Sparkles,
     Plus,
     Eye,
     Calendar,
-    ChevronDown,
     FileText,
     Loader2
 } from 'lucide-react';
@@ -31,7 +25,7 @@ interface SalesOrderFormProps {
     isExtractingSO?: boolean;
 }
 
-const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onUploadPO, isExtractingSO }) => {
+const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [customers, setCustomers] = useState<any[]>([]);
@@ -666,7 +660,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onU
                                 </thead>
                                 <tbody>
                                     {salesOrder.items.map((item: any, index: number) => (
-                                        <tr key={index} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                        <tr key={item.id ?? `new-${index}`} style={{ borderBottom: '1px solid #F1F5F9' }}>
                                             <td style={{ padding: '8px', textAlign: 'center' }}>
                                                 {index === salesOrder.items.length - 1 && !isSubmitted && (
                                                     <button

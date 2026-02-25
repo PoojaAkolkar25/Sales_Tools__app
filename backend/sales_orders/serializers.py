@@ -6,6 +6,9 @@ class SalesOrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = SalesOrderItem
         fields = '__all__'
+        extra_kwargs = {
+            'sales_order': {'required': False, 'allow_null': True}
+        }
 
 class SalesOrderSerializer(serializers.ModelSerializer):
     items = SalesOrderItemSerializer(many=True, required=False)
