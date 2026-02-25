@@ -42,6 +42,7 @@ const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: stri
         { key: 'payment_terms', label: 'Payment Terms', shortLabel: 'Terms' },
     ],
     company: [
+        { key: 'linked_company_profile_name', label: 'Company Name', shortLabel: 'Comp' },
         { key: 'name', label: 'Customer Name', shortLabel: 'Co' },
         { key: 'customer_id', label: 'Customer ID', shortLabel: 'ID' },
         { key: 'region', label: 'Region', shortLabel: 'Reg' },
@@ -137,6 +138,7 @@ const DEFAULT_COL_WIDTHS: Record<string, number> = {
     location: 150,
     status: 100,
     entity: 120,
+    linked_company_profile_name: 200,
     customer_id: 120,
     alias_name: 150,
     mobile_number: 150,
@@ -578,6 +580,7 @@ const UserManagement: React.FC = () => {
 
     const renderCompanyCell = (c: any, colKey: string) => {
         switch (colKey) {
+            case 'linked_company_profile_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 600 }}>{c.linked_company_profile_name || c.linked_company_profile_display || '-'}</div>;
             case 'name':
                 return (
                     <div className="flex items-center">
@@ -2805,12 +2808,22 @@ const UserManagement: React.FC = () => {
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
 
                                             <div>
+                                                <SearchableDropdown
+                                                    label="Company Name"
+                                                    options={partners.map(p => ({ value: String(p.id), label: p.name }))}
+                                                    value={String(companyFormData.linked_company_profile || '')}
+                                                    onChange={(val) => setCompanyFormData({ ...companyFormData, linked_company_profile: val as string })}
+                                                    placeholder="Select Company"
+                                                />
+                                            </div>
+
+                                            <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Customer Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    placeholder="Company Name"
+                                                    placeholder="Customer Name"
                                                     value={companyFormData.name}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
                                                     style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}

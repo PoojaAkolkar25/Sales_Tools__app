@@ -18,6 +18,9 @@ class StateMasterSerializer(serializers.ModelSerializer):
 class CompanyProfileSerializer(serializers.ModelSerializer):
     state_name = serializers.CharField(source='state.name', read_only=True)
     entity = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    linked_company_profile_name = serializers.CharField(source='linked_company_profile.name', read_only=True, allow_null=True)
+    linked_company_profile_entity = serializers.CharField(source='linked_company_profile.entity', read_only=True, allow_null=True)
+
     class Meta:
         model = CompanyProfile
         fields = '__all__'
@@ -25,9 +28,9 @@ class CompanyProfileSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         # Handle empty strings from frontend
         data = data.copy()
-        for field in ['state', 'decimal_places']:
+        for field in ['state', 'decimal_places', 'linked_company_profile']:
             if field in data and data[field] == '':
-                if field == 'state':
+                if field in ['state', 'linked_company_profile']:
                     data[field] = None
                 else:
                     data.pop(field)

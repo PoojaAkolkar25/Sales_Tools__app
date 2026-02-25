@@ -106,11 +106,7 @@ class Customer(models.Model):
         return self.name
 
 class Deal(models.Model):
-    class CompanyChoices(models.TextChoices):
-        AE_IND = 'AE IND', 'AE IND'
-        AE_USA = 'AE USA', 'AE USA'
-
-    company = models.CharField(max_length=10, choices=CompanyChoices.choices, default=CompanyChoices.AE_IND)
+    company = models.CharField(max_length=255, blank=True, null=True)
     deal_id = models.CharField(max_length=50, unique=True, blank=True)
     deal_name = models.CharField(max_length=255) # This is "Project Name" in UI
     deal_date = models.DateField(default=timezone.localdate)
@@ -154,7 +150,7 @@ class Deal(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.deal_id:
-            prefix = "AEINDDL" if self.company == self.CompanyChoices.AE_IND else "AEUSADL"
+            prefix = "AEUSADL" if self.company and "USA" in self.company.upper() else "AEINDDL"
             
             import re
             last_deal = Deal.objects.filter(deal_id__startswith=prefix).order_by('deal_id').last()

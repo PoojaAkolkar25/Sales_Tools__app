@@ -104,7 +104,16 @@ class DealSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Deal
-        fields = '__all__'
+        fields = [
+            'id', 'company', 'deal_id', 'deal_name', 'deal_date', 
+            'lead', 'stage', 'currency', 'fx_rate', 'deal_amount', 'deal_type', 
+            'description', 'customer', 'customer_email', 'end_customer', 
+            'attachments', 'client_type', 'inside_salesperson', 'inside_sales_head', 
+            'salesperson_name', 'sales_head', 'project_manager', 'project_manager_head', 
+            'expected_close_date', 'remark', 'won_lost_reason', 'hubspot_id', 
+            'last_synced_at', 'is_read', 'created_at', 'updated_at', 'deal_types', 
+            'deal_attachments', 'customer_name', 'lead_name', 'lead_no'
+        ]
         read_only_fields = ['deal_id', 'deal_date', 'created_at', 'updated_at']
     
 
