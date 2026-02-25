@@ -73,7 +73,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
 
 
     const [formData, setFormData] = useState<any>({
-        company: 'AE IND',
+        company: '',
         deal_name: '',
         deal_date: new Date().toISOString().split('T')[0],
         lead: '',
