@@ -43,7 +43,6 @@ const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: stri
     ],
     company: [
         { key: 'name', label: 'Customer Name', shortLabel: 'Co' },
-        { key: 'entity', label: 'Company Name', shortLabel: 'CoNm' },
         { key: 'customer_id', label: 'Customer ID', shortLabel: 'ID' },
         { key: 'region', label: 'Region', shortLabel: 'Reg' },
         { key: 'contact_person', label: 'Contact Person', shortLabel: 'Cont' },
@@ -214,7 +213,6 @@ const UserManagement: React.FC = () => {
 
     const [companyFormData, setCompanyFormData] = useState({
         name: '',
-        entity: '',
         customer_id: '',
         region: '',
         contact_person: '',
@@ -417,7 +415,6 @@ const UserManagement: React.FC = () => {
         } else if (mode === 'company') {
             setCompanyFormData({
                 name: item.name || '',
-                entity: item.entity || 'AE_IND',
                 customer_id: item.customer_id || '',
                 region: item.region || '',
                 contact_person: item.contact_person || '',
@@ -590,7 +587,7 @@ const UserManagement: React.FC = () => {
                         </div>
                     </div>
                 );
-            case 'entity': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.entity}</div>;
+
             case 'customer_id': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{c.customer_id}</div>;
             case 'region': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.region}</div>;
             case 'contact_person': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.contact_person || '-'}</div>;
@@ -844,8 +841,8 @@ const UserManagement: React.FC = () => {
         e.preventDefault();
         setCompanyError('');
 
-        if (!companyFormData.name || !companyFormData.entity || !companyFormData.base_currency) {
-            showNotification('Please fill in all required fields (Customer Name, Company Name, Currency)', 'error');
+        if (!companyFormData.name || !companyFormData.base_currency) {
+            showNotification('Please fill in all required fields (Customer Name, Currency)', 'error');
             return;
         }
 
@@ -883,7 +880,7 @@ const UserManagement: React.FC = () => {
             }
 
             setCompanyFormData({
-                name: '', entity: 'AE_IND', customer_id: '', region: '',
+                name: '', customer_id: '', region: '',
                 contact_person: '', alias_name: '', logo: null, address_line_1: '',
                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
                 mobile_number: '', email: '', website_url: '', linked_company_profile: '',
@@ -1574,7 +1571,7 @@ const UserManagement: React.FC = () => {
                                 status: 'ACTIVE'
                             });
                             setCompanyFormData({
-                                name: '', entity: 'AE_IND', customer_id: '', region: '',
+                                name: '', customer_id: '', region: '',
                                 contact_person: '', alias_name: '', logo: null, address_line_1: '',
                                 country: 'India', state: '', city: '', pincode: '', phone_number: '',
                                 mobile_number: '', email: '', website_url: '', linked_company_profile: '',
@@ -2806,16 +2803,7 @@ const UserManagement: React.FC = () => {
                                             Customer Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                                            <div>
-                                                <SearchableDropdown
-                                                    label="Company Name"
-                                                    options={partners.map(p => ({ value: p.name, label: p.name }))}
-                                                    value={companyFormData.entity}
-                                                    onChange={(val) => setCompanyFormData({ ...companyFormData, entity: val as string })}
-                                                    placeholder="Select Company Name"
-                                                    required
-                                                />
-                                            </div>
+
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Customer Name <span style={{ color: 'var(--theme-primary)' }}>*</span>

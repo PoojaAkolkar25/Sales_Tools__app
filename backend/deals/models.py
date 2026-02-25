@@ -92,6 +92,13 @@ class Customer(models.Model):
     state = models.CharField(max_length=100, blank=True, default='')
     state_code = models.CharField(max_length=10, blank=True, default='')
     currency = models.CharField(max_length=10, choices=Currency.choices, default=Currency.INR, blank=True)
+    
+    # Restoring missing fields required by database/migrations
+    customer_id = models.CharField(max_length=50, blank=True, null=True)
+    industry = models.CharField(max_length=100, blank=True, null=True)
+    region = models.CharField(max_length=100, blank=True, null=True)
+    website_url = models.URLField(blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
