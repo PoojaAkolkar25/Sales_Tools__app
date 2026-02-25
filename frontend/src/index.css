@@ -1,11 +1,15 @@
 /* Global Font Standardization - Enforcing strict system fonts (Arial/Times New Roman) */
 
+html {
+  font-size: 14.4px;
+}
+
 :root {
   /* --- Primary Theme (Orange & Blue) --- */
   --theme-primary: #FF6B00;
   /* Primary Orange */
-  --theme-secondary: #F7FAFC;
-  /* Light Gray Background */
+  --theme-secondary: #FFFFFF;
+  /* Pure White Background */
   --theme-accent: #0066CC;
   /* Azure Blue */
 
@@ -16,14 +20,14 @@
   --ae-orange: #FF6B00;
   --ae-orange-dark: #E65100;
   --ae-green: #00C853;
-  --ae-gray-50: #F8FAFC;
+  --ae-gray-50: #FFFFFF;
   --ae-gray-100: #E2E8F0;
   --ae-gray-800: #000000;
   --ae-gray-900: #000000;
 
   /* Semantic Color Variables */
   --bg-primary: #FFFFFF;
-  --bg-secondary: #F7FAFC;
+  --bg-secondary: #FFFFFF;
   --bg-accent: #E2E8F0;
   --ae-table-header-bg: #E2E8F0;
   --ae-filter-row-bg: #EDF2F7;
@@ -50,9 +54,9 @@
   --profile-dropdown-subtext: rgba(255, 255, 255, 0.5);
 
   /* Dimensions */
-  --nav-height: 72px;
-  --sidebar-width: 80px;
-  --sidebar-width-expanded: 240px;
+  --nav-height: 56px;
+  --sidebar-width: 64px;
+  --sidebar-width-expanded: 160px;
   --sidebar-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Shadows */
@@ -1060,20 +1064,20 @@ option {
 
 
 .sidebar-logo {
-  padding: 16px;
+  padding: 8px;
   background: rgba(0, 0, 0, 0.2);
   transition: all var(--sidebar-transition);
   display: flex;
   align-items: center;
-  min-height: 72px;
+  min-height: var(--nav-height);
 }
 
 .sidebar.expanded .sidebar-logo {
-  padding: 16px 24px;
+  padding: 8px 16px;
 }
 
 .sidebar-logo-img {
-  width: 48px;
+  width: 36px;
   height: auto;
   transition: all var(--sidebar-transition);
   flex-shrink: 0;
@@ -1098,7 +1102,7 @@ option {
 
 
 .sidebar-nav {
-  padding: 16px 8px;
+  padding: 12px 6px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -1117,7 +1121,7 @@ option {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 0;
+  padding: 10px 0;
   margin-bottom: 4px;
   color: rgba(255, 255, 255, 0.7);
   font-weight: 400;
@@ -1132,7 +1136,7 @@ option {
 
 .sidebar.expanded .sidebar-item {
   justify-content: flex-start;
-  padding: 12px 16px;
+  padding: 10px 12px;
   gap: 12px;
 }
 
@@ -1214,24 +1218,20 @@ option {
   width: 100%;
   display: flex;
   flex-direction: column;
-  background: #F0F2F5;
-  /* Light gray page background */
+  background: #FFFFFF;
+  /* Pure white page background */
 }
 
 .main-route-container {
-  background: #FFFFFF;
-  min-height: calc(100vh - 64px);
-  padding: 24px 41px;
-  border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  margin: 16px;
+  min-height: calc(100vh - var(--nav-height));
+  padding: 0 8px;
+  /* Reduced side gaps */
+  background: transparent;
 }
 
 .content-inner {
-  padding: 24px;
-  max-width: 1400px;
+  padding: 12px 16px;
   width: 100%;
-  margin: 0 auto;
 }
 
 
@@ -1244,7 +1244,7 @@ option {
   background-color: var(--ae-navy);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   z-index: 900;
-  padding: 0 40px;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1287,17 +1287,23 @@ option {
 }
 
 .ae-icon-btn {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
+  color: white;
+  transition: all 0.2s;
+  cursor: pointer;
+  padding: 0;
 }
 
 .ae-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .ae-create-btn {
@@ -1776,7 +1782,7 @@ option {
   font-size: 0.75rem;
   font-weight: 400;
   color: var(--ae-gray-800);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .ae-input {
@@ -1789,7 +1795,7 @@ option {
   outline: none;
   transition: all 0.2s;
   background: white;
-  height: 34px;
+  height: 30px;
 }
 
 .ae-input:hover,

@@ -1,0 +1,4 @@
+WARNING 2026-02-24 18:00:14,037 log 6560 3484 Not Found: /favicon.ico
+WARNING 2026-02-24 18:00:14,037 log 6560 3484 Not Found: /favicon.ico
+WARNING 2026-02-24 18:00:14,041 basehttp 6560 3484 "GET /favicon.ico HTTP/1.1" 404 3721
+WARNING 2026-02-24 18:00:14,041 basehttp 6560 3484 "GET /favicon.ico HTTP/1.1" 404 3721

@@ -346,7 +346,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
                     gap: '16px',
-                    padding: '20px',
+                    padding: '12px 16px',
                     borderBottom: '1px solid var(--border-primary)'
                 }}>
                     {/* Status Tabs */}

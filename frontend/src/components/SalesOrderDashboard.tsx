@@ -316,7 +316,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                     flexWrap: 'wrap',
                     verticalAlign: 'middle',
                     gap: '16px',
-                    padding: '20px',
+                    padding: '12px 16px',
                     borderBottom: '1px solid var(--border-primary)'
                 }}>
                     {/* Status Tabs */}

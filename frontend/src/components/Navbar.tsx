@@ -1,13 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     Bell,
-    ChevronDown,
-    User,
     LogOut,
-    HelpCircle,
-    History
+    HelpCircle
 } from 'lucide-react';
-import AllAuditTrail from './AllAuditTrail';
 
 interface NavbarProps {
     user: any;
@@ -15,25 +11,9 @@ interface NavbarProps {
     isSidebarExpanded?: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) => {
-    const [isProfileOpen, setIsProfileOpen] = useState(false);
+const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarExpanded }) => {
     const [showNotifications, setShowNotifications] = useState(false);
     const [showHelpModal, setShowHelpModal] = useState(false);
-    const [showAuditTrail, setShowAuditTrail] = useState(false);
-    const profileRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
-                setIsProfileOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
 
     return (
         <header className={`ae-navbar ${isSidebarExpanded ? 'sidebar-expanded' : ''}`}>
@@ -42,12 +22,12 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
             <div style={{ flex: 1 }}></div>
 
             {/* Right Section: Actions & Profile aligned as per image */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                 {/* Notification Bell */}
                 <div style={{ position: 'relative' }}>
                     <button
                         className="ae-icon-btn"
-                        style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+                        style={{ position: 'relative' }}
                         onClick={() => setShowNotifications(!showNotifications)}
                     >
                         <Bell size={20} />
@@ -86,159 +66,25 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                     )}
                 </div>
 
-                {/* Help Button */}
                 <button
                     onClick={() => setShowHelpModal(true)}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 16px',
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '8px',
-                        color: 'white',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                    }}
-                    title="View Process Flow"
+                    className="ae-icon-btn"
+                    title="Help"
                 >
-                    <HelpCircle size={18} />
-                    <span>Help</span>
+                    <HelpCircle size={20} />
                 </button>
 
-                {/* Audit Trail Button */}
+
+
+
+                {/* Logout Button */}
                 <button
-                    onClick={() => setShowAuditTrail(true)}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 16px',
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '8px',
-                        color: 'white',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                    }}
-                    title="View All Audit Logs"
+                    onClick={() => onLogout()}
+                    className="ae-icon-btn"
+                    title="Logout"
                 >
-                    <History size={18} />
-                    <span>Audit Trail</span>
+                    <LogOut size={20} />
                 </button>
-
-
-                {/* Profile Section */}
-                <div
-                    ref={profileRef}
-                    style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}
-                    onClick={() => setIsProfileOpen(!isProfileOpen)}
-                >
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: '1.2' }}>
-                        <span style={{ color: 'white', fontSize: '14px', fontWeight: 700 }}>
-                            {user?.username}
-                        </span>
-                        <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>
-                            {user?.role === 'app_admin' ? 'Admin' : 'Sales Rep'}
-                        </span>
-                    </div>
-
-                    <div
-                        className="ae-profile-avatar"
-                        style={{
-                            width: '38px',
-                            height: '38px',
-                            borderRadius: '50%',
-                            background: 'rgba(255,255,255,0.1)',
-                            padding: '2px',
-                            border: '2px solid var(--profile-avatar-border)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                    >
-                        <User size={18} color="var(--profile-icon-color)" />
-                    </div>
-
-                    <ChevronDown size={14} color="rgba(255,255,255,0.4)" style={{ transform: isProfileOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-
-                    {/* Profile Dropdown Menu */}
-                    {isProfileOpen && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '100%',
-                            right: 0,
-                            marginTop: '12px',
-                            width: '240px',
-                            background: 'var(--profile-dropdown-bg)',
-                            borderRadius: '12px',
-                            boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-                            padding: '8px',
-                            border: '1px solid var(--profile-dropdown-border)',
-                            zIndex: 100,
-                            overflow: 'hidden'
-                        }}>
-                            <div style={{ padding: '16px', borderBottom: '1px solid var(--profile-dropdown-divider)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <User size={20} color="var(--profile-dropdown-text)" />
-                                </div>
-                                <div>
-                                    <div style={{ color: 'var(--profile-dropdown-text)', fontWeight: 700, fontSize: '14px' }}>{user?.username}</div>
-                                    <div style={{ color: 'var(--profile-dropdown-subtext)', fontSize: '11px' }}>{user?.role === 'app_admin' ? 'Administrator' : 'User'}</div>
-                                </div>
-                            </div>
-
-
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onLogout();
-                                }}
-                                style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: '12px 16px',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: 'var(--theme-primary)',
-                                    fontWeight: 600,
-                                    fontSize: '13px',
-                                    cursor: 'pointer',
-                                    borderRadius: '8px',
-                                    transition: 'background 0.2s'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                            >
-                                <span>Logout</span>
-                                <LogOut size={16} />
-                            </button>
-                        </div>
-                    )}
-                </div>
             </div>
 
             {/* Help Modal */}
@@ -371,8 +217,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isSidebarExpanded }) =>
                 </div>
             )}
 
-            {/* Audit Trail Sidebar */}
-            <AllAuditTrail show={showAuditTrail} onClose={() => setShowAuditTrail(false)} />
+
         </header>
 
     );

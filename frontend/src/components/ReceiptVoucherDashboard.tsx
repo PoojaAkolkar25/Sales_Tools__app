@@ -193,7 +193,7 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '16px 20px',
+                    padding: '12px 16px',
                     borderBottom: '1px solid var(--border-primary)'
                 }}>
                     <div style={{

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
     Loader2,
     FileSpreadsheet,
-    FileText,
     ChevronDown,
     ChevronLeft,
     ChevronRight,
@@ -170,6 +169,10 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
         const saved = localStorage.getItem('dealDashboard_visibleColumns');
         return saved ? JSON.parse(saved) : ALL_COLUMNS.map(col => col.key);
     });
+
+    const [hoveredTab, setHoveredTab] = useState<string | null>(null);
+    const [hoveredExport, setHoveredExport] = useState(false);
+    const [hoveredColumn, setHoveredColumn] = useState(false);
 
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const columnMenuRef = useRef<HTMLDivElement>(null);
@@ -476,16 +479,69 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
     };
 
     return (
-        <div className="ae-table-container" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: 'none', overflowY: 'visible' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                        Projects Dashboard
-                    </h1>
+        <div className="ae-table-container" style={{
+            marginTop: '12px',
+            marginBottom: '60px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'visible',
+            maxHeight: 'none',
+            overflowY: 'visible',
+            background: 'white',
+            padding: '0'
+        }}>
+            {/* Controls Status Tabs and Actions - Padded Header Area */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'nowrap',
+                gap: '12px',
+                padding: '12px 16px',
+                borderBottom: '1px solid var(--border-primary)',
+                position: 'relative'
+            }}>
+                {/* Status Tabs */}
+                <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    background: 'var(--bg-primary)',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-primary)',
+                    boxShadow: 'var(--shadow-sm)'
+                }}>
+                    {statusFlow.map((flow) => {
+                        const isActive = filters.stage === flow.value;
+                        const isHovered = hoveredTab === flow.value;
+                        return (
+                            <button
+                                key={flow.value}
+                                onClick={() => setFilters({ ...filters, stage: flow.value })}
+                                onMouseEnter={() => setHoveredTab(flow.value)}
+                                onMouseLeave={() => setHoveredTab(null)}
+                                style={{
+                                    padding: '5px 12px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    border: isActive ? '1px solid var(--theme-primary)' : (isHovered ? '1px solid var(--theme-primary)' : '1px solid transparent'),
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    whiteSpace: 'nowrap',
+                                    background: isActive ? 'var(--theme-primary)' : 'transparent',
+                                    color: isActive ? 'white' : 'var(--text-secondary)',
+                                    boxShadow: isActive ? 'var(--shadow-md)' : (isHovered ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none')
+                                }}
+                            >
+                                {flow.label}
+                            </button>
+                        );
+                    })}
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                {/* Right Side Actions */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Report Period:</span>
                         <select
@@ -514,17 +570,22 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                         <button
                             className="ae-btn-secondary"
                             onClick={() => setShowExportMenu(!showExportMenu)}
+                            onMouseEnter={() => setHoveredExport(true)}
+                            onMouseLeave={() => setHoveredExport(false)}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
                                 padding: '6px 14px',
                                 fontSize: '0.8rem',
-                                border: showExportMenu ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
-                                boxShadow: showExportMenu ? '0 0 0 2px rgba(187, 77, 0, 0.1)' : 'none'
+                                fontWeight: 400,
+                                color: '#000000',
+                                border: (showExportMenu || hoveredExport) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                boxShadow: (showExportMenu || hoveredExport) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none',
+                                background: 'white'
                             }}
                         >
-                            <Download size={16} /> Export <ChevronDown size={14} />
+                            <Download size={16} color="#000000" /> Export <ChevronDown size={14} color="#000000" />
                         </button>
                         {showExportMenu && (
                             <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-primary)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
@@ -548,22 +609,26 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                         )}
                     </div>
 
-
                     <div style={{ position: 'relative' }} ref={columnMenuRef}>
                         <button
                             className="ae-btn-secondary"
                             onClick={() => setShowColumnMenu(!showColumnMenu)}
+                            onMouseEnter={() => setHoveredColumn(true)}
+                            onMouseLeave={() => setHoveredColumn(false)}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
                                 padding: '6px 14px',
                                 fontSize: '0.8rem',
-                                border: showColumnMenu ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
-                                boxShadow: showColumnMenu ? '0 0 0 2px rgba(187, 77, 0, 0.1)' : 'none'
+                                fontWeight: 400,
+                                color: '#000000',
+                                border: (showColumnMenu || hoveredColumn) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                boxShadow: (showColumnMenu || hoveredColumn) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none',
+                                background: 'white'
                             }}
                         >
-                            <Columns size={16} /> Columns <ChevronDown size={14} />
+                            <Columns size={16} color="#000000" /> Columns <ChevronDown size={14} color="#000000" />
                         </button>
                         {showColumnMenu && (
                             <div style={{
@@ -667,44 +732,13 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                 </div>
             </div>
 
-            {/* Status Tabs */}
-            <div style={{
-                display: 'flex',
-                gap: '8px',
-                background: 'var(--bg-primary)',
-                padding: '4px',
-                borderRadius: '12px',
-                border: '1px solid var(--border-primary)',
-                width: 'fit-content'
-            }}>
-                {statusFlow.map((flow) => (
-                    <button
-                        key={flow.value}
-                        onClick={() => setFilters({ ...filters, stage: flow.value })}
-                        style={{
-                            padding: '6px 16px',
-                            borderRadius: '8px',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: filters.stage === flow.value ? 'var(--theme-primary)' : 'transparent',
-                            color: filters.stage === flow.value ? 'white' : 'var(--text-secondary)',
-                        }}
-                    >
-                        {flow.label}
-                    </button>
-                ))}
-            </div>
-
             <div style={{ position: 'relative' }}>
                 {/* Left scroll button */}
                 <button
                     onClick={() => tableScrollRef.current?.scrollBy({ left: -150, behavior: 'smooth' })}
                     style={{
                         position: 'absolute',
-                        left: '-18px',
+                        left: '-8px',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         zIndex: 30,
@@ -733,7 +767,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                     onClick={() => tableScrollRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
                     style={{
                         position: 'absolute',
-                        right: '-18px',
+                        right: '-8px',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         zIndex: 30,
