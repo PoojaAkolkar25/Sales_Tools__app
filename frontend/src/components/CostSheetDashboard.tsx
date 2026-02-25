@@ -120,6 +120,9 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 20;
     const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [hoveredTab, setHoveredTab] = useState<string | null>(null);
+    const [hoveredExport, setHoveredExport] = useState(false);
+    const [hoveredColumn, setHoveredColumn] = useState(false);
     const [showFilters] = useState(true);
     const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
         const saved = localStorage.getItem('costSheetDashboard_colWidths_v2');
@@ -482,11 +485,11 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
     }), [costSheets]);
 
     const statusFlow = [
-        { label: `Draft (${counts.draft})`, value: 'Draft', color: '#718096' },
-        { label: `Pending (${counts.pending})`, value: 'Pending', color: '#FF6B00' },
-        { label: `Approved (${counts.approved})`, value: 'Approved', color: '#00C853' },
-        { label: `Rejected (${counts.rejected})`, value: 'Rejected', color: '#E53E3E' },
-        { label: `Reverted (${counts.reverted})`, value: 'Reverted', color: '#D69E2E' },
+        { label: `Draft (${counts.draft})`, value: 'PENDING', color: '#718096' },
+        { label: `Pending (${counts.pending})`, value: 'SUBMITTED', color: '#FF6B00' },
+        { label: `Approved (${counts.approved})`, value: 'APPROVED', color: '#00C853' },
+        { label: `Rejected (${counts.rejected})`, value: 'REJECTED', color: '#E53E3E' },
+        { label: `Reverted (${counts.reverted})`, value: 'REVERTED', color: '#D69E2E' },
         { label: `All (${counts.all})`, value: '', color: '#718096' }
     ];
 
@@ -525,27 +528,33 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                         border: '1px solid var(--border-primary)',
                         boxShadow: 'var(--shadow-sm)'
                     }}>
-                        {statusFlow.map((flow) => (
-                            <button
-                                key={flow.value}
-                                onClick={() => setFilters({ ...filters, status: flow.value })}
-                                style={{
-                                    padding: '5px 12px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    whiteSpace: 'nowrap',
-                                    background: filters.status === flow.value ? 'var(--theme-primary)' : 'transparent',
-                                    color: filters.status === flow.value ? 'white' : 'var(--text-secondary)',
-                                    boxShadow: filters.status === flow.value ? 'var(--shadow-md)' : 'none'
-                                }}
-                            >
-                                {flow.label}
-                            </button>
-                        ))}
+                        {statusFlow.map((flow) => {
+                            const isActive = filters.status === flow.value;
+                            const isHovered = hoveredTab === flow.value;
+                            return (
+                                <button
+                                    key={flow.value}
+                                    onClick={() => setFilters({ ...filters, status: flow.value })}
+                                    onMouseEnter={() => setHoveredTab(flow.value)}
+                                    onMouseLeave={() => setHoveredTab(null)}
+                                    style={{
+                                        padding: '5px 12px',
+                                        borderRadius: '8px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        border: isActive ? '1px solid var(--theme-primary)' : (isHovered ? '1px solid var(--theme-primary)' : '1px solid transparent'),
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        whiteSpace: 'nowrap',
+                                        background: isActive ? 'var(--theme-primary)' : 'transparent',
+                                        color: isActive ? 'white' : 'var(--text-secondary)',
+                                        boxShadow: isActive ? 'var(--shadow-md)' : (isHovered ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none')
+                                    }}
+                                >
+                                    {flow.label}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* Right Side Actions */}
@@ -578,6 +587,8 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                 className="ae-btn-secondary"
                                 disabled={isDownloading}
                                 onClick={() => setShowExportMenu(!showExportMenu)}
+                                onMouseEnter={() => setHoveredExport(true)}
+                                onMouseLeave={() => setHoveredExport(false)}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -586,13 +597,15 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                     fontSize: '0.8rem',
                                     height: '32px',
                                     borderRadius: '8px',
-                                    background: 'var(--bg-primary)',
-                                    color: 'var(--text-secondary)',
-                                    fontWeight: 700,
+                                    background: 'white',
+                                    color: '#000000',
+                                    fontWeight: 400,
+                                    border: (showExportMenu || hoveredExport) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                    boxShadow: (showExportMenu || hoveredExport) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none',
                                     cursor: 'pointer'
                                 }}
                             >
-                                <Download size={16} /> Export <ChevronDown size={14} />
+                                <Download size={16} color="#000000" /> Export <ChevronDown size={14} color="#000000" />
                             </button>
                             {showExportMenu && (
                                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-primary)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
@@ -623,6 +636,8 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                             <button
                                 className="ae-btn-secondary"
                                 onClick={() => setShowColumnMenu(!showColumnMenu)}
+                                onMouseEnter={() => setHoveredColumn(true)}
+                                onMouseLeave={() => setHoveredColumn(false)}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -631,13 +646,15 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                     fontSize: '0.8rem',
                                     height: '32px',
                                     borderRadius: '8px',
-                                    background: 'var(--bg-primary)',
-                                    color: 'var(--text-secondary)',
-                                    fontWeight: 700,
+                                    background: 'white',
+                                    color: '#000000',
+                                    fontWeight: 400,
+                                    border: (showColumnMenu || hoveredColumn) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                    boxShadow: (showColumnMenu || hoveredColumn) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none',
                                     cursor: 'pointer'
                                 }}
                             >
-                                <Columns size={16} /> Columns <ChevronDown size={14} />
+                                <Columns size={16} color="#000000" /> Columns <ChevronDown size={14} color="#000000" />
                             </button>
                             {showColumnMenu && (
                                 <div style={{
