@@ -47,7 +47,7 @@ class CompanyProfileViewSet(viewsets.ModelViewSet):
                 action_type='CREATE',
                 field_name='created',
                 old_value='',
-                new_value=f'Company Profile {profile.company_name} created'
+                new_value=f'Company Profile {profile.name} created'
             )
         except Exception as e:
             logger.error(f"Error creating company profile: {str(e)}", exc_info=True)
@@ -65,8 +65,8 @@ class CompanyProfileViewSet(viewsets.ModelViewSet):
                 user=self.request.user,
                 action_type='UPDATE',
                 field_name='company_name',
-                old_value=profile.company_name,
-                new_value=f'Company Profile {profile.company_name} updated'
+                old_value=profile.name,
+                new_value=f'Company Profile {profile.name} updated'
             )
         except Exception as e:
             logger.error(f"Error updating company profile: {str(e)}", exc_info=True)

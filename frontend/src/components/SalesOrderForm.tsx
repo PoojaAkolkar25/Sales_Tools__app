@@ -32,9 +32,13 @@ interface SalesOrderFormProps {
 const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [customers, setCustomers] = useState<any[]>([]);
+    const [partners, setPartners] = useState<any[]>([]);
+
     const [salesOrder, setSalesOrder] = useState<any>(id ? null : {
         so_number: '',
         customer_name: '',
+        customer: '',
         customer_code: '',
         po_number: '',
         po_date: '',
@@ -73,11 +77,24 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     const { showNotification, showConfirm } = useNotification();
 
     useEffect(() => {
-
+        fetchCustomers();
         if (id) {
             fetchSalesOrderDetails();
         }
     }, [id]);
+
+    const fetchCustomers = async () => {
+        try {
+            const [custRes, partRes] = await Promise.all([
+                api.get('/customers/'),
+                api.get('/partners/')
+            ]);
+            setCustomers(custRes.data);
+            setPartners(partRes.data);
+        } catch (error) {
+            console.error('Error fetching customers/partners', error);
+        }
+    };
 
     useEffect(() => {
         if (salesOrder?.customer_detail?.address && !salesOrder.billing_address) {
@@ -111,6 +128,23 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setSalesOrder((prev: any) => ({ ...prev, [name]: value }));
+    };
+
+    const handleCustomerSelect = (value: string | number) => {
+        const selectedCustomer = customers.find(c => c.id === parseInt(value.toString()));
+        if (selectedCustomer) {
+            const matchedPartner = partners.find(p => p.name === selectedCustomer.name);
+
+            setSalesOrder((prev: any) => ({
+                ...prev,
+                customer: selectedCustomer.id,
+                customer_name: selectedCustomer.name,
+                customer_code: selectedCustomer.customer_id || prev.customer_code,
+                billing_address: matchedPartner?.address || selectedCustomer.address || prev.billing_address,
+                shipping_address: matchedPartner?.address || selectedCustomer.address || prev.shipping_address,
+                currency: selectedCustomer.currency || prev.currency
+            }));
+        }
     };
 
     const handleItemChange = (index: number, field: string, value: any) => {
@@ -447,24 +481,33 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Name</label>
-                                <div className="ae-input" style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    background: 'var(--bg-secondary)',
-                                    color: 'var(--text-primary)',
-                                    minHeight: '34px',
-                                    cursor: 'default'
-                                }}>
-                                    <span style={{
-                                        fontSize: '0.85rem',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap'
+                                {!id ? (
+                                    <SearchableDropdown
+                                        options={customers.map(c => ({ value: c.id, label: c.name }))}
+                                        value={salesOrder.customer || ''}
+                                        onChange={handleCustomerSelect}
+                                        placeholder="Select Customer"
+                                    />
+                                ) : (
+                                    <div className="ae-input" style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        background: 'var(--bg-secondary)',
+                                        color: 'var(--text-primary)',
+                                        minHeight: '34px',
+                                        cursor: 'default'
                                     }}>
-                                        {salesOrder.customer_detail?.name || salesOrder.customer_name || 'No Customer Extracted'}
-                                    </span>
-                                </div>
+                                        <span style={{
+                                            fontSize: '0.85rem',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            {salesOrder.customer_detail?.name || salesOrder.customer_name || 'No Customer Extracted'}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Code</label>

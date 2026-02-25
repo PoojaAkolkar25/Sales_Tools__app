@@ -17,6 +17,7 @@ class StateMasterSerializer(serializers.ModelSerializer):
 
 class CompanyProfileSerializer(serializers.ModelSerializer):
     state_name = serializers.CharField(source='state.name', read_only=True)
+    entity = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     class Meta:
         model = CompanyProfile
         fields = '__all__'
@@ -136,6 +137,7 @@ class ReceiptVoucherSerializer(serializers.ModelSerializer):
 
 class CustomerPartnerSerializer(serializers.ModelSerializer):
     linked_company_name = serializers.CharField(source='linked_company.name', read_only=True)
+    entity = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     
     class Meta:
         model = CustomerPartner

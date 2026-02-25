@@ -43,7 +43,7 @@ const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: stri
     ],
     company: [
         { key: 'name', label: 'Customer Name', shortLabel: 'Co' },
-        { key: 'entity', label: 'Entity', shortLabel: 'Ent' },
+        { key: 'entity', label: 'Company Name', shortLabel: 'CoNm' },
         { key: 'customer_id', label: 'Customer ID', shortLabel: 'ID' },
         { key: 'region', label: 'Region', shortLabel: 'Reg' },
         { key: 'contact_person', label: 'Contact Person', shortLabel: 'Cont' },
@@ -214,7 +214,7 @@ const UserManagement: React.FC = () => {
 
     const [companyFormData, setCompanyFormData] = useState({
         name: '',
-        entity: 'AE_IND',
+        entity: '',
         customer_id: '',
         region: '',
         contact_person: '',
@@ -845,7 +845,7 @@ const UserManagement: React.FC = () => {
         setCompanyError('');
 
         if (!companyFormData.name || !companyFormData.entity || !companyFormData.base_currency) {
-            showNotification('Please fill in all required fields (Company Name, Entity, Currency)', 'error');
+            showNotification('Please fill in all required fields (Customer Name, Company Name, Currency)', 'error');
             return;
         }
 
@@ -2808,14 +2808,11 @@ const UserManagement: React.FC = () => {
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Entity"
-                                                    options={[
-                                                        { value: 'AE_IND', label: 'AE India' },
-                                                        { value: 'AE_USA', label: 'AE USA' }
-                                                    ]}
+                                                    label="Company Name"
+                                                    options={partners.map(p => ({ value: p.name, label: p.name }))}
                                                     value={companyFormData.entity}
                                                     onChange={(val) => setCompanyFormData({ ...companyFormData, entity: val as string })}
-                                                    placeholder="Select Entity"
+                                                    placeholder="Select Company Name"
                                                     required
                                                 />
                                             </div>
