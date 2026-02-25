@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type ChangeEvent } from 'react';
 import {
     Trash2,
     Save,
@@ -27,9 +27,11 @@ interface SalesOrderFormProps {
     id: number | null;
     onBack: () => void;
     onSave: () => void;
+    onUploadPO?: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
+    isExtractingSO?: boolean;
 }
 
-const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) => {
+const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, onUploadPO, isExtractingSO }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [customers, setCustomers] = useState<any[]>([]);
