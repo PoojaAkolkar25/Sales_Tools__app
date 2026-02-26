@@ -1014,17 +1014,25 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                                 alignItems: 'center',
                                                                 gap: '6px',
                                                                 padding: '6px 12px',
-                                                                background: 'var(--theme-primary)',
-                                                                color: 'white',
-                                                                border: 'none',
+                                                                background: 'rgba(255,107,0,0.08)',
+                                                                color: 'var(--theme-primary)',
+                                                                border: '1px solid rgba(255,107,0,0.25)',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: 600,
                                                                 cursor: 'pointer',
                                                                 transition: 'all 0.2s'
                                                             }}
-                                                            onMouseOver={(e) => { e.currentTarget.style.background = 'var(--theme-primary-dark, #cc5500)'; }}
-                                                            onMouseOut={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; }}
+                                                            onMouseOver={(e) => {
+                                                                e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                e.currentTarget.style.color = 'white';
+                                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                            }}
+                                                            onMouseOut={(e) => {
+                                                                e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                                e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                            }}
                                                             title="View"
                                                         >
                                                             <Eye size={14} />

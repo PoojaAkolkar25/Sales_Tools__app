@@ -1799,8 +1799,10 @@ option {
 }
 
 .ae-input:hover,
-.ae-input:focus {
-  border-color: var(--ae-orange);
+.ae-input:focus,
+.input-container:hover,
+.input-container:focus-within {
+  border-color: var(--ae-orange) !important;
   box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
 }
 

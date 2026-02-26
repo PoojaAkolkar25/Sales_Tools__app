@@ -657,13 +657,13 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 <thead>
                                     <tr style={{ background: '#F8FAFC' }}>
                                         <th style={{ padding: '10px 4px', width: '40px' }}></th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '60px' }}>Sr.No.</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '130px' }}>Type *</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>Description</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '80px' }}>Currency</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '70px' }}>Qty</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '120px' }}>Rate</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '130px' }}>Amount</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '60px' }}>Sr.No.</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '130px' }}>Type *</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'black' }}>Description</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '80px' }}>Currency</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '70px' }}>Qty</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '120px' }}>Rate</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '130px' }}>Amount</th>
                                         <th style={{ padding: '10px 4px', width: '40px' }}></th>
                                     </tr>
                                 </thead>
@@ -778,7 +778,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 </tbody>
                                 <tfoot>
                                     <tr style={{ background: '#F8FAFC' }}>
-                                        <td colSpan={7} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#4A5568' }}>Total Deal Value:</td>
+                                        <td colSpan={7} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: 'black' }}>Total Deal Value:</td>
                                         <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '0.95rem', fontWeight: 800, color: '#FF6B00' }}>
                                             {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
                                             {parseFloat(formData.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}

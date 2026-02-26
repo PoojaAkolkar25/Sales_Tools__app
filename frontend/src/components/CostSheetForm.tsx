@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, ArrowLeft, Eye, Calendar, RotateCcw } from 'lucide-react';
+import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, Eye, Calendar, RotateCcw } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
@@ -42,21 +42,21 @@ interface CostSheetFormProps {
 const TableHeader = ({ columns, isReadOnly }: { columns: string[], isReadOnly: boolean }) => {
     return (
         <thead>
-            <tr style={{ background: 'var(--bg-secondary)' }}>
-                {!isReadOnly && <th style={{ padding: '10px 8px', width: '40px' }}></th>}
+            <tr style={{ background: '#F8FAFC' }}>
+                {!isReadOnly && <th style={{ padding: '10px 4px', width: '40px' }}></th>}
                 {columns.map((col, i) => {
                     return (
                         <th key={i} style={{
-                            padding: '10px 8px',
+                            padding: '10px 4px',
                             textAlign: 'left',
                             fontSize: '0.8rem',
                             fontWeight: 700,
-                            color: 'var(--text-secondary)',
+                            color: 'black',
                             whiteSpace: 'nowrap'
                         }}>{col}</th>
                     );
                 })}
-                {!isReadOnly && <th style={{ padding: '10px 8px', width: '40px' }}></th>}
+                {!isReadOnly && <th style={{ padding: '10px 4px', width: '40px' }}></th>}
             </tr>
         </thead>
     );
@@ -86,29 +86,31 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly,
     const displayValue = (type === 'number' && (value === 0 || value === '0' || value === '')) ? '' : value;
 
     return (
-        <td style={{ padding: '2px 4px' }}>
+        <td style={{ padding: '6px 4px' }}>
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 width: '100%',
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-primary)',
-                borderRadius: '4px',
+                background: 'white',
+                border: '1px solid #E2E8F0',
+                borderRadius: '6px',
+                height: '30px',
                 padding: '0 8px',
-                transition: 'border-color 0.2s',
+                transition: 'all 0.2s',
             }}
                 className={`${className} input-container`}
             >
-                {symbol && <span style={{ marginRight: '4px', fontSize: '0.75rem', color: '#718096', fontWeight: 600 }}>{symbol}</span>}
+                {symbol && <span style={{ marginRight: '4px', fontSize: '0.85rem', color: '#718096', fontWeight: 600 }}>{symbol}</span>}
                 <input
                     style={{
                         flex: 1,
                         width: '100%',
-                        padding: '4px 0',
+                        height: '100%',
+                        padding: '0',
                         border: 'none',
                         outline: 'none',
-                        fontSize: '0.9rem',
-                        fontWeight: 500,
+                        fontSize: '0.85rem',
+                        fontWeight: 400,
                         color: 'var(--text-primary)',
                         background: 'transparent',
                         textAlign: 'left'
@@ -121,7 +123,7 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly,
                     onChange={handleChange}
                     onKeyDown={onKeyDown}
                 />
-                {suffix && <span style={{ marginLeft: '4px', fontSize: '0.75rem', color: '#718096', fontWeight: 600 }}>{suffix}</span>}
+                {suffix && <span style={{ marginLeft: '4px', fontSize: '0.85rem', color: '#718096', fontWeight: 600 }}>{suffix}</span>}
             </div>
         </td>
     );
@@ -129,7 +131,7 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly,
 
 const ReadOnlyCell = ({ value, bold = false, symbol = '', color, fontSize, fontWeight }: any) => (
     <td style={{
-        padding: '4px 8px',
+        padding: '6px 4px',
         fontSize: fontSize || (bold ? '0.9rem' : '0.9rem'),
         fontWeight: fontWeight || (bold ? 700 : 600),
         color: color || (bold ? 'var(--text-primary)' : 'var(--text-secondary)'),
@@ -301,20 +303,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         }
     };
 
-    const handleLeadChange = (id: string) => {
-        const selected = leads.find(l => l.id.toString() === id);
-        if (selected) {
-            setLead(selected);
-            setSelectedCustomerName(selected.customer_name);
-            setProjectManager(selected.project_manager || '');
-            setSalesPerson(selected.sales_person || '');
-            setProjectName(selected.project_name || '');
-        } else {
-            setLead(null);
-            // setLeadNo('');
-            // Do NOT reset PM/SP here if they were manually entered or set by customer
-        }
-    };
+
 
     const handleDealChange = (idStr: string) => {
         const id = idStr ? parseInt(idStr) : null;
@@ -716,26 +705,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         setter(newItems);
     };
 
-    const formatDateDisplay = (dateStr: string) => {
-        if (!dateStr) return '—';
-        try {
-            const date = new Date(dateStr);
-            if (isNaN(date.getTime())) return dateStr;
-            const day = date.getDate().toString().padStart(2, '0');
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const month = months[date.getMonth()];
-            const year = date.getFullYear();
-            return `${day} ${month} ${year}`;
-        } catch (e) {
-            return dateStr;
-        }
-    };
 
 
 
 
     const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)' }}>{title}</h3>
@@ -796,11 +771,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
             {activeTab === 'form' ? (
                 <div style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-primary)',
+                    background: 'white',
+                    border: '1px solid #E0E6ED',
                     borderRadius: '12px',
                     width: '100%',
-                    boxShadow: 'var(--shadow-md)',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                     padding: '24px',
                     display: 'flex',
                     flexDirection: 'column'
@@ -952,8 +927,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     </div>
                                 )}
                             </div>
+                        </div>
 
-                            {/* Row 2 */}
+                        {/* Row 2 */}
+                        <div className="ae-grid-4 mt-6">
                             {/* Project Name */}
                             <div>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Name</label>
@@ -1057,10 +1034,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </div>
 
-                    <section style={{ borderTop: '1px solid var(--border-primary)', paddingTop: '32px', marginTop: '32px' }}>
+                    <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="License" />
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1100px', marginTop: '12px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['License Name', 'License Type', 'Rate/Month', 'Qty', 'Month', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {licenseItems.map((item, idx) => {
@@ -1069,7 +1046,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}>
+                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === licenseItems.length - 1 && (
@@ -1137,13 +1114,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for License */}
-                                    <tr style={{ background: 'var(--bg-secondary)', fontWeight: 700 }}>
+                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
-                                        <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total License:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catCost} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
+                                        <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total License:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catMarginAmount} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
-                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catPrice} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1152,10 +1129,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <section className="implementation-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                    <section className="implementation-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Services - Implementation" />
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1100px', marginTop: '12px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {implementationItems.map((item, idx) => {
@@ -1164,7 +1141,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}>
+                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === implementationItems.length - 1 && (
@@ -1232,13 +1209,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for Implementation */}
-                                    <tr style={{ background: 'var(--bg-secondary)', fontWeight: 700 }}>
+                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
-                                        <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total Implementation:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catCost} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
+                                        <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total Implementation:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catMarginAmount} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
-                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catPrice} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1247,10 +1224,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <section className="support-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                    <section className="support-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Services - Support" />
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1100px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1100px', marginTop: '12px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {supportItems.map((item, idx) => {
@@ -1259,7 +1236,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}>
+                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === supportItems.length - 1 && (
@@ -1327,13 +1304,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for Support */}
-                                    <tr style={{ background: 'var(--bg-secondary)', fontWeight: 700 }}>
+                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
-                                        <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total Support:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catCost} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
+                                        <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total Support:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catMarginAmount} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
-                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catPrice} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1342,18 +1319,18 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <section className="infra-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                    <section className="infra-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Infrastructure Cost" />
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '1000px' }}>
-                                <TableHeader isReadOnly={isReadOnly} columns={['Infra Name', 'Qty', 'Months', 'Rate/Month', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1100px', marginTop: '12px' }}>
+                                <TableHeader isReadOnly={isReadOnly} columns={['Platform', 'Type', 'Rate/Month', 'Qty', 'Month', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {infraItems.map((item, idx) => {
                                         const cost = (parseFloat(item.qty) || 0) * (parseFloat(item.months) || 0) * (parseFloat(item.rate_per_month) || 0);
                                         const marginAmount = cost * ((parseFloat(item.margin_percentage) || 0) / 100);
                                         const price = cost + marginAmount;
                                         return (
-                                            <tr key={idx} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}>
+                                            <tr key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                                         {idx === infraItems.length - 1 && (
@@ -1420,13 +1397,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         );
                                     })}
                                     {/* Total row for Infra */}
-                                    <tr style={{ background: 'var(--bg-secondary)', fontWeight: 700 }}>
+                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
-                                        <td colSpan={4} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total Infra:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catCost} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
+                                        <td colSpan={4} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total Infra:</td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catMarginAmount} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
-                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catPrice} symbol={currencySymbol} bold color="#FF6B00" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1435,10 +1412,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <section className="other-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                    <section className="other-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Other Category" />
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', minWidth: '800px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px', marginTop: '12px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['Description', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
                                     {otherItems.map((item, idx) => {
@@ -1512,7 +1489,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     {/* Total row for Other */}
                                     <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
-                                        <td style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: '#4A5568', fontWeight: 700 }}>Total Other:</td>
+                                        <td style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total Other:</td>
                                         <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
                                         <td></td>
                                         <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
@@ -1525,7 +1502,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                         </div>
                     </section>
 
-                    <section className="remarks-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                    <section className="remarks-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Description/Remark" />
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <textarea
@@ -1545,202 +1522,198 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                 }}
                             />
                         </div>
-                    </section>
 
-                    <div style={{
-                        display: 'flex',
-                        gap: '24px',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginTop: '32px',
-                        paddingTop: '32px',
-                        marginBottom: '20px',
-                        width: '100%',
-                        padding: '32px 4px 0 4px'
-                    }}>
-                        {/* Compact Attachment Panel */}
                         <div style={{
                             display: 'flex',
+                            gap: '24px',
+                            justifyContent: 'space-between',
                             alignItems: 'center',
-                            gap: '16px',
-                            padding: '4px 12px',
-                            background: 'var(--bg-secondary)',
-                            borderRadius: '12px',
-                            border: '1px solid var(--border-primary)',
-                            width: 'fit-content',
-                            minWidth: 'fit-content',
-                            boxShadow: 'var(--shadow-sm)'
+                            marginTop: '12px',
+                            width: '100%'
                         }}>
-                            {!isReadOnly && (
-                                <>
-                                    <input
-                                        id="file-upload-input"
-                                        type="file"
-                                        onChange={handleFileUpload}
-                                        accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                                        disabled={uploading}
-                                        style={{ display: 'none' }}
-                                    />
-                                    <button
-                                        onClick={() => document.getElementById('file-upload-input')?.click()}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            background: 'white',
-                                            color: '#1a1f36',
-                                            border: '1px solid #E0E6ED',
-                                            height: '34px',
-                                            padding: '0 16px',
-                                            borderRadius: '8px',
-                                            fontWeight: 700,
-                                            fontSize: '0.85rem',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            whiteSpace: 'nowrap'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = 'var(--theme-primary)';
-                                            e.currentTarget.style.color = 'white';
-                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = 'white';
-                                            e.currentTarget.style.color = 'var(--text-primary)';
-                                            e.currentTarget.style.borderColor = 'var(--border-primary)';
-                                        }}
-                                    >
-                                        <Paperclip size={14} /> Attachments
-                                    </button>
-                                </>
-                            )}
-
-                            {/* MIDDLE: File List pills - More Compact */}
+                            {/* Compact Attachment Panel */}
                             <div style={{
-                                flex: 1,
                                 display: 'flex',
-                                gap: '8px',
-                                overflowX: 'auto',
-                                padding: '4px 0',
-                                alignItems: 'center'
+                                alignItems: 'center',
+                                gap: '16px',
+                                padding: '4px 12px',
+                                background: 'var(--bg-secondary)',
+                                borderRadius: '12px',
+                                border: '1px solid var(--border-primary)',
+                                width: 'fit-content',
+                                minWidth: 'fit-content',
+                                boxShadow: 'var(--shadow-sm)'
                             }}>
-                                {attachments.length > 0 ? (
-                                    attachments.map((att) => (
-                                        <div
-                                            key={att.id}
+                                {!isReadOnly && (
+                                    <>
+                                        <input
+                                            id="file-upload-input"
+                                            type="file"
+                                            onChange={handleFileUpload}
+                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                            disabled={uploading}
+                                            style={{ display: 'none' }}
+                                        />
+                                        <button
+                                            onClick={() => document.getElementById('file-upload-input')?.click()}
                                             style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: '8px',
-                                                padding: '4px 10px',
                                                 background: 'white',
-                                                borderRadius: '8px',
+                                                color: '#1a1f36',
                                                 border: '1px solid #E0E6ED',
-                                                minWidth: 'fit-content'
+                                                height: '34px',
+                                                padding: '0 16px',
+                                                borderRadius: '8px',
+                                                fontWeight: 700,
+                                                fontSize: '0.85rem',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                whiteSpace: 'nowrap'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'var(--theme-primary)';
+                                                e.currentTarget.style.color = 'white';
+                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'white';
+                                                e.currentTarget.style.color = 'var(--text-primary)';
+                                                e.currentTarget.style.borderColor = 'var(--border-primary)';
                                             }}
                                         >
-                                            <File size={14} style={{ color: '#FF6B00' }} />
-                                            <span style={{
-                                                fontSize: '0.8rem',
-                                                fontWeight: 600,
-                                                color: '#1a1f36',
-                                                maxWidth: '120px',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap'
-                                            }}>
-                                                {att.filename}
-                                            </span>
-                                            <div style={{ display: 'flex', gap: '4px' }}>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleView(att)}
-                                                    style={{
-                                                        width: '22px',
-                                                        height: '22px',
-                                                        borderRadius: '50%',
-                                                        border: 'none',
-                                                        background: '#e0f2fe',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        cursor: 'pointer',
-                                                        color: '#0369a1'
-                                                    }}
-                                                    title="View"
-                                                >
-                                                    <Eye size={10} />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDownload(att)}
-                                                    style={{
-                                                        width: '22px',
-                                                        height: '22px',
-                                                        borderRadius: '50%',
-                                                        border: 'none',
-                                                        background: '#f1f5f9',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        cursor: 'pointer',
-                                                        color: '#475569'
-                                                    }}
-                                                    title="Download"
-                                                >
-                                                    <Download size={10} />
-                                                </button>
-                                                {!isReadOnly && (
+                                            <Paperclip size={14} /> Attachments
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* MIDDLE: File List pills - More Compact */}
+                                <div style={{
+                                    flex: 1,
+                                    display: 'flex',
+                                    gap: '8px',
+                                    overflowX: 'auto',
+                                    padding: '4px 0',
+                                    alignItems: 'center'
+                                }}>
+                                    {attachments.length > 0 ? (
+                                        attachments.map((att) => (
+                                            <div
+                                                key={att.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    padding: '4px 10px',
+                                                    background: 'white',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #E0E6ED',
+                                                    minWidth: 'fit-content'
+                                                }}
+                                            >
+                                                <File size={14} style={{ color: '#FF6B00' }} />
+                                                <span style={{
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 600,
+                                                    color: '#1a1f36',
+                                                    maxWidth: '120px',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap'
+                                                }}>
+                                                    {att.filename}
+                                                </span>
+                                                <div style={{ display: 'flex', gap: '4px' }}>
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleDeleteAttachment(att.id)}
+                                                        onClick={() => handleView(att)}
                                                         style={{
                                                             width: '22px',
                                                             height: '22px',
                                                             borderRadius: '50%',
                                                             border: 'none',
-                                                            background: '#fee2e2',
+                                                            background: '#e0f2fe',
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             justifyContent: 'center',
                                                             cursor: 'pointer',
-                                                            color: '#ef4444'
+                                                            color: '#0369a1'
                                                         }}
-                                                        title="Delete"
+                                                        title="View"
                                                     >
-                                                        <Trash2 size={10} />
+                                                        <Eye size={10} />
                                                     </button>
-                                                )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDownload(att)}
+                                                        style={{
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            borderRadius: '50%',
+                                                            border: 'none',
+                                                            background: '#f1f5f9',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            color: '#475569'
+                                                        }}
+                                                        title="Download"
+                                                    >
+                                                        <Download size={10} />
+                                                    </button>
+                                                    {!isReadOnly && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteAttachment(att.id)}
+                                                            style={{
+                                                                width: '22px',
+                                                                height: '22px',
+                                                                borderRadius: '50%',
+                                                                border: 'none',
+                                                                background: '#fee2e2',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                cursor: 'pointer',
+                                                                color: '#ef4444'
+                                                            }}
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 size={10} />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <span style={{ fontSize: '0.9rem', color: '#A0AEC0', fontStyle: 'italic', marginLeft: '10px' }}>
-                                        {uploading ? 'Uploading...' : 'No attachments yet'}
-                                    </span>
-                                )}
+                                        ))
+                                    ) : (
+                                        <span style={{ fontSize: '0.9rem', color: '#A0AEC0', fontStyle: 'italic', marginLeft: '10px' }}>
+                                            {uploading ? 'Uploading...' : 'No attachments yet'}
+                                        </span>
+                                    )}
 
-                                {/* Upload Feedback Message */}
-                                {uploadFeedback.message && (
-                                    <div style={{
-                                        padding: '4px 12px',
-                                        borderRadius: '6px',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 600,
-                                        background: uploadFeedback.type === 'error' ? '#FFF5F5' : '#F0FFF4',
-                                        color: uploadFeedback.type === 'error' ? '#C53030' : '#2F855A',
-                                        border: `1px solid ${uploadFeedback.type === 'error' ? '#FEB2B2' : '#9AE6B4'}`,
-                                        marginLeft: '10px',
-                                        whiteSpace: 'nowrap',
-                                        animation: 'fadeIn 0.3s ease'
-                                    }}>
-                                        {uploadFeedback.message}
-                                    </div>
-                                )}
+                                    {/* Upload Feedback Message */}
+                                    {uploadFeedback.message && (
+                                        <div style={{
+                                            padding: '4px 12px',
+                                            borderRadius: '6px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                            background: uploadFeedback.type === 'error' ? '#FFF5F5' : '#F0FFF4',
+                                            color: uploadFeedback.type === 'error' ? '#C53030' : '#2F855A',
+                                            border: `1px solid ${uploadFeedback.type === 'error' ? '#FEB2B2' : '#9AE6B4'}`,
+                                            marginLeft: '10px',
+                                            whiteSpace: 'nowrap',
+                                            animation: 'fadeIn 0.3s ease'
+                                        }}>
+                                            {uploadFeedback.message}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-
+                    </section>
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -1813,18 +1786,18 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         </tr>
                                     ))}
                                     {/* Subtotal Row */}
-                                    <tr style={{ background: 'var(--bg-secondary)', borderTop: '2px solid var(--border-primary)' }}>
+                                    <tr style={{ background: '#F8FAFC', borderTop: '2px solid var(--border-primary)' }}>
                                         <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>Total</td>
-                                        <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: '#1a1f36', fontFamily: 'monospace', textAlign: 'right' }}>
+                                        <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: 'var(--theme-primary)', fontFamily: 'monospace', textAlign: 'right' }}>
                                             {currencySymbol}{totals.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                         <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: totals.totalMarginPercent >= 0 ? '#00C853' : '#EF4444', fontFamily: 'monospace', textAlign: 'right' }}>
                                             {totals.totalMarginPercent.toFixed(2)}%
                                         </td>
-                                        <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: '#1a1f36', fontFamily: 'monospace', textAlign: 'right' }}>
+                                        <td style={{ padding: '12px 16px', fontSize: '0.9rem', fontWeight: 800, color: 'var(--theme-primary)', fontFamily: 'monospace', textAlign: 'right' }}>
                                             {currencySymbol}{totals.totalMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
-                                        <td style={{ padding: '12px 16px', fontSize: '0.95rem', fontWeight: 900, color: '#FF6B00', fontFamily: 'monospace', textAlign: 'right' }}>
+                                        <td style={{ padding: '12px 16px', fontSize: '0.95rem', fontWeight: 900, color: 'var(--theme-primary)', fontFamily: 'monospace', textAlign: 'right' }}>
                                             {currencySymbol}{totals.totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                     </tr>

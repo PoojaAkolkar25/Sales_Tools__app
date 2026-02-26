@@ -862,7 +862,29 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                             <td style={{ textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
                                                 <button
                                                     onClick={() => onView && onView(m.id)}
-                                                    style={{ padding: '6px', color: 'var(--ae-blue)', background: 'none', border: 'none', cursor: 'pointer' }}
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        background: 'rgba(255,107,0,0.08)',
+                                                        color: 'var(--theme-primary)',
+                                                        border: '1px solid rgba(255,107,0,0.25)',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseOver={(e) => {
+                                                        e.currentTarget.style.background = 'var(--theme-primary)';
+                                                        e.currentTarget.style.color = 'white';
+                                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                    }}
+                                                    onMouseOut={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                        e.currentTarget.style.color = 'var(--theme-primary)';
+                                                        e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                    }}
                                                     title="View Milestone"
                                                 >
                                                     <Eye size={18} />
@@ -886,7 +908,29 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                             showNotification('Error downloading PDF', 'error');
                                                         }
                                                     }}
-                                                    style={{ padding: '6px', color: 'var(--ae-orange)', background: 'none', border: 'none', cursor: 'pointer' }}
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        background: 'rgba(255,107,0,0.08)',
+                                                        color: 'var(--theme-primary)',
+                                                        border: '1px solid rgba(255,107,0,0.25)',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseOver={(e) => {
+                                                        e.currentTarget.style.background = 'var(--theme-primary)';
+                                                        e.currentTarget.style.color = 'white';
+                                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                    }}
+                                                    onMouseOut={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                        e.currentTarget.style.color = 'var(--theme-primary)';
+                                                        e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                    }}
                                                     title="Download Milestone PDF"
                                                 >
                                                     <Download size={18} />

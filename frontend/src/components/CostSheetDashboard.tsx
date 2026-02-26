@@ -19,30 +19,30 @@ const ALL_COL_CONFIG = [
 ];
 
 const SHORT_COL_WIDTHS: Record<string, number> = {
-    lead_no: 40,
-    deal_no: 40,
-    customer_name: 55,
-    project_name: 55,
-    cost_sheet_no: 45,
-    date: 45,
-    status: 35,
-    margin_percentage: 55,
-    est_margin: 55,
-    total_price: 55,
-    actions: 60
+    lead_no: 75,
+    deal_no: 75,
+    customer_name: 130,
+    project_name: 130,
+    cost_sheet_no: 110,
+    date: 85,
+    status: 90,
+    margin_percentage: 90,
+    est_margin: 110,
+    total_price: 110,
+    actions: 80
 };
 
 const FULL_LABEL_WIDTHS: Record<string, number> = {
-    lead_no: 130,
-    deal_no: 110,
+    lead_no: 120,
+    deal_no: 120,
     customer_name: 180,
     project_name: 180,
     cost_sheet_no: 140,
     date: 120,
-    status: 100,
-    margin_percentage: 110,
-    est_margin: 130,
-    total_price: 130
+    status: 120,
+    margin_percentage: 120,
+    est_margin: 150,
+    total_price: 150
 };
 
 const MAX_COL_WIDTHS: Record<string, number> = {
@@ -839,16 +839,14 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                     {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
                                         <th key={col.key} style={{
                                             backgroundColor: 'var(--ae-table-header-bg)',
+                                            zIndex: 12,
                                             position: 'relative',
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
                                             userSelect: 'none',
                                             paddingRight: '20px',
                                             borderRight: '1px solid var(--border-secondary)',
-                                            borderBottom: '1px solid var(--border-secondary)',
-                                            zIndex: 12,
-                                            top: 0,
-                                            color: 'var(--text-secondary)'
+                                            borderBottom: '1px solid var(--border-secondary)'
                                         }}>
                                             <span title={col.label}>
                                                 {getColWidth(col.key) < (SHORT_COL_WIDTHS[col.key] + 5)
@@ -876,8 +874,6 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         zIndex: 12,
                                         textAlign: 'center',
                                         whiteSpace: 'nowrap',
-                                        top: 0,
-                                        color: 'var(--text-secondary)',
                                         borderBottom: '1px solid var(--border-secondary)'
                                     }}>Actions</th>
                                 </tr>
@@ -1065,17 +1061,17 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                                 alignItems: 'center',
                                                                 gap: '6px',
                                                                 padding: '6px 12px',
-                                                                background: 'var(--theme-primary)',
-                                                                color: 'white',
-                                                                border: 'none',
+                                                                background: 'rgba(255,107,0,0.08)',
+                                                                color: 'var(--theme-primary)',
+                                                                border: '1px solid rgba(255,107,0,0.25)',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: 600,
                                                                 cursor: 'pointer',
                                                                 transition: 'all 0.2s'
                                                             }}
-                                                            onMouseOver={(e) => e.currentTarget.style.background = 'var(--theme-primary-dark, #cc5500)'}
-                                                            onMouseOut={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
+                                                            onMouseOver={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                                                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,107,0,0.08)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)'; }}
                                                             title="View/Edit"
                                                         >
                                                             <Eye size={14} />
