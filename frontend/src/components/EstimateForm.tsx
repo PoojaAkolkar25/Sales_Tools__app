@@ -236,16 +236,18 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.status === 'PENDING_APPROVAL' || estimate?.status === 'SUBMITTED' || estimate?.status === 'REWOUND';
 
     const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '24px' }}>
-            <span style={{
-                width: '4px',
-                height: '18px',
-                background: 'var(--ae-blue)',
-                borderRadius: '2px'
-            }}></span>
-            <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', margin: 0 }}>
-                {title}
-            </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                    width: '4px',
+                    height: '18px',
+                    background: 'var(--ae-blue)',
+                    borderRadius: '2px'
+                }}></span>
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)', margin: 0 }}>
+                    {title}
+                </h3>
+            </div>
             {extra}
         </div>
     );
@@ -1009,11 +1011,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     background: 'var(--bg-primary)',
                                     color: estimate?.status === 'SUBMITTED' ? '#CBD5E0' : 'var(--text-primary)',
                                     border: '1px solid var(--border-primary)',
-                                    height: '24px',
-                                    padding: '0 10px',
-                                    borderRadius: '6px',
+                                    height: '34px',
+                                    padding: '0 12px',
+                                    borderRadius: '8px',
                                     fontWeight: 700,
-                                    fontSize: '0.75rem',
+                                    fontSize: '0.85rem',
                                     cursor: estimate?.status === 'SUBMITTED' ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.2s ease',
                                     whiteSpace: 'nowrap'
@@ -1073,9 +1075,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '6px',
-                                            padding: '2px 8px',
+                                            padding: '4px 10px',
                                             background: 'white',
-                                            borderRadius: '6px',
+                                            borderRadius: '8px',
                                             border: '1px solid #E0E6ED',
                                             whiteSpace: 'nowrap'
                                         }}>
@@ -1101,21 +1103,18 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                 </div>
 
                 {/* Line Items Table */}
-                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                     <SectionHeader title="Product Line Items" />
                     <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
                         <thead>
-                            <tr style={{ background: 'transparent' }}>
-                                {!isReadOnly && <th style={{ padding: '6px 8px', width: '40px', borderBottom: '2px solid #E0E6ED' }}></th>}
+                            <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                                {!isReadOnly && <th style={{ padding: '6px 8px', width: '40px' }}></th>}
                                 <th style={{
-                                    padding: '6px 8px',
+                                    padding: '10px 4px',
                                     textAlign: 'center',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
                                     color: 'black',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    borderBottom: '2px solid #E0E6ED',
                                     whiteSpace: 'nowrap',
                                     width: '60px'
                                 }}>
@@ -1139,14 +1138,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     </div>
                                 </th>
                                 <th style={{
-                                    padding: '6px 8px',
+                                    padding: '10px 4px',
                                     textAlign: 'left',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
                                     color: 'black',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    borderBottom: '2px solid #E0E6ED',
                                     whiteSpace: 'nowrap',
                                     width: '120px'
                                 }}>
@@ -1170,14 +1166,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     </div>
                                 </th>
                                 <th style={{
-                                    padding: '6px 8px',
+                                    padding: '10px 4px',
                                     textAlign: 'left',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
                                     color: 'black',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    borderBottom: '2px solid #E0E6ED',
                                     whiteSpace: 'nowrap'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -1200,14 +1193,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     </div>
                                 </th>
                                 <th style={{
-                                    padding: '6px 8px',
+                                    padding: '10px 4px',
                                     textAlign: 'left',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
                                     color: 'black',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    borderBottom: '2px solid #E0E6ED',
                                     whiteSpace: 'nowrap'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -1230,14 +1220,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     </div>
                                 </th>
                                 <th style={{
-                                    padding: '6px 8px',
+                                    padding: '10px 4px',
                                     textAlign: 'left',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
                                     color: 'black',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    borderBottom: '2px solid #E0E6ED',
                                     whiteSpace: 'nowrap',
                                     width: '140px'
                                 }}>
@@ -1261,14 +1248,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     </div>
                                 </th>
                                 <th style={{
-                                    padding: '6px 8px',
+                                    padding: '10px 4px',
                                     textAlign: 'left',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
                                     color: 'black',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    borderBottom: '2px solid #E0E6ED',
                                     whiteSpace: 'nowrap',
                                     width: '140px'
                                 }}>
@@ -1292,14 +1276,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     </div>
                                 </th>
                                 <th style={{
-                                    padding: '6px 8px',
+                                    padding: '10px 4px',
                                     textAlign: 'center',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
                                     color: 'black',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    borderBottom: '2px solid #E0E6ED',
                                     whiteSpace: 'nowrap',
                                     width: '100px'
                                 }}>
@@ -1323,14 +1304,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     </div>
                                 </th>
                                 <th style={{
-                                    padding: '6px 8px',
+                                    padding: '10px 4px',
                                     textAlign: 'right',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
                                     color: 'black',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    borderBottom: '2px solid #E0E6ED',
                                     whiteSpace: 'nowrap',
                                     width: '150px'
                                 }}>
@@ -1354,14 +1332,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     </div>
                                 </th>
                                 <th style={{
-                                    padding: '6px 8px',
+                                    padding: '10px 4px',
                                     textAlign: 'right',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
                                     color: 'black',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    borderBottom: '2px solid #E0E6ED',
                                     whiteSpace: 'nowrap',
                                     width: '100px'
                                 }}>
@@ -1385,14 +1360,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     </div>
                                 </th>
                                 <th style={{
-                                    padding: '6px 8px',
+                                    padding: '10px 4px',
                                     textAlign: 'right',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
                                     color: 'black',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    borderBottom: '2px solid #E0E6ED',
                                     whiteSpace: 'nowrap'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
@@ -1414,13 +1386,13 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         )}
                                     </div>
                                 </th>
-                                {!isReadOnly && <th style={{ padding: '6px 8px', width: '40px', borderBottom: '2px solid #E0E6ED' }}></th>}
+                                {!isReadOnly && <th style={{ padding: '6px 8px', width: '40px' }}></th>}
                             </tr>
                         </thead>
                         <tbody>
                             {formData.items.map((item: any, index: number) => (
                                 <tr key={item.id} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
-                                    <td style={{ padding: '8px', textAlign: 'center' }}>
+                                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>
                                         {index === formData.items.length - 1 && !isReadOnly && (
                                             <button
                                                 type="button"
@@ -1443,19 +1415,19 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             </button>
                                         )}
                                     </td>
-                                    <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.95rem', color: '#4A5568', fontWeight: 600 }}>
+                                    <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: '0.85rem', color: '#4A5568', fontWeight: 600 }}>
                                         {index + 1}
                                     </td>
-                                    <td style={{ padding: '8px' }}>
+                                    <td style={{ padding: '6px 4px' }}>
                                         <select
                                             disabled={isReadOnly}
                                             value={item.item_type || 'License'}
                                             onChange={(e) => handleItemChange(item.id, 'item_type', e.target.value)}
                                             style={{
-                                                fontSize: '0.8rem',
+                                                fontSize: '0.85rem',
                                                 padding: '4px 8px',
-                                                height: '36px',
-                                                borderRadius: '8px',
+                                                height: '30px',
+                                                borderRadius: '6px',
                                                 width: '100%',
                                                 cursor: isReadOnly ? 'not-allowed' : 'pointer',
                                                 fontWeight: 600,
@@ -1467,33 +1439,33 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             <option value="Service">Service</option>
                                         </select>
                                     </td>
-                                    <td style={{ padding: '8px' }}>
+                                    <td style={{ padding: '6px 4px' }}>
                                         <input
                                             className="ae-input"
-                                            style={{ height: '36px', padding: '4px 8px', width: '100%' }}
+                                            style={{ height: '30px', padding: '4px 8px', width: '100%', fontSize: '0.85rem', borderRadius: '6px' }}
                                             value={item.particulars || ''}
                                             onChange={(e) => handleItemChange(item.id, 'particulars', e.target.value)}
                                             disabled={isReadOnly}
                                             placeholder="Enter particulars"
                                         />
                                     </td>
-                                    <td style={{ padding: '8px' }}>
+                                    <td style={{ padding: '6px 4px' }}>
                                         <textarea
                                             className="ae-input"
-                                            style={{ padding: '4px 8px', minHeight: '36px', width: '100%', resize: 'vertical' }}
+                                            style={{ padding: '4px 8px', minHeight: '30px', width: '100%', resize: 'vertical', fontSize: '0.85rem', borderRadius: '6px' }}
                                             value={item.description || ''}
                                             onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
                                             disabled={isReadOnly}
                                             placeholder="Enter description"
                                         />
                                     </td>
-                                    <td style={{ padding: '8px' }}>
+                                    <td style={{ padding: '6px 4px' }}>
                                         <div style={{ position: 'relative' }}>
                                             <input
                                                 type="text"
                                                 readOnly
                                                 className="ae-input"
-                                                style={{ height: '36px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer', background: isReadOnly ? '#f7fafc' : 'white' }}
+                                                style={{ height: '30px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer', background: isReadOnly ? '#f7fafc' : 'white', borderRadius: '6px' }}
                                                 value={item.subscription_from ? formatToAppDate(item.subscription_from) : ''}
                                                 onClick={() => {
                                                     if (!isReadOnly) {
@@ -1514,13 +1486,13 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             <Calendar size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
                                         </div>
                                     </td>
-                                    <td style={{ padding: '8px' }}>
+                                    <td style={{ padding: '6px 4px' }}>
                                         <div style={{ position: 'relative' }}>
                                             <input
                                                 type="text"
                                                 readOnly
                                                 className="ae-input"
-                                                style={{ height: '36px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer', background: isReadOnly ? '#f7fafc' : 'white' }}
+                                                style={{ height: '30px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer', background: isReadOnly ? '#f7fafc' : 'white', borderRadius: '6px' }}
                                                 value={item.subscription_to ? formatToAppDate(item.subscription_to) : ''}
                                                 onClick={() => {
                                                     if (!isReadOnly) {
@@ -1542,24 +1514,24 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         </div>
                                     </td>
 
-                                    <td style={{ padding: '8px' }}>
+                                    <td style={{ padding: '6px 4px' }}>
                                         <input
                                             type="number"
                                             className="ae-input"
-                                            style={{ height: '36px', padding: '4px 8px', textAlign: 'center', width: '100%', fontSize: '0.95rem', fontWeight: 600 }}
+                                            style={{ height: '30px', padding: '4px 8px', textAlign: 'center', width: '100%', fontSize: '0.85rem', fontWeight: 600 }}
                                             value={item.qty || ''}
                                             placeholder="0"
                                             onChange={(e) => handleItemChange(item.id, 'qty', e.target.value)}
                                             disabled={isReadOnly}
                                         />
                                     </td>
-                                    <td style={{ padding: '8px' }}>
+                                    <td style={{ padding: '6px 4px' }}>
                                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                            <span style={{ position: 'absolute', left: '8px', fontSize: '0.95rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
+                                            <span style={{ position: 'absolute', left: '8px', fontSize: '0.85rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
                                             <input
                                                 type="number"
                                                 className="ae-input"
-                                                style={{ height: '36px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%', fontSize: '0.95rem', fontWeight: 600 }}
+                                                style={{ height: '30px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%', fontSize: '0.85rem', fontWeight: 600, borderRadius: '6px' }}
                                                 value={item.rate || ''}
                                                 placeholder="0"
                                                 onChange={(e) => handleItemChange(item.id, 'rate', e.target.value)}
@@ -1573,13 +1545,13 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             />
                                         </div>
                                     </td>
-                                    <td style={{ padding: '8px' }}>
+                                    <td style={{ padding: '6px 4px' }}>
                                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                            <span style={{ position: 'absolute', left: '8px', fontSize: '0.95rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
+                                            <span style={{ position: 'absolute', left: '8px', fontSize: '0.85rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
                                             <input
                                                 type="number"
                                                 className="ae-input"
-                                                style={{ height: '36px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%', fontSize: '0.95rem', fontWeight: 600 }}
+                                                style={{ height: '30px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%', fontSize: '0.85rem', fontWeight: 600, borderRadius: '6px' }}
                                                 value={item.discount || ''}
                                                 placeholder="0"
                                                 onChange={(e) => handleItemChange(item.id, 'discount', e.target.value)}
@@ -1593,10 +1565,10 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             />
                                         </div>
                                     </td>
-                                    <td style={{ padding: '8px', textAlign: 'right', fontSize: '0.95rem', fontWeight: 800, color: '#1a1f36' }}>
+                                    <td style={{ padding: '6px 4px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36' }}>
                                         {getCurrencySymbol(formData.currency || 'INR')}{item.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}
                                     </td>
-                                    <td style={{ padding: '8px', textAlign: 'center' }}>
+                                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>
                                         {formData.items.length > 1 && !isReadOnly && (
                                             <button
                                                 onClick={() => handleRemoveItem(item.id)}
@@ -1626,8 +1598,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                         </tbody>
                         <tfoot>
                             <tr style={{ background: '#F8FAFC' }}>
-                                <td colSpan={isReadOnly ? 9 : 10} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total:</td>
-                                <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: 'var(--theme-primary)' }}>
+                                <td colSpan={isReadOnly ? 9 : 10} style={{ padding: '10px 4px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)' }}>Total:</td>
+                                <td style={{ padding: '10px 4px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 900, color: 'var(--theme-primary)' }}>
                                     {getCurrencySymbol(formData.currency || 'INR')}{calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </td>
                                 <td></td>
@@ -1641,7 +1613,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                     <div style={{ marginBottom: '16px' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Description / Memo</label>
                         <textarea
-                            style={{ width: '100%', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px', minHeight: '80px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'white', fontSize: '0.85rem' }}
+                            style={{ width: '100%', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px', minHeight: '80px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'white', fontSize: '0.85rem' }}
                             placeholder="Description / Memo"
                             value={formData.description_memo || ''}
                             onChange={(e) => setFormData({ ...formData, description_memo: e.target.value })}
@@ -1651,7 +1623,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                     <div>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Terms & Conditions</label>
                         <textarea
-                            style={{ width: '100%', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px', minHeight: '80px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'white', fontSize: '0.85rem' }}
+                            style={{ width: '100%', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px', minHeight: '80px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'white', fontSize: '0.85rem' }}
                             placeholder="Terms & Conditions"
                             value={formData.terms_conditions || ''}
                             onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}
@@ -1720,7 +1692,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     padding: '0 18px',
                                     fontSize: '0.85rem',
                                     fontWeight: 700,
-                                    borderRadius: '8px',
+                                    borderRadius: '10px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
@@ -1745,7 +1717,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     padding: '0 20px',
                                     fontSize: '0.85rem',
                                     fontWeight: 700,
-                                    borderRadius: '8px',
+                                    borderRadius: '10px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',

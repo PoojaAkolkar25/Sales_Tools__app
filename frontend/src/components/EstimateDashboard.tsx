@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-    Search,
-    FileText,
     CheckCircle2,
     Upload,
     Mail,
     X,
-    Eye,
     Download,
     ChevronDown,
     ChevronLeft,
@@ -576,7 +573,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                 className="ae-input"
                                 value={filters.period}
                                 onChange={e => setFilters({ ...filters, period: e.target.value })}
-                                style={{ height: '32px', fontSize: '0.8rem', width: '130px', padding: '0 12px' }}
+                                style={{ height: '32px', fontSize: '0.8rem', width: '130px', padding: '0 8px', borderRadius: '8px' }}
                             >
                                 <option value="">All Time</option>
                                 <option value="last_month">Last Month</option>
@@ -608,7 +605,18 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                     background: 'white',
                                     color: 'var(--text-secondary)',
                                     fontWeight: 700,
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    border: '1px solid var(--border-primary)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'var(--bg-secondary)';
+                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                    e.currentTarget.style.color = 'var(--theme-primary)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'white';
+                                    e.currentTarget.style.borderColor = 'var(--border-primary)';
+                                    e.currentTarget.style.color = 'var(--text-secondary)';
                                 }}
                             >
                                 <Download size={16} /> Export <ChevronDown size={14} />
@@ -651,7 +659,18 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                     background: 'white',
                                     color: 'var(--text-secondary)',
                                     fontWeight: 700,
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    border: '1px solid var(--border-primary)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'var(--bg-secondary)';
+                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                    e.currentTarget.style.color = 'var(--theme-primary)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'white';
+                                    e.currentTarget.style.borderColor = 'var(--border-primary)';
+                                    e.currentTarget.style.color = 'var(--text-secondary)';
                                 }}
                             >
                                 <Columns size={16} /> Columns <ChevronDown size={14} />
@@ -843,7 +862,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                             top: 0,
                                             color: 'var(--text-secondary)'
                                         }}>
-                                            <span title={col.label}>
+                                            <span title={col.label} style={{ fontSize: '0.8rem', fontWeight: 800 }}>
                                                 {getColWidth(col.key) < (SHORT_COL_WIDTHS[col.key] + 5)
                                                     ? col.shortLabel
                                                     : col.label}
@@ -873,14 +892,15 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                         textOverflow: 'ellipsis',
                                         top: 0,
                                         color: 'var(--text-secondary)',
-                                        borderBottom: '1px solid var(--border-secondary)'
+                                        borderBottom: '1px solid var(--border-secondary)',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 800
                                     }}>Actions</th>
                                 </tr>
                                 <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
                                     {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
                                         <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <div className="ae-input-group" style={{ margin: 0 }}>
-                                                <Search className="ae-search-icon" size={12} />
                                                 <input
                                                     className="ae-input"
                                                     placeholder="Filter..."
@@ -902,7 +922,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                 total_price: '', status: '', created_at: '', period: '',
                                                 startDate: '', endDate: '', subscription_from: '', subscription_to: ''
                                             })}
-                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                         >
                                             Clear
                                         </button>
@@ -921,165 +941,187 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                         return (
                                             <tr key={est.id}>
                                                 {visibleColumns.includes('deal_id') && (
-                                                    <td style={{ fontWeight: 400, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }} onClick={() => navigate(`/deal?id=${est.deal}`)}>
+                                                    <td style={{ fontWeight: 400, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }} onClick={() => navigate(`/deal?id=${est.deal}`)}>
                                                         {est.deal_id}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('deal_amount') && (
-                                                    <td style={{ fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }}>
+                                                    <td style={{ fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }}>
                                                         ₹{parseFloat(est.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('cost_sheet_no') && (
-                                                    <td style={{ fontWeight: 400, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }} onClick={() => navigate(`/cost-sheet?id=${est.cost_sheet}`)}>
+                                                    <td style={{ fontWeight: 400, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }} onClick={() => navigate(`/cost-sheet?id=${est.cost_sheet}`)}>
                                                         {est.cost_sheet_no}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('cost_sheet_price') && (
-                                                    <td style={{ fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }}>
+                                                    <td style={{ fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }}>
                                                         ₹{parseFloat(est.cost_sheet_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('estimate_id') && (
-                                                    <td style={{ fontWeight: 400, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }} onClick={() => onView(est.id)}>
+                                                    <td style={{ fontWeight: 400, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }} onClick={() => onView(est.id)}>
                                                         {est.estimate_id}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('version') && (
-                                                    <td style={{ fontWeight: 400, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }}>
+                                                    <td style={{ fontWeight: 400, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }}>
                                                         v{est.version}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('created_at') && (
-                                                    <td style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }}>
+                                                    <td style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px' }}>
                                                         {est.created_at ? formatToAppDate(est.created_at) : '-'}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('estimate_date') && (
-                                                    <td style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }}>
+                                                    <td style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px' }}>
                                                         {est.estimate_date ? formatToAppDate(est.estimate_date) : '-'}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('customer_name') && (
-                                                    <td style={{ fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }}>
+                                                    <td style={{ fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }}>
                                                         {est.customer_name}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('project_name') && (
-                                                    <td style={{ fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }}>
+                                                    <td style={{ fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }}>
                                                         {est.project_name}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('total_price') && (
-                                                    <td style={{ fontWeight: 400, color: 'var(--theme-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }}>
+                                                    <td style={{ fontWeight: 400, color: 'var(--theme-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }}>
                                                         ₹{parseFloat(est.total_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('status') && (
-                                                    <td style={{ padding: '10px 12px' }}>
-                                                        <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 400, background: style.bg, color: style.text, whiteSpace: 'nowrap' }}>{style.label}</span>
+                                                    <td style={{ padding: '4px 6px' }}>
+                                                        <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: style.bg, color: style.text, whiteSpace: 'nowrap' }}>{style.label}</span>
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('subscription_from') && (
-                                                    <td style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }}>
+                                                    <td style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px' }}>
                                                         {est.subscription_from ? formatToAppDate(est.subscription_from) : '-'}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('subscription_to') && (
-                                                    <td style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '10px 12px' }}>
+                                                    <td style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px' }}>
                                                         {est.subscription_to ? formatToAppDate(est.subscription_to) : '-'}
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('proposal') && (
-                                                    <td style={{ overflow: 'hidden' }}>
+                                                    <td style={{ overflow: 'hidden', padding: '4px 6px' }}>
                                                         {hasProposal ? (
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#38A169', fontSize: '0.75rem', fontWeight: 600 }}><CheckCircle2 size={14} /> Attached</div>
                                                         ) : (
                                                             <button
                                                                 onClick={() => onView(est.id)}
                                                                 className="ae-btn-secondary"
-                                                                style={{ padding: '4px 8px', fontSize: '0.7rem', width: '100%', height: '24px' }}
+                                                                style={{ padding: '4px 14px', fontSize: '0.72rem', height: '24px', borderRadius: '20px', fontWeight: 700 }}
                                                             >
                                                                 <Upload size={12} /> Attach
                                                             </button>
                                                         )}
                                                     </td>
                                                 )}
-                                                <td style={{ padding: '8px' }}>
+                                                <td style={{ padding: '4px 6px' }}>
                                                     <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
                                                         <button
                                                             onClick={() => onView(est.id)}
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
-                                                                gap: '6px',
-                                                                padding: '6px 12px',
-                                                                background: 'rgba(255,107,0,0.08)',
+                                                                gap: '4px',
+                                                                background: 'rgba(187, 77, 0, 0.07)',
                                                                 color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(255,107,0,0.25)',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.75rem',
-                                                                fontWeight: 600,
+                                                                border: '1px solid rgba(187, 77, 0, 0.25)',
+                                                                padding: '4px 14px',
+                                                                borderRadius: '20px',
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: 700,
                                                                 cursor: 'pointer',
-                                                                transition: 'all 0.2s'
+                                                                transition: 'all 0.18s',
                                                             }}
-                                                            onMouseOver={(e) => {
+                                                            onMouseEnter={(e) => {
                                                                 e.currentTarget.style.background = 'var(--theme-primary)';
                                                                 e.currentTarget.style.color = 'white';
                                                                 e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
                                                             }}
-                                                            onMouseOut={(e) => {
-                                                                e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
                                                                 e.currentTarget.style.color = 'var(--theme-primary)';
-                                                                e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                                e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
+                                                                e.currentTarget.style.boxShadow = 'none';
                                                             }}
                                                             title="View"
                                                         >
-                                                            <Eye size={14} />
+                                                            View
                                                         </button>
                                                         <button
                                                             onClick={() => handleDownloadPDF(est.id, est.estimate_id)}
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
-                                                                gap: '6px',
-                                                                padding: '6px 12px',
-                                                                background: 'rgba(255,107,0,0.08)',
+                                                                gap: '4px',
+                                                                background: 'rgba(187, 77, 0, 0.07)',
                                                                 color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(255,107,0,0.25)',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.75rem',
-                                                                fontWeight: 600,
+                                                                border: '1px solid rgba(187, 77, 0, 0.25)',
+                                                                padding: '4px 14px',
+                                                                borderRadius: '20px',
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: 700,
                                                                 cursor: 'pointer',
-                                                                transition: 'all 0.2s'
+                                                                transition: 'all 0.18s',
                                                             }}
-                                                            onMouseOver={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
-                                                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,107,0,0.08)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)'; }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                e.currentTarget.style.color = 'white';
+                                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
+                                                                e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
+                                                                e.currentTarget.style.boxShadow = 'none';
+                                                            }}
                                                             title="Download"
                                                         >
-                                                            <Download size={14} />
+                                                            Download
                                                         </button>
                                                         <button
                                                             onClick={() => setEmailModal({ ...emailModal, open: true, estimateId: est.id, to: est.customer_email || '', subject: `Proposal for ${est.project_name}` })}
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
-                                                                gap: '6px',
-                                                                padding: '6px 12px',
-                                                                background: 'rgba(255,107,0,0.08)',
+                                                                gap: '4px',
+                                                                background: 'rgba(187, 77, 0, 0.07)',
                                                                 color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(255,107,0,0.25)',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.75rem',
-                                                                fontWeight: 600,
+                                                                border: '1px solid rgba(187, 77, 0, 0.25)',
+                                                                padding: '4px 14px',
+                                                                borderRadius: '20px',
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: 700,
                                                                 cursor: 'pointer',
-                                                                transition: 'all 0.2s'
+                                                                transition: 'all 0.18s',
                                                             }}
-                                                            onMouseOver={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
-                                                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,107,0,0.08)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)'; }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                e.currentTarget.style.color = 'white';
+                                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
+                                                                e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
+                                                                e.currentTarget.style.boxShadow = 'none';
+                                                            }}
                                                             title="Email"
                                                         >
-                                                            <Mail size={14} />
+                                                            Email
                                                         </button>
                                                     </div>
                                                 </td>

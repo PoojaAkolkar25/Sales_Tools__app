@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Search, FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw, ChevronLeft, ChevronRight, Plus, Minus, PlusCircle, X, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import { FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw, ChevronLeft, ChevronRight, Plus, Minus, PlusCircle, X, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
 import api from '../api';
 import { formatToAppDate } from '../utils/dateUtils';
 import Pagination from './Pagination';
@@ -559,28 +559,30 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
 
                     {/* Right Side Actions */}
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Period:</span>
-                            <select
-                                className="ae-input"
-                                value={filters.period}
-                                onChange={e => setFilters({ ...filters, period: e.target.value })}
-                                style={{ height: '32px', fontSize: '0.75rem', width: '130px', padding: '0 8px' }}
-                            >
-                                <option value="">All Time</option>
-                                <option value="last_month">Last Month</option>
-                                <option value="last_3_months">3 Months</option>
-                                <option value="last_year">Last Year</option>
-                                <option value="custom">Custom</option>
-                            </select>
-                        </div>
-
-                        {filters.period === 'custom' && (
-                            <div style={{ display: 'flex', gap: '6px' }}>
-                                <input type="date" className="ae-input" value={filters.startDate} onChange={e => setFilters({ ...filters, startDate: e.target.value })} style={{ height: '32px', fontSize: '0.75rem', width: '120px', padding: '0 8px' }} />
-                                <input type="date" className="ae-input" value={filters.endDate} onChange={e => setFilters({ ...filters, endDate: e.target.value })} style={{ height: '32px', fontSize: '0.75rem', width: '120px', padding: '0 8px' }} />
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Period:</span>
+                                <select
+                                    className="ae-input"
+                                    value={filters.period}
+                                    onChange={e => setFilters({ ...filters, period: e.target.value })}
+                                    style={{ height: '32px', fontSize: '0.8rem', width: '130px', padding: '0 12px', lineHeight: '32px' }}
+                                >
+                                    <option value="">All Time</option>
+                                    <option value="last_month">Last Month</option>
+                                    <option value="last_3_months">3 Months</option>
+                                    <option value="last_year">Last Year</option>
+                                    <option value="custom">Custom</option>
+                                </select>
                             </div>
-                        )}
+
+                            {filters.period === 'custom' && (
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                    <input type="date" className="ae-input" value={filters.startDate} onChange={e => setFilters({ ...filters, startDate: e.target.value })} style={{ height: '32px', fontSize: '0.75rem', width: '120px', padding: '0 8px' }} />
+                                    <input type="date" className="ae-input" value={filters.endDate} onChange={e => setFilters({ ...filters, endDate: e.target.value })} style={{ height: '32px', fontSize: '0.75rem', width: '120px', padding: '0 8px' }} />
+                                </div>
+                            )}
+                        </div>
 
                         <div style={{ position: 'relative' }} ref={exportMenuRef}>
                             <button
@@ -595,14 +597,11 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                     gap: '8px',
                                     padding: '6px 14px',
                                     fontSize: '0.8rem',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    background: 'white',
-                                    color: '#000000',
                                     fontWeight: 400,
+                                    color: '#000000',
                                     border: (showExportMenu || hoveredExport) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
                                     boxShadow: (showExportMenu || hoveredExport) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none',
-                                    cursor: 'pointer'
+                                    background: 'white'
                                 }}
                             >
                                 <Download size={16} color="#000000" /> Export <ChevronDown size={14} color="#000000" />
@@ -644,14 +643,11 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                     gap: '8px',
                                     padding: '6px 14px',
                                     fontSize: '0.8rem',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    background: 'white',
-                                    color: '#000000',
                                     fontWeight: 400,
+                                    color: '#000000',
                                     border: (showColumnMenu || hoveredColumn) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
                                     boxShadow: (showColumnMenu || hoveredColumn) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none',
-                                    cursor: 'pointer'
+                                    background: 'white'
                                 }}
                             >
                                 <Columns size={16} color="#000000" /> Columns <ChevronDown size={14} color="#000000" />
@@ -684,7 +680,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                             style={{
                                                 background: 'none',
                                                 border: 'none',
-                                                color: 'var(--theme-primary)',
+                                                color: 'var(--ae-blue)',
                                                 fontSize: '0.75rem',
                                                 fontWeight: 700,
                                                 cursor: 'pointer',
@@ -692,7 +688,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                 borderRadius: '4px',
                                                 transition: 'background 0.2s'
                                             }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = '#EBF5FF'}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
                                             onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                         >
                                             Select All
@@ -723,14 +719,14 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                             gap: '12px',
                                             padding: '10px 16px',
                                             fontSize: '0.85rem',
-                                            color: '#2D3748',
+                                            color: 'var(--text-primary)',
                                             cursor: 'pointer',
                                             userSelect: 'none',
                                             transition: 'background 0.2s',
                                             borderBottom: '1px solid var(--border-primary)'
                                         }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-primary)'}
                                         >
                                             <input
                                                 type="checkbox"
@@ -898,7 +894,6 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                             return (
                                                 <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                                     <div className="ae-input-group" style={{ margin: 0 }}>
-                                                        <Search className="ae-search-icon" size={12} />
                                                         <input
                                                             className="ae-input"
                                                             placeholder="Filter..."
@@ -918,10 +913,10 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                             <button
                                                 onClick={() => setFilters({
                                                     csNumber: '', leadNo: '', dealNo: '', customerName: '', projectName: '',
-                                                    status: 'PENDING', period: '', startDate: '', endDate: '', dateStr: '',
+                                                    status: '', period: '', startDate: '', endDate: '', dateStr: '',
                                                     statusStr: '', marginStr: '', estMarginStr: '', totalPriceStr: ''
                                                 })}
-                                                style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                                style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                             >
                                                 Clear
                                             </button>
@@ -962,7 +957,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         return (
                                             <React.Fragment key={cs.id}>
                                                 <tr>
-                                                    <td style={{ textAlign: 'center', borderRight: '1px solid var(--border-secondary)', padding: 0 }}>
+                                                    <td style={{ textAlign: 'center', padding: 0 }}>
                                                         <button
                                                             onClick={() => toggleRow(cs.id)}
                                                             style={{
@@ -986,7 +981,8 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                             overflow: 'hidden',
                                                             textOverflow: 'ellipsis',
                                                             whiteSpace: 'nowrap',
-                                                            fontSize: '0.8rem'
+                                                            fontSize: '0.75rem',
+                                                            padding: '4px 6px',
                                                         } as React.CSSProperties;
 
                                                         switch (key) {
@@ -1025,10 +1021,9 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                                 return <td key={key} style={{ ...cellStyle }}>
                                                                     <span style={{
                                                                         padding: '4px 10px',
-                                                                        borderRadius: '6px',
-                                                                        fontSize: '10px',
+                                                                        borderRadius: '99px',
+                                                                        fontSize: '0.7rem',
                                                                         fontWeight: 700,
-                                                                        textTransform: 'uppercase',
                                                                         background: statusInfo.bg,
                                                                         color: statusInfo.color
                                                                     }}>
@@ -1053,28 +1048,39 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                                 return null;
                                                         }
                                                     })}
-                                                    <td style={{ textAlign: 'center', minWidth: '100px', display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                                    <td style={{ textAlign: 'center', minWidth: '100px', display: 'flex', gap: '4px', justifyContent: 'center', alignSelf: 'center' }}>
                                                         <button
                                                             onClick={() => onView?.(cs.id)}
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
-                                                                gap: '6px',
-                                                                padding: '6px 12px',
-                                                                background: 'rgba(255,107,0,0.08)',
+                                                                gap: '4px',
+                                                                background: 'rgba(187, 77, 0, 0.07)',
                                                                 color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(255,107,0,0.25)',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.75rem',
-                                                                fontWeight: 600,
+                                                                border: '1px solid rgba(187, 77, 0, 0.25)',
+                                                                padding: '4px 14px',
+                                                                borderRadius: '20px',
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: 700,
                                                                 cursor: 'pointer',
-                                                                transition: 'all 0.2s'
+                                                                letterSpacing: '0.04em',
+                                                                transition: 'all 0.18s',
                                                             }}
-                                                            onMouseOver={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
-                                                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,107,0,0.08)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)'; }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                e.currentTarget.style.color = 'white';
+                                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
+                                                                e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
+                                                                e.currentTarget.style.boxShadow = 'none';
+                                                            }}
                                                             title="View/Edit"
                                                         >
-                                                            <Eye size={14} />
+                                                            View
                                                         </button>
                                                         <button
                                                             onClick={(e) => {
@@ -1084,19 +1090,30 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
-                                                                gap: '6px',
-                                                                padding: '6px 12px',
-                                                                background: 'rgba(255,107,0,0.08)',
+                                                                gap: '4px',
+                                                                background: 'rgba(187, 77, 0, 0.07)',
                                                                 color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(255,107,0,0.25)',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.75rem',
-                                                                fontWeight: 600,
+                                                                border: '1px solid rgba(187, 77, 0, 0.25)',
+                                                                padding: '4px 14px',
+                                                                borderRadius: '20px',
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: 700,
                                                                 cursor: 'pointer',
-                                                                transition: 'all 0.2s'
+                                                                letterSpacing: '0.04em',
+                                                                transition: 'all 0.18s',
                                                             }}
-                                                            onMouseOver={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
-                                                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,107,0,0.08)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)'; }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                e.currentTarget.style.color = 'white';
+                                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
+                                                                e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
+                                                                e.currentTarget.style.boxShadow = 'none';
+                                                            }}
                                                             title="Download Cost Sheet"
                                                         >
                                                             <Download size={14} />

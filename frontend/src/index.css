@@ -1419,15 +1419,25 @@ option {
   /* Reduced gap */
 }
 
+.ae-grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
 
 @media (max-width: 1200px) {
-  .ae-grid-4 {
+
+  .ae-grid-4,
+  .ae-grid-5 {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .ae-grid-4 {
+
+  .ae-grid-4,
+  .ae-grid-5 {
     grid-template-columns: 1fr;
   }
 }
