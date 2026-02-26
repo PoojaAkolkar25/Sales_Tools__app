@@ -982,14 +982,22 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         borderRadius: '6px',
-                                                        background: 'var(--theme-primary)',
-                                                        color: 'white',
-                                                        border: 'none',
+                                                        background: 'rgba(255,107,0,0.08)',
+                                                        color: 'var(--theme-primary)',
+                                                        border: '1px solid rgba(255,107,0,0.25)',
                                                         cursor: 'pointer',
                                                         transition: 'all 0.2s'
                                                     }}
-                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary-dark, #cc4400)'; }}
-                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'var(--theme-primary)';
+                                                        e.currentTarget.style.color = 'white';
+                                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                        e.currentTarget.style.color = 'var(--theme-primary)';
+                                                        e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                    }}
                                                 >
                                                     <Eye size={16} />
                                                 </button>

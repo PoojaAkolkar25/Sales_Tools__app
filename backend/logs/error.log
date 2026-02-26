@@ -1,1173 +1,934 @@
-ERROR 2026-02-24 16:25:58,048 views 13016 3780 Automated PO extraction failed in process_po: PO Number MACM/IT/PO/2026/015 already exists. Check first PO (ID: 24).
+ERROR 2026-02-26 11:33:53,415 log 14332 10172 Internal Server Error: /api/deals/
 Traceback (most recent call last):
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\views.py", line 347, in process_po
-    draft_so = SalesOrderCreator.create_from_po(po_file)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\contextlib.py", line 81, in inner
-    return func(*args, **kwds)
-           ^^^^^^^^^^^^^^^^^^^
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\services.py", line 564, in create_from_po
-    raise Exception(f"PO Number {po_num} already exists. Check first PO (ID: {existing_so.id}).")
-Exception: PO Number MACM/IT/PO/2026/015 already exists. Check first PO (ID: 24).
-WARNING 2026-02-24 16:26:15,314 log 13016 19552 Not Found: /favicon.ico
-WARNING 2026-02-24 16:26:15,314 log 13016 19552 Not Found: /favicon.ico
-WARNING 2026-02-24 16:26:15,316 basehttp 13016 19552 "GET /favicon.ico HTTP/1.1" 404 3721
-WARNING 2026-02-24 16:26:15,316 basehttp 13016 19552 "GET /favicon.ico HTTP/1.1" 404 3721
-ERROR 2026-02-24 16:27:03,606 views 13016 3780 Automated PO extraction failed in process_po: PO Number ETL-PO-2025-1064 already exists. Check first PO (ID: 19).
-Traceback (most recent call last):
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\views.py", line 347, in process_po
-    draft_so = SalesOrderCreator.create_from_po(po_file)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\contextlib.py", line 81, in inner
-    return func(*args, **kwds)
-           ^^^^^^^^^^^^^^^^^^^
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\services.py", line 564, in create_from_po
-    raise Exception(f"PO Number {po_num} already exists. Check first PO (ID: {existing_so.id}).")
-Exception: PO Number ETL-PO-2025-1064 already exists. Check first PO (ID: 19).
-ERROR 2026-02-24 16:28:16,640 views 13016 3304 Automated PO extraction failed in process_po: PO Number PO/IT/AUTOMATI/00229676/2025-26 already exists. Check first PO (ID: 18).
-Traceback (most recent call last):
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\views.py", line 347, in process_po
-    draft_so = SalesOrderCreator.create_from_po(po_file)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\contextlib.py", line 81, in inner
-    return func(*args, **kwds)
-           ^^^^^^^^^^^^^^^^^^^
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\services.py", line 564, in create_from_po
-    raise Exception(f"PO Number {po_num} already exists. Check first PO (ID: {existing_so.id}).")
-Exception: PO Number PO/IT/AUTOMATI/00229676/2025-26 already exists. Check first PO (ID: 18).
-ERROR 2026-02-24 16:30:05,255 views 13016 21024 Automated PO extraction failed in process_po: PO Number MACM/IT/PO/2026/015 already exists. Check first PO (ID: 24).
-Traceback (most recent call last):
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\views.py", line 347, in process_po
-    draft_so = SalesOrderCreator.create_from_po(po_file)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\contextlib.py", line 81, in inner
-    return func(*args, **kwds)
-           ^^^^^^^^^^^^^^^^^^^
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\services.py", line 564, in create_from_po
-    raise Exception(f"PO Number {po_num} already exists. Check first PO (ID: {existing_so.id}).")
-Exception: PO Number MACM/IT/PO/2026/015 already exists. Check first PO (ID: 24).
-WARNING 2026-02-24 16:46:05,786 log 22352 8252 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-24 16:46:05,786 log 22352 8252 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-24 16:46:05,788 basehttp 22352 8252 "POST /api/finance/company-profile/ HTTP/1.1" 400 136
-WARNING 2026-02-24 16:46:05,788 basehttp 22352 8252 "POST /api/finance/company-profile/ HTTP/1.1" 400 136
-WARNING 2026-02-24 16:46:21,454 log 22352 8252 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-24 16:46:21,454 log 22352 8252 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-24 16:46:21,456 basehttp 22352 8252 "POST /api/finance/company-profile/ HTTP/1.1" 400 63
-WARNING 2026-02-24 16:46:21,456 basehttp 22352 8252 "POST /api/finance/company-profile/ HTTP/1.1" 400 63
-WARNING 2026-02-24 16:46:28,110 log 22352 8252 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-24 16:46:28,110 log 22352 8252 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-24 16:46:28,112 basehttp 22352 8252 "POST /api/finance/company-profile/ HTTP/1.1" 400 63
-WARNING 2026-02-24 16:46:28,112 basehttp 22352 8252 "POST /api/finance/company-profile/ HTTP/1.1" 400 63
-ERROR 2026-02-24 17:51:14,573 log 22200 2548 Internal Server Error: /api/customers/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-psycopg2.errors.UndefinedColumn: column deals_customer.entity does not exist
-LINE 1: ...T "deals_customer"."id", "deals_customer"."name", "deals_cus...
-                                                             ^
-
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
-    response = get_response(request)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
-    response = wrapped_callback(request, *callback_args, **callback_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
-    return view_func(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
-    return self.dispatch(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
-    response = self.handle_exception(exc)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
-    self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
-    raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
-    response = handler(request, *args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 46, in list
-    return Response(serializer.data)
-                    ^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 797, in data
-    ret = super().data
-          ^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 251, in data
-    self._data = self.to_representation(self.instance)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 715, in to_representation
-    return [
-           ^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 384, in __iter__
-    self._fetch_all()
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
-    self._result_cache = list(self._iterable_class(self))
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
-    results = compiler.execute_sql(
-              ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
-    cursor.execute(sql, params)
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
-    return super().execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
-    return self._execute_with_wrappers(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
-    return executor(sql, params, many, context)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
-    with self.db.wrap_database_errors:
-  File "C:\Python\Lib\site-packages\django\db\utils.py", line 91, in __exit__
-    raise dj_exc_value.with_traceback(traceback) from exc_value
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-django.db.utils.ProgrammingError: column deals_customer.entity does not exist
-LINE 1: ...T "deals_customer"."id", "deals_customer"."name", "deals_cus...
-                                                             ^
-
-ERROR 2026-02-24 17:51:14,573 log 22200 2548 Internal Server Error: /api/customers/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-psycopg2.errors.UndefinedColumn: column deals_customer.entity does not exist
-LINE 1: ...T "deals_customer"."id", "deals_customer"."name", "deals_cus...
-                                                             ^
-
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
-    response = get_response(request)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
-    response = wrapped_callback(request, *callback_args, **callback_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
-    return view_func(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
-    return self.dispatch(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
-    response = self.handle_exception(exc)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
-    self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
-    raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
-    response = handler(request, *args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 46, in list
-    return Response(serializer.data)
-                    ^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 797, in data
-    ret = super().data
-          ^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 251, in data
-    self._data = self.to_representation(self.instance)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 715, in to_representation
-    return [
-           ^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 384, in __iter__
-    self._fetch_all()
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
-    self._result_cache = list(self._iterable_class(self))
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
-    results = compiler.execute_sql(
-              ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
-    cursor.execute(sql, params)
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
-    return super().execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
-    return self._execute_with_wrappers(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
-    return executor(sql, params, many, context)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
-    with self.db.wrap_database_errors:
-  File "C:\Python\Lib\site-packages\django\db\utils.py", line 91, in __exit__
-    raise dj_exc_value.with_traceback(traceback) from exc_value
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-django.db.utils.ProgrammingError: column deals_customer.entity does not exist
-LINE 1: ...T "deals_customer"."id", "deals_customer"."name", "deals_cus...
-                                                             ^
-
-ERROR 2026-02-24 17:51:14,657 basehttp 22200 2548 "GET /api/customers/ HTTP/1.1" 500 170234
-ERROR 2026-02-24 17:51:14,657 basehttp 22200 2548 "GET /api/customers/ HTTP/1.1" 500 170234
-ERROR 2026-02-24 17:51:15,567 log 22200 2128 Internal Server Error: /api/customers/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-psycopg2.errors.UndefinedColumn: column deals_customer.entity does not exist
-LINE 1: ...T "deals_customer"."id", "deals_customer"."name", "deals_cus...
-                                                             ^
-
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
-    response = get_response(request)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
-    response = wrapped_callback(request, *callback_args, **callback_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
-    return view_func(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
-    return self.dispatch(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
-    response = self.handle_exception(exc)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
-    self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
-    raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
-    response = handler(request, *args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 46, in list
-    return Response(serializer.data)
-                    ^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 797, in data
-    ret = super().data
-          ^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 251, in data
-    self._data = self.to_representation(self.instance)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 715, in to_representation
-    return [
-           ^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 384, in __iter__
-    self._fetch_all()
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
-    self._result_cache = list(self._iterable_class(self))
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
-    results = compiler.execute_sql(
-              ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
-    cursor.execute(sql, params)
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
-    return super().execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
-    return self._execute_with_wrappers(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
-    return executor(sql, params, many, context)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
-    with self.db.wrap_database_errors:
-  File "C:\Python\Lib\site-packages\django\db\utils.py", line 91, in __exit__
-    raise dj_exc_value.with_traceback(traceback) from exc_value
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-django.db.utils.ProgrammingError: column deals_customer.entity does not exist
-LINE 1: ...T "deals_customer"."id", "deals_customer"."name", "deals_cus...
-                                                             ^
-
-ERROR 2026-02-24 17:51:15,567 log 22200 2128 Internal Server Error: /api/customers/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-psycopg2.errors.UndefinedColumn: column deals_customer.entity does not exist
-LINE 1: ...T "deals_customer"."id", "deals_customer"."name", "deals_cus...
-                                                             ^
-
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
-    response = get_response(request)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
-    response = wrapped_callback(request, *callback_args, **callback_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
-    return view_func(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
-    return self.dispatch(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
-    response = self.handle_exception(exc)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
-    self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
-    raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
-    response = handler(request, *args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 46, in list
-    return Response(serializer.data)
-                    ^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 797, in data
-    ret = super().data
-          ^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 251, in data
-    self._data = self.to_representation(self.instance)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 715, in to_representation
-    return [
-           ^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 384, in __iter__
-    self._fetch_all()
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
-    self._result_cache = list(self._iterable_class(self))
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
-    results = compiler.execute_sql(
-              ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
-    cursor.execute(sql, params)
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
-    return super().execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
-    return self._execute_with_wrappers(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
-    return executor(sql, params, many, context)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
-    with self.db.wrap_database_errors:
-  File "C:\Python\Lib\site-packages\django\db\utils.py", line 91, in __exit__
-    raise dj_exc_value.with_traceback(traceback) from exc_value
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-django.db.utils.ProgrammingError: column deals_customer.entity does not exist
-LINE 1: ...T "deals_customer"."id", "deals_customer"."name", "deals_cus...
-                                                             ^
-
-ERROR 2026-02-24 17:51:15,579 basehttp 22200 2128 "GET /api/customers/ HTTP/1.1" 500 170234
-ERROR 2026-02-24 17:51:15,579 basehttp 22200 2128 "GET /api/customers/ HTTP/1.1" 500 170234
-ERROR 2026-02-24 17:54:20,287 views 22200 22108 Error updating company profile: 'CompanyProfile' object has no attribute 'company_name'
-Traceback (most recent call last):
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\views.py", line 68, in perform_update
-    old_value=profile.company_name,
-              ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'CompanyProfile' object has no attribute 'company_name'. Did you mean: 'company_seal'?
-ERROR 2026-02-24 17:54:20,413 log 22200 22108 Internal Server Error: /api/finance/company-profile/14/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
-    response = get_response(request)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
-    response = wrapped_callback(request, *callback_args, **callback_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
-    return view_func(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
-    return self.dispatch(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
-    response = self.handle_exception(exc)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
-    self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
-    raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
-    response = handler(request, *args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 82, in partial_update
-    return self.update(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 68, in update
-    self.perform_update(serializer)
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\views.py", line 68, in perform_update
-    old_value=profile.company_name,
-              ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'CompanyProfile' object has no attribute 'company_name'. Did you mean: 'company_seal'?
-ERROR 2026-02-24 17:54:20,413 log 22200 22108 Internal Server Error: /api/finance/company-profile/14/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
-    response = get_response(request)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
-    response = wrapped_callback(request, *callback_args, **callback_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
-    return view_func(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
-    return self.dispatch(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
-    response = self.handle_exception(exc)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
-    self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
-    raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
-    response = handler(request, *args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 82, in partial_update
-    return self.update(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 68, in update
-    self.perform_update(serializer)
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\views.py", line 68, in perform_update
-    old_value=profile.company_name,
-              ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'CompanyProfile' object has no attribute 'company_name'. Did you mean: 'company_seal'?
-ERROR 2026-02-24 17:54:20,429 basehttp 22200 22108 "PATCH /api/finance/company-profile/14/ HTTP/1.1" 500 120475
-ERROR 2026-02-24 17:54:20,429 basehttp 22200 22108 "PATCH /api/finance/company-profile/14/ HTTP/1.1" 500 120475
-ERROR 2026-02-24 17:54:27,800 views 22200 22108 Error updating company profile: 'CompanyProfile' object has no attribute 'company_name'
-Traceback (most recent call last):
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\views.py", line 68, in perform_update
-    old_value=profile.company_name,
-              ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'CompanyProfile' object has no attribute 'company_name'. Did you mean: 'company_seal'?
-ERROR 2026-02-24 17:54:27,923 log 22200 22108 Internal Server Error: /api/finance/company-profile/14/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
-    response = get_response(request)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
-    response = wrapped_callback(request, *callback_args, **callback_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
-    return view_func(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
-    return self.dispatch(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
-    response = self.handle_exception(exc)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
-    self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
-    raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
-    response = handler(request, *args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 82, in partial_update
-    return self.update(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 68, in update
-    self.perform_update(serializer)
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\views.py", line 68, in perform_update
-    old_value=profile.company_name,
-              ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'CompanyProfile' object has no attribute 'company_name'. Did you mean: 'company_seal'?
-ERROR 2026-02-24 17:54:27,923 log 22200 22108 Internal Server Error: /api/finance/company-profile/14/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
-    response = get_response(request)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
-    response = wrapped_callback(request, *callback_args, **callback_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
-    return view_func(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
-    return self.dispatch(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
-    response = self.handle_exception(exc)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
-    self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
-    raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
-    response = handler(request, *args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 82, in partial_update
-    return self.update(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 68, in update
-    self.perform_update(serializer)
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\views.py", line 68, in perform_update
-    old_value=profile.company_name,
-              ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'CompanyProfile' object has no attribute 'company_name'. Did you mean: 'company_seal'?
-ERROR 2026-02-24 17:54:27,939 basehttp 22200 22108 "PATCH /api/finance/company-profile/14/ HTTP/1.1" 500 120475
-ERROR 2026-02-24 17:54:27,939 basehttp 22200 22108 "PATCH /api/finance/company-profile/14/ HTTP/1.1" 500 120475
-ERROR 2026-02-24 18:11:06,827 log 3304 23448 Internal Server Error: /api/estimates/34/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-psycopg2.errors.UndefinedColumn: column estimates_estimateitem.item_type does not exist
-LINE 1: ...."estimate_id", "estimates_estimateitem"."sr_no", "estimates...
-                                                             ^
-
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
-    response = get_response(request)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
-    response = wrapped_callback(request, *callback_args, **callback_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
-    return view_func(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
-    return self.dispatch(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
-    response = self.handle_exception(exc)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
-    self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
-    raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
-    response = handler(request, *args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 56, in retrieve
-    return Response(serializer.data)
-                    ^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 573, in data
-    ret = super().data
-          ^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 251, in data
-    self._data = self.to_representation(self.instance)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 540, in to_representation
-    ret[field.field_name] = field.to_representation(attribute)
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 715, in to_representation
-    return [
-           ^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 384, in __iter__
-    self._fetch_all()
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
-    self._result_cache = list(self._iterable_class(self))
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
-    results = compiler.execute_sql(
-              ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
-    cursor.execute(sql, params)
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
-    return super().execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
-    return self._execute_with_wrappers(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
-    return executor(sql, params, many, context)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
-    with self.db.wrap_database_errors:
-  File "C:\Python\Lib\site-packages\django\db\utils.py", line 91, in __exit__
-    raise dj_exc_value.with_traceback(traceback) from exc_value
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-django.db.utils.ProgrammingError: column estimates_estimateitem.item_type does not exist
-LINE 1: ...."estimate_id", "estimates_estimateitem"."sr_no", "estimates...
-                                                             ^
-
-ERROR 2026-02-24 18:11:06,827 log 3304 23448 Internal Server Error: /api/estimates/34/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-psycopg2.errors.UndefinedColumn: column estimates_estimateitem.item_type does not exist
-LINE 1: ...."estimate_id", "estimates_estimateitem"."sr_no", "estimates...
-                                                             ^
-
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
-    response = get_response(request)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
-    response = wrapped_callback(request, *callback_args, **callback_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
-    return view_func(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
-    return self.dispatch(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
-    response = self.handle_exception(exc)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
-    self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
-    raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
-    response = handler(request, *args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 56, in retrieve
-    return Response(serializer.data)
-                    ^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 573, in data
-    ret = super().data
-          ^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 251, in data
-    self._data = self.to_representation(self.instance)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 540, in to_representation
-    ret[field.field_name] = field.to_representation(attribute)
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 715, in to_representation
-    return [
-           ^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 384, in __iter__
-    self._fetch_all()
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
-    self._result_cache = list(self._iterable_class(self))
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
-    results = compiler.execute_sql(
-              ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
-    cursor.execute(sql, params)
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
-    return super().execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
-    return self._execute_with_wrappers(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
-    return executor(sql, params, many, context)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
-    with self.db.wrap_database_errors:
-  File "C:\Python\Lib\site-packages\django\db\utils.py", line 91, in __exit__
-    raise dj_exc_value.with_traceback(traceback) from exc_value
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-django.db.utils.ProgrammingError: column estimates_estimateitem.item_type does not exist
-LINE 1: ...."estimate_id", "estimates_estimateitem"."sr_no", "estimates...
-                                                             ^
-
-ERROR 2026-02-24 18:11:07,063 basehttp 3304 23448 "GET /api/estimates/34/ HTTP/1.1" 500 193009
-ERROR 2026-02-24 18:11:07,063 basehttp 3304 23448 "GET /api/estimates/34/ HTTP/1.1" 500 193009
-ERROR 2026-02-24 18:11:09,592 log 3304 22520 Internal Server Error: /api/estimates/34/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-psycopg2.errors.UndefinedColumn: column estimates_estimateitem.item_type does not exist
-LINE 1: ...."estimate_id", "estimates_estimateitem"."sr_no", "estimates...
-                                                             ^
-
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
-    response = get_response(request)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
-    response = wrapped_callback(request, *callback_args, **callback_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
-    return view_func(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
-    return self.dispatch(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
-    response = self.handle_exception(exc)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
-    self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
-    raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
-    response = handler(request, *args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 56, in retrieve
-    return Response(serializer.data)
-                    ^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 573, in data
-    ret = super().data
-          ^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 251, in data
-    self._data = self.to_representation(self.instance)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 540, in to_representation
-    ret[field.field_name] = field.to_representation(attribute)
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 715, in to_representation
-    return [
-           ^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 384, in __iter__
-    self._fetch_all()
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
-    self._result_cache = list(self._iterable_class(self))
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
-    results = compiler.execute_sql(
-              ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
-    cursor.execute(sql, params)
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
-    return super().execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
-    return self._execute_with_wrappers(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
-    return executor(sql, params, many, context)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
-    with self.db.wrap_database_errors:
-  File "C:\Python\Lib\site-packages\django\db\utils.py", line 91, in __exit__
-    raise dj_exc_value.with_traceback(traceback) from exc_value
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-django.db.utils.ProgrammingError: column estimates_estimateitem.item_type does not exist
-LINE 1: ...."estimate_id", "estimates_estimateitem"."sr_no", "estimates...
-                                                             ^
-
-ERROR 2026-02-24 18:11:09,592 log 3304 22520 Internal Server Error: /api/estimates/34/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-psycopg2.errors.UndefinedColumn: column estimates_estimateitem.item_type does not exist
-LINE 1: ...."estimate_id", "estimates_estimateitem"."sr_no", "estimates...
-                                                             ^
-
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
-    response = get_response(request)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
-    response = wrapped_callback(request, *callback_args, **callback_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
-    return view_func(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
-    return self.dispatch(request, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
-    response = self.handle_exception(exc)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
-    self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
-    raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
-    response = handler(request, *args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 56, in retrieve
-    return Response(serializer.data)
-                    ^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 573, in data
-    ret = super().data
-          ^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 251, in data
-    self._data = self.to_representation(self.instance)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 540, in to_representation
-    ret[field.field_name] = field.to_representation(attribute)
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 715, in to_representation
-    return [
-           ^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 384, in __iter__
-    self._fetch_all()
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
-    self._result_cache = list(self._iterable_class(self))
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
-    results = compiler.execute_sql(
-              ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
-    cursor.execute(sql, params)
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
-    return super().execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
-    return self._execute_with_wrappers(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
-    return executor(sql, params, many, context)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
-    with self.db.wrap_database_errors:
-  File "C:\Python\Lib\site-packages\django\db\utils.py", line 91, in __exit__
-    raise dj_exc_value.with_traceback(traceback) from exc_value
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-django.db.utils.ProgrammingError: column estimates_estimateitem.item_type does not exist
-LINE 1: ...."estimate_id", "estimates_estimateitem"."sr_no", "estimates...
-                                                             ^
-
-ERROR 2026-02-24 18:11:10,054 basehttp 3304 22520 "GET /api/estimates/34/ HTTP/1.1" 500 193009
-ERROR 2026-02-24 18:11:10,054 basehttp 3304 22520 "GET /api/estimates/34/ HTTP/1.1" 500 193009
-WARNING 2026-02-25 14:15:30,180 log 26192 26416 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-25 14:15:30,180 log 26192 26416 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-25 14:15:30,183 basehttp 26192 26416 "POST /api/finance/company-profile/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:15:30,183 basehttp 26192 26416 "POST /api/finance/company-profile/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:15:44,578 log 26192 26416 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-25 14:15:44,578 log 26192 26416 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-25 14:15:44,580 basehttp 26192 26416 "POST /api/finance/company-profile/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:15:44,580 basehttp 26192 26416 "POST /api/finance/company-profile/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:16:35,470 log 26192 26416 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-25 14:16:35,470 log 26192 26416 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-25 14:16:35,472 basehttp 26192 26416 "POST /api/finance/company-profile/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:16:35,472 basehttp 26192 26416 "POST /api/finance/company-profile/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:16:37,422 log 26192 26416 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-25 14:16:37,422 log 26192 26416 Bad Request: /api/finance/company-profile/
-WARNING 2026-02-25 14:16:37,423 basehttp 26192 26416 "POST /api/finance/company-profile/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:16:37,423 basehttp 26192 26416 "POST /api/finance/company-profile/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:17:39,623 log 26192 26416 Bad Request: /api/finance/company-profile/14/
-WARNING 2026-02-25 14:17:39,623 log 26192 26416 Bad Request: /api/finance/company-profile/14/
-WARNING 2026-02-25 14:17:39,624 basehttp 26192 26416 "PATCH /api/finance/company-profile/14/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:17:39,624 basehttp 26192 26416 "PATCH /api/finance/company-profile/14/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:18:20,083 log 26192 26416 Bad Request: /api/finance/company-profile/14/
-WARNING 2026-02-25 14:18:20,083 log 26192 26416 Bad Request: /api/finance/company-profile/14/
-WARNING 2026-02-25 14:18:20,085 basehttp 26192 26416 "PATCH /api/finance/company-profile/14/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:18:20,085 basehttp 26192 26416 "PATCH /api/finance/company-profile/14/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:18:49,721 log 26192 26416 Bad Request: /api/finance/company-profile/14/
-WARNING 2026-02-25 14:18:49,721 log 26192 26416 Bad Request: /api/finance/company-profile/14/
-WARNING 2026-02-25 14:18:49,723 basehttp 26192 26416 "PATCH /api/finance/company-profile/14/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:18:49,723 basehttp 26192 26416 "PATCH /api/finance/company-profile/14/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:19:49,094 log 26192 26416 Bad Request: /api/finance/company-profile/14/
-WARNING 2026-02-25 14:19:49,094 log 26192 26416 Bad Request: /api/finance/company-profile/14/
-WARNING 2026-02-25 14:19:49,095 basehttp 26192 26416 "PATCH /api/finance/company-profile/14/ HTTP/1.1" 400 56
-WARNING 2026-02-25 14:19:49,095 basehttp 26192 26416 "PATCH /api/finance/company-profile/14/ HTTP/1.1" 400 56
-ERROR 2026-02-25 14:53:14,518 views 24024 27032 Automated PO extraction failed in process_po: PO Number ETL-PO-2025-1064 already exists. Check first PO (ID: 19).
-Traceback (most recent call last):
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\views.py", line 347, in process_po
-    draft_so = SalesOrderCreator.create_from_po(po_file)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\contextlib.py", line 81, in inner
-    return func(*args, **kwds)
-           ^^^^^^^^^^^^^^^^^^^
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\services.py", line 564, in create_from_po
-    raise Exception(f"PO Number {po_num} already exists. Check first PO (ID: {existing_so.id}).")
-Exception: PO Number ETL-PO-2025-1064 already exists. Check first PO (ID: 19).
-WARNING 2026-02-25 14:53:14,533 log 24024 27032 Bad Request: /api/po-files/process_po/
-WARNING 2026-02-25 14:53:14,533 log 24024 27032 Bad Request: /api/po-files/process_po/
-WARNING 2026-02-25 14:53:14,535 basehttp 24024 27032 "POST /api/po-files/process_po/ HTTP/1.1" 400 168
-WARNING 2026-02-25 14:53:14,535 basehttp 24024 27032 "POST /api/po-files/process_po/ HTTP/1.1" 400 168
-WARNING 2026-02-25 15:30:50,885 log 24024 11664 Bad Request: /api/sales-orders/
-WARNING 2026-02-25 15:30:50,885 log 24024 11664 Bad Request: /api/sales-orders/
-WARNING 2026-02-25 15:30:50,890 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
-WARNING 2026-02-25 15:30:50,890 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
-WARNING 2026-02-25 15:30:59,885 log 24024 11664 Bad Request: /api/sales-orders/
-WARNING 2026-02-25 15:30:59,885 log 24024 11664 Bad Request: /api/sales-orders/
-WARNING 2026-02-25 15:30:59,896 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
-WARNING 2026-02-25 15:30:59,896 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
-WARNING 2026-02-25 15:33:38,264 log 24024 11664 Bad Request: /api/sales-orders/
-WARNING 2026-02-25 15:33:38,264 log 24024 11664 Bad Request: /api/sales-orders/
-WARNING 2026-02-25 15:33:38,305 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
-WARNING 2026-02-25 15:33:38,305 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
-WARNING 2026-02-25 15:37:44,579 log 24024 11664 Bad Request: /api/sales-orders/
-WARNING 2026-02-25 15:37:44,579 log 24024 11664 Bad Request: /api/sales-orders/
-WARNING 2026-02-25 15:37:44,584 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
-WARNING 2026-02-25 15:37:44,584 basehttp 24024 11664 "POST /api/sales-orders/ HTTP/1.1" 400 55
-WARNING 2026-02-25 15:44:14,990 log 24024 11388 Bad Request: /api/sales-orders/
-WARNING 2026-02-25 15:44:14,990 log 24024 11388 Bad Request: /api/sales-orders/
-WARNING 2026-02-25 15:44:14,994 basehttp 24024 11388 "POST /api/sales-orders/ HTTP/1.1" 400 55
-WARNING 2026-02-25 15:44:14,994 basehttp 24024 11388 "POST /api/sales-orders/ HTTP/1.1" 400 55
-WARNING 2026-02-25 15:46:17,128 log 24024 11388 Bad Request: /api/sales-orders/
-WARNING 2026-02-25 15:46:17,128 log 24024 11388 Bad Request: /api/sales-orders/
-WARNING 2026-02-25 15:46:17,132 basehttp 24024 11388 "POST /api/sales-orders/ HTTP/1.1" 400 55
-WARNING 2026-02-25 15:46:17,132 basehttp 24024 11388 "POST /api/sales-orders/ HTTP/1.1" 400 55
-ERROR 2026-02-25 16:20:19,229 views 21364 21776 Error creating company profile: null value in column "entity" of relation "deals_customer" violates not-null constraint
-DETAIL:  Failing row contains (16, Pari, , CUSTOMER, t, , , , , , , , 2026-02-25 10:50:19.206511+00, 2026-02-25 10:50:19.206511+00, INR, null, null, null, null, null, null).
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 946, in get_or_create
-    return self.get(**kwargs), False
-           ^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 633, in get
-    raise self.model.DoesNotExist(
-deals.models.Customer.DoesNotExist: Customer matching query does not exist.
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'customer'
 
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
     return self.cursor.execute(sql, params)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-psycopg2.errors.NotNullViolation: null value in column "entity" of relation "deals_customer" violates not-null constraint
-DETAIL:  Failing row contains (16, Pari, , CUSTOMER, t, , , , , , , , 2026-02-25 10:50:19.206511+00, 2026-02-25 10:50:19.206511+00, INR, null, null, null, null, null, null).
+psycopg2.errors.UndefinedColumn: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
 
 
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\views.py", line 39, in perform_create
-    profile = serializer.save()
-              ^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 210, in save
-    self.instance = self.create(validated_data)
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 991, in create
-    instance = ModelClass._default_manager.create(**validated_data)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
-    return getattr(self.get_queryset(), name)(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 663, in create
-    obj.save(force_insert=True, using=self.db)
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\models.py", line 98, in save
-    super().save(*args, **kwargs)
-  File "C:\Python\Lib\site-packages\django\db\models\base.py", line 902, in save
-    self.save_base(
-  File "C:\Python\Lib\site-packages\django\db\models\base.py", line 1023, in save_base
-    post_save.send(
-  File "C:\Python\Lib\site-packages\django\dispatch\dispatcher.py", line 189, in send
-    response = receiver(signal=self, sender=sender, **named)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\signals.py", line 12, in sync_company_profile_to_customer
-    customer, created_customer = Customer.objects.get_or_create(
-                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
-    return getattr(self.get_queryset(), name)(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 953, in get_or_create
-    return self.create(**params), True
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 663, in create
-    obj.save(force_insert=True, using=self.db)
-  File "C:\Python\Lib\site-packages\django\db\models\base.py", line 902, in save
-    self.save_base(
-  File "C:\Python\Lib\site-packages\django\db\models\base.py", line 1008, in save_base
-    updated = self._save_table(
-              ^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\base.py", line 1169, in _save_table
-    results = self._do_insert(
-              ^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\base.py", line 1210, in _do_insert
-    return manager._insert(
-           ^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
-    return getattr(self.get_queryset(), name)(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 1868, in _insert
-    return query.get_compiler(using=using).execute_sql(returning_fields)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\sql\compiler.py", line 1882, in execute_sql
-    cursor.execute(sql, params)
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
-    return super().execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
-    return self._execute_with_wrappers(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
-    return executor(sql, params, many, context)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
-    with self.db.wrap_database_errors:
-  File "C:\Python\Lib\site-packages\django\db\utils.py", line 91, in __exit__
-    raise dj_exc_value.with_traceback(traceback) from exc_value
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-django.db.utils.IntegrityError: null value in column "entity" of relation "deals_customer" violates not-null constraint
-DETAIL:  Failing row contains (16, Pari, , CUSTOMER, t, , , , , , , , 2026-02-25 10:50:19.206511+00, 2026-02-25 10:50:19.206511+00, INR, null, null, null, null, null, null).
-
-ERROR 2026-02-25 16:20:19,712 log 21364 21776 Internal Server Error: /api/finance/company-profile/
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 946, in get_or_create
-    return self.get(**kwargs), False
-           ^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 633, in get
-    raise self.model.DoesNotExist(
-deals.models.Customer.DoesNotExist: Customer matching query does not exist.
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
-    return self.cursor.execute(sql, params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-psycopg2.errors.NotNullViolation: null value in column "entity" of relation "deals_customer" violates not-null constraint
-DETAIL:  Failing row contains (16, Pari, , CUSTOMER, t, , , , , , , , 2026-02-25 10:50:19.206511+00, 2026-02-25 10:50:19.206511+00, INR, null, null, null, null, null, null).
-
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
     response = get_response(request)
                ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
     response = wrapped_callback(request, *callback_args, **callback_kwargs)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
     return view_func(request, *args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\viewsets.py", line 124, in view
     return self.dispatch(request, *args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
     response = self.handle_exception(exc)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
     self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
     raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
     response = handler(request, *args, **kwargs)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 19, in create
-    self.perform_create(serializer)
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\views.py", line 39, in perform_create
-    profile = serializer.save()
-              ^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 210, in save
-    self.instance = self.create(validated_data)
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 991, in create
-    instance = ModelClass._default_manager.create(**validated_data)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
-    return getattr(self.get_queryset(), name)(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 663, in create
-    obj.save(force_insert=True, using=self.db)
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\models.py", line 98, in save
-    super().save(*args, **kwargs)
-  File "C:\Python\Lib\site-packages\django\db\models\base.py", line 902, in save
-    self.save_base(
-  File "C:\Python\Lib\site-packages\django\db\models\base.py", line 1023, in save_base
-    post_save.send(
-  File "C:\Python\Lib\site-packages\django\dispatch\dispatcher.py", line 189, in send
-    response = receiver(signal=self, sender=sender, **named)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Sales_tools_application\Sales_Tools__app\backend\finance\signals.py", line 12, in sync_company_profile_to_customer
-    customer, created_customer = Customer.objects.get_or_create(
-                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
-    return getattr(self.get_queryset(), name)(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 953, in get_or_create
-    return self.create(**params), True
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 663, in create
-    obj.save(force_insert=True, using=self.db)
-  File "C:\Python\Lib\site-packages\django\db\models\base.py", line 902, in save
-    self.save_base(
-  File "C:\Python\Lib\site-packages\django\db\models\base.py", line 1008, in save_base
-    updated = self._save_table(
-              ^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\base.py", line 1169, in _save_table
-    results = self._do_insert(
-              ^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\base.py", line 1210, in _do_insert
-    return manager._insert(
-           ^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
-    return getattr(self.get_queryset(), name)(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 1868, in _insert
-    return query.get_compiler(using=using).execute_sql(returning_fields)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\sql\compiler.py", line 1882, in execute_sql
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 713, in to_representation
+    return [
+           ^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 714, in <listcomp>
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 525, in to_representation
+    attribute = field.get_attribute(instance)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 437, in get_attribute
+    return get_attribute(instance, self.source_attrs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 104, in get_attribute
+    instance = getattr(instance, attr)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 629, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 366, in __len__
+    self._fetch_all()
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
     cursor.execute(sql, params)
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
     return super().execute(sql, params)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
     return self._execute_with_wrappers(
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
     return executor(sql, params, many, context)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
     with self.db.wrap_database_errors:
-  File "C:\Python\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\utils.py", line 91, in __exit__
     raise dj_exc_value.with_traceback(traceback) from exc_value
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
     return self.cursor.execute(sql, params)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-django.db.utils.IntegrityError: null value in column "entity" of relation "deals_customer" violates not-null constraint
-DETAIL:  Failing row contains (16, Pari, , CUSTOMER, t, , , , , , , , 2026-02-25 10:50:19.206511+00, 2026-02-25 10:50:19.206511+00, INR, null, null, null, null, null, null).
+django.db.utils.ProgrammingError: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
 
-ERROR 2026-02-25 16:20:19,712 log 21364 21776 Internal Server Error: /api/finance/company-profile/
+ERROR 2026-02-26 11:33:53,415 log 14332 10172 Internal Server Error: /api/deals/
 Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 946, in get_or_create
-    return self.get(**kwargs), False
-           ^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\db\models\query.py", line 633, in get
-    raise self.model.DoesNotExist(
-deals.models.Customer.DoesNotExist: Customer matching query does not exist.
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'customer'
 
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
     return self.cursor.execute(sql, params)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-psycopg2.errors.NotNullViolation: null value in column "entity" of relation "deals_customer" violates not-null constraint
-DETAIL:  Failing row contains (16, Pari, , CUSTOMER, t, , , , , , , , 2026-02-25 10:50:19.206511+00, 2026-02-25 10:50:19.206511+00, INR, null, null, null, null, null, null).
+psycopg2.errors.UndefinedColumn: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
 
 
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
     response = get_response(request)
                ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
     response = wrapped_callback(request, *callback_args, **callback_kwargs)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
     return view_func(request, *args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\viewsets.py", line 124, in view
     return self.dispatch(request, *args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
     response = self.handle_exception(exc)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
     self.raise_uncaught_exception(exc)
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
     raise exc
-  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 713, in to_representation
+    return [
+           ^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 714, in <listcomp>
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 525, in to_representation
+    attribute = field.get_attribute(instance)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 437, in get_attribute
+    return get_attribute(instance, self.source_attrs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 104, in get_attribute
+    instance = getattr(instance, attr)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 629, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 366, in __len__
+    self._fetch_all()
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+ERROR 2026-02-26 11:33:53,451 basehttp 14332 10172 "GET /api/deals/ HTTP/1.1" 500 246581
+ERROR 2026-02-26 11:33:53,451 basehttp 14332 10172 "GET /api/deals/ HTTP/1.1" 500 246581
+ERROR 2026-02-26 11:33:53,785 log 14332 11092 Internal Server Error: /api/deals/
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'customer'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 713, in to_representation
+    return [
+           ^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 714, in <listcomp>
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 525, in to_representation
+    attribute = field.get_attribute(instance)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 437, in get_attribute
+    return get_attribute(instance, self.source_attrs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 104, in get_attribute
+    instance = getattr(instance, attr)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 629, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 366, in __len__
+    self._fetch_all()
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+ERROR 2026-02-26 11:33:53,785 log 14332 11092 Internal Server Error: /api/deals/
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'customer'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 713, in to_representation
+    return [
+           ^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 714, in <listcomp>
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 525, in to_representation
+    attribute = field.get_attribute(instance)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 437, in get_attribute
+    return get_attribute(instance, self.source_attrs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 104, in get_attribute
+    instance = getattr(instance, attr)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 629, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 366, in __len__
+    self._fetch_all()
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+ERROR 2026-02-26 11:33:53,853 basehttp 14332 11092 "GET /api/deals/ HTTP/1.1" 500 246581
+ERROR 2026-02-26 11:33:53,853 basehttp 14332 11092 "GET /api/deals/ HTTP/1.1" 500 246581
+ERROR 2026-02-26 11:33:58,423 log 14332 10172 Internal Server Error: /api/deals/
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'customer'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 713, in to_representation
+    return [
+           ^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 714, in <listcomp>
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 525, in to_representation
+    attribute = field.get_attribute(instance)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 437, in get_attribute
+    return get_attribute(instance, self.source_attrs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 104, in get_attribute
+    instance = getattr(instance, attr)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 629, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 366, in __len__
+    self._fetch_all()
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+ERROR 2026-02-26 11:33:58,423 log 14332 10172 Internal Server Error: /api/deals/
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'customer'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 713, in to_representation
+    return [
+           ^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 714, in <listcomp>
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 525, in to_representation
+    attribute = field.get_attribute(instance)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 437, in get_attribute
+    return get_attribute(instance, self.source_attrs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 104, in get_attribute
+    instance = getattr(instance, attr)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 629, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 366, in __len__
+    self._fetch_all()
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+ERROR 2026-02-26 11:33:58,456 basehttp 14332 10172 "GET /api/deals/ HTTP/1.1" 500 246581
+ERROR 2026-02-26 11:33:58,456 basehttp 14332 10172 "GET /api/deals/ HTTP/1.1" 500 246581
+ERROR 2026-02-26 11:33:58,724 log 14332 11092 Internal Server Error: /api/deals/
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'customer'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 713, in to_representation
+    return [
+           ^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 714, in <listcomp>
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 525, in to_representation
+    attribute = field.get_attribute(instance)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 437, in get_attribute
+    return get_attribute(instance, self.source_attrs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 104, in get_attribute
+    instance = getattr(instance, attr)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 629, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 366, in __len__
+    self._fetch_all()
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+ERROR 2026-02-26 11:33:58,724 log 14332 11092 Internal Server Error: /api/deals/
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 243, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\mixins.py", line 37, in get_cached_value
+    return instance._state.fields_cache[self.cache_name]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'customer'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 713, in to_representation
+    return [
+           ^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 714, in <listcomp>
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 525, in to_representation
+    attribute = field.get_attribute(instance)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 437, in get_attribute
+    return get_attribute(instance, self.source_attrs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\fields.py", line 104, in get_attribute
+    instance = getattr(instance, attr)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 261, in __get__
+    rel_obj = self.get_object(instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 224, in get_object
+    return qs.get(self.field.get_reverse_related_filter(instance))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 629, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 366, in __len__
+    self._fetch_all()
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: column deals_customer.customer_id does not exist
+LINE 1: ...tomer"."state_code", "deals_customer"."currency", "deals_cus...
+                                                             ^
+
+ERROR 2026-02-26 11:33:58,757 basehttp 14332 11092 "GET /api/deals/ HTTP/1.1" 500 246581
+ERROR 2026-02-26 11:33:58,757 basehttp 14332 11092 "GET /api/deals/ HTTP/1.1" 500 246581
+ERROR 2026-02-26 18:02:25,516 log 12768 15636 Internal Server Error: /api/po-files/process_po/
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SalesEdge\Sales_Tools__app\backend\sales_orders\views.py", line 345, in process_po
+    from .services import SalesOrderCreator
+  File "D:\SalesEdge\Sales_Tools__app\backend\sales_orders\services.py", line 3, in <module>
+    import pdfplumber
+ModuleNotFoundError: No module named 'pdfplumber'
+ERROR 2026-02-26 18:02:25,516 log 12768 15636 Internal Server Error: /api/po-files/process_po/
+Traceback (most recent call last):
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
     response = handler(request, *args, **kwargs)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 19, in create

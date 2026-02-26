@@ -522,7 +522,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
     };
 
     const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)' }}>{title}</h3>
@@ -553,7 +553,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 <input
                                     type="text"
                                     value={formatToAppDate(formData.lead ? leads.find(l => l.id === parseInt(formData.lead))?.lead_date || '' : '')}
-                                    placeholder="mm/dd/yyyy"
+                                    placeholder={formatToAppDate(new Date().toISOString())}
                                     className="ae-input"
                                     disabled
                                     style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
@@ -570,16 +570,15 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Date *</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Date</label>
                                 <input
                                     type="text"
                                     name="deal_date"
                                     value={formatToAppDate(formData.deal_date)}
-                                    placeholder="mm/dd/yyyy"
+                                    placeholder={formatToAppDate(new Date().toISOString())}
                                     className="ae-input"
                                     disabled
                                     style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
-                                    required
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -597,16 +596,22 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         <div className="ae-grid-4 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
-                                    label="Customer/Partner Name"
-                                    options={companies.map(c => {
-                                        const customerId = customers.find(cust => cust.name === c.name)?.id || '';
-                                        return { value: customerId, label: c.name };
-                                    }).filter(opt => opt.value !== '')}
+                                    label="Customer/Partner Name *"
+                                    options={companies
+                                        .filter((c, index, self) =>
+                                            index === self.findIndex((t) => t.name === c.name)
+                                        )
+                                        .map(c => {
+                                            const customerId = customers.find(cust => cust.name === c.name)?.id || '';
+                                            return { value: customerId.toString(), label: c.name };
+                                        })
+                                        .filter(opt => opt.value !== '')}
                                     value={formData.customer}
                                     onChange={(val) => handleInputChange({ target: { name: 'customer', value: val } } as any)}
                                     placeholder="Select Customer"
                                     onAddNew={() => handleInputChange({ target: { name: 'customer', value: 'ADD_NEW' } } as any)}
                                     addNewLabel="Add New Customer"
+                                    required={true}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -625,6 +630,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     type="text"
                                     value={formData.end_customer}
                                     className="ae-input"
+                                    placeholder="End user Name"
                                     disabled
                                     style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
                                 />
@@ -645,22 +651,22 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     </div>
 
                     {/* 2 & 3 Combined. Deal Value */}
-                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Deal Value" />
 
                         <div style={{ overflow: 'visible' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '16px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '12px' }}>
                                 <thead>
                                     <tr style={{ background: '#F8FAFC' }}>
-                                        <th style={{ padding: '12px 8px', width: '40px' }}></th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '50px' }}>Sr.No.</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '200px' }}>Type *</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568' }}>Description</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '100px' }}>Currency</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '80px' }}>Qty</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '130px' }}>Rate</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', width: '140px' }}>Amount</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', width: '40px' }}></th>
+                                        <th style={{ padding: '10px 4px', width: '40px' }}></th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '60px' }}>Sr.No.</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '130px' }}>Type *</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'black' }}>Description</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '80px' }}>Currency</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '70px' }}>Qty</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '120px' }}>Rate</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '130px' }}>Amount</th>
+                                        <th style={{ padding: '10px 4px', width: '40px' }}></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -668,7 +674,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                         const amount = (parseFloat(item.amount) || 0) * (parseInt(item.quantity) || 0);
                                         return (
                                             <tr key={index} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
-                                                <td style={{ padding: '8px', textAlign: 'center' }}>
+                                                <td style={{ padding: '6px 4px', textAlign: 'center' }}>
                                                     {index === (formData.deal_types || []).length - 1 && (
                                                         <button
                                                             type="button"
@@ -691,8 +697,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                         </button>
                                                     )}
                                                 </td>
-                                                <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{index + 1}</td>
-                                                <td style={{ padding: '8px' }}>
+                                                <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{index + 1}</td>
+                                                <td style={{ padding: '6px 4px' }}>
                                                     <SearchableDropdown
                                                         options={[
                                                             { value: 'LICENSE', label: 'License' },
@@ -702,34 +708,35 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                         onChange={(val) => handleDealTypeChange(index, 'type', val.toString())}
                                                         placeholder="Select Type"
                                                         className="w-full"
+                                                        required={true}
                                                     />
                                                 </td>
-                                                <td style={{ padding: '8px' }}>
+                                                <td style={{ padding: '6px 4px' }}>
                                                     <input
                                                         type="text"
                                                         value={item.description}
                                                         onChange={(e) => handleDealTypeChange(index, 'description', e.target.value)}
                                                         className="ae-input"
                                                         placeholder="Description"
-                                                        style={{ height: '36px', padding: '4px 8px' }}
+                                                        style={{ height: '30px', padding: '4px 8px' }}
                                                     />
                                                 </td>
-                                                <td style={{ padding: '8px' }}>
-                                                    <div style={{ height: '36px', padding: '4px 0', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                                                <td style={{ padding: '6px 4px' }}>
+                                                    <div style={{ height: '30px', padding: '4px 0', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                         {formData.currency}
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '8px' }}>
+                                                <td style={{ padding: '6px 4px' }}>
                                                     <input
                                                         type="number"
                                                         value={item.quantity === 0 ? '' : item.quantity}
                                                         onChange={(e) => handleDealTypeChange(index, 'quantity', e.target.value)}
                                                         className="ae-input"
                                                         placeholder="0"
-                                                        style={{ height: '36px', padding: '4px 8px', textAlign: 'left' }}
+                                                        style={{ height: '30px', padding: '4px 8px', textAlign: 'center' }}
                                                     />
                                                 </td>
-                                                <td style={{ padding: '8px' }}>
+                                                <td style={{ padding: '6px 4px' }}>
                                                     <div style={{ position: 'relative' }}>
                                                         <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: '#718096' }}>
                                                             {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
@@ -740,7 +747,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                             onChange={(e) => handleDealTypeChange(index, 'amount', e.target.value)}
                                                             className="ae-input"
                                                             placeholder="0"
-                                                            style={{ height: '36px', padding: '4px 8px 4px 24px', textAlign: 'left' }}
+                                                            style={{ height: '30px', padding: '4px 8px 4px 24px', textAlign: 'left' }}
                                                             onKeyDown={(e) => {
                                                                 if (e.key === 'Tab' && !e.shiftKey && index === (formData.deal_types || []).length - 1) {
                                                                     e.preventDefault();
@@ -751,11 +758,11 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                         />
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '8px', textAlign: 'left', fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>
+                                                <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>
                                                     {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
                                                     {amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </td>
-                                                <td style={{ padding: '8px', textAlign: 'center' }}>
+                                                <td style={{ padding: '6px 4px', textAlign: 'center' }}>
                                                     {(formData.deal_types || []).length > 1 && (
                                                         <button
                                                             type="button"
@@ -773,8 +780,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 </tbody>
                                 <tfoot>
                                     <tr style={{ background: '#F8FAFC' }}>
-                                        <td colSpan={7} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#4A5568' }}>Total Deal Value:</td>
-                                        <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.95rem', fontWeight: 800, color: '#FF6B00' }}>
+                                        <td colSpan={7} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: 'black' }}>Total Deal Value:</td>
+                                        <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '0.95rem', fontWeight: 800, color: '#FF6B00' }}>
                                             {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
                                             {parseFloat(formData.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
@@ -786,7 +793,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
 
                         <div className="ae-grid-4 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Stage *</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Stage</label>
                                 <input
                                     type="text"
                                     value={
@@ -864,7 +871,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     </div>
 
                     {/* 4. Deal Team */}
-                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Deal Team" />
                         <div className="ae-grid-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -935,7 +942,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
 
 
                     {/* 5. Description/Remark & Attachments */}
-                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Description/Remark" />
 
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -945,21 +952,16 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 onChange={handleInputChange}
                                 className="ae-input"
                                 placeholder="Description/Remark"
-                                style={{ height: '100px', padding: '12px', resize: 'vertical' }}
+                                style={{ height: '48px', padding: '8px 12px', resize: 'none' }}
                             />
                         </div>
 
-                        <div style={{ marginTop: '24px' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Attachments</label>
+                        <div style={{ marginTop: '12px' }}>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '12px',
-                                background: '#F8FAFC',
-                                padding: '8px 12px',
-                                borderRadius: '12px',
-                                border: '1px solid #E2E8F0',
-                                minHeight: '50px'
+                                gap: '8px',
+                                flexWrap: 'wrap'
                             }}>
                                 {/* LEFT: Attachment Button */}
                                 <div style={{ flexShrink: 0 }}>
@@ -1024,7 +1026,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                     background: 'white',
                                                     borderRadius: '8px',
                                                     border: '1px solid #E0E6ED',
-                                                    minWidth: 'fit-content'
+                                                    minWidth: 'fit-content',
+                                                    height: '34px'
                                                 }}
                                             >
                                                 <File size={14} style={{ color: '#FF6B00' }} />
@@ -1032,7 +1035,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                     fontSize: '0.8rem',
                                                     fontWeight: 600,
                                                     color: '#1a1f36',
-                                                    maxWidth: '120px',
+                                                    maxWidth: '150px',
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
                                                     whiteSpace: 'nowrap'
@@ -1101,7 +1104,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                             </div>
                                         ))
                                     ) : (
-                                        <span style={{ fontSize: '0.9rem', color: '#A0AEC0', fontStyle: 'italic', marginLeft: '10px' }}>
+                                        <span style={{ fontSize: '0.85rem', color: '#A0AEC0', fontStyle: 'italic' }}>
                                             {uploading ? 'Uploading...' : 'No attachments yet'}
                                         </span>
                                     )}

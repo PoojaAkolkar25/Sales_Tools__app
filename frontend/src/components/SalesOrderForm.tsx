@@ -3,7 +3,7 @@ import {
     Trash2,
     Save,
     CheckCircle,
-    XCircle, X,
+    XCircle,
     Download,
     PlusCircle,
     Plus,
@@ -415,7 +415,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '20px'
+            marginBottom: '16px'
         }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{
@@ -424,9 +424,9 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                     background: 'var(--ae-blue)',
                     borderRadius: '2px'
                 }}></span>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)', margin: 0 }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)', margin: 0 }}>
                     {title}
-                </h2>
+                </h3>
             </div>
             {extra}
 
@@ -461,7 +461,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                     {/* 1. Basic Info Section */}
                     <section>
                         <SectionHeader title="Basic Order Information" />
-                        <div className="ae-grid-4">
+                        <div className="ae-grid-5">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Sales Order Number</label>
                                 <input
@@ -638,30 +638,30 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                     </section>
 
                     {/* 2. Line Items Section */}
-                    <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                    <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Product Line Items" />
-                        <div style={{ overflowX: 'auto', border: '1px solid #E0E6ED', borderRadius: '8px' }}>
+                        <div>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ background: '#F8FAFC' }}>
-                                        <th style={{ padding: '12px 8px', width: '40px' }}></th>
-                                        <th style={{ width: '60px', padding: '12px 8px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Sr.No.</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '180px' }}>Type</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '250px' }}>Product</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '250px' }}>Description</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '140px' }}>Start Date</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '140px' }}>End Date</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '120px' }}>Qty</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '180px' }}>Rate</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', minWidth: '120px' }}>Disc%</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Total</th>
-                                        {!isSubmitted && <th style={{ padding: '12px 16px', borderBottom: '1px solid #E0E6ED', width: '40px' }}></th>}
+                                        <th style={{ padding: '10px 4px', width: '40px', borderBottom: '1px solid #E0E6ED' }}></th>
+                                        <th style={{ width: '60px', padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>Sr.No.</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '100px' }}>Type</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '180px' }}>Product</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '180px' }}>Description</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '150px' }}>Start Date</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '150px' }}>End Date</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '80px' }}>Qty</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '130px' }}>Rate</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '80px' }}>Disc%</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>Total</th>
+                                        {!isSubmitted && <th style={{ padding: '10px 4px', borderBottom: '1px solid #E0E6ED', width: '40px' }}></th>}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {salesOrder.items.map((item: any, index: number) => (
-                                        <tr key={item.id ?? `new-${index}`} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                                            <td style={{ padding: '8px', textAlign: 'center' }}>
+                                        <tr key={item.id ?? `new-${index}`} style={{ borderBottom: index === salesOrder.items.length - 1 ? 'none' : '1px solid #E0E6ED' }}>
+                                            <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
                                                 {index === salesOrder.items.length - 1 && !isSubmitted && (
                                                     <button
                                                         type="button"
@@ -684,9 +684,9 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     </button>
                                                 )}
                                             </td>
-                                            <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600 }}>{index + 1}</td>
-                                            <td style={{ padding: '8px 8px', minWidth: '180px' }}>
-                                                <div style={{ width: '180px' }}>
+                                            <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: '0.85rem', color: '#4A5568', fontWeight: 600, verticalAlign: 'middle' }}>{index + 1}</td>
+                                            <td style={{ padding: '6px 4px', minWidth: '100px', verticalAlign: 'middle' }}>
+                                                <div style={{ width: '100px' }}>
                                                     <SearchableDropdown
                                                         options={[
                                                             { value: 'LICENSE', label: 'License' },
@@ -700,64 +700,52 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     />
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '8px 8px', minWidth: '250px' }}>
-                                                <textarea
+                                            <td style={{ padding: '6px 4px', minWidth: '180px', verticalAlign: 'middle' }}>
+                                                <input
+                                                    type="text"
                                                     value={item.product_name || item.product || ''}
                                                     onChange={(e) => handleItemChange(index, 'product_name', e.target.value)}
-                                                    className="ae-input custom-scrollbar"
+                                                    className="ae-input"
                                                     style={{
                                                         width: '100%',
-                                                        minWidth: 0,
-                                                        height: '80px',
-                                                        padding: '6px 10px',
+                                                        height: '30px',
+                                                        padding: '4px 8px',
                                                         fontSize: '0.85rem',
-                                                        outline: 'none',
-                                                        resize: 'none',
-                                                        lineHeight: '1.4',
-                                                        overflowY: 'auto',
-                                                        boxSizing: 'border-box',
-                                                        wordBreak: 'break-word',
-                                                        whiteSpace: 'pre-wrap'
+                                                        borderRadius: '6px'
                                                     }}
                                                     placeholder="Product Name"
                                                     disabled={isSubmitted}
                                                 />
                                             </td>
-                                            <td style={{ padding: '8px 8px', minWidth: '250px' }}>
+                                            <td style={{ padding: '6px 4px', minWidth: '180px', verticalAlign: 'middle' }}>
                                                 <textarea
                                                     value={item.description || ''}
                                                     onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                                                     className="ae-input custom-scrollbar"
                                                     style={{
                                                         width: '100%',
-                                                        minWidth: 0,
-                                                        height: '80px',
-                                                        padding: '6px 10px',
+                                                        minHeight: '30px',
+                                                        height: '30px',
+                                                        padding: '4px 8px',
                                                         fontSize: '0.85rem',
-                                                        color: 'var(--text-secondary)',
-                                                        outline: 'none',
-                                                        resize: 'none',
-                                                        lineHeight: '1.4',
-                                                        overflowY: 'auto',
-                                                        boxSizing: 'border-box',
-                                                        wordBreak: 'break-word',
-                                                        whiteSpace: 'pre-wrap'
+                                                        borderRadius: '6px',
+                                                        resize: 'vertical'
                                                     }}
                                                     placeholder="Item Description"
                                                     disabled={isSubmitted}
                                                 />
                                             </td>
-                                            <td style={{ padding: '8px 16px', position: 'relative' }}>
+                                            <td style={{ padding: '6px 4px', position: 'relative', verticalAlign: 'middle' }}>
                                                 {isSubmitted ? (
-                                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', fontSize: '0.85rem' }}>{item.start_date ? formatToAppDate(item.start_date) : ''}</div>
+                                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '30px', fontSize: '0.85rem' }}>{item.start_date ? formatToAppDate(item.start_date) : ''}</div>
                                                 ) : (
-                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '130px' }}>
+                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '140px' }}>
                                                         <input
                                                             type="text"
                                                             value={item.start_date ? formatToAppDate(item.start_date) : ''}
                                                             readOnly
                                                             className="ae-input"
-                                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '28px', fontSize: '0.85rem', width: '100%' }}
+                                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '28px', fontSize: '0.85rem', width: '100%', height: '30px' }}
                                                             onClick={(e) => {
                                                                 const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
                                                                 if (dateInput) dateInput.showPicker();
@@ -779,17 +767,17 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     </div>
                                                 )}
                                             </td>
-                                            <td style={{ padding: '8px 16px', position: 'relative' }}>
+                                            <td style={{ padding: '6px 4px', position: 'relative', verticalAlign: 'middle' }}>
                                                 {isSubmitted ? (
-                                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', fontSize: '0.85rem' }}>{item.end_date ? formatToAppDate(item.end_date) : ''}</div>
+                                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '30px', fontSize: '0.85rem' }}>{item.end_date ? formatToAppDate(item.end_date) : ''}</div>
                                                 ) : (
-                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '130px' }}>
+                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '140px' }}>
                                                         <input
                                                             type="text"
                                                             value={item.end_date ? formatToAppDate(item.end_date) : ''}
                                                             readOnly
                                                             className="ae-input"
-                                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '28px', fontSize: '0.85rem', width: '100%' }}
+                                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '28px', fontSize: '0.85rem', width: '100%', height: '30px' }}
                                                             onClick={(e) => {
                                                                 const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
                                                                 if (dateInput) dateInput.showPicker();
@@ -811,52 +799,53 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     </div>
                                                 )}
                                             </td>
-                                            <td style={{ padding: '8px 8px', textAlign: 'center', minWidth: '140px' }}>
-                                                <div style={{ width: '120px', margin: '0 auto' }}>
+                                            <td style={{ padding: '6px 4px', textAlign: 'center', minWidth: '80px', verticalAlign: 'middle' }}>
+                                                <div style={{ width: '70px', margin: '0 auto' }}>
                                                     <input
                                                         type="number"
                                                         value={item.qty || ''}
                                                         onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
                                                         className="ae-input"
-                                                        style={{ width: '100%', padding: '8px 10px', fontSize: '0.95rem', textAlign: 'center', fontWeight: 600 }}
+                                                        style={{ width: '100%', padding: '4px 8px', fontSize: '0.85rem', textAlign: 'center', fontWeight: 600, height: '30px' }}
                                                         min="1"
                                                         disabled={isSubmitted}
                                                     />
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '8px 8px', minWidth: '200px' }}>
-                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '180px' }}>
-                                                    <span style={{ position: 'absolute', left: '10px', color: '#718096', fontSize: '0.85rem', fontWeight: 600 }}>{getCurrencySymbol(salesOrder.currency)}</span>
+                                            <td style={{ padding: '6px 4px', minWidth: '130px', verticalAlign: 'middle' }}>
+                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '120px' }}>
+                                                    <span style={{ position: 'absolute', left: '8px', color: '#718096', fontSize: '0.85rem', fontWeight: 600 }}>{getCurrencySymbol(salesOrder.currency)}</span>
                                                     <input
                                                         type="number"
                                                         value={item.rate || ''}
                                                         onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
                                                         className="ae-input"
-                                                        style={{ width: '100%', padding: '8px 10px 8px 24px', fontSize: '0.95rem', fontWeight: 600 }}
+                                                        style={{ width: '100%', padding: '4px 8px 4px 20px', fontSize: '0.85rem', fontWeight: 600, height: '30px' }}
                                                         min="0"
                                                         step="0.01"
                                                         disabled={isSubmitted}
                                                     />
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '8px 8px', textAlign: 'center', minWidth: '140px' }}>
-                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '120px', margin: '0 auto' }}>
+                                            <td style={{ padding: '6px 4px', textAlign: 'center', minWidth: '80px', verticalAlign: 'middle' }}>
+                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '70px', margin: '0 auto' }}>
                                                     <input
                                                         type="number"
                                                         value={item.discount_percent || 0}
                                                         onChange={(e) => handleItemChange(index, 'discount_percent', e.target.value)}
                                                         className="ae-input"
-                                                        style={{ width: '100%', padding: '8px 10px', fontSize: '0.95rem', color: '#C53030', textAlign: 'center', fontWeight: 600 }}
+                                                        style={{ width: '100%', padding: '4px 8px', fontSize: '0.85rem', color: '#C53030', textAlign: 'center', fontWeight: 600, height: '30px' }}
                                                         min="0"
                                                         max="100"
                                                         step="0.01"
                                                         disabled={isSubmitted}
                                                     />
-                                                    <span style={{ position: 'absolute', right: '10px', color: '#C53030', fontSize: '0.85rem', pointerEvents: 'none' }}>%</span>
+                                                    <span style={{ position: 'absolute', right: '8px', color: '#C53030', fontSize: '0.85rem', pointerEvents: 'none' }}>%</span>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                                                {getCurrencySymbol(salesOrder.currency)} {((parseFloat(item.qty as unknown as string) || 0) * (parseFloat(item.rate as unknown as string) || 0) * (1 - (parseFloat(item.discount_percent as unknown as string) || 0) / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 700, fontSize: '0.85rem', color: '#2D3748', verticalAlign: 'middle' }}>
+                                                <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{getCurrencySymbol(salesOrder.currency)}</span>
+                                                {((parseFloat(item.qty as unknown as string) || 0) * (parseFloat(item.rate as unknown as string) || 0) * (1 - (parseFloat(item.discount_percent as unknown as string) || 0) / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </td>
                                             {!isSubmitted && (
                                                 <td style={{ padding: '8px', textAlign: 'center' }}>
@@ -888,9 +877,9 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     ))}
                                 </tbody>
                                 <tfoot>
-                                    <tr style={{ background: 'var(--bg-secondary)' }}>
-                                        <td colSpan={10} style={{ padding: '16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Order Value</td>
-                                        <td style={{ padding: '16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+                                    <tr style={{ background: '#F8FAFC', borderTop: '1px solid #E0E6ED' }}>
+                                        <td colSpan={10} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Order Value</td>
+                                        <td style={{ padding: '8px 16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
                                             <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{getCurrencySymbol(salesOrder.currency)}</span>
                                             {parseFloat(salesOrder.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
@@ -902,9 +891,9 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                     </section>
 
                     {/* 3. Logistics & Currency Section */}
-                    <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                    <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Logistics & Currency" />
-                        <div className="ae-grid-4">
+                        <div style={{ display: 'grid', gridTemplateColumns: '150px 150px 1fr 1fr', gap: '16px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Currency</label>
                                 <SearchableDropdown
@@ -930,11 +919,11 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                         value={salesOrder.order_date || ''}
                                         onChange={handleInputChange}
                                         className="ae-input"
-                                        style={{ ...getHighlightStyle(salesOrder.order_date) }}
+                                        style={{ ...getHighlightStyle(salesOrder.order_date), height: '34px' }}
                                     />
                                 )}
                             </div>
-                            <div className="md:col-span-2" style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Billing Address</label>
                                 <textarea
                                     name="billing_address"
@@ -942,16 +931,18 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     onChange={handleInputChange}
                                     className="ae-input"
                                     style={{
-                                        height: 'auto',
-                                        minHeight: '120px',
-                                        ...getHighlightStyle(salesOrder.billing_address)
+                                        minHeight: '60px',
+                                        height: '60px',
+                                        ...getHighlightStyle(salesOrder.billing_address),
+                                        padding: '4px 8px',
+                                        fontSize: '0.85rem'
                                     }}
-                                    rows={4}
+                                    rows={2}
                                     disabled={isSubmitted}
                                     placeholder="Billing Address"
                                 />
                             </div>
-                            <div className="md:col-span-2" style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Shipping Address</label>
                                 <textarea
                                     name="shipping_address"
@@ -959,11 +950,13 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     onChange={handleInputChange}
                                     className="ae-input"
                                     style={{
-                                        height: 'auto',
-                                        minHeight: '120px',
-                                        ...getHighlightStyle(salesOrder.shipping_address)
+                                        minHeight: '60px',
+                                        height: '60px',
+                                        ...getHighlightStyle(salesOrder.shipping_address),
+                                        padding: '4px 8px',
+                                        fontSize: '0.85rem'
                                     }}
-                                    rows={4}
+                                    rows={2}
                                     disabled={isSubmitted}
                                     placeholder="Shipping Address"
                                 />
@@ -973,7 +966,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
 
                     {/* 4. Source Document Section */}
                     {salesOrder.po_file_url && (
-                        <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                        <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                             <SectionHeader title="Source Document" />
                             <div style={{
                                 display: 'inline-flex',
@@ -1089,22 +1082,23 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             onClick={handleSave}
                             disabled={saving}
                             style={{
-                                height: '38px',
-                                padding: '0 18px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                borderRadius: '8px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
+                                padding: '6px 16px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
                                 border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
                                 background: hoveredBtn === 'draft' ? 'var(--theme-primary)' : 'transparent',
                                 color: hoveredBtn === 'draft' ? 'white' : 'var(--text-secondary)',
-                                transition: 'all 0.2s',
-                                cursor: 'pointer',
-                                boxShadow: hoveredBtn === 'draft' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                                boxShadow: hoveredBtn === 'draft' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                             }}
                             onMouseEnter={() => !isConfirmingExit && setHoveredBtn('draft')}
+                            onMouseLeave={() => setHoveredBtn('')}
                         >
                             {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
                             <span>Save as Draft</span>
@@ -1113,24 +1107,25 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             onClick={handleSubmit}
                             disabled={saving}
                             style={{
-                                height: '38px',
-                                padding: '0 20px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                borderRadius: '8px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                background: hoveredBtn === 'submit' ? 'var(--theme-primary)' : 'transparent',
-                                color: hoveredBtn === 'submit' ? 'white' : 'var(--text-secondary)',
+                                padding: '6px 16px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
                                 border: 'none',
-                                transition: 'all 0.2s',
                                 cursor: 'pointer',
-                                boxShadow: hoveredBtn === 'submit' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                                transition: 'all 0.2s',
+                                background: hoveredBtn === 'submit' ? 'var(--theme-primary)' : 'rgba(255, 107, 0, 0.05)',
+                                color: hoveredBtn === 'submit' ? 'white' : 'var(--ae-orange)',
+                                boxShadow: hoveredBtn === 'submit' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                             }}
                             onMouseEnter={() => !isConfirmingExit && setHoveredBtn('submit')}
+                            onMouseLeave={() => setHoveredBtn('')}
                         >
-                            <PlusCircle size={18} />
+                            <PlusCircle size={16} />
                             <span>Submit for Approval</span>
                         </button>
                     </>
@@ -1142,38 +1137,39 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             onClick={handleApprove}
                             disabled={saving}
                             style={{
-                                height: '38px',
-                                padding: '0 20px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                borderRadius: '10px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
+                                padding: '6px 16px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
                                 border: 'none',
                                 background: '#00C853',
                                 color: 'white',
                                 transition: 'all 0.2s',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(0, 200, 83, 0.2)'
                             }}
                             onMouseOver={(e) => { e.currentTarget.style.background = '#00ad48'; }}
                             onMouseOut={(e) => { e.currentTarget.style.background = '#00C853'; }}
                         >
-                            <CheckCircle size={15} />
+                            <CheckCircle size={16} />
                             <span>Approve</span>
                         </button>
                         <button
                             onClick={handleReject}
                             disabled={saving}
                             style={{
-                                height: '38px',
-                                padding: '0 20px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                borderRadius: '10px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
+                                padding: '6px 16px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
                                 background: 'rgba(229,62,62,0.06)',
                                 color: '#E53E3E',
                                 border: '1px solid rgba(229,62,62,0.4)',
@@ -1183,7 +1179,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             onMouseOver={(e) => { e.currentTarget.style.background = '#E53E3E'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#E53E3E'; }}
                             onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(229,62,62,0.06)'; e.currentTarget.style.color = '#E53E3E'; e.currentTarget.style.borderColor = 'rgba(229,62,62,0.4)'; }}
                         >
-                            <XCircle size={15} />
+                            <XCircle size={16} />
                             <span>Reject</span>
                         </button>
                     </>
@@ -1199,24 +1195,24 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                         });
                     }}
                     style={{
-                        height: '38px',
-                        padding: '0 18px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        borderRadius: '8px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
+                        padding: '6px 16px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
                         border: 'none',
-                        background: hoveredBtn === 'cancel' ? 'rgba(0,0,0,0.05)' : 'transparent',
-                        color: 'var(--text-secondary)',
+                        background: hoveredBtn === 'cancel' ? 'rgba(255, 107, 0, 0.05)' : 'transparent',
+                        color: hoveredBtn === 'cancel' ? 'var(--ae-orange)' : 'var(--text-secondary)',
                         transition: 'all 0.2s',
                         cursor: 'pointer'
                     }}
                     onMouseEnter={() => !isConfirmingExit && setHoveredBtn('cancel')}
                     onMouseLeave={() => setHoveredBtn('')}
                 >
-                    <X size={18} />
+                    <span style={{ fontSize: '16px', lineHeight: '16px', fontWeight: 700 }}>×</span>
                     <span>Cancel</span>
                 </button>
             </div>

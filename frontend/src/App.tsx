@@ -19,10 +19,10 @@ import {
   ChevronRight,
   Upload,
   RefreshCcw,
-  Eye,
   Settings as SettingsIcon,
   Palette,
-  ChevronDown
+  ChevronDown,
+  History
 } from 'lucide-react';
 
 
@@ -92,6 +92,7 @@ const getNavItems = (user: any): NavItem[] => {
       path: '#', // Placeholder, parent item doesn't navigate directly if it has children
       children: [
         { id: 'create', label: 'Create', path: '/user-management', icon: PlusCircle },
+        { id: 'audit-trail', label: 'Audit Trail', path: '/audit-trail', icon: History },
         { id: 'themes', label: 'Themes', path: '/settings', icon: Palette }
       ]
     });
@@ -138,8 +139,8 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
   return (
     <div className={`app-container ${theme && theme !== 'default' ? `theme-${theme}` : ''}`}>
       {/* Left Sidebar */}
-      <aside className={`sidebar flex flex-col ${isSidebarExpanded ? 'expanded' : '!w-20'} overflow-hidden transition-all duration-300`}>
-        <div className={`sidebar-logo !px-0 flex items-center ${isSidebarExpanded ? 'justify-start px-6' : 'justify-center'}`}>
+      <aside className={`sidebar flex flex-col ${isSidebarExpanded ? 'expanded' : '!w-16'} overflow-hidden transition-all duration-300`}>
+        <div className={`sidebar-logo !px-0 flex items-center ${isSidebarExpanded ? 'justify-start px-4' : 'justify-center'}`}>
           <img
             src="/Salesedge1_logo.png"
             alt="SalesEdge Logo"
@@ -162,7 +163,7 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
                   title={!isSidebarExpanded ? item.label : ''}
                 >
                   <div className={`flex items-center ${isSidebarExpanded ? 'w-full' : 'justify-center'} px-4`}>
-                    <item.icon size={24} className="flex-shrink-0" />
+                    <item.icon size={16} className="flex-shrink-0" />
                     {isSidebarExpanded && (
                       <>
                         <span className="font-semibold text-sm ml-3 flex-1 text-left">{item.label}</span>
@@ -208,8 +209,10 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
                           }}
                         >
                           <div className="flex items-center justify-center w-full px-4">
-                            <child.icon size={18} className="flex-shrink-0" />
-                            <span className="font-medium text-sm ml-3 text-left">{child.label}</span>
+                            <div className="flex items-center justify-start w-[105px]">
+                              <child.icon size={14} className="flex-shrink-0" />
+                              <span className="font-medium text-sm ml-3 text-left">{child.label}</span>
+                            </div>
                           </div>
                         </button>
                       );
@@ -550,12 +553,16 @@ const AppContent: React.FC = () => {
                         if (costSheetView !== 'dashboard') {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (costSheetView !== 'dashboard') {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -583,12 +590,16 @@ const AppContent: React.FC = () => {
                         if (costSheetView !== 'form' || editingId) {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (costSheetView !== 'form' || editingId) {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -690,12 +701,16 @@ const AppContent: React.FC = () => {
                         if (leadView !== 'dashboard') {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (leadView !== 'dashboard') {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -723,12 +738,16 @@ const AppContent: React.FC = () => {
                         if (leadView !== 'form' || editingLeadId) {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (leadView !== 'form' || editingLeadId) {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -760,14 +779,14 @@ const AppContent: React.FC = () => {
       <Route path="/deal" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container">
+            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '0 8px',
-                  marginBottom: '24px'
+                  marginBottom: '10px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
@@ -778,10 +797,10 @@ const AppContent: React.FC = () => {
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
+                  justifyContent: 'flex-start',
                   padding: '0 8px',
-                  marginBottom: '12px',
-                  gap: '24px'
+                  marginBottom: '0',
+                  gap: '8px'
                 }}>
                   <div style={{
                     display: 'flex',
@@ -814,12 +833,16 @@ const AppContent: React.FC = () => {
                         if (dealView !== 'dashboard') {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (dealView !== 'dashboard') {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -847,12 +870,16 @@ const AppContent: React.FC = () => {
                         if (dealView !== 'form' || editingDealId) {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (dealView !== 'form' || editingDealId) {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -947,12 +974,16 @@ const AppContent: React.FC = () => {
                         if (estimateView !== 'dashboard') {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (estimateView !== 'dashboard') {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -983,12 +1014,16 @@ const AppContent: React.FC = () => {
                         if (estimateView !== 'form' || editingEstimateId) {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (estimateView !== 'form' || editingEstimateId) {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -1071,12 +1106,16 @@ const AppContent: React.FC = () => {
                         if (salesOrderView !== 'dashboard') {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (salesOrderView !== 'dashboard') {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -1101,12 +1140,18 @@ const AppContent: React.FC = () => {
                     }}
                       onMouseEnter={(e) => {
                         if (!isExtractingSO) {
-                          e.currentTarget.style.background = 'var(--bg-hover)';
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (!isExtractingSO) {
                           e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = '#718096';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -1227,12 +1272,16 @@ const AppContent: React.FC = () => {
                         if (invoiceView !== 'dashboard') {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (invoiceView !== 'dashboard') {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -1263,12 +1312,16 @@ const AppContent: React.FC = () => {
                         if (invoiceView !== 'form' || editingInvoiceId) {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (invoiceView !== 'form' || editingInvoiceId) {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -1375,12 +1428,16 @@ const AppContent: React.FC = () => {
                         if (milestoneView !== 'dashboard') {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (milestoneView !== 'dashboard') {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >
@@ -1411,12 +1468,16 @@ const AppContent: React.FC = () => {
                         if (milestoneView !== 'form') {
                           e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
                           e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (milestoneView !== 'form') {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.color = '#718096';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
                         }
                       }}
                     >

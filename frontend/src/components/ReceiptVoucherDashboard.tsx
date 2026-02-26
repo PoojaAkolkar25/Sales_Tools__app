@@ -193,7 +193,7 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '16px 20px',
+                    padding: '12px 16px',
                     borderBottom: '1px solid var(--border-primary)'
                 }}>
                     <div style={{
@@ -573,17 +573,25 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                                     alignItems: 'center',
                                                     gap: '6px',
                                                     padding: '6px 12px',
-                                                    background: 'var(--ae-blue)',
-                                                    color: 'white',
-                                                    border: 'none',
+                                                    background: 'rgba(255,107,0,0.08)',
+                                                    color: 'var(--theme-primary)',
+                                                    border: '1px solid rgba(255,107,0,0.25)',
                                                     borderRadius: '6px',
                                                     fontSize: '0.75rem',
                                                     fontWeight: 600,
                                                     cursor: 'pointer',
                                                     transition: 'all 0.2s'
                                                 }}
-                                                onMouseOver={(e) => e.currentTarget.style.background = 'var(--theme-primary)'}
-                                                onMouseOut={(e) => e.currentTarget.style.background = 'var(--ae-blue)'}
+                                                onMouseOver={(e) => {
+                                                    e.currentTarget.style.background = 'var(--theme-primary)';
+                                                    e.currentTarget.style.color = 'white';
+                                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                }}
+                                                onMouseOut={(e) => {
+                                                    e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                    e.currentTarget.style.color = 'var(--theme-primary)';
+                                                    e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                }}
                                             >
                                                 <Eye size={14} /> View
                                             </button>
