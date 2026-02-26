@@ -40,7 +40,7 @@ class ResourceRequestViewSet(viewsets.ModelViewSet):
             return Response({"error": "Only draft requests can be submitted."}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            resource_request.status = RequestStatus.PENDING_IT
+            resource_request.status = RequestStatus.SUBMITTED
             resource_request.save()
             
             # Log audit trail for submission
@@ -52,7 +52,7 @@ class ResourceRequestViewSet(viewsets.ModelViewSet):
                 action_type='UPDATE',
                 field_name='status',
                 old_value=RequestStatus.DRAFT,
-                new_value=RequestStatus.PENDING_IT
+                new_value=RequestStatus.SUBMITTED
             )
             
             return Response(ResourceRequestSerializer(resource_request).data)
@@ -61,10 +61,44 @@ class ResourceRequestViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'])
+    def submit_to_it(self, request, pk=None):
+        resource_request = self.get_object()
+        if resource_request.status != RequestStatus.SUBMITTED:
+            return Response({"error": "Only submitted requests can be sent to IT Head."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Checked by Project Manager or Admin
+        if not (request.user.groups.filter(name='Project Manager').exists() or request.user.is_superuser):
+            return Response({"error": "Only Project Managers can submit requests to IT Head."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            resource_request.status = RequestStatus.PENDING_IT
+            resource_request.save()
+            
+            # Log audit trail
+            content_type = ContentType.objects.get_for_model(ResourceRequest)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=resource_request.id,
+                user=request.user,
+                action_type='UPDATE',
+                field_name='status',
+                old_value=RequestStatus.SUBMITTED,
+                new_value=RequestStatus.PENDING_IT
+            )
+            
+            return Response(ResourceRequestSerializer(resource_request).data)
+        except Exception as e:
+            logger.error(f"Error in submit_to_it: {str(e)}", exc_info=True)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
     def approve_it(self, request, pk=None):
         resource_request = self.get_object()
         if resource_request.status != RequestStatus.PENDING_IT:
             return Response({"error": "Only requests pending IT approval can be processed by IT."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not (request.user.groups.filter(name='IT Head').exists() or request.user.is_superuser):
+            return Response({"error": "Only IT Head can approve this request."}, status=status.HTTP_403_FORBIDDEN)
         
         try:
             resource_request.status = RequestStatus.PENDING_FINANCE
@@ -95,6 +129,9 @@ class ResourceRequestViewSet(viewsets.ModelViewSet):
         resource_request = self.get_object()
         if resource_request.status != RequestStatus.PENDING_FINANCE:
             return Response({"error": "Only requests pending Finance approval can be processed by Finance."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not (request.user.groups.filter(name='Finance Manager').exists() or request.user.is_superuser):
+            return Response({"error": "Only Finance Head can approve this request."}, status=status.HTTP_403_FORBIDDEN)
         
         try:
             resource_request.status = RequestStatus.APPROVED
@@ -160,6 +197,9 @@ class ResourceRequestViewSet(viewsets.ModelViewSet):
         resource_request = self.get_object()
         if resource_request.status != RequestStatus.APPROVED:
             return Response({"error": "Only approved requests can be issued."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not (request.user.groups.filter(name='Server Issuing Authority').exists() or request.user.is_superuser):
+            return Response({"error": "Only Server Issuing Authority can issue resources."}, status=status.HTTP_403_FORBIDDEN)
         
         resource_id = request.data.get('resource_id')
         if not resource_id:

@@ -3967,3 +3967,334 @@ Traceback (most recent call last):
 AttributeError: 'Deal' object has no attribute 'CompanyChoices'
 ERROR 2026-02-25 17:41:56,174 basehttp 5228 21616 "POST /api/deals/ HTTP/1.1" 500 146100
 ERROR 2026-02-25 17:41:56,174 basehttp 5228 21616 "POST /api/deals/ HTTP/1.1" 500 146100
+WARNING 2026-02-26 12:57:56,544 log 360 2796 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 12:57:56,544 log 360 2796 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 12:57:56,549 basehttp 360 2796 "POST /api/inventory/requests/ HTTP/1.1" 400 436
+WARNING 2026-02-26 12:57:56,549 basehttp 360 2796 "POST /api/inventory/requests/ HTTP/1.1" 400 436
+WARNING 2026-02-26 13:03:19,794 log 360 24572 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 13:03:19,794 log 360 24572 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 13:03:19,795 basehttp 360 24572 "POST /api/inventory/requests/ HTTP/1.1" 400 436
+WARNING 2026-02-26 13:03:19,795 basehttp 360 24572 "POST /api/inventory/requests/ HTTP/1.1" 400 436
+WARNING 2026-02-26 14:40:03,741 log 10004 22368 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 14:40:03,741 log 10004 22368 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 14:40:03,745 basehttp 10004 22368 "POST /api/inventory/requests/ HTTP/1.1" 400 436
+WARNING 2026-02-26 14:40:03,745 basehttp 10004 22368 "POST /api/inventory/requests/ HTTP/1.1" 400 436
+WARNING 2026-02-26 14:40:11,458 log 10004 22368 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 14:40:11,458 log 10004 22368 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 14:40:11,465 basehttp 10004 22368 "POST /api/inventory/requests/ HTTP/1.1" 400 436
+WARNING 2026-02-26 14:40:11,465 basehttp 10004 22368 "POST /api/inventory/requests/ HTTP/1.1" 400 436
+WARNING 2026-02-26 14:47:00,655 log 10004 5836 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 14:47:00,655 log 10004 5836 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 14:47:00,657 basehttp 10004 5836 "POST /api/inventory/requests/ HTTP/1.1" 400 436
+WARNING 2026-02-26 14:47:00,657 basehttp 10004 5836 "POST /api/inventory/requests/ HTTP/1.1" 400 436
+WARNING 2026-02-26 14:47:02,316 log 10004 5836 Not Found: /api/inventory/requests/null/submit/
+WARNING 2026-02-26 14:47:02,316 log 10004 5836 Not Found: /api/inventory/requests/null/submit/
+WARNING 2026-02-26 14:47:02,317 basehttp 10004 5836 "POST /api/inventory/requests/null/submit/ HTTP/1.1" 404 23
+WARNING 2026-02-26 14:47:02,317 basehttp 10004 5836 "POST /api/inventory/requests/null/submit/ HTTP/1.1" 404 23
+WARNING 2026-02-26 14:47:07,240 log 10004 5836 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 14:47:07,240 log 10004 5836 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 14:47:07,242 basehttp 10004 5836 "POST /api/inventory/requests/ HTTP/1.1" 400 436
+WARNING 2026-02-26 14:47:07,242 basehttp 10004 5836 "POST /api/inventory/requests/ HTTP/1.1" 400 436
+WARNING 2026-02-26 14:47:22,031 log 10004 5836 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 14:47:22,031 log 10004 5836 Bad Request: /api/inventory/requests/
+WARNING 2026-02-26 14:47:22,033 basehttp 10004 5836 "POST /api/inventory/requests/ HTTP/1.1" 400 324
+WARNING 2026-02-26 14:47:22,033 basehttp 10004 5836 "POST /api/inventory/requests/ HTTP/1.1" 400 324
+WARNING 2026-02-26 15:20:29,485 log 20012 23816 Not Found: /api/inventory/requests/export_excel/
+WARNING 2026-02-26 15:20:29,485 log 20012 23816 Not Found: /api/inventory/requests/export_excel/
+WARNING 2026-02-26 15:20:29,487 basehttp 20012 23816 "GET /api/inventory/requests/export_excel/?period= HTTP/1.1" 404 23
+WARNING 2026-02-26 15:20:29,487 basehttp 20012 23816 "GET /api/inventory/requests/export_excel/?period= HTTP/1.1" 404 23
+WARNING 2026-02-26 16:23:46,634 log 10024 19524 Not Found: /api/finance/customers/
+WARNING 2026-02-26 16:23:46,634 log 10024 19524 Not Found: /api/finance/customers/
+WARNING 2026-02-26 16:23:46,635 basehttp 10024 19524 "GET /api/finance/customers/ HTTP/1.1" 404 90091
+WARNING 2026-02-26 16:23:46,635 basehttp 10024 19524 "GET /api/finance/customers/ HTTP/1.1" 404 90091
+WARNING 2026-02-26 16:23:46,735 log 10024 4364 Not Found: /api/finance/customers/
+WARNING 2026-02-26 16:23:46,735 log 10024 4364 Not Found: /api/finance/customers/
+WARNING 2026-02-26 16:23:46,736 basehttp 10024 4364 "GET /api/finance/customers/ HTTP/1.1" 404 90091
+WARNING 2026-02-26 16:23:46,736 basehttp 10024 4364 "GET /api/finance/customers/ HTTP/1.1" 404 90091
+WARNING 2026-02-26 16:24:00,997 log 10024 25160 Not Found: /api/finance/customers/
+WARNING 2026-02-26 16:24:00,997 log 10024 25160 Not Found: /api/finance/customers/
+WARNING 2026-02-26 16:24:01,000 basehttp 10024 25160 "GET /api/finance/customers/ HTTP/1.1" 404 90091
+WARNING 2026-02-26 16:24:01,000 basehttp 10024 25160 "GET /api/finance/customers/ HTTP/1.1" 404 90091
+WARNING 2026-02-26 16:24:01,046 log 10024 19524 Not Found: /api/finance/customers/
+WARNING 2026-02-26 16:24:01,046 log 10024 19524 Not Found: /api/finance/customers/
+WARNING 2026-02-26 16:24:01,047 basehttp 10024 19524 "GET /api/finance/customers/ HTTP/1.1" 404 90091
+WARNING 2026-02-26 16:24:01,047 basehttp 10024 19524 "GET /api/finance/customers/ HTTP/1.1" 404 90091
+WARNING 2026-02-26 16:31:54,953 log 10024 25476 Not Found: /api/inventory/requests/
+WARNING 2026-02-26 16:31:54,953 log 10024 25476 Not Found: /api/inventory/requests/
+WARNING 2026-02-26 16:31:54,962 basehttp 10024 25476 "GET /api/inventory/requests/ HTTP/1.1" 404 62371
+WARNING 2026-02-26 16:31:54,962 basehttp 10024 25476 "GET /api/inventory/requests/ HTTP/1.1" 404 62371
+WARNING 2026-02-26 16:31:55,272 log 10024 25476 Not Found: /api/inventory/requests/
+WARNING 2026-02-26 16:31:55,272 log 10024 25476 Not Found: /api/inventory/requests/
+WARNING 2026-02-26 16:31:55,294 basehttp 10024 25476 "GET /api/inventory/requests/ HTTP/1.1" 404 62371
+WARNING 2026-02-26 16:31:55,294 basehttp 10024 25476 "GET /api/inventory/requests/ HTTP/1.1" 404 62371
+WARNING 2026-02-26 16:32:03,953 log 10024 18568 Not Found: /api/finance/customers/
+WARNING 2026-02-26 16:32:03,953 log 10024 18568 Not Found: /api/finance/customers/
+WARNING 2026-02-26 16:32:03,958 basehttp 10024 18568 "GET /api/finance/customers/ HTTP/1.1" 404 90091
+WARNING 2026-02-26 16:32:03,958 basehttp 10024 18568 "GET /api/finance/customers/ HTTP/1.1" 404 90091
+WARNING 2026-02-26 16:32:04,036 log 10024 17452 Not Found: /api/finance/customers/
+WARNING 2026-02-26 16:32:04,036 log 10024 17452 Not Found: /api/finance/customers/
+WARNING 2026-02-26 16:32:04,043 basehttp 10024 17452 "GET /api/finance/customers/ HTTP/1.1" 404 90091
+WARNING 2026-02-26 16:32:04,043 basehttp 10024 17452 "GET /api/finance/customers/ HTTP/1.1" 404 90091
+WARNING 2026-02-26 16:32:06,225 log 10024 17452 Bad Request: /api/revenue/contracts/
+WARNING 2026-02-26 16:32:06,225 log 10024 17452 Bad Request: /api/revenue/contracts/
+WARNING 2026-02-26 16:32:06,226 basehttp 10024 17452 "POST /api/revenue/contracts/ HTTP/1.1" 400 300
+WARNING 2026-02-26 16:32:06,226 basehttp 10024 17452 "POST /api/revenue/contracts/ HTTP/1.1" 400 300
+WARNING 2026-02-26 17:27:05,872 log 10024 11424 Not Found: /api/inventory/requests/
+WARNING 2026-02-26 17:27:05,872 log 10024 11424 Not Found: /api/inventory/requests/
+WARNING 2026-02-26 17:27:05,875 basehttp 10024 11424 "GET /api/inventory/requests/ HTTP/1.1" 404 62371
+WARNING 2026-02-26 17:27:05,875 basehttp 10024 11424 "GET /api/inventory/requests/ HTTP/1.1" 404 62371
+WARNING 2026-02-26 17:27:05,929 log 10024 24392 Not Found: /api/inventory/requests/
+WARNING 2026-02-26 17:27:05,929 log 10024 24392 Not Found: /api/inventory/requests/
+WARNING 2026-02-26 17:27:05,931 basehttp 10024 24392 "GET /api/inventory/requests/ HTTP/1.1" 404 62371
+WARNING 2026-02-26 17:27:05,931 basehttp 10024 24392 "GET /api/inventory/requests/ HTTP/1.1" 404 62371
+WARNING 2026-02-26 17:42:46,829 vertex_model 10024 24708 Vertex model not ready: File D:/Keys/vertex.json was not found.
+WARNING 2026-02-26 17:42:46,830 log 10024 24708 Bad Request: /api/po-files/process_po/
+WARNING 2026-02-26 17:42:46,830 log 10024 24708 Bad Request: /api/po-files/process_po/
+WARNING 2026-02-26 17:42:46,832 basehttp 10024 24708 "POST /api/po-files/process_po/ HTTP/1.1" 400 67
+WARNING 2026-02-26 17:42:46,832 basehttp 10024 24708 "POST /api/po-files/process_po/ HTTP/1.1" 400 67
+ERROR 2026-02-26 17:45:15,864 views 15676 23280 Automated PO extraction failed in process_po: PO Number PO/IT/AUTOMATI/00229676/2025-26 already exists. Check first PO (ID: 18).
+Traceback (most recent call last):
+  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\views.py", line 347, in process_po
+    draft_so = SalesOrderCreator.create_from_po(po_file)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\services.py", line 564, in create_from_po
+    raise Exception(f"PO Number {po_num} already exists. Check first PO (ID: {existing_so.id}).")
+Exception: PO Number PO/IT/AUTOMATI/00229676/2025-26 already exists. Check first PO (ID: 18).
+WARNING 2026-02-26 17:45:15,897 log 15676 23280 Bad Request: /api/po-files/process_po/
+WARNING 2026-02-26 17:45:15,897 log 15676 23280 Bad Request: /api/po-files/process_po/
+WARNING 2026-02-26 17:45:15,899 basehttp 15676 23280 "POST /api/po-files/process_po/ HTTP/1.1" 400 183
+WARNING 2026-02-26 17:45:15,899 basehttp 15676 23280 "POST /api/po-files/process_po/ HTTP/1.1" 400 183
+ERROR 2026-02-26 17:50:13,994 views 15676 20416 Automated PO extraction failed in process_po: PO Number PO/IT/AUTOMATI/00229676/2025-26 already exists. Check first PO (ID: 18).
+Traceback (most recent call last):
+  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\views.py", line 347, in process_po
+    draft_so = SalesOrderCreator.create_from_po(po_file)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\Sales_tools_application\Sales_Tools__app\backend\sales_orders\services.py", line 564, in create_from_po
+    raise Exception(f"PO Number {po_num} already exists. Check first PO (ID: {existing_so.id}).")
+Exception: PO Number PO/IT/AUTOMATI/00229676/2025-26 already exists. Check first PO (ID: 18).
+WARNING 2026-02-26 17:50:13,995 log 15676 20416 Bad Request: /api/po-files/process_po/
+WARNING 2026-02-26 17:50:13,995 log 15676 20416 Bad Request: /api/po-files/process_po/
+WARNING 2026-02-26 17:50:13,996 basehttp 15676 20416 "POST /api/po-files/process_po/ HTTP/1.1" 400 183
+WARNING 2026-02-26 17:50:13,996 basehttp 15676 20416 "POST /api/po-files/process_po/ HTTP/1.1" 400 183
+ERROR 2026-02-26 18:05:05,548 log 20240 18520 Internal Server Error: /api/finance/invoices/
+Traceback (most recent call last):
+  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 797, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 716, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 525, in to_representation
+    for field in fields:
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 386, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 374, in fields
+    for key, value in self.get_fields().items():
+                      ^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 1081, in get_fields
+    field_names = self.get_field_names(declared_fields, info)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 1177, in get_field_names
+    assert field_name in fields, (
+AssertionError: The field 'so_no' was declared on serializer InvoiceSerializer, but has not been included in the 'fields' option.
+ERROR 2026-02-26 18:05:05,548 log 20240 18520 Internal Server Error: /api/finance/invoices/
+Traceback (most recent call last):
+  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 797, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 716, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 525, in to_representation
+    for field in fields:
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 386, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 374, in fields
+    for key, value in self.get_fields().items():
+                      ^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 1081, in get_fields
+    field_names = self.get_field_names(declared_fields, info)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 1177, in get_field_names
+    assert field_name in fields, (
+AssertionError: The field 'so_no' was declared on serializer InvoiceSerializer, but has not been included in the 'fields' option.
+ERROR 2026-02-26 18:05:05,560 basehttp 20240 18520 "GET /api/finance/invoices/ HTTP/1.1" 500 153299
+ERROR 2026-02-26 18:05:05,560 basehttp 20240 18520 "GET /api/finance/invoices/ HTTP/1.1" 500 153299
+ERROR 2026-02-26 18:05:05,935 log 20240 22696 Internal Server Error: /api/finance/invoices/
+Traceback (most recent call last):
+  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 797, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 716, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 525, in to_representation
+    for field in fields:
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 386, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 374, in fields
+    for key, value in self.get_fields().items():
+                      ^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 1081, in get_fields
+    field_names = self.get_field_names(declared_fields, info)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 1177, in get_field_names
+    assert field_name in fields, (
+AssertionError: The field 'so_no' was declared on serializer InvoiceSerializer, but has not been included in the 'fields' option.
+ERROR 2026-02-26 18:05:05,935 log 20240 22696 Internal Server Error: /api/finance/invoices/
+Traceback (most recent call last):
+  File "C:\Python\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Python\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\mixins.py", line 46, in list
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 797, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 251, in data
+    self._data = self.to_representation(self.instance)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 716, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 525, in to_representation
+    for field in fields:
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 386, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 374, in fields
+    for key, value in self.get_fields().items():
+                      ^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 1081, in get_fields
+    field_names = self.get_field_names(declared_fields, info)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python\Lib\site-packages\rest_framework\serializers.py", line 1177, in get_field_names
+    assert field_name in fields, (
+AssertionError: The field 'so_no' was declared on serializer InvoiceSerializer, but has not been included in the 'fields' option.
+ERROR 2026-02-26 18:05:05,939 basehttp 20240 22696 "GET /api/finance/invoices/ HTTP/1.1" 500 153299
+ERROR 2026-02-26 18:05:05,939 basehttp 20240 22696 "GET /api/finance/invoices/ HTTP/1.1" 500 153299

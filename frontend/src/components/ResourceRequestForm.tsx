@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
     Clock,
     ChevronLeft,
     Send,
-    Server
+    Server,
+    Save,
+    PlusCircle,
+    X,
+    CheckCircle,
+    XCircle,
+    Calendar
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -50,20 +57,39 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
         business_justification: '',
         expected_start_date: new Date().toISOString().split('T')[0],
         expected_end_date: '',
+        quantity: 1,
+        status: 'DRAFT',
         it_head_remarks: '',
         finance_head_remarks: '',
     });
 
 
     const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
+    const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel' | 'approve' | 'reject' | 'issue'>('submit');
+    const [isConfirmingExit, setIsConfirmingExit] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectRemarks, setRejectRemarks] = useState('');
     const { showNotification, showConfirm } = useNotification();
+
+    useEffect(() => {
+        if (isConfirmingExit) {
+            setActiveAction('cancel');
+        }
+    }, [isConfirmingExit]);
 
     useEffect(() => {
         fetchInitialData();
         if (id) {
             fetchRequestDetails();
+        } else if (user) {
+            // Auto-fetch requestor details for new requests
+            setFormData((prev: any) => ({
+                ...prev,
+                employee_id: user.employee_id || prev.employee_id,
+                department: user.department || prev.department,
+            }));
         }
-    }, [id]);
+    }, [id, user]);
 
     const fetchInitialData = async () => {
         try {
@@ -76,6 +102,23 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
         }
     };
 
+    const handleSubmitToIT = async () => {
+        setSaving(true);
+        try {
+            await api.post(`/inventory/requests/${id}/submit_to_it/`);
+            showNotification('Request submitted to IT Head', 'success');
+            onSave();
+        } catch (error: any) {
+            let errorMsg = 'IT Submission failed';
+            if (error.response?.data) {
+                const data = error.response.data;
+                if (data.error) errorMsg = data.error;
+            }
+            showNotification(errorMsg, 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
     const fetchRequestDetails = async () => {
         setLoading(true);
         try {
@@ -105,14 +148,58 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
         }
     };
 
+    const prepareDataForSubmission = (data: any) => {
+        const cleaned = { ...data };
+
+        // Convert empty strings to null for optional fields
+        const nullableFields = [
+            'expected_end_date', 'db_storage_gb', 'project_code',
+            'client_name', 'designation', 'rds_type', 'database_engine',
+            'cloud_provider', 'region', 'instance_type'
+        ];
+        nullableFields.forEach(field => {
+            if (cleaned[field] === '') {
+                cleaned[field] = null;
+            }
+        });
+
+        // Convert numerical strings to numbers
+        const numericalFields = ['cpu_cores', 'ram_gb', 'storage_size_gb', 'quantity', 'db_storage_gb', 'cpu_cores', 'ram_gb'];
+        numericalFields.forEach(field => {
+            if (cleaned[field] !== null && cleaned[field] !== undefined && cleaned[field] !== '') {
+                cleaned[field] = parseInt(cleaned[field], 10);
+            }
+        });
+
+        return cleaned;
+    };
+
+    const validateForm = (data: any) => {
+        const requiredFields = [
+            'employee_id', 'department', 'project_name',
+            'purpose_of_request', 'business_justification',
+            'expected_start_date'
+        ];
+
+        for (const field of requiredFields) {
+            if (!data[field] || data[field].toString().trim() === '') {
+                showNotification(`${field.replace(/_/g, ' ')} is required`, 'error');
+                return false;
+            }
+        }
+        return true;
+    };
+
     const handleSave = async () => {
+        if (!validateForm(formData)) return;
         setSaving(true);
         try {
+            const cleanedData = prepareDataForSubmission(formData);
             if (id) {
-                await api.patch(`/inventory/requests/${id}/`, formData);
+                await api.patch(`/inventory/requests/${id}/`, cleanedData);
                 showNotification('Request updated successfully', 'success');
             } else {
-                await api.post('/inventory/requests/', formData);
+                await api.post('/inventory/requests/', cleanedData);
                 showNotification('Request raised successfully', 'success');
             }
             onSave();
@@ -138,10 +225,24 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     };
 
     const handleSubmit = async () => {
+        if (!validateForm(formData)) return;
         setSaving(true);
         try {
-            await api.post(`/inventory/requests/${id}/submit/`);
-            showNotification('Request submitted to IT Head', 'success');
+            const cleanedData = prepareDataForSubmission(formData);
+            let requestId = id;
+
+            if (!requestId) {
+                // For new requests, create them first
+                const response = await api.post('/inventory/requests/', cleanedData);
+                requestId = response.data.id;
+            } else {
+                // For existing requests, save latest changes first
+                await api.patch(`/inventory/requests/${requestId}/`, cleanedData);
+            }
+
+            // Now transition to SUBMITTED
+            await api.post(`/inventory/requests/${requestId}/submit/`);
+            showNotification('Request created and submitted.', 'success');
             onSave();
         } catch (error: any) {
             let errorMsg = 'Submission failed';
@@ -213,26 +314,21 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     };
 
     const handleReject = async () => {
-        const remarks = prompt('Enter rejection reason:');
-        if (!remarks) return;
+        if (!rejectRemarks) {
+            showNotification('Please enter rejection remarks', 'error');
+            return;
+        }
         try {
-            await api.post(`/inventory/requests/${id}/reject/`, { remarks });
+            await api.post(`/inventory/requests/${id}/reject/`, { remarks: rejectRemarks });
             showNotification('Request rejected', 'success');
+            setShowRejectModal(false);
+            setRejectRemarks('');
             onSave();
         } catch (error: any) {
             let errorMsg = 'Rejection failed';
             if (error.response?.data) {
                 const data = error.response.data;
                 if (data.error) errorMsg = data.error;
-                else if (typeof data === 'object') {
-                    const errors = [];
-                    for (const [key, value] of Object.entries(data)) {
-                        if (Array.isArray(value)) errors.push(`${key}: ${value[0]}`);
-                        else if (typeof value === 'string') errors.push(`${key}: ${value}`);
-                    }
-                    if (errors.length > 0) errorMsg = errors.join(' | ');
-                    else errorMsg = JSON.stringify(data);
-                }
             }
             showNotification(errorMsg, 'error');
         }
@@ -270,196 +366,35 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Header Toolbar */}
+            {/* Header Toolbar (Standardized with Cost Sheet) */}
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 background: 'white',
-                padding: '8px 16px',
-                borderRadius: '12px',
-                border: '1px solid #E0E6ED',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                padding: '16px 24px',
+                borderRadius: '16px',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
             }}>
-                <button
-                    onClick={() => {
-                        showConfirm({
-                            title: 'Are you sure you want to exit?',
-                            onConfirm: () => onBack()
-                        });
-                    }}
-                    style={{
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, var(--ae-blue) 0%, #1e40af 100%)',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: hoveredBtn === 'cancel' ? 'var(--theme-primary)' : 'transparent',
-                        color: hoveredBtn === 'cancel' ? 'white' : 'var(--text-secondary)',
-                        border: 'none',
-                        boxShadow: hoveredBtn === 'cancel' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
-                    }}
-                    onMouseEnter={() => setHoveredBtn('cancel')}
-                    onMouseLeave={() => setHoveredBtn(null)}
-                >
-                    <ChevronLeft size={18} /> Back to Dashboard
-                </button>
-                <div style={{ display: 'flex', gap: '8px', background: 'white', padding: '4px', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                    {id && formData.status === 'DRAFT' && (
-                        <button
-                            onClick={handleSubmit}
-                            style={{
-                                padding: '6px 16px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 800,
-                                background: hoveredBtn === 'submit' ? 'var(--theme-primary)' : 'transparent',
-                                color: (hoveredBtn === 'submit' ? 'white' : 'var(--text-secondary)'),
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                boxShadow: hoveredBtn === 'submit' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
-                            }}
-                            onMouseEnter={() => setHoveredBtn('submit')}
-                            onMouseLeave={() => setHoveredBtn(null)}
-                        >
-                            Submit to IT Head
-                        </button>
-                    )}
-                    {id && formData.status === 'PENDING_IT' && (
-                        <>
-                            <button
-                                onClick={handleApproveIT}
-                                style={{
-                                    padding: '6px 16px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
-                                    background: hoveredBtn === 'approve_it' ? 'var(--theme-primary)' : 'transparent',
-                                    color: (hoveredBtn === 'approve_it' ? 'white' : 'var(--text-secondary)'),
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: hoveredBtn === 'approve_it' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
-                                }}
-                                onMouseEnter={() => setHoveredBtn('approve_it')}
-                                onMouseLeave={() => setHoveredBtn(null)}
-                            >
-                                Approve (IT Head)
-                            </button>
-                            <button
-                                onClick={handleReject}
-                                style={{
-                                    padding: '6px 16px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
-                                    background: hoveredBtn === 'reject' ? 'var(--theme-primary)' : 'transparent',
-                                    color: (hoveredBtn === 'reject' ? 'white' : 'var(--text-secondary)'),
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: hoveredBtn === 'reject' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
-                                }}
-                                onMouseEnter={() => setHoveredBtn('reject')}
-                                onMouseLeave={() => setHoveredBtn(null)}
-                            >
-                                Reject
-                            </button>
-                        </>
-                    )}
-                    {id && formData.status === 'PENDING_FINANCE' && (
-                        <>
-                            <button
-                                onClick={handleApproveFinance}
-                                style={{
-                                    padding: '6px 16px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
-                                    background: hoveredBtn === 'approve_finance' ? 'var(--theme-primary)' : 'transparent',
-                                    color: (hoveredBtn === 'approve_finance' ? 'white' : 'var(--text-secondary)'),
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: hoveredBtn === 'approve_finance' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
-                                }}
-                                onMouseEnter={() => setHoveredBtn('approve_finance')}
-                                onMouseLeave={() => setHoveredBtn(null)}
-                            >
-                                Approve (Finance Head)
-                            </button>
-                            <button
-                                onClick={handleReject}
-                                style={{
-                                    padding: '6px 16px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
-                                    background: hoveredBtn === 'reject_finance' ? 'var(--theme-primary)' : 'transparent',
-                                    color: (hoveredBtn === 'reject_finance' ? 'white' : 'var(--text-secondary)'),
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: hoveredBtn === 'reject_finance' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
-                                }}
-                                onMouseEnter={() => setHoveredBtn('reject')}
-                                onMouseLeave={() => setHoveredBtn(null)}
-                            >
-                                Reject
-                            </button>
-                        </>
-                    )}
-                    {id && formData.status === 'APPROVED' && (
-                        <button
-                            onClick={handleIssue}
-                            style={{
-                                padding: '6px 16px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 800,
-                                background: hoveredBtn === 'issue' ? 'var(--theme-primary)' : 'transparent',
-                                color: (hoveredBtn === 'issue' ? 'white' : 'var(--text-secondary)'),
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                boxShadow: hoveredBtn === 'issue' ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
-                            }}
-                            onMouseEnter={() => setHoveredBtn('issue')}
-                            onMouseLeave={() => setHoveredBtn(null)}
-                        >
-                            Issue Server
-                        </button>
-                    )}
-                    {!isReadOnly && (
-                        <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '6px 20px',
-                                borderRadius: '8px',
-                                fontSize: '0.8rem',
-                                fontWeight: 800,
-                                background: (!hoveredBtn || hoveredBtn === 'save') ? 'var(--theme-primary)' : 'transparent',
-                                color: ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                boxShadow: (!hoveredBtn || hoveredBtn === 'save') ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
-                            }}
-                            onMouseEnter={() => setHoveredBtn('save')}
-                            onMouseLeave={() => setHoveredBtn(null)}
-                        >
-                            {saving ? <Clock className="animate-spin" size={16} /> : <Send size={16} />} {id ? 'Save Changes' : 'Create Draft'}
-                        </button>
-                    )}
+                        justifyContent: 'center',
+                        color: 'white',
+                        boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
+                    }}>
+                        <Server size={24} />
+                    </div>
+                    <div>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Resource Request</h2>
+                        <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '2px 0 0 0' }}>Request IT infrastructure and resources</p>
+                    </div>
                 </div>
             </div>
 
@@ -473,16 +408,56 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         </h3>
                         <div className="grid grid-cols-2 gap-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Request Date</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Request Date <span style={{ color: '#ef4444' }}>*</span></label>
                                 {isReadOnly ? (
                                     <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formatToAppDate(formData.request_date)}</div>
                                 ) : (
-                                    <input type="date" name="request_date" value={formData.request_date} onChange={handleInputChange} className="ae-input" />
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            className="ae-input"
+                                            style={{ height: '38px', padding: '4px 34px 4px 12px', width: '100%', cursor: 'pointer', background: 'white' }}
+                                            value={formData.request_date ? formatToAppDate(formData.request_date) : ''}
+                                            onClick={() => (document.getElementById('hidden-request-date') as HTMLInputElement)?.showPicker()}
+                                            placeholder="DD/MMM/YYYY"
+                                        />
+                                        <Calendar
+                                            size={16}
+                                            style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ae-blue)', pointerEvents: 'none' }}
+                                        />
+                                        <input
+                                            type="date"
+                                            id="hidden-request-date"
+                                            name="request_date"
+                                            value={formData.request_date || ''}
+                                            onChange={handleInputChange}
+                                            style={{ position: 'absolute', opacity: 0, inset: 0, pointerEvents: 'none' }}
+                                        />
+                                    </div>
                                 )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Form Number</label>
                                 <input type="text" value={formData.form_number || 'Auto-generated'} className="ae-input !bg-gray-50" disabled />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Quantity <span style={{ color: '#ef4444' }}>*</span></label>
+                                <input
+                                    type="number"
+                                    name="quantity"
+                                    min="1"
+                                    value={formData.quantity}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    disabled={isReadOnly}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Request Status</label>
+                                <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>
+                                    {formData.status_display || formData.status?.toLowerCase().replace('_', ' ') || 'Draft'}
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -495,7 +470,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         </h3>
                         <div className="grid grid-cols-2 gap-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Employee ID</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Employee ID <span style={{ color: '#ef4444' }}>*</span></label>
                                 <input type="text" name="employee_id" value={formData.employee_id} onChange={handleInputChange} className="ae-input" placeholder="EMP1023" disabled={isReadOnly} />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -503,7 +478,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 <input type="text" value={user?.full_name || ''} className="ae-input !bg-gray-50" disabled />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Department</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Department <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
                                     options={[
                                         { value: 'Engineering', label: 'Engineering' },
@@ -520,7 +495,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Designation</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Designation <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
                                     options={[
                                         { value: 'Project Manager', label: 'Project Manager' },
@@ -552,7 +527,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         </h3>
                         <div className="grid grid-cols-2 gap-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Name</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Name <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
                                     options={deals.map(d => ({
                                         value: d.deal_name,
@@ -570,7 +545,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 <input type="text" name="project_code" value={formData.project_code} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Client Name</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Client Name <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
                                     options={[
                                         { value: 'ABC Corp', label: 'ABC Corp' },
@@ -586,7 +561,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Environment</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Environment <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
                                     options={[
                                         { value: 'DEVELOPMENT', label: 'Development' },
@@ -614,7 +589,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         </h3>
                         <div className="space-y-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Resource Type</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Resource Type <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
                                     options={[
                                         { value: 'Server', label: 'Server' },
@@ -662,7 +637,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cloud Provider</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cloud Provider <span style={{ color: '#ef4444' }}>*</span></label>
                                     <SearchableDropdown
                                         options={[
                                             { value: 'AWS', label: 'AWS' },
@@ -678,7 +653,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Region</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Region <span style={{ color: '#ef4444' }}>*</span></label>
                                     <SearchableDropdown
                                         options={[
                                             { value: 'ap-south-1', label: 'ap-south-1 (Mumbai)' },
@@ -729,17 +704,17 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>CPU Cores</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>CPU Cores <span style={{ color: '#ef4444' }}>*</span></label>
                                     <input type="number" name="cpu_cores" value={formData.cpu_cores} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>RAM (GB)</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>RAM (GB) <span style={{ color: '#ef4444' }}>*</span></label>
                                     <input type="number" name="ram_gb" value={formData.ram_gb} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Storage Type</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Storage Type <span style={{ color: '#ef4444' }}>*</span></label>
                                     <SearchableDropdown
                                         options={[
                                             { value: 'SSD', label: 'SSD' },
@@ -754,7 +729,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Storage Size (GB)</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Storage Size (GB) <span style={{ color: '#ef4444' }}>*</span></label>
                                     <input type="number" name="storage_size_gb" value={formData.storage_size_gb} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
                                 </div>
                             </div>
@@ -831,125 +806,446 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         </div>
                     </section>
 
-                    {/* Approval History (Read Only) */}
-                    {(formData.it_head_approved_by || formData.status === 'PENDING_IT') && (
-                        <section className="section-panel" style={{ padding: '24px', borderLeft: '4px solid var(--ae-blue)' }}>
-                            <h3 className="section-title text-[var(--theme-primary)] flex items-center gap-2 mb-4">
-                                <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
-                                IT Head Approval
-                            </h3>
-                            <div className="space-y-3">
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>IT Head Remarks</label>
-                                    <textarea
-                                        name="it_head_remarks"
-                                        value={formData.it_head_remarks || ''}
-                                        onChange={handleInputChange}
-                                        className="ae-input !h-20"
-                                        disabled={formData.status !== 'PENDING_IT'}
-                                        placeholder="Enter technical observations..."
-                                    ></textarea>
-                                </div>
-                                {formData.it_head_approved_at && (
-                                    <div className="text-[10px] text-[#718096] font-semibold">
-                                        Approved by: {formData.it_head_approved_by_detail?.full_name} on {formatToAppDate(formData.it_head_approved_at)}
-                                    </div>
-                                )}
-                            </div>
-                        </section>
-                    )}
-
-                    {(formData.finance_head_approved_by || formData.status === 'PENDING_FINANCE') && (
-                        <section className="section-panel" style={{ padding: '24px', borderLeft: '4px solid #00C853' }}>
-                            <h3 className="section-title text-[var(--theme-primary)] flex items-center gap-2 mb-4">
-                                <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
-                                Finance Head Approval
-                            </h3>
-                            <div className="space-y-3">
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Finance Remarks</label>
-                                    <textarea
-                                        name="finance_head_remarks"
-                                        value={formData.finance_head_remarks || ''}
-                                        onChange={handleInputChange}
-                                        className="ae-input !h-20"
-                                        disabled={formData.status !== 'PENDING_FINANCE'}
-                                        placeholder="Enter budget confirmation..."
-                                    ></textarea>
-                                </div>
-                                {formData.finance_head_approved_at && (
-                                    <div className="text-[10px] text-[#718096] font-semibold">
-                                        Approved by: {formData.finance_head_approved_by_detail?.full_name} on {formatToAppDate(formData.finance_head_approved_at)}
-                                    </div>
-                                )}
-                            </div>
-                        </section>
-                    )}
-
-                    {/* 5. Justification */}
+                    {/* 6. Usage & Justification */}
                     <section className="section-panel" style={{ padding: '24px' }}>
                         <h3 className="section-title text-[var(--theme-primary)] mb-6 flex items-center gap-2">
                             <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
-                            Usage & Justification
+                            6. Usage & Justification
                         </h3>
                         <div className="space-y-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Purpose of Request</label>
-                                <textarea name="purpose_of_request" value={formData.purpose_of_request} onChange={handleInputChange} className="ae-input !h-24" disabled={isReadOnly}></textarea>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Purpose of Request <span style={{ color: '#ef4444' }}>*</span></label>
+                                <textarea name="purpose_of_request" value={formData.purpose_of_request} onChange={handleInputChange} className="ae-input !h-20" disabled={isReadOnly}></textarea>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Exp. Start Date</label>
-                                {isReadOnly ? (
-                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formatToAppDate(formData.expected_start_date)}</div>
-                                ) : (
-                                    <input type="date" name="expected_start_date" value={formData.expected_start_date} onChange={handleInputChange} className="ae-input" />
-                                )}
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Business Justification <span style={{ color: '#ef4444' }}>*</span></label>
+                                <textarea name="business_justification" value={formData.business_justification} onChange={handleInputChange} className="ae-input !h-20" disabled={isReadOnly}></textarea>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Expected Start Date <span style={{ color: '#ef4444' }}>*</span></label>
+                                    {isReadOnly ? (
+                                        <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formatToAppDate(formData.expected_start_date)}</div>
+                                    ) : (
+                                        <div style={{ position: 'relative' }}>
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                className="ae-input"
+                                                style={{ height: '38px', padding: '4px 34px 4px 12px', width: '100%', cursor: 'pointer', background: 'white' }}
+                                                value={formData.expected_start_date ? formatToAppDate(formData.expected_start_date) : ''}
+                                                onClick={() => (document.getElementById('hidden-start-date') as HTMLInputElement)?.showPicker()}
+                                                placeholder="DD/MMM/YYYY"
+                                            />
+                                            <Calendar
+                                                size={16}
+                                                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ae-blue)', pointerEvents: 'none' }}
+                                            />
+                                            <input
+                                                type="date"
+                                                id="hidden-start-date"
+                                                name="expected_start_date"
+                                                value={formData.expected_start_date || ''}
+                                                onChange={handleInputChange}
+                                                style={{ position: 'absolute', opacity: 0, inset: 0, pointerEvents: 'none' }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Expected End Date</label>
+                                    {isReadOnly ? (
+                                        <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formatToAppDate(formData.expected_end_date)}</div>
+                                    ) : (
+                                        <div style={{ position: 'relative' }}>
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                className="ae-input"
+                                                style={{ height: '38px', padding: '4px 34px 4px 12px', width: '100%', cursor: 'pointer', background: 'white' }}
+                                                value={formData.expected_end_date ? formatToAppDate(formData.expected_end_date) : ''}
+                                                onClick={() => (document.getElementById('hidden-end-date') as HTMLInputElement)?.showPicker()}
+                                                placeholder="DD/MMM/YYYY"
+                                            />
+                                            <Calendar
+                                                size={16}
+                                                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ae-blue)', pointerEvents: 'none' }}
+                                            />
+                                            <input
+                                                type="date"
+                                                id="hidden-end-date"
+                                                name="expected_end_date"
+                                                value={formData.expected_end_date || ''}
+                                                onChange={handleInputChange}
+                                                style={{ position: 'absolute', opacity: 0, inset: 0, pointerEvents: 'none' }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </section>
                 </div>
             </div>
 
-            {/* 8. Issuance Details (Visible only when ISSUED) */}
-
-            {formData.status === 'ISSUED' && (
-                <section className="section-panel" style={{ padding: '24px', borderLeft: '4px solid var(--ae-blue)' }}>
-                    <h3 className="section-title text-[var(--ae-blue)] flex items-center gap-2 mb-4">
-                        <Server size={18} /> 8. Issuance Details (Server Issuing Authority)
-                    </h3>
-                    <div className="grid grid-cols-3 gap-6">
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Server Asset ID / Name</label>
-                            <input
-                                type="text"
-                                value={formData.resource_assigned_detail?.server_name || 'N/A'}
-                                className="ae-input !bg-gray-50 !font-bold"
-                                disabled
-                            />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Issued Date</label>
-                            <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formData.issued_at ? formatToAppDate(formData.issued_at) : 'N/A'}</div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Issued By</label>
-                            <input
-                                type="text"
-                                value={formData.issued_by_detail?.full_name || 'System'}
-                                className="ae-input !bg-gray-50"
-                                disabled
-                            />
-                        </div>
-                        <div className="col-span-3" style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Allocation Status</label>
-                            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-[#E3F2FD] text-[#1E88E5]">
-                                ISSUED / ALLOCATED
-                            </div>
+            {/* 7. Issuance Details (Server Issuing Authority) */}
+            <section className="section-panel" style={{ padding: '24px', borderLeft: '4px solid var(--ae-blue)' }}>
+                <h3 className="section-title text-[var(--ae-blue)] flex items-center gap-2 mb-4">
+                    <Server size={18} /> 7. Issuance Details (Server Issuing Authority)
+                </h3>
+                <div className="grid grid-cols-3 gap-6">
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Server Asset ID</label>
+                        <input
+                            type="text"
+                            value={formData.resource_assigned_detail?.server_name || 'N/A'}
+                            className="ae-input !bg-gray-50 !font-bold"
+                            disabled
+                        />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Issued Date</label>
+                        <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formData.issued_at ? formatToAppDate(formData.issued_at) : 'N/A'}</div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Issued By</label>
+                        <input
+                            type="text"
+                            value={formData.issued_by_detail?.full_name || 'System'}
+                            className="ae-input !bg-gray-50"
+                            disabled
+                        />
+                    </div>
+                    <div className="col-span-3" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Allocation Status</label>
+                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-[#E3F2FD] text-[#1E88E5]">
+                            {formData.status === 'ISSUED' ? 'Issued' : 'N/A'}
                         </div>
                     </div>
-                </section>
-            )}
-        </div>
+                </div>
+            </section>
+
+
+            {/* Footer Actions (Standardized with Cost Sheet) */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'var(--bg-primary)',
+                padding: '6px',
+                borderRadius: '12px',
+                border: '1px solid var(--border-primary)',
+                boxShadow: 'var(--shadow-sm)',
+                width: 'fit-content',
+                flexShrink: 0,
+                zIndex: 10,
+                marginTop: '10px',
+                marginLeft: 'auto'
+            }}
+                className="button-container"
+                onMouseLeave={() => {
+                    if (!isConfirmingExit) {
+                        setActiveAction('submit');
+                    }
+                }}
+            >
+                {formData.status === 'DRAFT' && (
+                    <>
+                        <button
+                            onClick={handleSave}
+                            onMouseEnter={() => !isConfirmingExit && setActiveAction('draft')}
+                            style={{
+                                height: '38px',
+                                padding: '0 18px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                border: 'none',
+                                background: activeAction === 'draft' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeAction === 'draft' ? 'white' : 'var(--text-secondary)',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer',
+                                boxShadow: activeAction === 'draft' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                            }}
+                        >
+                            <Save size={16} />
+                            <span>Save as Draft</span>
+                        </button>
+
+                        <button
+                            onClick={handleSubmit}
+                            onMouseEnter={() => !isConfirmingExit && setActiveAction('submit')}
+                            style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: activeAction === 'submit' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeAction === 'submit' ? 'white' : 'var(--text-secondary)',
+                                border: 'none',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer',
+                                boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                            }}
+                        >
+                            <PlusCircle size={18} />
+                            <span>Submit Request</span>
+                        </button>
+                    </>
+                )}
+
+                {formData.status === 'SUBMITTED' && (user.role === 'project_manager' || user.role === 'app_admin') && (
+                    <button
+                        onClick={handleSubmitToIT}
+                        style={{
+                            height: '38px',
+                            padding: '0 20px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'var(--ae-blue)',
+                            color: 'white',
+                            border: 'none',
+                            transition: 'all 0.2s',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <Send size={16} />
+                        <span>Submit to IT Head</span>
+                    </button>
+                )}
+
+                {formData.status === 'PENDING_IT' && (user.role === 'it_head' || user.role === 'app_admin') && (
+                    <>
+                        <button
+                            onClick={handleApproveIT}
+                            style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: '#00C853',
+                                color: 'white',
+                                border: 'none',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <CheckCircle size={16} />
+                            <span>Approve (IT)</span>
+                        </button>
+                        <button
+                            onClick={() => setShowRejectModal(true)}
+                            style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: '#FF3D00',
+                                color: 'white',
+                                border: 'none',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <XCircle size={16} />
+                            <span>Reject</span>
+                        </button>
+                    </>
+                )}
+
+                {formData.status === 'PENDING_FINANCE' && (user.role === 'finance_manager' || user.role === 'app_admin') && (
+                    <>
+                        <button
+                            onClick={handleApproveFinance}
+                            style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: '#00C853',
+                                color: 'white',
+                                border: 'none',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <CheckCircle size={16} />
+                            <span>Approve (Finance)</span>
+                        </button>
+                        <button
+                            onClick={() => setShowRejectModal(true)}
+                            style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: '#FF3D00',
+                                color: 'white',
+                                border: 'none',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <XCircle size={16} />
+                            <span>Reject</span>
+                        </button>
+                    </>
+                )}
+
+                {formData.status === 'APPROVED' && (user.role === 'issuing_authority' || user.role === 'app_admin') && (
+                    <button
+                        onClick={handleIssue}
+                        style={{
+                            height: '38px',
+                            padding: '0 20px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'var(--ae-blue)',
+                            color: 'white',
+                            border: 'none',
+                            transition: 'all 0.2s',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <Server size={16} />
+                        <span>Issue Server</span>
+                    </button>
+                )}
+
+                <button
+                    onClick={() => {
+                        setIsConfirmingExit(true);
+                        showConfirm({
+                            title: 'Are you sure you want to exit?',
+                            onConfirm: () => onBack(),
+                            onCancel: () => {
+                                setIsConfirmingExit(false);
+                                setActiveAction('submit');
+                            }
+                        });
+                    }}
+                    onMouseEnter={() => !isConfirmingExit && setActiveAction('cancel')}
+                    style={{
+                        height: '38px',
+                        padding: '0 18px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        border: 'none',
+                        background: activeAction === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: activeAction === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        transition: 'all 0.2s',
+                        cursor: 'pointer',
+                        boxShadow: activeAction === 'cancel' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                    }}
+                >
+                    <X size={18} />
+                    <span>Cancel</span>
+                </button>
+            </div >
+            {/* Rejection Modal (Cost Sheet format) */}
+            {
+                showRejectModal && createPortal(
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.4)',
+                        backdropFilter: 'blur(8px)',
+                        zIndex: 10000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                        onClick={() => setShowRejectModal(false)}
+                    >
+                        <div style={{
+                            background: 'var(--bg-primary)',
+                            borderRadius: '16px',
+                            padding: '28px 32px',
+                            minWidth: '380px',
+                            maxWidth: '480px',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+                        }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                                <XCircle size={20} color='#E53E3E' />
+                                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                    Reject Resource Request
+                                </h3>
+                            </div>
+                            <p style={{ margin: '0 0 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                Please provide a reason for rejection:
+                            </p>
+                            <textarea
+                                autoFocus
+                                value={rejectRemarks}
+                                onChange={e => setRejectRemarks(e.target.value)}
+                                placeholder="Enter remarks here..."
+                                style={{
+                                    width: '100%',
+                                    minHeight: '100px',
+                                    padding: '12px',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border-primary)',
+                                    outline: 'none',
+                                    fontSize: '0.85rem'
+                                }}
+                            />
+                            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                                <button
+                                    onClick={() => setShowRejectModal(false)}
+                                    style={{ flex: 1, height: '38px', borderRadius: '8px', border: '1px solid var(--border-primary)', background: 'white', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleReject}
+                                    style={{ flex: 1, height: '38px', borderRadius: '8px', border: 'none', background: '#E53E3E', color: 'white', fontWeight: 700, cursor: 'pointer' }}
+                                >
+                                    Confirm Reject
+                                </button>
+                            </div>
+                        </div>
+                    </div>,
+                    document.body
+                )
+            }
+        </div >
     );
 };
 

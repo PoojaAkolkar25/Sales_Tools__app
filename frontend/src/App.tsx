@@ -13,6 +13,7 @@ import {
   Users,
   LayoutDashboard,
   PlusCircle,
+  Server,
   Loader2,
   ChevronLeft,
   ChevronRight,
@@ -53,6 +54,7 @@ import ResourceDashboard from './components/ResourceDashboard';
 import ResourceRequestForm from './components/ResourceRequestForm';
 import Settings from './components/Settings';
 import ResetPassword from './components/ResetPassword';
+import RevenueDashboard from './components/RevenueDashboard';
 
 
 
@@ -1459,18 +1461,91 @@ const AppContent: React.FC = () => {
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
             <div className="main-route-container">
-              <div className="space-y-8">
+              <div className="space-y-6">
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '0 8px',
-                  marginBottom: '24px'
+                  padding: '20px 0',
+                  borderBottom: '1px solid #edf2f7',
+                  marginBottom: '10px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Inventory - Resource Management</h1>
+                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '4px' }}></div>
+                    <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#1a1f36', margin: 0, letterSpacing: '-0.02em' }}>Resource Management</h1>
                   </div>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  marginBottom: '24px',
+                  background: 'white',
+                  padding: '8px',
+                  borderRadius: '16px',
+                  width: 'fit-content',
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+                }}>
+                  <button
+                    onClick={() => setInventoryView('dashboard')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 24px',
+                      borderRadius: '12px',
+                      fontSize: '0.9rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      border: 'none',
+                      background: inventoryView === 'dashboard' ? '#FF6B00' : 'transparent',
+                      color: inventoryView === 'dashboard' ? 'white' : '#4a5568',
+                      boxShadow: inventoryView === 'dashboard' ? '0 8px 15px rgba(255, 107, 0, 0.25)' : 'none'
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      padding: '4px',
+                      borderRadius: '6px',
+                      background: inventoryView === 'dashboard' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)'
+                    }}>
+                      <Server size={18} />
+                    </div>
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingInventoryId(null);
+                      setInventoryView('form');
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 24px',
+                      borderRadius: '12px',
+                      fontSize: '0.9rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      border: '1px solid ' + (inventoryView === 'form' ? '#FF6B00' : '#e2e8f0'),
+                      background: inventoryView === 'form' ? 'white' : 'transparent',
+                      color: inventoryView === 'form' ? '#FF6B00' : '#4a5568',
+                      boxShadow: inventoryView === 'form' ? '0 8px 15px rgba(255, 107, 0, 0.15)' : 'none'
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      padding: '4px',
+                      borderRadius: '6px',
+                      background: inventoryView === 'form' ? 'rgba(255,107,0,0.1)' : 'rgba(0,0,0,0.05)'
+                    }}>
+                      <PlusCircle size={18} />
+                    </div>
+                    Create New
+                  </button>
                 </div>
 
                 {inventoryView === 'form' ? (
@@ -1497,8 +1572,17 @@ const AppContent: React.FC = () => {
           </ModuleWrapper >
         ) : <Navigate to="/login" />
       } />
+      <Route path="/revenue" element={
+        user ? (
+          <ModuleWrapper {...commonWrapperProps}>
+            <div className="main-route-container">
+              <RevenueDashboard />
+            </div>
+          </ModuleWrapper>
+        ) : <Navigate to="/login" />
+      } />
       {
-        getNavItems(user).filter(item => !['lead', 'cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order', 'milestone', 'user-management', 'customer-dashboard', 'inventory'].includes(item.id)).map(item => (
+        getNavItems(user).filter(item => !['lead', 'cost-sheet', 'invoice', 'payment', 'deal', 'estimates', 'sales-order', 'milestone', 'user-management', 'customer-dashboard', 'inventory', 'revenue'].includes(item.id)).map(item => (
           <Route key={item.id} path={item.path} element={
             user ? (
               <ModuleWrapper {...commonWrapperProps}>

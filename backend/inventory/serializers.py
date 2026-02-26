@@ -19,12 +19,14 @@ class ResourceRequestSerializer(serializers.ModelSerializer):
     finance_head_approved_by_detail = UserMiniSerializer(source='finance_head_approved_by', read_only=True)
     resource_assigned_detail = ResourceSerializer(source='resource_assigned', read_only=True)
     issued_by_detail = UserMiniSerializer(source='issued_by', read_only=True)
+    requestor = serializers.ReadOnlyField(source='requestor.username')
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
     
     class Meta:
         model = ResourceRequest
         fields = '__all__'
         read_only_fields = [
-            'form_number', 'status', 'it_head_approved_by', 'it_head_approved_at',
+            'form_number', 'status', 'requestor', 'it_head_approved_by', 'it_head_approved_at',
             'finance_head_approved_by', 'finance_head_approved_at',
             'resource_assigned', 'issued_by', 'issued_at'
         ]

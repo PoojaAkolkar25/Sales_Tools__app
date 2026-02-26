@@ -57,6 +57,7 @@ class ResourceRequest(models.Model):
     
     # Resource Details - Server Configuration
     resource_type_requested = models.CharField(max_length=50, default='Server')
+    quantity = models.IntegerField(default=1)
     server_type = models.CharField(max_length=50) # e.g., EC2
     server_category = models.CharField(max_length=50) # Physical/Virtual
     cloud_provider = models.CharField(max_length=50, blank=True, null=True)

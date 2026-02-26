@@ -45,12 +45,16 @@ class UserSerializer(serializers.ModelSerializer):
             return 'app_admin'
         
         # Check for other granular roles (matching backend permission groups)
-        if obj.groups.filter(name='Sales Head').exists():
-            return 'sales_head'
+        if obj.groups.filter(name='IT Head').exists():
+            return 'it_head'
+        if obj.groups.filter(name='Project Manager').exists():
+            return 'project_manager'
+        if obj.groups.filter(name='Server Issuing Authority').exists():
+            return 'issuing_authority'
         if obj.groups.filter(name='Finance Manager').exists():
             return 'finance_manager'
         
-        roles = ['sales_head', 'finance_manager', 'inside_sales_head', 'pm_head', 'salesperson']
+        roles = ['sales_head', 'finance_manager', 'inside_sales_head', 'pm_head', 'salesperson', 'it_head', 'project_manager', 'issuing_authority']
         for r in roles:
             if obj.groups.filter(name=r).exists():
                 return r

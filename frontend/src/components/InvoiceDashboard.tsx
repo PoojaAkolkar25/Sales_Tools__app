@@ -11,6 +11,7 @@ interface Invoice {
     invoice_no: string;
     deal: number;
     deal_no?: string;
+    so_no?: string;
     customer_name: string;
     invoice_date: string;
     valid_until?: string;
@@ -41,6 +42,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
 
     const ALL_COL_CONFIG = [
         { key: 'invoice_no', label: 'Invoice No', shortLabel: 'INV#' },
+        { key: 'so_no', label: 'Sales Order Ref', shortLabel: 'SO#' },
         { key: 'deal_no', label: 'Deal ID', shortLabel: 'DEAL' },
         { key: 'customer', label: 'Customer', shortLabel: 'CUST.' },
         { key: 'date', label: 'Date', shortLabel: 'DATE' },
@@ -51,6 +53,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
 
     const SHORT_COL_WIDTHS: Record<string, number> = {
         invoice_no: 40,
+        so_no: 40,
         deal_no: 40,
         customer: 55,
         date: 45,
@@ -62,6 +65,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
 
     const FULL_LABEL_WIDTHS: Record<string, number> = {
         invoice_no: 75,
+        so_no: 85,
         deal_no: 65,
         customer: 120,
         date: 75,
@@ -72,6 +76,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
 
     const MAX_COL_WIDTHS: Record<string, number> = {
         invoice_no: 120,
+        so_no: 150,
         deal_no: 120,
         customer: 250,
         date: 120,
@@ -150,6 +155,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
     const [filters, setFilters] = useState({
         status: 'DRAFT',
         invoice_no: '',
+        so_no: '',
         deal_no: '',
         customer_name: '',
         type: '',
@@ -307,6 +313,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
         return invoices.filter(inv => {
             const matchesStatus = filters.status === '' || inv.status === filters.status;
             const matchesInvoiceNo = (inv.invoice_no || '').toLowerCase().includes(filters.invoice_no.toLowerCase());
+            const matchesSO = (inv.so_no || '').toLowerCase().includes(filters.so_no.toLowerCase());
             const matchesDeal = (inv.deal_no || '').toLowerCase().includes(filters.deal_no.toLowerCase());
             const matchesCustomer = (inv.customer_name || '').toLowerCase().includes(filters.customer_name.toLowerCase());
             const matchesType = filters.type === '' || inv.invoice_type === filters.type;
@@ -339,7 +346,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                 }
             }
 
-            return matchesStatus && matchesInvoiceNo && matchesDeal && matchesCustomer && matchesType && matchesDate;
+            return matchesStatus && matchesInvoiceNo && matchesSO && matchesDeal && matchesCustomer && matchesType && matchesDate;
         });
     }, [invoices, filters]);
 
@@ -801,6 +808,14 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                                 onChange={e => setFilters({ ...filters, invoice_no: e.target.value })}
                                                                 style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
                                                             />;
+                                                        case 'so_no':
+                                                            return <input
+                                                                className="ae-input"
+                                                                placeholder="Filter..."
+                                                                value={filters.so_no}
+                                                                onChange={e => setFilters({ ...filters, so_no: e.target.value })}
+                                                                style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                            />;
                                                         case 'deal_no':
                                                             return <input
                                                                 className="ae-input"
@@ -874,7 +889,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     }}>
                                         <button
                                             onClick={() => setFilters({
-                                                status: 'DRAFT', invoice_no: '', deal_no: '', customer_name: '',
+                                                status: 'DRAFT', invoice_no: '', so_no: '', deal_no: '', customer_name: '',
                                                 type: '', date_range: '', period: '', date_input: '', amount_input: '', status_input: ''
                                             })}
                                             style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
@@ -909,6 +924,12 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                             onClick={() => onView(inv.id)}
                                                         >
                                                             {inv.invoice_no}
+                                                        </td>
+                                                    );
+                                                case 'so_no':
+                                                    return (
+                                                        <td key={key} style={cellStyle}>
+                                                            <span style={{ fontWeight: 600, color: '#4A5568' }}>{inv.so_no || '---'}</span>
                                                         </td>
                                                     );
                                                 case 'deal_no':

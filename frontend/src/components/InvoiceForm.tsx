@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import { Save, Trash2, CheckCircle, Eye, X, Plus } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -17,11 +16,10 @@ interface LineItem {
 }
 
 const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> = ({ onBack, invoiceId }) => {
-    const location = useLocation();
     const { showNotification, showConfirm } = useNotification();
     const [leads, setLeads] = useState<any[]>([]);
-    const [costSheets, setCostSheets] = useState<any[]>([]);
-    const [proposals, setProposals] = useState<any[]>([]);
+    const [milestones, setMilestones] = useState<any[]>([]);
+    const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [isReadOnly, setIsReadOnly] = useState(false);
@@ -32,8 +30,8 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
     const [formData, setFormData] = useState({
         invoice_no: '',
         lead: '',
-        cost_sheet: '',
-        proposal: '',
+        milestone: '',
+        sales_order: '',
         invoice_date: new Date().toISOString().split('T')[0],
         due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         customer_gstin: '',
@@ -86,13 +84,6 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         calculateTotals();
     }, [lineItems, formData.invoice_type, formData.customer_state, formData.is_gst_applicable]);
 
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const mid = params.get('milestone_id');
-        if (mid && leads.length > 0 && !invoiceId) {
-            handleMilestonePopulate(mid);
-        }
-    }, [location.search, leads]);
 
     const handleSubmitForApproval = async () => {
         if (!invoiceId) {
@@ -117,56 +108,19 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
 
     const fetchInitialData = async () => {
         try {
-            const [leadsRes, costSheetsRes, statesRes, proposalsRes] = await Promise.all([
+            const [leadsRes, statesRes, soRes] = await Promise.all([
                 api.get('/leads/'),
-                api.get('/cost-sheets/?status=APPROVED'),
                 api.get('/finance/state-masters/'),
-                api.get('/proposals/')
+                api.get('/sales-orders/?status=APPROVED')
             ]);
             setLeads(leadsRes.data);
-            setCostSheets(costSheetsRes.data);
             setStates(statesRes.data);
-            setProposals(proposalsRes.data);
+            setSalesOrders(soRes.data);
         } catch (error) {
             console.error('Error fetching initial data', error);
         }
     };
 
-    const handleMilestonePopulate = async (mid: string) => {
-        try {
-            setLoading(true);
-            const response = await api.get(`/milestones/${mid}/`);
-            const ms = response.data;
-
-            if (ms.sales_order_details) {
-                const matchingLead = leads.find(l => l.customer_name === ms.sales_order_details.customer_name);
-
-                setFormData(prev => ({
-                    ...prev,
-                    lead: matchingLead ? matchingLead.id : prev.lead,
-                    cost_sheet: ms.sales_order_details.cost_sheet || prev.cost_sheet,
-                    billing_address: ms.sales_order_details.billing_address || prev.billing_address,
-                    shipping_address: ms.sales_order_details.shipping_address || prev.shipping_address,
-                    currency: ms.sales_order_details.currency || prev.currency,
-                }));
-
-                setLineItems([{
-                    type: 'Service',
-                    description: `${ms.milestone_no}: ${ms.description}`,
-                    hsn_sac: '998311',
-                    quantity: parseFloat(ms.qty) || 1,
-                    rate: parseFloat(ms.rate) || 0,
-                    discount: 0,
-                    gst_rate: 18
-                }]);
-            }
-        } catch (error) {
-            console.error('Error populating from milestone', error);
-            showNotification('Error loading milestone details', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const fetchInvoiceDetails = async () => {
         if (!invoiceId) return;
@@ -178,8 +132,8 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
             setFormData({
                 invoice_no: inv.invoice_no,
                 lead: inv.lead,
-                cost_sheet: inv.cost_sheet || '',
-                proposal: inv.proposal || '',
+                milestone: inv.milestone || '',
+                sales_order: inv.sales_order || '',
                 invoice_date: inv.invoice_date,
                 due_date: inv.due_date,
                 customer_gstin: inv.customer_gstin || '',
@@ -217,6 +171,14 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     gst_rate: item.igst_rate > 0 ? item.igst_rate : (item.cgst_rate + item.sgst_rate)
                 })));
             }
+            if (inv.sales_order) {
+                try {
+                    const msRes = await api.get(`/milestones/?sales_order=${inv.sales_order}`);
+                    setMilestones(msRes.data);
+                } catch (error) {
+                    console.error('Error fetching milestones for invoice', error);
+                }
+            }
         } catch (error) {
             console.error('Error fetching invoice details', error);
             showNotification('Error loading invoice details', 'error');
@@ -228,40 +190,42 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
 
 
 
-    const handleProposalChange = async (proposalId: string) => {
-        const p = proposals.find(prop => prop.id === parseInt(proposalId));
-        if (p && p.estimate) {
-            setLoading(true);
+    const handleSalesOrderChange = async (soId: string) => {
+        const so = salesOrders.find(s => s.id === parseInt(soId));
+        if (so) {
+            setFormData(prev => ({
+                ...prev,
+                sales_order: soId,
+                lead: so.customer ? (leads.find(l => l.customer_name === so.customer_name)?.id || prev.lead) : prev.lead,
+                currency: so.currency || prev.currency,
+                billing_address: so.billing_address || prev.billing_address,
+                shipping_address: so.shipping_address || prev.shipping_address,
+                po_number: so.po_number || prev.po_number,
+                po_date: so.po_date || prev.po_date,
+            }));
+
+            // Fetch milestones for this sales order
             try {
-                const response = await api.get(`/estimates/${p.estimate}/`);
-                const est = response.data;
-
-                setFormData(prev => ({
-                    ...prev,
-                    proposal: proposalId,
-                    cost_sheet: est.cost_sheet || prev.cost_sheet,
-                    lead: est.deal ? (leads.find(l => l.customer_name === est.customer_name)?.id || prev.lead) : prev.lead
-                }));
-
-                if (est.items && est.items.length > 0) {
-                    setLineItems(est.items.map((item: any) => ({
-                        type: 'Service',
-                        description: item.particulars + (item.description ? ` - ${item.description}` : ''),
-                        hsn_sac: item.hsn_sac || '',
-                        quantity: item.qty,
-                        rate: item.rate,
-                        discount: 0,
-                        gst_rate: 18
-                    })));
-                }
+                const response = await api.get(`/milestones/?sales_order=${soId}`);
+                setMilestones(response.data);
             } catch (error) {
-                console.error('Error fetching estimate details', error);
-                showNotification('Error loading estimate items', 'error');
-            } finally {
-                setLoading(false);
+                console.error('Error fetching milestones', error);
+                setMilestones([]);
+            }
+
+            if (so.items && so.items.length > 0) {
+                setLineItems(so.items.map((item: any) => ({
+                    type: item.item_type === 'SERVICES' ? 'Service' : 'Product',
+                    description: item.product_name + (item.description ? ` - ${item.description}` : ''),
+                    hsn_sac: '',
+                    quantity: parseFloat(item.qty),
+                    rate: parseFloat(item.rate),
+                    discount: parseFloat(item.discount) || 0,
+                    gst_rate: 18
+                })));
             }
         } else {
-            setFormData(prev => ({ ...prev, proposal: proposalId }));
+            setFormData(prev => ({ ...prev, sales_order: soId }));
         }
     };
 
@@ -339,31 +303,16 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
             if (signatureFile) data.append('signature_image', signatureFile);
             if (sealFile) data.append('company_seal', sealFile);
 
-            let newInvoiceId = invoiceId;
             if (invoiceId) {
                 await api.put(`/finance/invoices/${invoiceId}/`, data, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 showNotification('Invoice updated successfully', 'success');
             } else {
-                const response = await api.post('/finance/invoices/', data, {
+                await api.post('/finance/invoices/', data, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                newInvoiceId = response.data.id;
                 showNotification('Invoice created successfully', 'success');
-
-                const params = new URLSearchParams(location.search);
-                const mid = params.get('milestone_id');
-                if (mid && newInvoiceId) {
-                    try {
-                        await api.patch(`/milestones/${mid}/`, {
-                            invoice: newInvoiceId,
-                            status: 'INVOICED'
-                        });
-                    } catch (err) {
-                        console.error('Error linking milestone to invoice', err);
-                    }
-                }
             }
             onBack();
         } catch (error: any) {
@@ -439,23 +388,20 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     <SectionHeader title="Invoice Details" />
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Cost Sheet</label>
-                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
-                                {(() => {
-                                    const cs = costSheets.find(c => c.id === parseInt(formData.cost_sheet.toString()));
-                                    if (cs) return cs.cost_sheet_no;
-                                    const selectedLead = leads.find(l => l.id.toString() === formData.lead.toString());
-                                    if (selectedLead && selectedLead.cost_sheet_no) return selectedLead.cost_sheet_no;
-                                    return 'None Linked';
-                                })()}
-                            </div>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Milestone Reference</label>
+                            <select className="ae-input" disabled={isReadOnly} value={formData.milestone} onChange={e => setFormData({ ...formData, milestone: e.target.value })}>
+                                <option value="">Select Milestone (Optional)</option>
+                                {milestones.map(m => (
+                                    <option key={m.id} value={m.id}>{m.milestone_no} - {m.description}</option>
+                                ))}
+                            </select>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Reference Proposal</label>
-                            <select className="ae-input" disabled={isReadOnly} value={formData.proposal} onChange={e => handleProposalChange(e.target.value)}>
-                                <option value="">Select Proposal (Optional)</option>
-                                {proposals.map(p => (
-                                    <option key={p.id} value={p.id}>{p.filename} v{p.version}</option>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Order Reference</label>
+                            <select className="ae-input" disabled={isReadOnly} value={formData.sales_order} onChange={e => handleSalesOrderChange(e.target.value)}>
+                                <option value="">Select Sales Order (Optional)</option>
+                                {salesOrders.map(so => (
+                                    <option key={so.id} value={so.id}>{so.so_number}</option>
                                 ))}
                             </select>
                         </div>

@@ -130,8 +130,8 @@ class Invoice(models.Model):
     due_date = models.DateField()
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='invoices')
     deal = models.ForeignKey('deals.Deal', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
-    cost_sheet = models.ForeignKey('cost_sheets.CostSheet', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
-    proposal = models.ForeignKey('estimates.Proposal', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
+    milestone = models.ForeignKey('milestones.Milestone', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
+    sales_order = models.ForeignKey('sales_orders.SalesOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     
     invoice_type = models.CharField(max_length=20, choices=InvoiceType.choices, default=InvoiceType.DOMESTIC)
     status = models.CharField(max_length=20, choices=InvoiceStatus.choices, default=InvoiceStatus.DRAFT)
