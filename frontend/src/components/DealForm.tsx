@@ -73,7 +73,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
 
 
     const [formData, setFormData] = useState<any>({
-        company: 'AE IND',
+        company: '',
         deal_name: '',
         deal_date: new Date().toISOString().split('T')[0],
         lead: '',
@@ -188,7 +188,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         ...prev,
                         customer: matchedCustomer.id,
                         company: matchedCompany
-                            ? (matchedCompany.entity === 'AE_IND' ? 'AE IND' : matchedCompany.entity === 'AE_USA' ? 'AE USA' : prev.company)
+                            ? (matchedCompany.entity === 'AE_IND' ? 'AE IND' : matchedCompany.entity === 'AE_USA' ? 'AE USA' : (matchedCompany.entity || prev.company))
                             : prev.company
                     }));
                 }
@@ -208,15 +208,17 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     .map(ec => ec.name)
                     .join(', ');
 
-                setFormData((prev: any) => ({
-                    ...prev,
-                    customer_email: selectedCustomer.email || prev.customer_email,
-                    currency: selectedCustomer.currency || prev.currency,
-                    company: matchedCompany
-                        ? (matchedCompany.entity === 'AE_IND' ? 'AE IND' : matchedCompany.entity === 'AE_USA' ? 'AE USA' : prev.company)
-                        : prev.company,
-                    end_customer: associatedEndCustomers
-                }));
+                setFormData((prev: any) => {
+                    const linkedName = matchedCompany?.linked_company_profile_name || '';
+
+                    return {
+                        ...prev,
+                        customer_email: selectedCustomer.email || prev.customer_email,
+                        currency: selectedCustomer.currency || prev.currency,
+                        company: linkedName || prev.company,
+                        end_customer: associatedEndCustomers
+                    };
+                });
             }
         }
     };
@@ -442,7 +444,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
     };
 
     const handleSave = async (isAutoSave = false) => {
-        if (!formData.deal_date || !formData.company || !formData.deal_name) {
+        if (!formData.deal_date || (!formData.company && !formData.company_name) || !formData.deal_name) {
             if (!isAutoSave) showNotification('Please fill in required fields: Deal Date, Company Name, and Project Name', 'warning');
             return null;
         }
@@ -616,7 +618,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Company Name *</label>
                                 <input
                                     type="text"
-                                    value={formData.company}
+                                    value={formData.company || ''}
                                     className="ae-input"
                                     disabled
                                     style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
@@ -1216,7 +1218,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
                     <div style={{ background: 'white', padding: '32px', borderRadius: '12px', width: showAddModal.type === 'customer' ? '600px' : '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
                         <h3 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 800 }}>
-                            {showAddModal.type === 'customer' ? 'Add New Company Profile' : `Add New ${showAddModal.type.replace('_', ' ').toUpperCase()}`}
+                            {showAddModal.type === 'customer' ? 'Add New Company Name' : `Add New ${showAddModal.type.replace('_', ' ').toUpperCase()}`}
                         </h3>
 
                         {showAddModal.type === 'customer' ? (

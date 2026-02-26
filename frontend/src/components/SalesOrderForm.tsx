@@ -1,20 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type ChangeEvent } from 'react';
 import {
     Trash2,
     Save,
     CheckCircle,
-    XCircle,
-    Clock,
-    File,
-    Paperclip,
-    X,
+    XCircle, X,
     Download,
     PlusCircle,
-    Sparkles,
     Plus,
     Eye,
     Calendar,
-    ChevronDown,
     FileText,
     Loader2
 } from 'lucide-react';
@@ -27,14 +21,45 @@ interface SalesOrderFormProps {
     id: number | null;
     onBack: () => void;
     onSave: () => void;
-    onUploadPO?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onUploadPO?: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
     isExtractingSO?: boolean;
 }
 
 const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [salesOrder, setSalesOrder] = useState<any>(null);
+    const [customers, setCustomers] = useState<any[]>([]);
+    const [partners, setPartners] = useState<any[]>([]);
+
+    const [salesOrder, setSalesOrder] = useState<any>(id ? null : {
+        so_number: '',
+        customer_name: '',
+        customer: '',
+        customer_code: '',
+        po_number: '',
+        po_date: '',
+        po_from_date: '',
+        po_to_date: '',
+        currency: 'INR',
+        order_date: new Date().toISOString().split('T')[0],
+        billing_address: '',
+        shipping_address: '',
+        items: [{
+            item_type: 'LICENSE',
+            product: '',
+            product_name: '',
+            description: '',
+            start_date: '',
+            end_date: '',
+            qty: 1,
+            rate: 0,
+            tax: 0,
+            discount: 0,
+            amount: 0
+        }],
+        total_amount: 0,
+        status: 'DRAFT'
+    });
 
 
     const [hoveredBtn, setHoveredBtn] = useState<string | null>('submit');
@@ -48,11 +73,24 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     const { showNotification, showConfirm } = useNotification();
 
     useEffect(() => {
-
+        fetchCustomers();
         if (id) {
             fetchSalesOrderDetails();
         }
     }, [id]);
+
+    const fetchCustomers = async () => {
+        try {
+            const [custRes, partRes] = await Promise.all([
+                api.get('/customers/'),
+                api.get('/partners/')
+            ]);
+            setCustomers(custRes.data);
+            setPartners(partRes.data);
+        } catch (error) {
+            console.error('Error fetching customers/partners', error);
+        }
+    };
 
     useEffect(() => {
         if (salesOrder?.customer_detail?.address && !salesOrder.billing_address) {
@@ -86,6 +124,23 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setSalesOrder((prev: any) => ({ ...prev, [name]: value }));
+    };
+
+    const handleCustomerSelect = (value: string | number) => {
+        const selectedCustomer = customers.find(c => c.id === parseInt(value.toString()));
+        if (selectedCustomer) {
+            const matchedPartner = partners.find(p => p.name === selectedCustomer.name);
+
+            setSalesOrder((prev: any) => ({
+                ...prev,
+                customer: selectedCustomer.id,
+                customer_name: selectedCustomer.name,
+                customer_code: selectedCustomer.customer_id || prev.customer_code,
+                billing_address: matchedPartner?.address || selectedCustomer.address || prev.billing_address,
+                shipping_address: matchedPartner?.address || selectedCustomer.address || prev.shipping_address,
+                currency: selectedCustomer.currency || prev.currency
+            }));
+        }
     };
 
     const handleItemChange = (index: number, field: string, value: any) => {
@@ -178,8 +233,13 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 }))
             };
 
-            await api.patch(`/sales-orders/${id}/`, payload);
-            showNotification('Sales Order updated successfully', 'success');
+            if (id) {
+                await api.patch(`/sales-orders/${id}/`, payload);
+                showNotification('Sales Order updated successfully', 'success');
+            } else {
+                await api.post('/sales-orders/', payload);
+                showNotification('Sales Order created successfully', 'success');
+            }
             onSave();
         } catch (error: any) {
             console.error('Save Error:', error);
@@ -241,10 +301,16 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 }))
             };
 
-            await api.patch(`/sales-orders/${id}/`, payload);
+            let currentId = id;
+            if (id) {
+                await api.patch(`/sales-orders/${id}/`, payload);
+            } else {
+                const response = await api.post('/sales-orders/', payload);
+                currentId = response.data.id;
+            }
 
             // Then, trigger the submit action
-            await api.post(`/sales-orders/${id}/submit/`);
+            await api.post(`/sales-orders/${currentId}/submit/`);
             showNotification('Sales Order submitted successfully', 'success');
             onSave();
         } catch (error: any) {
@@ -411,24 +477,33 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Name</label>
-                                <div className="ae-input" style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    background: 'var(--bg-secondary)',
-                                    color: 'var(--text-primary)',
-                                    minHeight: '34px',
-                                    cursor: 'default'
-                                }}>
-                                    <span style={{
-                                        fontSize: '0.85rem',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap'
+                                {!id ? (
+                                    <SearchableDropdown
+                                        options={customers.map(c => ({ value: c.id, label: c.name }))}
+                                        value={salesOrder.customer || ''}
+                                        onChange={handleCustomerSelect}
+                                        placeholder="Select Customer"
+                                    />
+                                ) : (
+                                    <div className="ae-input" style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        background: 'var(--bg-secondary)',
+                                        color: 'var(--text-primary)',
+                                        minHeight: '34px',
+                                        cursor: 'default'
                                     }}>
-                                        {salesOrder.customer_detail?.name || salesOrder.customer_name || 'No Customer Extracted'}
-                                    </span>
-                                </div>
+                                        <span style={{
+                                            fontSize: '0.85rem',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            {salesOrder.customer_detail?.name || salesOrder.customer_name || 'No Customer Extracted'}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Code</label>
@@ -585,7 +660,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 </thead>
                                 <tbody>
                                     {salesOrder.items.map((item: any, index: number) => (
-                                        <tr key={index} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                        <tr key={item.id ?? `new-${index}`} style={{ borderBottom: '1px solid #F1F5F9' }}>
                                             <td style={{ padding: '8px', textAlign: 'center' }}>
                                                 {index === salesOrder.items.length - 1 && !isSubmitted && (
                                                     <button
@@ -897,89 +972,91 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                     </section>
 
                     {/* 4. Source Document Section */}
-                    <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
-                        <SectionHeader title="Source Document" />
-                        <div style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            padding: '10px 16px',
-                            background: '#F8FAFC',
-                            borderRadius: '16px',
-                            border: '1px solid #E2E8F0',
-                            maxWidth: '100%',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                        }}>
+                    {salesOrder.po_file_url && (
+                        <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
+                            <SectionHeader title="Source Document" />
                             <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '8px',
-                                background: 'white',
-                                display: 'flex',
+                                display: 'inline-flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                border: '1px solid #EDF2F7',
-                                flexShrink: 0
+                                gap: '12px',
+                                padding: '10px 16px',
+                                background: '#F8FAFC',
+                                borderRadius: '16px',
+                                border: '1px solid #E2E8F0',
+                                maxWidth: '100%',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
                             }}>
-                                <FileText size={18} style={{ color: 'var(--theme-primary)', margin: '0 auto' }} />
-                            </div>
+                                <div style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    background: 'white',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: '1px solid #EDF2F7',
+                                    flexShrink: 0
+                                }}>
+                                    <FileText size={18} style={{ color: 'var(--theme-primary)', margin: '0 auto' }} />
+                                </div>
 
-                            <span style={{
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                color: '#2D3748',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '300px'
-                            }}>
-                                {salesOrder.po_file_name || 'PurchaseOrder.pdf'}
-                            </span>
+                                <span style={{
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    color: '#2D3748',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    maxWidth: '300px'
+                                }}>
+                                    {salesOrder.po_file_name || 'PurchaseOrder.pdf'}
+                                </span>
 
-                            <div style={{ display: 'flex', gap: '6px', marginLeft: '8px' }}>
-                                <button
-                                    onClick={handleViewPDF}
-                                    style={{
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '50%',
-                                        border: 'none',
-                                        background: '#EBF8FF',
-                                        color: '#3182CE',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s'
-                                    }}
-                                    className="hover:bg-[#BEE3F8]"
-                                    title="View PDF"
-                                >
-                                    <Eye size={16} />
-                                </button>
-                                <button
-                                    onClick={handleDownloadPDF}
-                                    style={{
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '50%',
-                                        background: '#F7FAFC',
-                                        color: '#718096',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        border: '1px solid #E2E8F0'
-                                    }}
-                                    className="hover:bg-[#EDF2F7]"
-                                    title="Download PDF"
-                                >
-                                    <Download size={16} />
-                                </button>
+                                <div style={{ display: 'flex', gap: '6px', marginLeft: '8px' }}>
+                                    <button
+                                        onClick={handleViewPDF}
+                                        style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            border: 'none',
+                                            background: '#EBF8FF',
+                                            color: '#3182CE',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        className="hover:bg-[#BEE3F8]"
+                                        title="View PDF"
+                                    >
+                                        <Eye size={16} />
+                                    </button>
+                                    <button
+                                        onClick={handleDownloadPDF}
+                                        style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            background: '#F7FAFC',
+                                            color: '#718096',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            border: '1px solid #E2E8F0'
+                                        }}
+                                        className="hover:bg-[#EDF2F7]"
+                                        title="Download PDF"
+                                    >
+                                        <Download size={16} />
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
+                    )}
                 </div>
             </div>
 
