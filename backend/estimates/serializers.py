@@ -25,7 +25,7 @@ class RenewalSerializer(serializers.ModelSerializer):
 class EstimateItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = EstimateItem
-        fields = ['id', 'sr_no', 'particulars', 'description', 'subscription_from', 'subscription_to', 'hsn_sac', 'qty', 'rate', 'discount', 'amount']
+        fields = ['id', 'sr_no', 'item_type', 'particulars', 'description', 'subscription_from', 'subscription_to', 'hsn_sac', 'qty', 'rate', 'discount', 'amount']
         # Removed amount from read_only_fields to allow manual overrides
 
 class EmailLogSerializer(serializers.ModelSerializer):

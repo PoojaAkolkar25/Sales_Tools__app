@@ -168,8 +168,12 @@
             width: 5%;
         }
 
+        .col-type {
+            width: 12%;
+        }
+
         .col-description {
-            width: 45%;
+            width: 33%;
         }
 
         .col-qty {
@@ -189,7 +193,7 @@
         }
 
         .has-discount .col-description {
-            width: 35%;
+            width: 23%;
         }
     </style>
 </head>
@@ -203,7 +207,8 @@
         <tr>
             <td class="company-info">
                 <div class="company-name">{{ company.name|upper }}</div>
-                <div>{{ company.address_line_1 }}{% if company.address_line_2 %}, {{ company.address_line_2 }}{% endif %}</div>
+                <div>{{ company.address_line_1 }}{% if company.address_line_2 %}, {{ company.address_line_2 }}{% endif
+                    %}</div>
                 <div>{{ company.city }}{% if company.pincode %} - {{ company.pincode }}{% endif %}</div>
                 {% if company.gstin %}
                 <div><span class="bold blue">GSTIN/UIN:</span> {{ company.gstin }}</div>
@@ -246,7 +251,8 @@
                     {% if po_number %}
                     <tr>
                         <td class="meta-label">PO & DATE</td>
-                        <td class="meta-value">: {{ po_number }} {% if po_date %} - {{ po_date|date:"d-M-Y" }}{% endif %}</td>
+                        <td class="meta-value">: {{ po_number }} {% if po_date %} - {{ po_date|date:"d-M-Y" }}{% endif
+                            %}</td>
                     </tr>
                     {% endif %}
                     {% if estimate.deal.deal_id %}
@@ -276,8 +282,10 @@
                 <div><span class="bold">PAN/TIN No.:</span> {{ estimate.deal.customer.pan }}</div>
                 {% endif %}
                 {% if estimate.deal.customer.state %}
-                <div><span class="bold">State Name:</span> {{ estimate.deal.customer.state.name|default:estimate.deal.customer.state }}, <span
-                        class="bold">Code:</span> {{ estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
+                <div><span class="bold">State Name:</span> {{
+                    estimate.deal.customer.state.name|default:estimate.deal.customer.state }}, <span
+                        class="bold">Code:</span> {{
+                    estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
                 {% endif %}
             </td>
             <td class="address-col">
@@ -292,8 +300,10 @@
                 <div><span class="bold">PAN/TIN No.:</span> {{ estimate.deal.customer.pan }}</div>
                 {% endif %}
                 {% if estimate.deal.customer.state %}
-                <div><span class="bold">State Name:</span> {{ estimate.deal.customer.state.name|default:estimate.deal.customer.state }}, <span
-                        class="bold">Code:</span> {{ estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
+                <div><span class="bold">State Name:</span> {{
+                    estimate.deal.customer.state.name|default:estimate.deal.customer.state }}, <span
+                        class="bold">Code:</span> {{
+                    estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
                 {% endif %}
             </td>
         </tr>
@@ -305,6 +315,7 @@
         <thead>
             <tr>
                 <th class="text-center col-sr">SR.NO.</th>
+                <th class="col-type">TYPE</th>
                 <th class="col-description">DESCRIPTION</th>
                 <th class="text-center col-qty">QTY</th>
                 <th class="text-right col-rate">RATE</th>
@@ -318,12 +329,14 @@
             {% for item in items %}
             <tr>
                 <td class="text-center">{{ item.sr_no }}</td>
+                <td class="col-type">{{ item.item_type }}</td>
                 <td>
                     <div class="bold">{{ item.particulars }}</div>
                     <div style="font-size: 7.5pt; color: #555;">{{ item.description|linebreaksbr }}</div>
                     {% if item.subscription_from or item.subscription_to %}
                     <div style="font-size: 7pt; color: #777;">
-                        Period: {{ item.subscription_from|date:"d/m/Y"|default:"-" }} to {{ item.subscription_to|date:"d/m/Y"|default:"-" }}
+                        Period: {{ item.subscription_from|date:"d/m/Y"|default:"-" }} to {{
+                        item.subscription_to|date:"d/m/Y"|default:"-" }}
                     </div>
                     {% endif %}
                 </td>
@@ -336,7 +349,7 @@
             </tr>
             {% endfor %}
             <tr class="total-row">
-                <td colspan="2" style="text-align: right; padding-right: 15px;">TOTAL</td>
+                <td colspan="3" style="text-align: right; padding-right: 15px;">TOTAL</td>
                 <td class="text-center">{{ estimate.total_qty|floatformat:0 }}</td>
                 <td class="text-right"></td>
                 {% if has_discount %}<td class="text-right"></td>{% endif %}

@@ -205,6 +205,18 @@ class EstimateViewSet(viewsets.ModelViewSet):
         original_estimate.status = EstimateStatus.REWOUND
         original_estimate.save()
 
+        # Log audit trail for rewound version
+        content_type = ContentType.objects.get_for_model(Estimate)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=original_estimate.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='status',
+            old_value='SUBMITTED', # Typically submitted estimates are rewound
+            new_value='REWOUND'
+        )
+
         # Create new version (reset approval for negotiated version)
         new_estimate = Estimate.objects.create(
             estimate_id=original_estimate.estimate_id,
@@ -225,6 +237,18 @@ class EstimateViewSet(viewsets.ModelViewSet):
             is_latest=True,
             approval_status=ApprovalStatus.PENDING,
             created_by=request.user
+        )
+
+        # Log audit trail for new version creation
+        content_type = ContentType.objects.get_for_model(Estimate)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=new_estimate.id,
+            user=request.user,
+            action_type='CREATE',
+            field_name='created',
+            old_value='',
+            new_value=f'Estimate {new_estimate.estimate_id} v{new_estimate.version} created via Rewind'
         )
 
         # Copy line items
@@ -275,6 +299,18 @@ class EstimateViewSet(viewsets.ModelViewSet):
             created_by=request.user
         )
 
+        # Log audit trail for auto-renewal creation
+        content_type = ContentType.objects.get_for_model(Estimate)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=new_estimate.id,
+            user=request.user,
+            action_type='CREATE',
+            field_name='created',
+            old_value='',
+            new_value=f'Estimate {new_estimate.estimate_id} v{new_estimate.version} created via Auto-Renewal'
+        )
+
         # Copy line items
         for item in original_estimate.items.all():
             EstimateItem.objects.create(
@@ -303,6 +339,19 @@ class EstimateViewSet(viewsets.ModelViewSet):
         estimate.status = EstimateStatus.PENDING_APPROVAL
         estimate.approval_status = ApprovalStatus.PENDING
         estimate.save()
+        
+        # Log audit trail for requesting approval
+        content_type = ContentType.objects.get_for_model(Estimate)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=estimate.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='status',
+            old_value='DRAFT',
+            new_value='PENDING_APPROVAL'
+        )
+        
         return Response(EstimateSerializer(estimate).data)
 
     @decorators.action(detail=True, methods=['post'], permission_classes=[IsSalesHeadOrFinanceManager])
@@ -525,6 +574,18 @@ class EstimateViewSet(viewsets.ModelViewSet):
         # valid_until logic might need reset? preserving for now
         
         estimate.save()
+        
+        # Log audit trail for unapprove action
+        content_type = ContentType.objects.get_for_model(Estimate)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=estimate.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='approval_status',
+            old_value='APPROVED/REJECTED',
+            new_value='PENDING'
+        )
         
         return Response({
             "message": "Estimate approval reverted. You can now edit this estimate.",

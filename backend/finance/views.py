@@ -12,6 +12,7 @@ from .models import (
     BankTransactionStatus, ReceiptStatus, BankTransactionSource,
     CustomerPartner, EndCustomer, FinancialYear
 )
+from deals.models import AuditTrail
 from .serializers import (
     InvoiceSerializer, InvoiceLineItemSerializer, StateMasterSerializer, 
     CompanyProfileSerializer, BankConnectionSerializer, BankTransactionSerializer, 
@@ -35,14 +36,38 @@ class CompanyProfileViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         try:
-            serializer.save()
+            profile = serializer.save()
+            
+            # Log audit trail for company profile creation
+            content_type = ContentType.objects.get_for_model(CompanyProfile)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=profile.id,
+                user=self.request.user,
+                action_type='CREATE',
+                field_name='created',
+                old_value='',
+                new_value=f'Company Profile {profile.name} created'
+            )
         except Exception as e:
             logger.error(f"Error creating company profile: {str(e)}", exc_info=True)
             raise
 
     def perform_update(self, serializer):
         try:
-            serializer.save()
+            profile = serializer.save()
+            
+            # Log audit trail for company profile update
+            content_type = ContentType.objects.get_for_model(CompanyProfile)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=profile.id,
+                user=self.request.user,
+                action_type='UPDATE',
+                field_name='company_name',
+                old_value=profile.name,
+                new_value=f'Company Profile {profile.name} updated'
+            )
         except Exception as e:
             logger.error(f"Error updating company profile: {str(e)}", exc_info=True)
             raise
@@ -232,6 +257,18 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 total_amount=item.get('total_amount')
             )
         
+        # Log audit trail for invoice update
+        content_type = ContentType.objects.get_for_model(Invoice)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=invoice.id,
+            user=self.request.user,
+            action_type='UPDATE',
+            field_name='invoice_no',
+            old_value=invoice.invoice_no,
+            new_value=f'Invoice {invoice.invoice_no} updated'
+        )
+        
         return invoice
 
     @action(detail=True, methods=['post'])
@@ -242,6 +279,19 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         
         invoice.status = 'PENDING_APPROVAL'
         invoice.save()
+        
+        # Log audit trail for submission
+        content_type = ContentType.objects.get_for_model(Invoice)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=invoice.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='status',
+            old_value='DRAFT',
+            new_value='PENDING_APPROVAL'
+        )
+        
         return Response({'status': 'Invoice submitted for approval'})
 
     @action(detail=True, methods=['post'])
@@ -816,6 +866,18 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
             transaction.reconciliation_date = reconciliation_date
         transaction.save()
         
+        # Log audit trail for matching
+        content_type = ContentType.objects.get_for_model(BankTransaction)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=transaction.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='status',
+            old_value=BankTransactionStatus.FOR_REVIEW,
+            new_value=BankTransactionStatus.CATEGORIZED
+        )
+        
         return Response({'status': 'Transaction matched and categorized'})
 
     @action(detail=True, methods=['post'])
@@ -825,6 +887,18 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
         transaction.status = BankTransactionStatus.EXCLUDED
         transaction.exclusion_reason = reason
         transaction.save()
+        
+        # Log audit trail for exclusion
+        content_type = ContentType.objects.get_for_model(BankTransaction)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=transaction.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='status',
+            old_value=BankTransactionStatus.FOR_REVIEW,
+            new_value=BankTransactionStatus.EXCLUDED
+        )
         return Response({'status': 'Excluded successfully'})
 
     @action(detail=True, methods=['post'])
@@ -833,6 +907,18 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
         transaction.status = BankTransactionStatus.FOR_REVIEW
         transaction.exclusion_reason = None
         transaction.save()
+        
+        # Log audit trail for undo exclusion
+        content_type = ContentType.objects.get_for_model(BankTransaction)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=transaction.id,
+            user=request.user,
+            action_type='UPDATE',
+            field_name='status',
+            old_value=BankTransactionStatus.EXCLUDED,
+            new_value=BankTransactionStatus.FOR_REVIEW
+        )
         return Response({'status': 'Transaction moved back to for review'})
 
 class ReceiptVoucherViewSet(viewsets.ModelViewSet):
@@ -859,6 +945,18 @@ class ReceiptVoucherViewSet(viewsets.ModelViewSet):
             lead = Lead.objects.filter(customer_name=customer_name).first()
 
         receipt = serializer.save(lead=lead)
+        
+        # Log audit trail for receipt creation
+        content_type = ContentType.objects.get_for_model(ReceiptVoucher)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=receipt.id,
+            user=self.request.user,
+            action_type='CREATE',
+            field_name='created',
+            old_value='',
+            new_value=f'Receipt Voucher {receipt.receipt_no} created'
+        )
         # Handle adjustments
         adjustments_data = self.request.data.get('adjustments', [])
         if isinstance(adjustments_data, str):
@@ -886,6 +984,7 @@ class ReceiptVoucherViewSet(viewsets.ModelViewSet):
             )
             
             # Update invoice balance
+            old_balance = invoice.open_balance
             invoice.open_balance -= (payment_amount + tds_amount + bank_charges)
             if invoice.open_balance <= 0:
                 invoice.open_balance = 0
@@ -893,6 +992,18 @@ class ReceiptVoucherViewSet(viewsets.ModelViewSet):
             else:
                 invoice.status = 'PARTIAL'
             invoice.save()
+            
+            # Log audit trail for invoice balance update
+            invoice_ct = ContentType.objects.get_for_model(Invoice)
+            AuditTrail.objects.create(
+                content_type=invoice_ct,
+                object_id=invoice.id,
+                user=self.request.user,
+                action_type='UPDATE',
+                field_name='open_balance',
+                old_value=str(old_balance),
+                new_value=str(invoice.open_balance)
+            )
             
         # Handle Attachments
         files = self.request.FILES.getlist('attachments')
@@ -912,14 +1023,38 @@ class CustomerPartnerViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         try:
-            serializer.save()
+            partner = serializer.save()
+            
+            # Log audit trail for partner creation
+            content_type = ContentType.objects.get_for_model(CustomerPartner)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=partner.id,
+                user=self.request.user,
+                action_type='CREATE',
+                field_name='created',
+                old_value='',
+                new_value=f'Customer Partner {partner.name} created'
+            )
         except Exception as e:
             logger.error(f"Error creating customer partner: {str(e)}", exc_info=True)
             raise
 
     def perform_update(self, serializer):
         try:
-            serializer.save()
+            partner = serializer.save()
+            
+            # Log audit trail for partner update
+            content_type = ContentType.objects.get_for_model(CustomerPartner)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=partner.id,
+                user=self.request.user,
+                action_type='UPDATE',
+                field_name='name',
+                old_value=partner.name,
+                new_value=f'Customer Partner {partner.name} updated'
+            )
         except Exception as e:
             logger.error(f"Error updating customer partner: {str(e)}", exc_info=True)
             raise
@@ -934,14 +1069,38 @@ class EndCustomerViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         try:
-            serializer.save()
+            customer = serializer.save()
+            
+            # Log audit trail for end customer creation
+            content_type = ContentType.objects.get_for_model(EndCustomer)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=customer.id,
+                user=self.request.user,
+                action_type='CREATE',
+                field_name='created',
+                old_value='',
+                new_value=f'End Customer {customer.name} created'
+            )
         except Exception as e:
             logger.error(f"Error creating end customer: {str(e)}", exc_info=True)
             raise
 
     def perform_update(self, serializer):
         try:
-            serializer.save()
+            customer = serializer.save()
+            
+            # Log audit trail for end customer update
+            content_type = ContentType.objects.get_for_model(EndCustomer)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=customer.id,
+                user=self.request.user,
+                action_type='UPDATE',
+                field_name='name',
+                old_value=customer.name,
+                new_value=f'End Customer {customer.name} updated'
+            )
         except Exception as e:
             logger.error(f"Error updating end customer: {str(e)}", exc_info=True)
             raise
@@ -955,14 +1114,38 @@ class FinancialYearViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         try:
-            serializer.save()
+            fy = serializer.save()
+            
+            # Log audit trail for financial year creation
+            content_type = ContentType.objects.get_for_model(FinancialYear)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=fy.id,
+                user=self.request.user,
+                action_type='CREATE',
+                field_name='created',
+                old_value='',
+                new_value=f'Financial Year {fy.code} created'
+            )
         except Exception as e:
             logger.error(f"Error creating financial year: {str(e)}", exc_info=True)
             raise
 
     def perform_update(self, serializer):
         try:
-            serializer.save()
+            fy = serializer.save()
+            
+            # Log audit trail for financial year update
+            content_type = ContentType.objects.get_for_model(FinancialYear)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=fy.id,
+                user=self.request.user,
+                action_type='UPDATE',
+                field_name='code',
+                old_value=fy.code,
+                new_value=f'Financial Year {fy.code} updated'
+            )
         except Exception as e:
             logger.error(f"Error updating financial year: {str(e)}", exc_info=True)
             raise

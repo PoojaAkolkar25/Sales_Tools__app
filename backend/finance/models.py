@@ -33,7 +33,7 @@ class IndustryType(models.TextChoices):
 class CompanyProfile(models.Model):
     # 5.1 Company Basic Details
     name = models.CharField(max_length=255)
-    entity = models.CharField(max_length=10, choices=EntityType.choices, default=EntityType.AE_IND)
+    entity = models.CharField(max_length=255, blank=True, null=True)
     customer_id = models.CharField(max_length=50, blank=True, null=True)
     region = models.CharField(max_length=100, blank=True, null=True)
     contact_person = models.CharField(max_length=255, blank=True, null=True)
@@ -71,6 +71,15 @@ class CompanyProfile(models.Model):
     tan = models.CharField(max_length=10, blank=True, null=True)
     cin = models.CharField(max_length=21, blank=True, null=True, verbose_name="CIN")
     
+    # Linked Company (from Company section / CustomerPartner)
+    linked_company_profile = models.ForeignKey(
+        'CustomerPartner',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='customer_profiles'
+    )
+
     # Existing fields
     authorized_signatory_name = models.CharField(max_length=255, blank=True, null=True, help_text="Name of authorized signatory")
     signature_image = models.ImageField(upload_to='company/signatures/', blank=True, null=True)
@@ -350,7 +359,7 @@ class EntityStatus(models.TextChoices):
 class CustomerPartner(models.Model):
     # Customer Basic Details
     name = models.CharField(max_length=255)
-    entity = models.CharField(max_length=10, choices=EntityType.choices, default=EntityType.AE_IND)
+    entity = models.CharField(max_length=255, blank=True, null=True)
     customer_id = models.CharField(max_length=50, blank=True, null=True)
     region = models.CharField(max_length=100, blank=True, null=True)
     contact_person = models.CharField(max_length=255, blank=True, null=True)

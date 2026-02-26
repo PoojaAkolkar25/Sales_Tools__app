@@ -93,8 +93,13 @@ class Proposal(models.Model):
         return f"{self.filename} v{self.version}"
 
 class EstimateItem(models.Model):
+    class ItemType(models.TextChoices):
+        LICENSE = 'License', 'License'
+        SERVICE = 'Service', 'Service'
+
     estimate = models.ForeignKey(Estimate, on_delete=models.CASCADE, related_name='items')
     sr_no = models.IntegerField()
+    item_type = models.CharField(max_length=20, choices=ItemType.choices, default=ItemType.LICENSE)
     particulars = models.CharField(max_length=255)
     description = models.TextField(blank=True, default='')
     subscription_from = models.DateField(null=True, blank=True)

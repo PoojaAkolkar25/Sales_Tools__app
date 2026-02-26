@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from django.utils import timezone
 from .models import Resource, ResourceRequest, RequestStatus, ResourceStatus
 from .serializers import ResourceSerializer, ResourceRequestSerializer
+from django.contrib.contenttypes.models import ContentType
+from deals.models import AuditTrail
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,7 +19,19 @@ class ResourceRequestViewSet(viewsets.ModelViewSet):
     serializer_class = ResourceRequestSerializer
 
     def perform_create(self, serializer):
-        serializer.save(requestor=self.request.user, status=RequestStatus.DRAFT)
+        resource_request = serializer.save(requestor=self.request.user, status=RequestStatus.DRAFT)
+        
+        # Log audit trail for creation
+        content_type = ContentType.objects.get_for_model(ResourceRequest)
+        AuditTrail.objects.create(
+            content_type=content_type,
+            object_id=resource_request.id,
+            user=self.request.user,
+            action_type='CREATE',
+            field_name='created',
+            old_value='',
+            new_value=f'Resource Request {resource_request.id} created'
+        )
 
     @action(detail=True, methods=['post'])
     def submit(self, request, pk=None):
@@ -28,6 +42,19 @@ class ResourceRequestViewSet(viewsets.ModelViewSet):
         try:
             resource_request.status = RequestStatus.PENDING_IT
             resource_request.save()
+            
+            # Log audit trail for submission
+            content_type = ContentType.objects.get_for_model(ResourceRequest)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=resource_request.id,
+                user=request.user,
+                action_type='UPDATE',
+                field_name='status',
+                old_value=RequestStatus.DRAFT,
+                new_value=RequestStatus.PENDING_IT
+            )
+            
             return Response(ResourceRequestSerializer(resource_request).data)
         except Exception as e:
             logger.error(f"Error in submit resource request: {str(e)}", exc_info=True)
@@ -45,6 +72,19 @@ class ResourceRequestViewSet(viewsets.ModelViewSet):
             resource_request.it_head_approved_at = timezone.now()
             resource_request.it_head_remarks = request.data.get('remarks', resource_request.it_head_remarks)
             resource_request.save()
+            
+            # Log audit trail for IT approval
+            content_type = ContentType.objects.get_for_model(ResourceRequest)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=resource_request.id,
+                user=request.user,
+                action_type='UPDATE',
+                field_name='status',
+                old_value=RequestStatus.PENDING_IT,
+                new_value=RequestStatus.PENDING_FINANCE
+            )
+            
             return Response(ResourceRequestSerializer(resource_request).data)
         except Exception as e:
             logger.error(f"Error in approve_it resource request: {str(e)}", exc_info=True)
@@ -62,6 +102,19 @@ class ResourceRequestViewSet(viewsets.ModelViewSet):
             resource_request.finance_head_approved_at = timezone.now()
             resource_request.finance_head_remarks = request.data.get('remarks', resource_request.finance_head_remarks)
             resource_request.save()
+            
+            # Log audit trail for Finance approval
+            content_type = ContentType.objects.get_for_model(ResourceRequest)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=resource_request.id,
+                user=request.user,
+                action_type='UPDATE',
+                field_name='status',
+                old_value=RequestStatus.PENDING_FINANCE,
+                new_value=RequestStatus.APPROVED
+            )
+            
             return Response(ResourceRequestSerializer(resource_request).data)
         except Exception as e:
             logger.error(f"Error in approve_finance resource request: {str(e)}", exc_info=True)
@@ -75,13 +128,28 @@ class ResourceRequestViewSet(viewsets.ModelViewSet):
             return Response({"error": "This request cannot be rejected in its current status."}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            resource_request.status = RequestStatus.REJECTED
+            old_status = resource_request.status
             remarks = request.data.get('remarks', '')
             if resource_request.status == RequestStatus.PENDING_IT:
                 resource_request.it_head_remarks = f"REJECTED: {remarks}"
             else:
                 resource_request.finance_head_remarks = f"REJECTED: {remarks}"
+            
+            resource_request.status = RequestStatus.REJECTED
             resource_request.save()
+            
+            # Log audit trail for rejection
+            content_type = ContentType.objects.get_for_model(ResourceRequest)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=resource_request.id,
+                user=request.user,
+                action_type='UPDATE',
+                field_name='status',
+                old_value=old_status,
+                new_value=RequestStatus.REJECTED
+            )
+            
             return Response(ResourceRequestSerializer(resource_request).data)
         except Exception as e:
             logger.error(f"Error in reject resource request: {str(e)}", exc_info=True)
@@ -115,6 +183,18 @@ class ResourceRequestViewSet(viewsets.ModelViewSet):
             resource_request.issued_by = request.user
             resource_request.issued_at = timezone.now()
             resource_request.save()
+            
+            # Log audit trail for issuance
+            content_type = ContentType.objects.get_for_model(ResourceRequest)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=resource_request.id,
+                user=request.user,
+                action_type='UPDATE',
+                field_name='status',
+                old_value=RequestStatus.APPROVED,
+                new_value=RequestStatus.ISSUED
+            )
             
             return Response(ResourceRequestSerializer(resource_request).data)
         except Exception as e:

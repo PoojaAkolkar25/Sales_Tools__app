@@ -80,6 +80,19 @@ class CostSheetViewSet(viewsets.ModelViewSet):
             instance.status = CostSheetStatus.REJECTED
             instance.approval_comments = comments
             instance.save()
+            
+            # Log audit trail for rejection
+            content_type = ContentType.objects.get_for_model(CostSheet)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=instance.id,
+                user=request.user,
+                action_type='UPDATE',
+                field_name='status',
+                old_value='SUBMITTED',
+                new_value='REJECTED'
+            )
+            
             return Response({'status': 'rejected'})
         except Exception as e:
             logger.error(f"Error in reject (CostSheetViewSet): {str(e)}", exc_info=True)
@@ -99,6 +112,19 @@ class CostSheetViewSet(viewsets.ModelViewSet):
             instance.status = CostSheetStatus.REVERTED
             instance.revert_comments = comments
             instance.save()
+            
+            # Log audit trail for revert
+            content_type = ContentType.objects.get_for_model(CostSheet)
+            AuditTrail.objects.create(
+                content_type=content_type,
+                object_id=instance.id,
+                user=request.user,
+                action_type='UPDATE',
+                field_name='status',
+                old_value='SUBMITTED',
+                new_value='REVERTED'
+            )
+            
             return Response({'status': 'reverted'})
         except Exception as e:
             logger.error(f"Error in revert (CostSheetViewSet): {str(e)}", exc_info=True)
