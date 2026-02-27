@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Trash2, CheckCircle, Eye, Plus } from 'lucide-react';
+import { Save, Trash2, CheckCircle, Eye, X, Plus } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
@@ -361,29 +361,17 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
     };
 
     const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
-        <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '16px'
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                    width: '4px',
-                    height: '18px',
-                    background: 'var(--ae-blue)',
-                    borderRadius: '2px'
-                }}></span>
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)', margin: 0 }}>
-                    {title}
-                </h3>
+                <span style={{ width: '4px', height: '18px', background: '#0066CC', borderRadius: '2px' }}></span>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)' }}>{title}</h3>
             </div>
             {extra}
         </div>
     );
 
     return (
-        <div style={{ width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+        <div className="space-y-6" style={{ padding: '4px' }}>
 
 
             <div style={{
@@ -398,9 +386,9 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
             }}>
                 <div>
                     <SectionHeader title="Invoice Details" />
-                    <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Milestone Reference</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Milestone Reference</label>
                             <select className="ae-input" disabled={isReadOnly} value={formData.milestone} onChange={e => setFormData({ ...formData, milestone: e.target.value })}>
                                 <option value="">Select Milestone (Optional)</option>
                                 {milestones.map(m => (
@@ -409,7 +397,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             </select>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Sales Order Reference</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Order Reference</label>
                             <select className="ae-input" disabled={isReadOnly} value={formData.sales_order} onChange={e => handleSalesOrderChange(e.target.value)}>
                                 <option value="">Select Sales Order (Optional)</option>
                                 {salesOrders.map(so => (
@@ -418,24 +406,24 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             </select>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer</label>
                             <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
                                 {leads.find(l => l.id.toString() === formData.lead.toString())?.customer_name || 'No Customer Selected'}
                             </div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
                             <input type="text" className="ae-input" disabled value={formatToAppDate(formData.invoice_date)} style={{ background: '#f8fafc' }} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Place of Supply (State)</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Place of Supply (State)</label>
                             <select className="ae-input" required disabled={isReadOnly} value={formData.customer_state} onChange={e => setFormData({ ...formData, customer_state: e.target.value })}>
                                 <option value="">Select State</option>
                                 {states.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
                             </select>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer GSTIN</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer GSTIN</label>
                             <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
                                 {formData.customer_gstin || 'Not Provided'}
                             </div>
@@ -447,31 +435,31 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                         </div>
                         {formData.invoice_type === 'USA' && (
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Sales Tax %</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Tax %</label>
                                 <input type="number" className="ae-input" disabled={isReadOnly} value={formData.sales_tax_rate} onChange={e => setFormData({ ...formData, sales_tax_rate: parseFloat(e.target.value) || 0 })} />
                             </div>
                         )}
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment Terms (Days)</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Payment Terms (Days)</label>
                             <input type="number" className="ae-input" disabled={isReadOnly} value={formData.payment_terms_days} onChange={e => setFormData({ ...formData, payment_terms_days: parseInt(e.target.value) || 0 })} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Due Date</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Due Date</label>
                             <input type="text" className="ae-input" disabled value={formatToAppDate(formData.due_date)} style={{ background: '#f8fafc' }} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Number</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Number</label>
                             <input type="text" className="ae-input" disabled={isReadOnly} value={formData.po_number} onChange={e => setFormData({ ...formData, po_number: e.target.value })} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Date</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>PO Date</label>
                             <input type="text" className="ae-input" disabled value={formatToAppDate(formData.po_date)} style={{ background: '#f8fafc' }} />
                         </div>
                     </div>
                 </div>
 
 
-                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                     <SectionHeader title="Invoice Items" />
                     <div className="ae-table-container" style={{
                         marginTop: '24px',
@@ -485,14 +473,14 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                         <table className="ae-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                             <thead style={{ background: '#F8FAFC' }}>
                                 <tr>
-                                    <th style={{ width: '50px', padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>SR.NO.</th>
-                                    <th style={{ width: '120px', padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>TYPE *</th>
-                                    <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>ITEM & DESCRIPTION</th>
-                                    <th style={{ width: '80px', padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>QTY</th>
-                                    <th style={{ width: '130px', padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>RATE</th>
-                                    <th style={{ width: '100px', padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>GST %</th>
-                                    <th style={{ width: '140px', padding: '10px 4px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>AMOUNT</th>
-                                    <th style={{ width: '40px', padding: '10px 4px', borderBottom: '1px solid #E0E6ED' }}></th>
+                                    <th style={{ width: '50px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', borderBottom: '1px solid #E2E8F0', borderTopLeftRadius: '12px' }}>Sr.No.</th>
+                                    <th style={{ width: '120px', padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', borderBottom: '1px solid #E2E8F0' }}>Type *</th>
+                                    <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', borderBottom: '1px solid #E2E8F0' }}>Item & Description</th>
+                                    <th style={{ width: '80px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', borderBottom: '1px solid #E2E8F0' }}>Qty</th>
+                                    <th style={{ width: '130px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', borderBottom: '1px solid #E2E8F0' }}>Rate</th>
+                                    <th style={{ width: '100px', padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', borderBottom: '1px solid #E2E8F0' }}>GST %</th>
+                                    <th style={{ width: '140px', padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: '#4A5568', borderBottom: '1px solid #E2E8F0' }}>Amount</th>
+                                    <th style={{ width: '40px', padding: '12px 8px', borderBottom: '1px solid #E2E8F0', borderTopRightRadius: '12px' }}></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -627,13 +615,12 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 ))}
                             </tbody>
                             <tfoot>
-                                <tr style={{ background: '#F8FAFC', borderTop: '1px solid #E0E6ED' }}>
-                                    <td colSpan={6} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Invoice Value:</td>
-                                    <td style={{ padding: '8px 16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-                                        <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{formData.currency === 'INR' ? '₹' : '$'}</span>
-                                        {totals.grand_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                <tr style={{ background: '#F8FAFC' }}>
+                                    <td colSpan={6} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: '#4A5568', borderBottomLeftRadius: '12px' }}>Total Invoice Value:</td>
+                                    <td style={{ padding: '12px 12px', textAlign: 'right', fontSize: '0.95rem', fontWeight: 800, color: '#FF6B00' }}>
+                                        {formData.currency === 'INR' ? '₹' : '$'}{totals.grand_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </td>
-                                    <td></td>
+                                    <td style={{ borderBottomRightRadius: '12px' }}></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -641,11 +628,11 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 </div>
 
                 {/* e-Invoice Details Section - Positioned after Items Table */}
-                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                     <SectionHeader title="e-Invoice Details" />
-                    <div className="ae-grid-5">
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>IRN</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>IRN</label>
                             <input
                                 className="ae-input"
                                 disabled={isReadOnly}
@@ -655,7 +642,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Ack No.</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Ack No.</label>
                             <input
                                 className="ae-input"
                                 disabled={isReadOnly}
@@ -665,7 +652,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Ack Date</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Ack Date</label>
                             <input
                                 type="text"
                                 className="ae-input"
@@ -677,15 +664,15 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     </div>
                 </div>
 
-                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                     <SectionHeader title="Compliance & Signatory" />
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Authorized Signatory</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Authorized Signatory</label>
                             <input className="ae-input" placeholder="Authorized Signatory" disabled={isReadOnly} value={formData.authorized_signatory} onChange={e => setFormData({ ...formData, authorized_signatory: e.target.value })} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Signature & Seal</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Signature & Seal</label>
                             <div style={{ display: 'flex', gap: '10px' }}>
                                 <label style={{ flex: 1, padding: '8px', border: '1px dashed #E0E6ED', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontSize: '0.7rem' }}>
                                     {signatureFile ? 'Signature selected' : 'Upload Signature'}
@@ -701,7 +688,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
 
                     {formData.invoice_type === 'EXPORT' ? (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>LUT Declaration (Export)</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>LUT Declaration (Export)</label>
                             <textarea
                                 className="ae-input"
                                 disabled={isReadOnly}
@@ -712,7 +699,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>GST Declaration (India)</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>GST Declaration (India)</label>
                             <textarea
                                 className="ae-input"
                                 disabled={isReadOnly}
@@ -724,7 +711,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     )}
                 </div>
 
-                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
                     <SectionHeader title="Invoice Summary" />
                     <div style={{ background: '#F8FAFC', padding: '24px', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -751,7 +738,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 </div>
 
                 <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Description / Memo</label>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Description / Memo</label>
                     <textarea
                         className="ae-input"
                         style={{ width: '100%', minHeight: '100px', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem', resize: 'vertical' }}
@@ -768,12 +755,12 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
+                        gap: '4px',
                         background: 'white',
                         padding: '6px',
                         borderRadius: '12px',
-                        border: '1px solid #E0E6ED',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                        border: '1px solid var(--border-primary)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
                     }}
                     onMouseLeave={() => { if (!isConfirmingExit) setActiveAction('submit'); }}
                 >
@@ -783,23 +770,15 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                         onClick={() => handlePreview()}
                         onMouseEnter={() => !isConfirmingExit && setActiveAction('preview')}
                         style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            height: '32px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
+                            height: '38px', padding: '0 18px', fontSize: '0.875rem', fontWeight: 700,
+                            borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px',
+                            border: 'none', cursor: 'pointer', transition: 'all 0.2s',
                             background: activeAction === 'preview' ? 'var(--theme-primary)' : 'transparent',
                             color: activeAction === 'preview' ? 'white' : 'var(--text-secondary)',
-                            boxShadow: activeAction === 'preview' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                            boxShadow: activeAction === 'preview' ? '0 2px 8px rgba(255,107,0,0.2)' : 'none'
                         }}
                     >
-                        <Eye size={16} /> <span>Preview</span>
+                        <Eye size={17} /> Preview
                     </button>
 
                     {!isReadOnly && (
@@ -811,54 +790,40 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 disabled={loading}
                                 onMouseEnter={() => !isConfirmingExit && setActiveAction('save')}
                                 style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '6px 16px',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: loading ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.2s',
+                                    height: '38px', padding: '0 18px', fontSize: '0.875rem', fontWeight: 700,
+                                    borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px',
+                                    border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+                                    opacity: loading ? 0.6 : 1,
                                     background: activeAction === 'save' ? 'var(--theme-primary)' : 'transparent',
                                     color: activeAction === 'save' ? 'white' : 'var(--text-secondary)',
-                                    boxShadow: activeAction === 'save' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                                    boxShadow: activeAction === 'save' ? '0 2px 8px rgba(255,107,0,0.2)' : 'none'
                                 }}
                             >
-                                <Save size={16} /> <span>{loading ? 'Saving...' : 'Save Draft'}</span>
+                                <Save size={17} /> {loading ? 'Saving...' : 'Save Draft'}
                             </button>
 
-                            {/* Submit for Approval */}
+                            {/* Submit for Approval - default orange */}
                             <button
                                 type="button"
                                 onClick={handleSubmitForApproval}
                                 disabled={loading}
                                 onMouseEnter={() => !isConfirmingExit && setActiveAction('submit')}
                                 style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '6px 16px',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: loading ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.2s',
-                                    background: activeAction === 'submit' ? 'var(--theme-primary)' : 'rgba(255, 107, 0, 0.05)',
-                                    color: activeAction === 'submit' ? 'white' : 'var(--ae-orange)',
-                                    boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                                    height: '38px', padding: '0 20px', fontSize: '0.875rem', fontWeight: 700,
+                                    borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px',
+                                    border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+                                    opacity: loading ? 0.6 : 1,
+                                    background: activeAction === 'submit' ? 'var(--theme-primary)' : 'transparent',
+                                    color: activeAction === 'submit' ? 'white' : 'var(--text-secondary)',
+                                    boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(255,107,0,0.2)' : 'none'
                                 }}
                             >
-                                <CheckCircle size={16} /> <span>{loading ? 'Submitting...' : 'Submit for Approval'}</span>
+                                <CheckCircle size={17} /> {loading ? 'Submitting...' : 'Submit for Approval'}
                             </button>
                         </>
                     )}
 
-                    {/* Cancel */}
+                    {/* Cancel - locks orange state when dialog opens */}
                     {status !== 'APPROVED' && status !== 'PAID' && (
                         <button
                             type="button"
@@ -875,23 +840,15 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             }}
                             onMouseEnter={() => !isConfirmingExit && setActiveAction('cancel')}
                             style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '6px 16px',
-                                height: '32px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                background: activeAction === 'cancel' ? 'rgba(255, 107, 0, 0.05)' : 'transparent',
-                                color: activeAction === 'cancel' ? 'var(--ae-orange)' : 'var(--text-secondary)'
+                                height: '38px', padding: '0 18px', fontSize: '0.875rem', fontWeight: 700,
+                                borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px',
+                                border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                                background: activeAction === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeAction === 'cancel' ? 'white' : 'var(--text-secondary)',
+                                boxShadow: activeAction === 'cancel' ? '0 2px 8px rgba(255,107,0,0.2)' : 'none'
                             }}
                         >
-                            <span style={{ fontSize: '16px', lineHeight: '16px', fontWeight: 700 }}>×</span>
-                            <span>Cancel</span>
+                            <X size={15} /> Cancel
                         </button>
                     )}
                 </div>

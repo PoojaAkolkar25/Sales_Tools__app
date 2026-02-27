@@ -55,7 +55,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
         backup_required: false,
         purpose_of_request: '',
         business_justification: '',
-        expected_start_date: '',
+        expected_start_date: new Date().toISOString().split('T')[0],
         expected_end_date: '',
         quantity: 1,
         status: 'DRAFT',
@@ -103,10 +103,6 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     };
 
     const handleSubmitToIT = async () => {
-        if (!id) {
-            showNotification('Request must be saved first', 'error');
-            return;
-        }
         setSaving(true);
         try {
             await api.post(`/inventory/requests/${id}/submit_to_it/`);
@@ -244,11 +240,6 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                 await api.patch(`/inventory/requests/${requestId}/`, cleanedData);
             }
 
-            if (!requestId) {
-                showNotification('Could not determine request ID', 'error');
-                return;
-            }
-
             // Now transition to SUBMITTED
             await api.post(`/inventory/requests/${requestId}/submit/`);
             showNotification('Request created and submitted.', 'success');
@@ -275,7 +266,6 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     };
 
     const handleApproveIT = async () => {
-        if (!id) return;
         try {
             await api.post(`/inventory/requests/${id}/approve_it/`, { remarks: formData.it_head_remarks });
             showNotification('Approved by IT and sent to Finance', 'success');
@@ -300,7 +290,6 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     };
 
     const handleApproveFinance = async () => {
-        if (!id) return;
         try {
             await api.post(`/inventory/requests/${id}/approve_finance/`, { remarks: formData.finance_head_remarks });
             showNotification('Approved by Finance', 'success');
@@ -325,7 +314,6 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     };
 
     const handleReject = async () => {
-        if (!id) return;
         if (!rejectRemarks) {
             showNotification('Please enter rejection remarks', 'error');
             return;
@@ -347,7 +335,6 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     };
 
     const handleIssue = async () => {
-        if (!id) return;
         const resourceId = prompt('Enter Server Asset ID to assign:');
         if (!resourceId) return;
         try {
@@ -377,49 +364,53 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
 
     const isReadOnly = !!(id && formData.status !== 'DRAFT');
 
-    const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
-        <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '16px'
-        }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                    width: '4px',
-                    height: '18px',
-                    background: 'var(--ae-blue)',
-                    borderRadius: '2px'
-                }}></span>
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)', margin: 0 }}>
-                    {title}
-                </h3>
-            </div>
-            {extra}
-        </div>
-    );
-
     return (
-        <div style={{ width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Header Toolbar (Standardized with Cost Sheet) */}
             <div style={{
-                background: 'white',
-                border: '1px solid #E0E6ED',
-                borderRadius: '12px',
-                width: '100%',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-                padding: '24px',
                 display: 'flex',
-                flexDirection: 'column'
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'white',
+                padding: '16px 24px',
+                borderRadius: '16px',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
             }}>
-                <div>
-                    {/* Request Information */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, var(--ae-blue) 0%, #1e40af 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
+                    }}>
+                        <Server size={24} />
+                    </div>
                     <div>
-                        <SectionHeader title="Request Information" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>Resource Request</h2>
+                        <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '2px 0 0 0' }}>Request IT infrastructure and resources</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                    {/* 1. Request Info */}
+                    <section className="section-panel" style={{ padding: '24px' }}>
+                        <h3 className="section-title text-[var(--theme-primary)] flex items-center gap-2 mb-6">
+                            <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
+                            1. Request Information
+                        </h3>
+                        <div className="grid grid-cols-2 gap-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Request Date <span style={{ color: '#ef4444' }}>*</span></label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Request Date <span style={{ color: '#ef4444' }}>*</span></label>
                                 {isReadOnly ? (
-                                    <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>{formatToAppDate(formData.request_date)}</div>
+                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formatToAppDate(formData.request_date)}</div>
                                 ) : (
                                     <div style={{ position: 'relative' }}>
                                         <input
@@ -447,11 +438,11 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Form Number</label>
-                                <input type="text" value={formData.form_number || 'Auto-generated'} className="ae-input" style={{ background: '#f8fafc' }} disabled />
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Form Number</label>
+                                <input type="text" value={formData.form_number || 'Auto-generated'} className="ae-input !bg-gray-50" disabled />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Quantity <span style={{ color: '#ef4444' }}>*</span></label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Quantity <span style={{ color: '#ef4444' }}>*</span></label>
                                 <input
                                     type="number"
                                     name="quantity"
@@ -463,28 +454,31 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Request Status</label>
-                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Request Status</label>
+                                <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>
                                     {formData.status_display || formData.status?.toLowerCase().replace('_', ' ') || 'Draft'}
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* Requestor Details */}
-                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
-                        <SectionHeader title="Requestor Details" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                    {/* 2. Requestor Details */}
+                    <section className="section-panel" style={{ padding: '24px' }}>
+                        <h3 className="section-title text-[var(--theme-primary)] flex items-center gap-2 mb-6">
+                            <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
+                            2. Requestor Details
+                        </h3>
+                        <div className="grid grid-cols-2 gap-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Employee ID <span style={{ color: '#ef4444' }}>*</span></label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Employee ID <span style={{ color: '#ef4444' }}>*</span></label>
                                 <input type="text" name="employee_id" value={formData.employee_id} onChange={handleInputChange} className="ae-input" placeholder="EMP1023" disabled={isReadOnly} />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Employee Name</label>
-                                <input type="text" value={user?.full_name || ''} className="ae-input" style={{ background: '#f8fafc' }} disabled />
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Employee Name</label>
+                                <input type="text" value={user?.full_name || ''} className="ae-input !bg-gray-50" disabled />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Department <span style={{ color: '#ef4444' }}>*</span></label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Department <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
                                     options={[
                                         { value: 'Engineering', label: 'Engineering' },
@@ -501,7 +495,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Designation <span style={{ color: '#ef4444' }}>*</span></label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Designation <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
                                     options={[
                                         { value: 'Project Manager', label: 'Project Manager' },
@@ -519,18 +513,21 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Email ID</label>
-                                <input type="email" value={user?.email || ''} className="ae-input" style={{ background: '#f8fafc' }} disabled />
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Email ID</label>
+                                <input type="email" value={user?.email || ''} className="ae-input !bg-gray-50" disabled />
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* Project Details */}
-                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
-                        <SectionHeader title="Project Details" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                    {/* 3. Project Details */}
+                    <section className="section-panel" style={{ padding: '24px' }}>
+                        <h3 className="section-title text-[var(--theme-primary)] flex items-center gap-2 mb-6">
+                            <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
+                            3. Project Details
+                        </h3>
+                        <div className="grid grid-cols-2 gap-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Project Name <span style={{ color: '#ef4444' }}>*</span></label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Name <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
                                     options={deals.map(d => ({
                                         value: d.deal_name,
@@ -544,11 +541,11 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Project Code</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Code</label>
                                 <input type="text" name="project_code" value={formData.project_code} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Client Name <span style={{ color: '#ef4444' }}>*</span></label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Client Name <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
                                     options={[
                                         { value: 'ABC Corp', label: 'ABC Corp' },
@@ -564,7 +561,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Environment <span style={{ color: '#ef4444' }}>*</span></label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Environment <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
                                     options={[
                                         { value: 'DEVELOPMENT', label: 'Development' },
@@ -579,16 +576,20 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 />
                             </div>
                         </div>
-                    </div>
+                    </section>
                 </div>
 
-                <div>
-                    {/* Server Configuration */}
-                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
-                        <SectionHeader title="Server Configuration" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                {/* Right Column */}
+                <div className="space-y-6">
+                    {/* 4. Server Config */}
+                    <section className="section-panel" style={{ padding: '24px' }}>
+                        <h3 className="section-title text-[var(--theme-primary)] flex items-center gap-2 mb-6">
+                            <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
+                            4. Server Configuration
+                        </h3>
+                        <div className="space-y-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Resource Type <span style={{ color: '#ef4444' }}>*</span></label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Resource Type <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
                                     options={[
                                         { value: 'Server', label: 'Server' },
@@ -602,9 +603,9 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     disabled={isReadOnly}
                                 />
                             </div>
-                            <div style={{ display: 'contents' }}>
+                            <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Server Type</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Server Type</label>
                                     <SearchableDropdown
                                         options={[
                                             { value: 'EC2', label: 'EC2' },
@@ -619,7 +620,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Server Category</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Server Category</label>
                                     <SearchableDropdown
                                         options={[
                                             { value: 'Virtual', label: 'Virtual' },
@@ -634,9 +635,9 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     />
                                 </div>
                             </div>
-                            <div style={{ display: 'contents' }}>
+                            <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Cloud Provider <span style={{ color: '#ef4444' }}>*</span></label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cloud Provider <span style={{ color: '#ef4444' }}>*</span></label>
                                     <SearchableDropdown
                                         options={[
                                             { value: 'AWS', label: 'AWS' },
@@ -652,7 +653,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Region <span style={{ color: '#ef4444' }}>*</span></label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Region <span style={{ color: '#ef4444' }}>*</span></label>
                                     <SearchableDropdown
                                         options={[
                                             { value: 'ap-south-1', label: 'ap-south-1 (Mumbai)' },
@@ -667,9 +668,9 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     />
                                 </div>
                             </div>
-                            <div style={{ display: 'contents' }}>
+                            <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Instance Type</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Instance Type</label>
                                     <SearchableDropdown
                                         options={[
                                             { value: 't3a.2xlarge', label: 't3a.2xlarge' },
@@ -685,7 +686,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Operating System</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Operating System</label>
                                     <SearchableDropdown
                                         options={[
                                             { value: 'Amazon Linux 2', label: 'Amazon Linux 2' },
@@ -701,19 +702,19 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     />
                                 </div>
                             </div>
-                            <div style={{ display: 'contents' }}>
+                            <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>CPU Cores <span style={{ color: '#ef4444' }}>*</span></label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>CPU Cores <span style={{ color: '#ef4444' }}>*</span></label>
                                     <input type="number" name="cpu_cores" value={formData.cpu_cores} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>RAM (GB) <span style={{ color: '#ef4444' }}>*</span></label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>RAM (GB) <span style={{ color: '#ef4444' }}>*</span></label>
                                     <input type="number" name="ram_gb" value={formData.ram_gb} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
                                 </div>
                             </div>
-                            <div style={{ display: 'contents' }}>
+                            <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Storage Type <span style={{ color: '#ef4444' }}>*</span></label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Storage Type <span style={{ color: '#ef4444' }}>*</span></label>
                                     <SearchableDropdown
                                         options={[
                                             { value: 'SSD', label: 'SSD' },
@@ -728,19 +729,22 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Storage Size (GB) <span style={{ color: '#ef4444' }}>*</span></label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Storage Size (GB) <span style={{ color: '#ef4444' }}>*</span></label>
                                     <input type="number" name="storage_size_gb" value={formData.storage_size_gb} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* Database / RDS Details */}
-                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
-                        <SectionHeader title="Database / RDS Details" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 2' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Database Required</label>
+                    {/* 5. Database / RDS Details */}
+                    <section className="section-panel" style={{ padding: '24px' }}>
+                        <h3 className="section-title text-[var(--theme-primary)] flex items-center gap-2 mb-6">
+                            <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
+                            5. Database / RDS Details
+                        </h3>
+                        <div className="space-y-4">
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Database Required</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input type="radio" name="database_required" checked={formData.database_required === true} onChange={() => setFormData((p: any) => ({ ...p, database_required: true }))} disabled={isReadOnly} /> Yes
@@ -753,9 +757,9 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
 
                             {formData.database_required && (
                                 <>
-                                    <div style={{ display: 'contents' }}>
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>RDS Type</label>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>RDS Type</label>
                                             <SearchableDropdown
                                                 options={[
                                                     { value: 'db.t3.small', label: 'db.t3.small' },
@@ -770,7 +774,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                             />
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Database Engine</label>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Database Engine</label>
                                             <SearchableDropdown
                                                 options={[
                                                     { value: 'MySQL', label: 'MySQL' },
@@ -785,13 +789,13 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                             />
                                         </div>
                                     </div>
-                                    <div style={{ display: 'contents' }}>
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>DB Storage (GB)</label>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>DB Storage (GB)</label>
                                             <input type="number" name="db_storage_gb" value={formData.db_storage_gb} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Backup Required</label>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Backup Required</label>
                                             <label className="flex items-center gap-2 cursor-pointer mt-2">
                                                 <input type="checkbox" name="backup_required" checked={formData.backup_required} onChange={(e) => setFormData((p: any) => ({ ...p, backup_required: e.target.checked }))} disabled={isReadOnly} /> Enable Daily Backup
                                             </label>
@@ -800,25 +804,28 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 </>
                             )}
                         </div>
-                    </div>
+                    </section>
 
-                    {/* Usage & Justification */}
-                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
-                        <SectionHeader title="Usage & Justification" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                    {/* 6. Usage & Justification */}
+                    <section className="section-panel" style={{ padding: '24px' }}>
+                        <h3 className="section-title text-[var(--theme-primary)] mb-6 flex items-center gap-2">
+                            <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
+                            6. Usage & Justification
+                        </h3>
+                        <div className="space-y-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Purpose of Request <span style={{ color: '#ef4444' }}>*</span></label>
-                                <textarea name="purpose_of_request" value={formData.purpose_of_request} onChange={handleInputChange} className="ae-input !h-20" disabled={isReadOnly} placeholder="Enter purpose"></textarea>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Purpose of Request <span style={{ color: '#ef4444' }}>*</span></label>
+                                <textarea name="purpose_of_request" value={formData.purpose_of_request} onChange={handleInputChange} className="ae-input !h-20" disabled={isReadOnly}></textarea>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Business Justification <span style={{ color: '#ef4444' }}>*</span></label>
-                                <textarea name="business_justification" value={formData.business_justification} onChange={handleInputChange} className="ae-input !h-20" disabled={isReadOnly} placeholder="Enter justification"></textarea>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Business Justification <span style={{ color: '#ef4444' }}>*</span></label>
+                                <textarea name="business_justification" value={formData.business_justification} onChange={handleInputChange} className="ae-input !h-20" disabled={isReadOnly}></textarea>
                             </div>
-                            <div style={{ display: 'contents' }}>
+                            <div className="grid grid-cols-2 gap-4">
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Expected Start Date <span style={{ color: '#ef4444' }}>*</span></label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Expected Start Date <span style={{ color: '#ef4444' }}>*</span></label>
                                     {isReadOnly ? (
-                                        <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>{formatToAppDate(formData.expected_start_date)}</div>
+                                        <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formatToAppDate(formData.expected_start_date)}</div>
                                     ) : (
                                         <div style={{ position: 'relative' }}>
                                             <input
@@ -828,7 +835,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                                 style={{ height: '38px', padding: '4px 34px 4px 12px', width: '100%', cursor: 'pointer', background: 'white' }}
                                                 value={formData.expected_start_date ? formatToAppDate(formData.expected_start_date) : ''}
                                                 onClick={() => (document.getElementById('hidden-start-date') as HTMLInputElement)?.showPicker()}
-                                                placeholder="Enter date"
+                                                placeholder="DD/MMM/YYYY"
                                             />
                                             <Calendar
                                                 size={16}
@@ -846,9 +853,9 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     )}
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Expected End Date</label>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Expected End Date</label>
                                     {isReadOnly ? (
-                                        <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>{formatToAppDate(formData.expected_end_date)}</div>
+                                        <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formatToAppDate(formData.expected_end_date)}</div>
                                     ) : (
                                         <div style={{ position: 'relative' }}>
                                             <input
@@ -858,7 +865,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                                 style={{ height: '38px', padding: '4px 34px 4px 12px', width: '100%', cursor: 'pointer', background: 'white' }}
                                                 value={formData.expected_end_date ? formatToAppDate(formData.expected_end_date) : ''}
                                                 onClick={() => (document.getElementById('hidden-end-date') as HTMLInputElement)?.showPicker()}
-                                                placeholder="Enter date"
+                                                placeholder="DD/MMM/YYYY"
                                             />
                                             <Calendar
                                                 size={16}
@@ -877,64 +884,64 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Issuance Details */}
-                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
-                        <SectionHeader title="Issuance Details" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Server Asset ID</label>
-                                <input
-                                    type="text"
-                                    value={formData.resource_assigned_detail?.server_name || 'N/A'}
-                                    className="ae-input"
-                                    style={{ background: '#f8fafc', fontWeight: 700 }}
-                                    disabled
-                                />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Issued Date</label>
-                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>{formData.issued_at ? formatToAppDate(formData.issued_at) : 'N/A'}</div>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Issued By</label>
-                                <input
-                                    type="text"
-                                    value={formData.issued_by_detail?.full_name || 'System'}
-                                    className="ae-input"
-                                    style={{ background: '#f8fafc' }}
-                                    disabled
-                                />
-                            </div>
-                            <div className="col-span-3" style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Allocation Status</label>
-                                <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-[#E3F2FD] text-[#1E88E5]">
-                                    {formData.status === 'ISSUED' ? 'Issued' : 'N/A'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    </section>
                 </div>
             </div>
 
-            {/* Footer Actions */}
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: 'var(--bg-primary)',
-                    padding: '6px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--border-primary)',
-                    boxShadow: 'var(--shadow-sm)',
-                    width: 'fit-content',
-                    flexShrink: 0,
-                    zIndex: 10,
-                    marginTop: '10px',
-                    marginLeft: 'auto'
-                }}
+            {/* 7. Issuance Details (Server Issuing Authority) */}
+            <section className="section-panel" style={{ padding: '24px', borderLeft: '4px solid var(--ae-blue)' }}>
+                <h3 className="section-title text-[var(--ae-blue)] flex items-center gap-2 mb-4">
+                    <Server size={18} /> 7. Issuance Details (Server Issuing Authority)
+                </h3>
+                <div className="grid grid-cols-3 gap-6">
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Server Asset ID</label>
+                        <input
+                            type="text"
+                            value={formData.resource_assigned_detail?.server_name || 'N/A'}
+                            className="ae-input !bg-gray-50 !font-bold"
+                            disabled
+                        />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Issued Date</label>
+                        <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '38px' }}>{formData.issued_at ? formatToAppDate(formData.issued_at) : 'N/A'}</div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Issued By</label>
+                        <input
+                            type="text"
+                            value={formData.issued_by_detail?.full_name || 'System'}
+                            className="ae-input !bg-gray-50"
+                            disabled
+                        />
+                    </div>
+                    <div className="col-span-3" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Allocation Status</label>
+                        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-[#E3F2FD] text-[#1E88E5]">
+                            {formData.status === 'ISSUED' ? 'Issued' : 'N/A'}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            {/* Footer Actions (Standardized with Cost Sheet) */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'var(--bg-primary)',
+                padding: '6px',
+                borderRadius: '12px',
+                border: '1px solid var(--border-primary)',
+                boxShadow: 'var(--shadow-sm)',
+                width: 'fit-content',
+                flexShrink: 0,
+                zIndex: 10,
+                marginTop: '10px',
+                marginLeft: 'auto'
+            }}
                 className="button-container"
                 onMouseLeave={() => {
                     if (!isConfirmingExit) {
@@ -942,64 +949,35 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     }
                 }}
             >
-                {
-                    formData.status === 'DRAFT' && (
-                        <>
-                            <button
-                                onClick={handleSave}
-                                onMouseEnter={() => !isConfirmingExit && setActiveAction('draft')}
-                                style={{
-                                    height: '38px',
-                                    padding: '0 18px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    borderRadius: '8px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    border: 'none',
-                                    background: activeAction === 'draft' ? 'var(--theme-primary)' : 'transparent',
-                                    color: activeAction === 'draft' ? 'white' : 'var(--text-secondary)',
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer',
-                                    boxShadow: activeAction === 'draft' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
-                                }}
-                            >
-                                <Save size={16} />
-                                <span>Save as Draft</span>
-                            </button>
-
-                            <button
-                                onClick={handleSubmit}
-                                onMouseEnter={() => !isConfirmingExit && setActiveAction('submit')}
-                                style={{
-                                    height: '38px',
-                                    padding: '0 20px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    borderRadius: '8px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    background: activeAction === 'submit' ? 'var(--theme-primary)' : 'transparent',
-                                    color: activeAction === 'submit' ? 'white' : 'var(--text-secondary)',
-                                    border: 'none',
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer',
-                                    boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
-                                }}
-                            >
-                                <PlusCircle size={18} />
-                                <span>Submit Request</span>
-                            </button>
-                        </>
-                    )
-                }
-
-                {
-                    formData.status === 'SUBMITTED' && (user.role === 'project_manager' || user.role === 'app_admin') && (
+                {formData.status === 'DRAFT' && (
+                    <>
                         <button
-                            onClick={handleSubmitToIT}
+                            onClick={handleSave}
+                            onMouseEnter={() => !isConfirmingExit && setActiveAction('draft')}
+                            style={{
+                                height: '38px',
+                                padding: '0 18px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                border: 'none',
+                                background: activeAction === 'draft' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeAction === 'draft' ? 'white' : 'var(--text-secondary)',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer',
+                                boxShadow: activeAction === 'draft' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                            }}
+                        >
+                            <Save size={16} />
+                            <span>Save as Draft</span>
+                        </button>
+
+                        <button
+                            onClick={handleSubmit}
+                            onMouseEnter={() => !isConfirmingExit && setActiveAction('submit')}
                             style={{
                                 height: '38px',
                                 padding: '0 20px',
@@ -1009,142 +987,161 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                background: 'var(--ae-blue)',
-                                color: 'white',
+                                background: activeAction === 'submit' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeAction === 'submit' ? 'white' : 'var(--text-secondary)',
                                 border: 'none',
                                 transition: 'all 0.2s',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
                             }}
                         >
-                            <Send size={16} />
-                            <span>Submit to IT Head</span>
+                            <PlusCircle size={18} />
+                            <span>Submit Request</span>
                         </button>
-                    )
-                }
+                    </>
+                )}
 
-                {
-                    formData.status === 'PENDING_IT' && (user.role === 'it_head' || user.role === 'app_admin') && (
-                        <>
-                            <button
-                                onClick={handleApproveIT}
-                                style={{
-                                    height: '38px',
-                                    padding: '0 20px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    borderRadius: '10px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    background: '#00C853',
-                                    color: 'white',
-                                    border: 'none',
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <CheckCircle size={16} />
-                                <span>Approve (IT)</span>
-                            </button>
-                            <button
-                                onClick={() => setShowRejectModal(true)}
-                                style={{
-                                    height: '38px',
-                                    padding: '0 20px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    borderRadius: '10px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    background: '#FF3D00',
-                                    color: 'white',
-                                    border: 'none',
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <XCircle size={16} />
-                                <span>Reject</span>
-                            </button>
-                        </>
-                    )
-                }
+                {formData.status === 'SUBMITTED' && (user.role === 'project_manager' || user.role === 'app_admin') && (
+                    <button
+                        onClick={handleSubmitToIT}
+                        style={{
+                            height: '38px',
+                            padding: '0 20px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'var(--ae-blue)',
+                            color: 'white',
+                            border: 'none',
+                            transition: 'all 0.2s',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <Send size={16} />
+                        <span>Submit to IT Head</span>
+                    </button>
+                )}
 
-                {
-                    formData.status === 'PENDING_FINANCE' && (user.role === 'finance_manager' || user.role === 'app_admin') && (
-                        <>
-                            <button
-                                onClick={handleApproveFinance}
-                                style={{
-                                    height: '38px',
-                                    padding: '0 20px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    borderRadius: '10px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    background: '#00C853',
-                                    color: 'white',
-                                    border: 'none',
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <CheckCircle size={16} />
-                                <span>Approve (Finance)</span>
-                            </button>
-                            <button
-                                onClick={() => setShowRejectModal(true)}
-                                style={{
-                                    height: '38px',
-                                    padding: '0 20px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    borderRadius: '10px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    background: '#FF3D00',
-                                    color: 'white',
-                                    border: 'none',
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <XCircle size={16} />
-                                <span>Reject</span>
-                            </button>
-                        </>
-                    )
-                }
-
-                {
-                    formData.status === 'APPROVED' && (user.role === 'issuing_authority' || user.role === 'app_admin') && (
+                {formData.status === 'PENDING_IT' && (user.role === 'it_head' || user.role === 'app_admin') && (
+                    <>
                         <button
-                            onClick={handleIssue}
+                            onClick={handleApproveIT}
                             style={{
                                 height: '38px',
                                 padding: '0 20px',
                                 fontSize: '0.85rem',
                                 fontWeight: 700,
-                                borderRadius: '8px',
+                                borderRadius: '10px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                background: 'var(--ae-blue)',
+                                background: '#00C853',
                                 color: 'white',
                                 border: 'none',
                                 transition: 'all 0.2s',
                                 cursor: 'pointer'
                             }}
                         >
-                            <Server size={16} />
-                            <span>Issue Server</span>
+                            <CheckCircle size={16} />
+                            <span>Approve (IT)</span>
                         </button>
-                    )
-                }
+                        <button
+                            onClick={() => setShowRejectModal(true)}
+                            style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: '#FF3D00',
+                                color: 'white',
+                                border: 'none',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <XCircle size={16} />
+                            <span>Reject</span>
+                        </button>
+                    </>
+                )}
+
+                {formData.status === 'PENDING_FINANCE' && (user.role === 'finance_manager' || user.role === 'app_admin') && (
+                    <>
+                        <button
+                            onClick={handleApproveFinance}
+                            style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: '#00C853',
+                                color: 'white',
+                                border: 'none',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <CheckCircle size={16} />
+                            <span>Approve (Finance)</span>
+                        </button>
+                        <button
+                            onClick={() => setShowRejectModal(true)}
+                            style={{
+                                height: '38px',
+                                padding: '0 20px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                borderRadius: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: '#FF3D00',
+                                color: 'white',
+                                border: 'none',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <XCircle size={16} />
+                            <span>Reject</span>
+                        </button>
+                    </>
+                )}
+
+                {formData.status === 'APPROVED' && (user.role === 'issuing_authority' || user.role === 'app_admin') && (
+                    <button
+                        onClick={handleIssue}
+                        style={{
+                            height: '38px',
+                            padding: '0 20px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'var(--ae-blue)',
+                            color: 'white',
+                            border: 'none',
+                            transition: 'all 0.2s',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <Server size={16} />
+                        <span>Issue Server</span>
+                    </button>
+                )}
 
                 <button
                     onClick={() => {
@@ -1179,33 +1176,30 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     <X size={18} />
                     <span>Cancel</span>
                 </button>
-            </div>
-
-            {/* Rejection Modal */}
+            </div >
+            {/* Rejection Modal (Cost Sheet format) */}
             {
                 showRejectModal && createPortal(
-                    <div
-                        style={{
-                            position: 'fixed',
-                            inset: 0,
-                            background: 'rgba(0,0,0,0.4)',
-                            backdropFilter: 'blur(8px)',
-                            zIndex: 10000,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.4)',
+                        backdropFilter: 'blur(8px)',
+                        zIndex: 10000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
                         onClick={() => setShowRejectModal(false)}
                     >
-                        <div
-                            style={{
-                                background: 'var(--bg-primary)',
-                                borderRadius: '16px',
-                                padding: '28px 32px',
-                                minWidth: '380px',
-                                maxWidth: '480px',
-                                boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
-                            }}
+                        <div style={{
+                            background: 'var(--bg-primary)',
+                            borderRadius: '16px',
+                            padding: '28px 32px',
+                            minWidth: '380px',
+                            maxWidth: '480px',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+                        }}
                             onClick={e => e.stopPropagation()}
                         >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
@@ -1251,7 +1245,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     document.body
                 )
             }
-        </div>
+        </div >
     );
 };
 

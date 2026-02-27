@@ -447,7 +447,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                                     {milestones.map((milestone, index) => {
                                         const isInvoiced = milestone.status === 'INVOICED';
                                         return (
-                                            <tr key={milestone.id || index} style={{ borderBottom: '1px solid var(--border-primary)' }}>
+                                            <tr style={{ borderBottom: '1px solid var(--border-primary)' }}>
                                                 <td style={{ padding: '8px', textAlign: 'center' }}>
                                                     {index === milestones.length - 1 && (
                                                         <button

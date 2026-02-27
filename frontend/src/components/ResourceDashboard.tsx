@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
+    PlusCircle,
     Server,
+    ArrowRight,
+    Search,
     Columns,
     ChevronDown,
     FileSpreadsheet,
     Download,
     ChevronLeft,
-    ChevronRight,
-    Loader2
+    ChevronRight
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -90,9 +92,10 @@ const MAX_COL_WIDTHS: Record<string, number> = {
 
 interface ResourceDashboardProps {
     onView: (id: number) => void;
+    onCreate: () => void;
 }
 
-const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
+const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView, onCreate }) => {
     const [requests, setRequests] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const { showNotification } = useNotification();
@@ -115,11 +118,6 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
     const columnMenuRef = useRef<HTMLDivElement>(null);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const tableScrollRef = useRef<HTMLDivElement>(null);
-
-    const [hoveredTab, setHoveredTab] = useState<string | null>(null);
-    const [hoveredExport, setHoveredExport] = useState(false);
-    const [hoveredColumn, setHoveredColumn] = useState(false);
-
     const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
         const saved = localStorage.getItem('resourceDashboard_colWidths');
         if (saved) return JSON.parse(saved);
@@ -353,20 +351,17 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
             <div className="ae-table-container" style={{
                 marginTop: '12px',
                 marginBottom: '60px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'visible',
-                maxHeight: 'none',
-                overflowY: 'visible',
-                background: 'white',
-                padding: '0'
+                maxHeight: 'none'
             }}>
                 {/* Controls Status Tabs and Actions - Padded Header Area */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    flexWrap: 'nowrap',
                     gap: '12px',
                     padding: '12px 16px',
                     borderBottom: '1px solid var(--border-primary)',
@@ -382,44 +377,38 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                         border: '1px solid var(--border-primary)',
                         boxShadow: 'var(--shadow-sm)'
                     }}>
-                        {statusFlow.map((flow) => {
-                            const isActive = filters.status === flow.value;
-                            const isHovered = hoveredTab === flow.value;
-                            return (
-                                <button
-                                    key={flow.value}
-                                    onClick={() => setFilters({ ...filters, status: flow.value })}
-                                    onMouseEnter={() => setHoveredTab(flow.value)}
-                                    onMouseLeave={() => setHoveredTab(null)}
-                                    style={{
-                                        padding: '5px 12px',
-                                        borderRadius: '8px',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 700,
-                                        border: isActive ? '1px solid var(--theme-primary)' : (isHovered ? '1px solid var(--theme-primary)' : '1px solid transparent'),
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        whiteSpace: 'nowrap',
-                                        background: isActive ? 'var(--theme-primary)' : 'transparent',
-                                        color: isActive ? 'white' : 'var(--text-secondary)',
-                                        boxShadow: isActive ? 'var(--shadow-md)' : (isHovered ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none')
-                                    }}
-                                >
-                                    {flow.label}
-                                </button>
-                            );
-                        })}
+                        {statusFlow.map((flow) => (
+                            <button
+                                key={flow.value}
+                                onClick={() => setFilters({ ...filters, status: flow.value })}
+                                style={{
+                                    padding: '5px 12px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    whiteSpace: 'nowrap',
+                                    background: filters.status === flow.value ? 'var(--theme-primary)' : 'transparent',
+                                    color: filters.status === flow.value ? 'white' : 'var(--text-secondary)',
+                                    boxShadow: filters.status === flow.value ? 'var(--shadow-md)' : 'none'
+                                }}
+                            >
+                                {flow.label}
+                            </button>
+                        ))}
                     </div>
 
                     {/* Right Side Actions */}
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Period:</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Period:</span>
                             <select
                                 className="ae-input"
                                 value={filters.period}
                                 onChange={e => setFilters({ ...filters, period: e.target.value })}
-                                style={{ height: '32px', fontSize: '0.8rem', width: '150px', padding: '0 12px', lineHeight: '32px' }}
+                                style={{ height: '32px', fontSize: '0.75rem', width: '130px', padding: '0 8px' }}
                             >
                                 <option value="">All Time</option>
                                 <option value="last_month">Last Month</option>
@@ -441,22 +430,22 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                                 className="ae-btn-secondary"
                                 disabled={isDownloading}
                                 onClick={() => setShowExportMenu(!showExportMenu)}
-                                onMouseEnter={() => setHoveredExport(true)}
-                                onMouseLeave={() => setHoveredExport(false)}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
                                     padding: '6px 14px',
                                     fontSize: '0.8rem',
-                                    fontWeight: 400,
-                                    color: '#000000',
-                                    border: (showExportMenu || hoveredExport) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
-                                    boxShadow: (showExportMenu || hoveredExport) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none',
-                                    background: 'white'
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    background: 'var(--bg-primary)',
+                                    color: 'var(--text-secondary)',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    border: '1px solid var(--border-primary)'
                                 }}
                             >
-                                <Download size={16} color="#000000" /> Export <ChevronDown size={14} color="#000000" />
+                                <Download size={16} /> Export <ChevronDown size={14} />
                             </button>
                             {showExportMenu && (
                                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-primary)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
@@ -486,22 +475,22 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                             <button
                                 className="ae-btn-secondary"
                                 onClick={() => setShowColumnMenu(!showColumnMenu)}
-                                onMouseEnter={() => setHoveredColumn(true)}
-                                onMouseLeave={() => setHoveredColumn(false)}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
                                     padding: '6px 14px',
                                     fontSize: '0.8rem',
-                                    fontWeight: 400,
-                                    color: '#000000',
-                                    border: (showColumnMenu || hoveredColumn) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
-                                    boxShadow: (showColumnMenu || hoveredColumn) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none',
-                                    background: 'white'
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    background: 'var(--bg-primary)',
+                                    color: 'var(--text-secondary)',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    border: '1px solid var(--border-primary)'
                                 }}
                             >
-                                <Columns size={16} color="#000000" /> Columns <ChevronDown size={14} color="#000000" />
+                                <Columns size={16} /> Columns <ChevronDown size={14} />
                             </button>
                             {showColumnMenu && (
                                 <div style={{
@@ -524,41 +513,17 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
-                                        background: 'var(--bg-secondary)'
+                                        background: 'var(--ae-table-header-bg)',
                                     }}>
                                         <button
                                             onClick={() => setVisibleColumns(ALL_COL_CONFIG.map(c => c.key))}
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                color: 'var(--ae-blue)',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                                padding: '4px 8px',
-                                                borderRadius: '4px',
-                                                transition: 'background 0.2s'
-                                            }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                            style={{ background: 'none', border: 'none', color: 'var(--theme-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
                                         >
                                             Select All
                                         </button>
                                         <button
                                             onClick={() => setVisibleColumns([])}
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                color: 'var(--text-secondary)',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                                padding: '4px 8px',
-                                                borderRadius: '4px',
-                                                transition: 'background 0.2s'
-                                            }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
                                         >
                                             Clear All
                                         </button>
@@ -605,7 +570,7 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                         onClick={() => tableScrollRef.current?.scrollBy({ left: -150, behavior: 'smooth' })}
                         style={{
                             position: 'absolute',
-                            left: '-8px',
+                            left: '-18px',
                             top: '50%',
                             transform: 'translateY(-50%)',
                             zIndex: 30,
@@ -620,11 +585,9 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                             justifyContent: 'center',
                             cursor: 'pointer',
                             color: 'var(--text-primary)',
-                            transition: 'all 0.2s',
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
-                        title="Scroll left"
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
                     >
                         <ChevronLeft size={18} />
                     </button>
@@ -634,7 +597,7 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                         onClick={() => tableScrollRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
                         style={{
                             position: 'absolute',
-                            right: '-8px',
+                            right: '-18px',
                             top: '50%',
                             transform: 'translateY(-50%)',
                             zIndex: 30,
@@ -649,16 +612,14 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                             justifyContent: 'center',
                             cursor: 'pointer',
                             color: 'var(--text-primary)',
-                            transition: 'all 0.2s',
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
-                        title="Scroll right"
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
                     >
                         <ChevronRight size={18} />
                     </button>
 
-                    <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
+                    <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '4px', border: '1px solid var(--border-primary)' }}>
                         <table className="ae-table" style={{ tableLayout: 'fixed', width: 'max-content' }}>
                             <colgroup>
                                 {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
@@ -667,38 +628,39 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                                 <col style={{ width: `${getColWidth('actions')}px` }} />
                             </colgroup>
                             <thead>
-                                <tr>
+                                <tr style={{ background: 'var(--ae-table-header-bg)' }}>
                                     {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
                                         <th key={col.key} style={{
-                                            backgroundColor: 'var(--ae-table-header-bg)',
-                                            zIndex: 12,
                                             position: 'relative',
+                                            backgroundColor: 'var(--ae-table-header-bg)',
+                                            padding: '8px 16px',
+                                            textAlign: 'left',
+                                            fontSize: '11px',
+                                            fontWeight: 900,
+                                            color: 'var(--text-secondary)',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
                                             userSelect: 'none',
-                                            paddingRight: '20px',
                                             borderRight: '1px solid var(--border-secondary)',
                                             borderBottom: '1px solid var(--border-secondary)'
                                         }}>
-                                            <span title={col.label}>
-                                                {getColWidth(col.key) < (SHORT_COL_WIDTHS[col.key] + 5)
-                                                    ? col.shortLabel ?? col.label
-                                                    : col.label}
-                                            </span>
+                                            <span title={col.label}>{col.label}</span>
                                             <div
                                                 onMouseDown={(e) => startResize(e, col.key)}
                                                 style={{ position: 'absolute', top: 0, right: 0, width: '6px', height: '100%', cursor: 'col-resize', background: 'transparent', zIndex: 20 }}
-                                                title="Drag to resize"
                                             />
                                         </th>
                                     ))}
-                                    <th style={{ backgroundColor: 'var(--ae-table-header-bg)', zIndex: 12, textAlign: 'center', whiteSpace: 'nowrap', borderBottom: '1px solid var(--border-secondary)' }}>Actions</th>
+                                    <th style={{ backgroundColor: 'var(--ae-table-header-bg)', padding: '8px 16px', textAlign: 'right', fontSize: '11px', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border-secondary)' }}>Action</th>
                                 </tr>
                                 {showFilters && (
                                     <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
                                         {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
-                                            <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
-                                                <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <th key={col.key} style={{ padding: '4px 16px', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                                <div className="ae-input-group !mb-0" style={{ display: 'block' }}>
+                                                    <Search className="ae-search-icon" size={12} />
                                                     <input
                                                         className="ae-input"
                                                         placeholder="Filter..."
@@ -709,7 +671,7 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                                                 </div>
                                             </th>
                                         ))}
-                                        <th style={{ textAlign: 'center', backgroundColor: 'var(--ae-filter-row-bg)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                        <th style={{ padding: '4px 16px', textAlign: 'right', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <button
                                                 onClick={() => setFilters({ form_number: '', project_name: '', requestor: '', server_type: '', status: '', period: '', startDate: '', endDate: '', dateStr: '' })}
                                                 style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
@@ -722,9 +684,9 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
+                                    <tr><td colSpan={visibleColumns.length + 1} style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: 600 }}>Loading requests...</td></tr>
                                 ) : paginatedRequests.length === 0 ? (
-                                    <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>No requests found.</td></tr>
+                                    <tr><td colSpan={visibleColumns.length + 1} style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: 600 }}>No requests found.</td></tr>
                                 ) : (
                                     paginatedRequests.map((req) => {
                                         const status = getStatusStyle(req.status);
@@ -819,39 +781,8 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                                                         default: return null;
                                                     }
                                                 })}
-                                                <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                                    <button
-                                                        onClick={() => onView(req.id)}
-                                                        style={{
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: '4px',
-                                                            background: 'rgba(187, 77, 0, 0.07)',
-                                                            color: 'var(--theme-primary)',
-                                                            border: '1px solid rgba(187, 77, 0, 0.25)',
-                                                            padding: '4px 14px',
-                                                            borderRadius: '20px',
-                                                            fontSize: '0.72rem',
-                                                            fontWeight: 700,
-                                                            cursor: 'pointer',
-                                                            letterSpacing: '0.04em',
-                                                            transition: 'all 0.18s',
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            e.currentTarget.style.background = 'var(--theme-primary)';
-                                                            e.currentTarget.style.color = 'white';
-                                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
-                                                            e.currentTarget.style.color = 'var(--theme-primary)';
-                                                            e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
-                                                            e.currentTarget.style.boxShadow = 'none';
-                                                        }}
-                                                    >
-                                                        View
-                                                    </button>
+                                                <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                                                    <button onClick={() => onView(req.id)} style={{ padding: '6px 12px', borderRadius: '6px', background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>Details <ArrowRight size={14} /></button>
                                                 </td>
                                             </tr>
                                         );

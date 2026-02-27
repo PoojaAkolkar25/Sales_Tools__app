@@ -38,7 +38,7 @@ const SHORT_COL_WIDTHS: Record<string, number> = {
     amount: 45,
     status: 35,
     invoice_no: 55,
-    actions: 140
+    actions: 60
 };
 
 const FULL_LABEL_WIDTHS: Record<string, number> = {
@@ -107,7 +107,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
         ALL_COL_CONFIG.forEach(col => {
             defaults[col.key] = FULL_LABEL_WIDTHS[col.key] || 150;
         });
-        defaults['actions'] = 140;
+        defaults['actions'] = 120;
         return defaults;
     });
 
@@ -668,7 +668,6 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
                                             userSelect: 'none',
-                                            padding: '4px 6px 4px 6px',
                                             paddingRight: '20px',
                                             borderRight: '1px solid var(--border-secondary)',
                                             borderBottom: '1px solid var(--border-secondary)',
@@ -701,12 +700,12 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                     <th style={{
                                         backgroundColor: 'var(--ae-table-header-bg)',
                                         zIndex: 12,
-                                        padding: '4px 6px 4px 6px',
+                                        textAlign: 'center',
+                                        height: '40px',
                                         whiteSpace: 'nowrap',
                                         top: 0,
                                         color: 'var(--text-secondary)',
-                                        borderBottom: '1px solid var(--border-secondary)',
-                                        textAlign: 'center'
+                                        borderBottom: '1px solid var(--border-secondary)'
                                     }}>Actions</th>
                                 </tr>
                                 {showFilters && (
@@ -782,8 +781,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
                                                     whiteSpace: 'nowrap',
-                                                    padding: '4px 6px',
-                                                    fontSize: '0.75rem'
+                                                    fontSize: '0.8rem'
                                                 } as React.CSSProperties;
 
                                                 switch (key) {
@@ -803,7 +801,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                             {m.sales_order_details?.deal ? (
                                                                 <span
                                                                     onClick={() => navigate(`/deal?id=${m.sales_order_details.deal}`)}
-                                                                    style={{ fontWeight: 600, color: 'var(--theme-primary)', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                                                    style={{ fontWeight: 600, color: 'var(--ae-blue)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
                                                                 >
                                                                     {m.sales_order_details.deal_id}
                                                                 </span>
@@ -811,7 +809,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                         </td>;
                                                     case 'sales_order':
                                                         return (
-                                                            <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)', fontSize: '0.75rem' }}>
+                                                            <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--ae-blue)', fontSize: '0.8rem' }}>
                                                                 {m.sales_order ? (
                                                                     <span
                                                                         onClick={() => navigate(`/sales-order?id=${m.sales_order}`)}
@@ -861,100 +859,99 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                         return null;
                                                 }
                                             })}
-                                            <td style={{ padding: '4px 6px' }}>
-                                                <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-start', minWidth: '130px' }}>
-                                                    <button
-                                                        onClick={() => onView && onView(m.id)}
-                                                        style={{
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            width: '32px',
-                                                            height: '32px',
-                                                            background: 'rgba(255,107,0,0.08)',
-                                                            color: 'var(--theme-primary)',
-                                                            border: '1px solid rgba(255,107,0,0.25)',
-                                                            borderRadius: '6px',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s'
-                                                        }}
-                                                        onMouseOver={(e) => {
-                                                            e.currentTarget.style.background = 'var(--theme-primary)';
-                                                            e.currentTarget.style.color = 'white';
-                                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                        }}
-                                                        onMouseOut={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
-                                                            e.currentTarget.style.color = 'var(--theme-primary)';
-                                                            e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
-                                                        }}
-                                                        title="View Milestone"
-                                                    >
-                                                        <Eye size={18} />
-                                                    </button>
-                                                    <button
-                                                        onClick={async () => {
-                                                            try {
-                                                                const response = await api.get(`/milestones/${m.id}/download_pdf/`, {
-                                                                    responseType: 'blob'
-                                                                });
-                                                                const url = window.URL.createObjectURL(new Blob([response.data]));
-                                                                const link = document.createElement('a');
-                                                                link.href = url;
-                                                                link.setAttribute('download', `milestone_${m.milestone_no}.pdf`);
-                                                                document.body.appendChild(link);
-                                                                link.click();
-                                                                link.parentNode?.removeChild(link);
-                                                                window.URL.revokeObjectURL(url);
-                                                            } catch (error) {
-                                                                console.error('Error downloading PDF', error);
-                                                                showNotification('Error downloading PDF', 'error');
-                                                            }
-                                                        }}
-                                                        style={{
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            width: '32px',
-                                                            height: '32px',
-                                                            background: 'rgba(255,107,0,0.08)',
-                                                            color: 'var(--theme-primary)',
-                                                            border: '1px solid rgba(255,107,0,0.25)',
-                                                            borderRadius: '6px',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s'
-                                                        }}
-                                                        onMouseOver={(e) => {
-                                                            e.currentTarget.style.background = 'var(--theme-primary)';
-                                                            e.currentTarget.style.color = 'white';
-                                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                        }}
-                                                        onMouseOut={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
-                                                            e.currentTarget.style.color = 'var(--theme-primary)';
-                                                            e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
-                                                        }}
-                                                        title="Download Milestone PDF">
-                                                        <Download size={18} />
-                                                    </button>
-                                                </div>
+                                            <td style={{ textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                                                <button
+                                                    onClick={() => onView && onView(m.id)}
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        background: 'rgba(255,107,0,0.08)',
+                                                        color: 'var(--theme-primary)',
+                                                        border: '1px solid rgba(255,107,0,0.25)',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseOver={(e) => {
+                                                        e.currentTarget.style.background = 'var(--theme-primary)';
+                                                        e.currentTarget.style.color = 'white';
+                                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                    }}
+                                                    onMouseOut={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                        e.currentTarget.style.color = 'var(--theme-primary)';
+                                                        e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                    }}
+                                                    title="View Milestone"
+                                                >
+                                                    <Eye size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            const response = await api.get(`/milestones/${m.id}/download_pdf/`, {
+                                                                responseType: 'blob'
+                                                            });
+                                                            const url = window.URL.createObjectURL(new Blob([response.data]));
+                                                            const link = document.createElement('a');
+                                                            link.href = url;
+                                                            link.setAttribute('download', `milestone_${m.milestone_no}.pdf`);
+                                                            document.body.appendChild(link);
+                                                            link.click();
+                                                            link.parentNode?.removeChild(link);
+                                                            window.URL.revokeObjectURL(url);
+                                                        } catch (error) {
+                                                            console.error('Error downloading PDF', error);
+                                                            showNotification('Error downloading PDF', 'error');
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        background: 'rgba(255,107,0,0.08)',
+                                                        color: 'var(--theme-primary)',
+                                                        border: '1px solid rgba(255,107,0,0.25)',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseOver={(e) => {
+                                                        e.currentTarget.style.background = 'var(--theme-primary)';
+                                                        e.currentTarget.style.color = 'white';
+                                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                    }}
+                                                    onMouseOut={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                        e.currentTarget.style.color = 'var(--theme-primary)';
+                                                        e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                    }}
+                                                    title="Download Milestone PDF"
+                                                >
+                                                    <Download size={18} />
+                                                </button>
                                             </td>
                                         </tr>
-                            ))
+                                    ))
                                 )}
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
 
-            <Pagination
-                currentPage={currentPage}
-                totalItems={filteredMilestones.length}
-                itemsPerPage={ITEMS_PER_PAGE}
-                onPageChange={setCurrentPage}
-            />
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={filteredMilestones.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                />
+            </div>
         </div>
-        </div >
     );
 };
 
