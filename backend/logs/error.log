@@ -4260,3 +4260,4 @@ rest_framework.exceptions.ValidationError: {'non_field_errors': [ErrorDetail(str
 WARNING 2026-02-27 12:52:43,523 log 6812 17716 Bad Request: /api/auth/login/
 WARNING 2026-02-27 12:52:43,523 log 6812 17716 Bad Request: /api/auth/login/
 WARNING 2026-02-27 12:52:43,526 basehttp 6812 17716 "POST /api/auth/login/ HTTP/1.1" 400 48
+WARNING 2026-02-27 12:52:43,526 basehttp 6812 17716 "POST /api/auth/login/ HTTP/1.1" 400 48
