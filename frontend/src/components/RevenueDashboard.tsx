@@ -2,13 +2,13 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     PlusCircle,
     Calendar,
-    FileText,
     Calculator,
     LayoutDashboard,
-    Search,
     ChevronLeft,
     ChevronRight,
-    Loader2
+    Loader2,
+    Columns,
+    ChevronDown
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -52,6 +52,7 @@ const RevenueDashboard: React.FC = () => {
     const [selectedContractId, setSelectedContractId] = useState<number | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 20;
+    const [hoveredTab, setHoveredTab] = useState<string | null>(null);
 
     const [filters, setFilters] = useState({
         contract_id: '',
@@ -60,6 +61,32 @@ const RevenueDashboard: React.FC = () => {
         customer_name: '',
         status: 'ACTIVE' // Default status tab
     });
+
+    const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [hoveredColumn, setHoveredColumn] = useState(false);
+    const columnMenuRef = useRef<HTMLDivElement>(null);
+
+    const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+        const saved = localStorage.getItem('revenueDashboard_visibleColumns');
+        return saved ? JSON.parse(saved) : ALL_COLUMNS.map(col => col.key);
+    });
+
+    useEffect(() => {
+        localStorage.setItem('revenueDashboard_visibleColumns', JSON.stringify(visibleColumns));
+    }, [visibleColumns]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (columnMenuRef.current && !columnMenuRef.current.contains(event.target as Node)) {
+                setShowColumnMenu(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const tableScrollRef = useRef<HTMLDivElement>(null);
 
@@ -131,62 +158,116 @@ const RevenueDashboard: React.FC = () => {
         );
     }, [filteredContracts, currentPage]);
 
-    const statusColors: Record<string, string> = {
-        'DRAFT': '#718096',
-        'ACTIVE': '#38A169',
-        'COMPLETED': '#3182CE',
-        'CANCELLED': '#E53E3E'
-    };
-
     return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-4">
-                <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '4px' }}></div>
-                <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#1a1f36', margin: 0 }}>Revenue Management</h1>
+        <div className="space-y-8" style={{ background: 'white', padding: '0', margin: '0' }}>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 8px',
+                marginBottom: '10px'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Revenue Management</h1>
+                </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-                <button
-                    onClick={() => { setActiveTab('dashboard'); setView('list'); setSelectedContractId(null); }}
-                    style={{
-                        padding: '10px 24px',
-                        borderRadius: '12px',
-                        fontSize: '0.9rem',
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        background: activeTab === 'dashboard' ? '#FF6B00' : 'white',
-                        color: activeTab === 'dashboard' ? 'white' : '#718096',
-                        border: '1px solid ' + (activeTab === 'dashboard' ? '#FF6B00' : '#E2E8F0'),
-                        boxShadow: activeTab === 'dashboard' ? '0 4px 12px rgba(255,107,0,0.2)' : 'none',
-                        transition: 'all 0.2s',
-                        cursor: 'pointer'
-                    }}
-                >
-                    <LayoutDashboard size={18} /> Dashboard
-                </button>
-                <button
-                    onClick={() => { setActiveTab('create'); setSelectedContractId(null); }}
-                    style={{
-                        padding: '10px 24px',
-                        borderRadius: '12px',
-                        fontSize: '0.9rem',
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        background: activeTab === 'create' ? '#FF6B00' : 'white',
-                        color: activeTab === 'create' ? 'white' : '#718096',
-                        border: '1px solid ' + (activeTab === 'create' ? '#FF6B00' : '#E2E8F0'),
-                        boxShadow: activeTab === 'create' ? '0 4px 12px rgba(255,107,0,0.2)' : 'none',
-                        transition: 'all 0.2s',
-                        cursor: 'pointer'
-                    }}
-                >
-                    <PlusCircle size={18} /> Create New
-                </button>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 8px',
+                marginBottom: '12px',
+                gap: '24px'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    alignItems: 'center',
+                    background: 'var(--bg-primary)',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                }}>
+                    <button
+                        onClick={() => { setActiveTab('dashboard'); setView('list'); setSelectedContractId(null); }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: activeTab === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                            color: activeTab === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                            boxShadow: activeTab === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (activeTab !== 'dashboard') {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                e.currentTarget.style.color = 'var(--ae-orange)';
+                                e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (activeTab !== 'dashboard') {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
+                                e.currentTarget.style.border = 'none';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }
+                        }}
+                    >
+                        <LayoutDashboard size={18} /> Dashboard
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('create'); setSelectedContractId(null); }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: activeTab === 'create' ? 'var(--theme-primary)' : 'transparent',
+                            color: activeTab === 'create' ? 'white' : 'var(--text-secondary)',
+                            boxShadow: activeTab === 'create' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (activeTab !== 'create') {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                e.currentTarget.style.color = 'var(--ae-orange)';
+                                e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (activeTab !== 'create') {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
+                                e.currentTarget.style.border = 'none';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }
+                        }}
+                    >
+                        <PlusCircle size={18} /> Create New
+                    </button>
+                </div>
             </div>
+
+
 
             {activeTab === 'create' ? (
                 <RevenueContractForm id={selectedContractId} onBack={handleBack} onSave={handleBack} />
@@ -194,77 +275,295 @@ const RevenueDashboard: React.FC = () => {
                 <RevenueScheduleTable contractId={selectedContractId} onBack={handleBack} />
             ) : (
 
-                <div className="ae-table-container shadow-sm border border-gray-200 rounded-xl overflow-visible bg-white" style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid #F1F5F9' }}>
-                        <div style={{ display: 'flex', gap: '4px', background: '#F8FAFC', padding: '4px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                            {statusTabs.map((tab) => (
-                                <button
-                                    key={tab.value}
-                                    onClick={() => setFilters({ ...filters, status: tab.value })}
-                                    style={{
-                                        padding: '6px 16px',
-                                        borderRadius: '8px',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 700,
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        background: filters.status === tab.value ? '#FF6B00' : 'transparent',
-                                        color: filters.status === tab.value ? 'white' : '#64748B'
-                                    }}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
+                <div className="ae-table-container" style={{
+                    marginTop: '12px',
+                    marginBottom: '60px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'visible',
+                    maxHeight: 'none',
+                    overflowY: 'visible',
+                    background: 'white',
+                    padding: '0'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'nowrap',
+                        gap: '12px',
+                        padding: '12px 16px',
+                        borderBottom: '1px solid var(--border-primary)',
+                        position: 'relative'
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            gap: '4px',
+                            background: 'var(--bg-primary)',
+                            padding: '6px',
+                            borderRadius: '12px',
+                            border: '1px solid var(--border-primary)',
+                            boxShadow: 'var(--shadow-sm)'
+                        }}>
+                            {statusTabs.map((tab) => {
+                                const isActive = filters.status === tab.value;
+                                const isHovered = hoveredTab === tab.value;
+                                return (
+                                    <button
+                                        key={tab.value}
+                                        onClick={() => setFilters({ ...filters, status: tab.value })}
+                                        onMouseEnter={() => setHoveredTab(tab.value)}
+                                        onMouseLeave={() => setHoveredTab(null)}
+                                        style={{
+                                            padding: '5px 12px',
+                                            borderRadius: '8px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 700,
+                                            border: isActive ? '1px solid var(--theme-primary)' : (isHovered ? '1px solid var(--theme-primary)' : '1px solid transparent'),
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            whiteSpace: 'nowrap',
+                                            background: isActive ? 'var(--theme-primary)' : 'transparent',
+                                            color: isActive ? 'white' : 'var(--text-secondary)',
+                                            boxShadow: isActive ? 'var(--shadow-md)' : (isHovered ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none')
+                                        }}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div style={{ position: 'relative' }} ref={columnMenuRef}>
+                            <button
+                                className="ae-btn-secondary"
+                                onClick={() => setShowColumnMenu(!showColumnMenu)}
+                                onMouseEnter={() => setHoveredColumn(true)}
+                                onMouseLeave={() => setHoveredColumn(false)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 14px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 400,
+                                    color: '#000000',
+                                    border: (showColumnMenu || hoveredColumn) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                    boxShadow: (showColumnMenu || hoveredColumn) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none',
+                                    background: 'white',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <Columns size={16} color="#000000" /> Columns <ChevronDown size={14} color="#000000" />
+                            </button>
+                            {showColumnMenu && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: 0,
+                                    marginTop: '8px',
+                                    background: 'var(--bg-primary)',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
+                                    border: '1px solid var(--border-primary)',
+                                    zIndex: 100,
+                                    minWidth: '220px',
+                                    maxHeight: '450px',
+                                    overflowY: 'auto'
+                                }}>
+                                    <div style={{
+                                        padding: '12px 16px',
+                                        borderBottom: '1px solid var(--border-primary)',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        background: 'var(--bg-secondary)'
+                                    }}>
+                                        <button
+                                            onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--ae-blue)',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                transition: 'background 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                        >
+                                            Select All
+                                        </button>
+                                        <button
+                                            onClick={() => setVisibleColumns([])}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--text-secondary)',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                transition: 'background 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                        >
+                                            Clear All
+                                        </button>
+                                    </div>
+                                    {ALL_COLUMNS.map(col => (
+                                        <label key={col.key} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '10px 16px',
+                                            fontSize: '0.85rem',
+                                            color: 'var(--text-primary)',
+                                            cursor: 'pointer',
+                                            userSelect: 'none',
+                                            transition: 'background 0.2s',
+                                            borderBottom: '1px solid var(--border-primary)'
+                                        }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-primary)'}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={visibleColumns.includes(col.key)}
+                                                onChange={() => {
+                                                    if (visibleColumns.includes(col.key)) {
+                                                        setVisibleColumns(visibleColumns.filter(c => c !== col.key));
+                                                    } else {
+                                                        setVisibleColumns([...visibleColumns, col.key]);
+                                                    }
+                                                }}
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    width: '16px',
+                                                    height: '16px',
+                                                    accentColor: '#FF6B00'
+                                                }}
+                                            />
+                                            <span style={{ fontWeight: 600 }}>{col.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     <div style={{ position: 'relative' }}>
                         <button
                             onClick={() => tableScrollRef.current?.scrollBy({ left: -150, behavior: 'smooth' })}
-                            style={{ position: 'absolute', left: '-18px', top: '50%', transform: 'translateY(-50%)', zIndex: 30, width: '36px', height: '36px', borderRadius: '50%', background: 'white', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                            style={{
+                                position: 'absolute',
+                                left: '-8px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                zIndex: 30,
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                background: 'var(--bg-primary)',
+                                border: '1px solid var(--border-primary)',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: 'var(--text-primary)',
+                                transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
+                            title="Scroll left"
                         >
                             <ChevronLeft size={18} />
                         </button>
+
                         <button
                             onClick={() => tableScrollRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
-                            style={{ position: 'absolute', right: '-18px', top: '50%', transform: 'translateY(-50%)', zIndex: 30, width: '36px', height: '36px', borderRadius: '50%', background: 'white', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                            style={{
+                                position: 'absolute',
+                                right: '-8px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                zIndex: 30,
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                background: 'var(--bg-primary)',
+                                border: '1px solid var(--border-primary)',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: 'var(--text-primary)',
+                                transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
+                            title="Scroll right"
                         >
                             <ChevronRight size={18} />
                         </button>
 
-                        <div ref={tableScrollRef} style={{ overflowX: 'auto' }}>
-                            <table className="ae-table w-full text-sm text-left" style={{ minWidth: '1000px' }}>
-                                <thead className="bg-[#F8FAFC] border-b border-gray-100">
+                        <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
+                            <table className="ae-table" style={{ tableLayout: 'auto', width: '100%', minWidth: '1000px' }}>
+                                <thead>
                                     <tr>
-                                        {ALL_COLUMNS.map(col => (
-                                            <th key={col.key} className="px-4 py-3 font-bold text-gray-600 uppercase tracking-wider text-[11px]">
-                                                {col.label}
-                                            </th>
-                                        ))}
-                                        <th className="px-4 py-3 font-bold text-gray-600 uppercase tracking-wider text-[11px] text-center">Actions</th>
+                                        {visibleColumns.map(key => {
+                                            const col = ALL_COLUMNS.find(c => c.key === key);
+                                            return (
+                                                <th key={key} style={{
+                                                    backgroundColor: 'var(--ae-table-header-bg)',
+                                                    zIndex: 12,
+                                                    position: 'relative',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    userSelect: 'none',
+                                                    paddingRight: '20px',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.75rem',
+                                                    color: 'var(--text-secondary)',
+                                                    textTransform: 'uppercase',
+                                                    borderRight: '1px solid var(--border-secondary)',
+                                                    borderBottom: '1px solid var(--border-secondary)',
+                                                    textAlign: ['total_amount'].includes(key) ? 'right' : 'left'
+                                                }}>
+                                                    {col?.label}
+                                                </th>
+                                            );
+                                        })}
+                                        <th style={{ backgroundColor: 'var(--ae-table-header-bg)', zIndex: 12, textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Actions</th>
                                     </tr>
-                                    <tr className="bg-[#FDFDFD]">
-                                        {ALL_COLUMNS.map(col => (
-                                            <th key={col.key} className="px-2 py-2 border-b border-gray-100">
-                                                {col.key !== 'period' && col.key !== 'total_amount' && col.key !== 'status' ? (
-                                                    <div className="relative">
-                                                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={12} />
+                                    <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
+                                        {visibleColumns.map(key => (
+                                            <th key={key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                                {key !== 'period' && key !== 'total_amount' && key !== 'status' ? (
+                                                    <div className="ae-input-group" style={{ margin: 0 }}>
                                                         <input
-                                                            type="text"
+                                                            className="ae-input"
                                                             placeholder="Filter..."
-                                                            className="w-full pl-7 pr-2 py-1 text-[11px] rounded-md border border-gray-200 focus:ring-1 focus:ring-orange-500 outline-none"
-                                                            value={(filters as any)[col.key] || ''}
-                                                            onChange={(e) => setFilters({ ...filters, [col.key]: e.target.value })}
+                                                            value={(filters as any)[key] || ''}
+                                                            onChange={(e) => setFilters({ ...filters, [key]: e.target.value })}
+                                                            style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
                                                         />
                                                     </div>
                                                 ) : null}
                                             </th>
                                         ))}
-                                        <th className="px-2 py-2 border-b border-gray-100">
+                                        <th style={{ textAlign: 'center', backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <button
                                                 onClick={() => setFilters({ contract_id: '', revenue_type: '', deal_no: '', customer_name: '', status: filters.status })}
-                                                className="w-full py-1 text-[10px] font-bold text-orange-600 bg-orange-50 rounded-md border border-orange-100"
+                                                style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                             >
                                                 Clear
                                             </button>
@@ -273,65 +572,94 @@ const RevenueDashboard: React.FC = () => {
                                 </thead>
                                 <tbody>
                                     {loading ? (
-                                        <tr>
-                                            <td colSpan={8} className="text-center py-20">
-                                                <Loader2 className="animate-spin mx-auto text-orange-500" size={32} />
-                                            </td>
-                                        </tr>
+                                        <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" style={{ margin: '0 auto', color: 'var(--theme-primary)' }} /></td></tr>
                                     ) : paginatedContracts.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={8} className="text-center py-20 text-gray-400">
-                                                <FileText className="mx-auto mb-2 opacity-20" size={48} />
-                                                <p>No revenue contracts found.</p>
-                                            </td>
-                                        </tr>
+                                        <tr><td colSpan={visibleColumns.length + 1} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>No revenue contracts found.</td></tr>
                                     ) : (
                                         paginatedContracts.map((contract) => (
-                                            <tr key={contract.id} className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors">
-                                                <td className="px-4 py-3 font-bold text-[#1a1f36]">
-                                                    <span className="text-orange-600 underline cursor-pointer" onClick={() => { setSelectedContractId(contract.id); setActiveTab('create'); }}>
-                                                        {contract.contract_id}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-600">
-                                                        {contract.revenue_type_display}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3 text-gray-600 font-medium">{contract.deal_no}</td>
-                                                <td className="px-4 py-3 text-gray-600 font-medium">{contract.customer_name}</td>
-                                                <td className="px-4 py-3 font-bold text-gray-900">
-                                                    {Number(contract.total_amount).toLocaleString()} {contract.currency}
-                                                </td>
-                                                <td className="px-4 py-3 text-gray-500 text-[11px]">
-                                                    {formatToAppDate(contract.start_date)} - {formatToAppDate(contract.end_date)}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <span
-                                                        className="text-[10px] font-black px-2 py-1 rounded"
-                                                        style={{
-                                                            backgroundColor: `${statusColors[contract.status]}15`,
-                                                            color: statusColors[contract.status]
-                                                        }}
-                                                    >
-                                                        {contract.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center justify-center gap-2">
+                                            <tr key={contract.id}>
+                                                {visibleColumns.map(key => {
+                                                    switch (key) {
+                                                        case 'contract_id':
+                                                            return (
+                                                                <td key={key} style={{ fontWeight: 600, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => { setSelectedContractId(contract.id); setActiveTab('create'); }}>
+                                                                    {contract.contract_id}
+                                                                </td>
+                                                            );
+                                                        case 'revenue_type':
+                                                            return <td key={key}>{contract.revenue_type_display}</td>;
+                                                        case 'deal_no':
+                                                            return <td key={key}>{contract.deal_no}</td>;
+                                                        case 'customer_name':
+                                                            return <td key={key}>{contract.customer_name}</td>;
+                                                        case 'total_amount':
+                                                            return (
+                                                                <td key={key} style={{ textAlign: 'right', fontWeight: 600 }}>
+                                                                    {contract.currency === 'INR' ? '₹' : contract.currency === 'USD' ? '$' : contract.currency === 'EURO' ? '€' : ''}
+                                                                    {parseFloat(contract.total_amount).toLocaleString()}
+                                                                </td>
+                                                            );
+                                                        case 'period':
+                                                            return <td key={key}>{formatToAppDate(contract.start_date)} - {formatToAppDate(contract.end_date)}</td>;
+                                                        case 'status':
+                                                            return (
+                                                                <td key={key}>
+                                                                    <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: 'var(--bg-secondary)', color: 'var(--theme-primary)' }}>
+                                                                        {contract.status.replace('_', ' ')}
+                                                                    </span>
+                                                                </td>
+                                                            );
+                                                        default:
+                                                            return <td key={key}>{(contract as any)[key] || '—'}</td>;
+                                                    }
+                                                })}
+                                                <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                                                         <button
                                                             onClick={() => { setSelectedContractId(contract.id); setView('schedule'); }}
-                                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '4px',
+                                                                background: 'rgba(187, 77, 0, 0.07)',
+                                                                color: 'var(--theme-primary)',
+                                                                border: '1px solid rgba(187, 77, 0, 0.25)',
+                                                                padding: '4px 14px',
+                                                                borderRadius: '20px',
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: 700,
+                                                                cursor: 'pointer',
+                                                                letterSpacing: '0.04em',
+                                                                transition: 'all 0.18s',
+                                                            }}
+                                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                                                             title="View Schedule"
                                                         >
-                                                            <Calendar size={16} />
+                                                            <Calendar size={13} /> Schedule
                                                         </button>
                                                         <button
                                                             onClick={() => computeSchedule(contract.id)}
-                                                            className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '4px',
+                                                                background: 'rgba(187, 77, 0, 0.07)',
+                                                                color: 'var(--theme-primary)',
+                                                                border: '1px solid rgba(187, 77, 0, 0.25)',
+                                                                padding: '4px 14px',
+                                                                borderRadius: '20px',
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: 700,
+                                                                cursor: 'pointer',
+                                                                letterSpacing: '0.04em',
+                                                                transition: 'all 0.18s',
+                                                            }}
+                                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                                                             title="Recompute"
                                                         >
-                                                            <Calculator size={16} />
+                                                            <Calculator size={13} /> Recompute
                                                         </button>
                                                     </div>
                                                 </td>

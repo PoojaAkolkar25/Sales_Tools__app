@@ -4059,3 +4059,204 @@ Traceback (most recent call last):
 AssertionError: The field 'so_no' was declared on serializer InvoiceSerializer, but has not been included in the 'fields' option.
 ERROR 2026-02-26 18:05:05,939 basehttp 20240 22696 "GET /api/finance/invoices/ HTTP/1.1" 500 153299
 ERROR 2026-02-26 18:05:05,939 basehttp 20240 22696 "GET /api/finance/invoices/ HTTP/1.1" 500 153299
+ERROR 2026-02-27 06:41:15,941 views 6812 8476 Login error for user admin1: {'non_field_errors': [ErrorDetail(string='Unable to log in with provided credentials.', code='authorization')]}
+Traceback (most recent call last):
+  File "D:\SalesEdge\Sales_Tools__app\backend\accounts\views.py", line 28, in post
+    serializer.is_valid(raise_exception=True)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 231, in is_valid
+    raise ValidationError(self.errors)
+rest_framework.exceptions.ValidationError: {'non_field_errors': [ErrorDetail(string='Unable to log in with provided credentials.', code='authorization')]}
+WARNING 2026-02-27 06:41:15,961 log 6812 8476 Bad Request: /api/auth/login/
+WARNING 2026-02-27 06:41:15,961 log 6812 8476 Bad Request: /api/auth/login/
+WARNING 2026-02-27 06:41:15,981 basehttp 6812 8476 "POST /api/auth/login/ HTTP/1.1" 400 48
+WARNING 2026-02-27 06:41:15,981 basehttp 6812 8476 "POST /api/auth/login/ HTTP/1.1" 400 48
+WARNING 2026-02-27 07:11:14,517 log 6812 14364 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:11:14,517 log 6812 14364 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:11:14,519 basehttp 6812 14364 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:11:14,519 basehttp 6812 14364 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:11:14,558 log 6812 16176 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:11:14,558 log 6812 16176 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:11:14,558 basehttp 6812 16176 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:11:14,558 basehttp 6812 16176 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:51:17,850 log 6812 560 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:51:17,850 log 6812 560 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:51:17,850 basehttp 6812 560 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:51:17,850 basehttp 6812 560 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:51:17,905 log 6812 2076 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:51:17,905 log 6812 2076 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:51:17,906 basehttp 6812 2076 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:51:17,906 basehttp 6812 2076 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:56:46,508 log 6812 12788 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:56:46,508 log 6812 12788 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:56:46,510 basehttp 6812 12788 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:56:46,510 basehttp 6812 12788 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:56:46,550 log 6812 12788 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:56:46,550 log 6812 12788 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:56:46,552 basehttp 6812 12788 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:56:46,552 basehttp 6812 12788 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:57:56,627 log 6812 14228 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:57:56,627 log 6812 14228 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:57:56,629 basehttp 6812 14228 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:57:56,629 basehttp 6812 14228 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:57:56,675 log 6812 8704 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:57:56,675 log 6812 8704 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:57:56,676 basehttp 6812 8704 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:57:56,676 basehttp 6812 8704 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:57:57,199 log 6812 12788 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:57:57,199 log 6812 12788 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:57:57,199 basehttp 6812 12788 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:57:57,199 basehttp 6812 12788 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:57:57,287 log 6812 14228 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:57:57,287 log 6812 14228 Not Found: /api/finance/customers/
+WARNING 2026-02-27 07:57:57,290 basehttp 6812 14228 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 07:57:57,290 basehttp 6812 14228 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:01:51,169 log 6812 14228 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:01:51,169 log 6812 14228 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:01:51,175 basehttp 6812 14228 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:01:51,175 basehttp 6812 14228 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:01:51,215 log 6812 2912 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:01:51,215 log 6812 2912 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:01:51,217 basehttp 6812 2912 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:01:51,217 basehttp 6812 2912 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:12:41,869 log 6812 3060 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:12:41,869 log 6812 3060 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:12:41,874 basehttp 6812 3060 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:12:41,874 basehttp 6812 3060 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:12:41,928 log 6812 3060 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:12:41,928 log 6812 3060 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:12:41,929 basehttp 6812 3060 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:12:41,929 basehttp 6812 3060 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:18:40,689 log 6812 16180 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:18:40,689 log 6812 16180 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:18:40,691 basehttp 6812 16180 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:18:40,691 basehttp 6812 16180 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:18:40,733 log 6812 12064 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:18:40,733 log 6812 12064 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:18:40,735 basehttp 6812 12064 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:18:40,735 basehttp 6812 12064 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:21:09,455 log 6812 12064 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:21:09,455 log 6812 12064 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:21:09,457 basehttp 6812 12064 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:21:09,457 basehttp 6812 12064 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:22:31,091 log 6812 15936 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:22:31,091 log 6812 15936 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:22:31,092 basehttp 6812 15936 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:22:31,092 basehttp 6812 15936 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:22:31,132 log 6812 15044 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:22:31,132 log 6812 15044 Not Found: /api/finance/customers/
+WARNING 2026-02-27 08:22:31,134 basehttp 6812 15044 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 08:22:31,134 basehttp 6812 15044 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:19:06,094 log 6812 14620 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:19:06,094 log 6812 14620 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:19:06,097 basehttp 6812 14620 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:19:06,097 basehttp 6812 14620 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:19:06,144 log 6812 17180 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:19:06,144 log 6812 17180 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:19:06,145 basehttp 6812 17180 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:19:06,145 basehttp 6812 17180 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:19:25,945 log 6812 17180 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:19:25,945 log 6812 17180 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:19:25,947 basehttp 6812 17180 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:19:25,947 basehttp 6812 17180 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:19:25,998 log 6812 14620 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:19:25,998 log 6812 14620 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:19:26,000 basehttp 6812 14620 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:19:26,000 basehttp 6812 14620 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:20:40,699 log 6812 17160 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:20:40,699 log 6812 17160 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:20:40,705 basehttp 6812 17160 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:20:40,705 basehttp 6812 17160 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:20:40,757 log 6812 16892 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:20:40,757 log 6812 16892 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:20:40,760 basehttp 6812 16892 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:20:40,760 basehttp 6812 16892 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:22:10,605 log 6812 16892 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:22:10,605 log 6812 16892 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:22:10,609 basehttp 6812 16892 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:22:10,609 basehttp 6812 16892 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:22:10,645 log 6812 17160 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:22:10,645 log 6812 17160 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:22:10,649 basehttp 6812 17160 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:22:10,649 basehttp 6812 17160 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:22:47,232 log 6812 17160 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:22:47,232 log 6812 17160 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:22:47,235 basehttp 6812 17160 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:22:47,235 basehttp 6812 17160 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:22:47,279 log 6812 16892 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:22:47,279 log 6812 16892 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:22:47,280 basehttp 6812 16892 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:22:47,280 basehttp 6812 16892 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:25:39,424 log 6812 17180 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:25:39,424 log 6812 17180 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:25:39,426 basehttp 6812 17180 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:25:39,426 basehttp 6812 17180 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:25:39,459 log 6812 17160 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:25:39,459 log 6812 17160 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:25:39,461 basehttp 6812 17160 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:25:39,461 basehttp 6812 17160 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:34:12,154 log 6812 15020 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:34:12,154 log 6812 15020 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:34:12,157 basehttp 6812 15020 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:34:12,157 basehttp 6812 15020 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:34:12,197 log 6812 17180 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:34:12,197 log 6812 17180 Not Found: /api/finance/customers/
+WARNING 2026-02-27 10:34:12,198 basehttp 6812 17180 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 10:34:12,198 basehttp 6812 17180 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 11:09:10,232 log 6812 15368 Not Found: /api/finance/customers/
+WARNING 2026-02-27 11:09:10,232 log 6812 15368 Not Found: /api/finance/customers/
+WARNING 2026-02-27 11:09:10,234 basehttp 6812 15368 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 11:09:10,234 basehttp 6812 15368 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 11:09:10,270 log 6812 16704 Not Found: /api/finance/customers/
+WARNING 2026-02-27 11:09:10,270 log 6812 16704 Not Found: /api/finance/customers/
+WARNING 2026-02-27 11:09:10,276 basehttp 6812 16704 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 11:09:10,276 basehttp 6812 16704 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 11:35:54,149 log 6812 15988 Not Found: /api/finance/customers/
+WARNING 2026-02-27 11:35:54,149 log 6812 15988 Not Found: /api/finance/customers/
+WARNING 2026-02-27 11:35:54,152 basehttp 6812 15988 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 11:35:54,152 basehttp 6812 15988 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 11:35:54,193 log 6812 1360 Not Found: /api/finance/customers/
+WARNING 2026-02-27 11:35:54,193 log 6812 1360 Not Found: /api/finance/customers/
+WARNING 2026-02-27 11:35:54,197 basehttp 6812 1360 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 11:35:54,197 basehttp 6812 1360 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 12:18:18,356 log 6812 3240 Not Found: /api/finance/customers/
+WARNING 2026-02-27 12:18:18,356 log 6812 3240 Not Found: /api/finance/customers/
+WARNING 2026-02-27 12:18:18,358 basehttp 6812 3240 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 12:18:18,358 basehttp 6812 3240 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 12:18:18,400 log 6812 6644 Not Found: /api/finance/customers/
+WARNING 2026-02-27 12:18:18,400 log 6812 6644 Not Found: /api/finance/customers/
+WARNING 2026-02-27 12:18:18,402 basehttp 6812 6644 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 12:18:18,402 basehttp 6812 6644 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 12:27:47,149 log 6812 15352 Not Found: /api/finance/customers/
+WARNING 2026-02-27 12:27:47,149 log 6812 15352 Not Found: /api/finance/customers/
+WARNING 2026-02-27 12:27:47,151 basehttp 6812 15352 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 12:27:47,151 basehttp 6812 15352 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 12:27:47,187 log 6812 15352 Not Found: /api/finance/customers/
+WARNING 2026-02-27 12:27:47,187 log 6812 15352 Not Found: /api/finance/customers/
+WARNING 2026-02-27 12:27:47,188 basehttp 6812 15352 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+WARNING 2026-02-27 12:27:47,188 basehttp 6812 15352 "GET /api/finance/customers/ HTTP/1.1" 404 90248
+ERROR 2026-02-27 12:43:07,189 views 6812 15504 Login error for user admin: {'non_field_errors': [ErrorDetail(string='Unable to log in with provided credentials.', code='authorization')]}
+Traceback (most recent call last):
+  File "D:\SalesEdge\Sales_Tools__app\backend\accounts\views.py", line 28, in post
+    serializer.is_valid(raise_exception=True)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 231, in is_valid
+    raise ValidationError(self.errors)
+rest_framework.exceptions.ValidationError: {'non_field_errors': [ErrorDetail(string='Unable to log in with provided credentials.', code='authorization')]}
+WARNING 2026-02-27 12:43:07,199 log 6812 15504 Bad Request: /api/auth/login/
+WARNING 2026-02-27 12:43:07,199 log 6812 15504 Bad Request: /api/auth/login/
+WARNING 2026-02-27 12:43:07,202 basehttp 6812 15504 "POST /api/auth/login/ HTTP/1.1" 400 48
+WARNING 2026-02-27 12:43:07,202 basehttp 6812 15504 "POST /api/auth/login/ HTTP/1.1" 400 48
+WARNING 2026-02-27 12:46:26,187 vertex_model 6812 11560 Vertex model not ready: File D:/Keys/vdxexccenter-4b1dff9ce849.json was not found.
+WARNING 2026-02-27 12:46:26,191 log 6812 11560 Bad Request: /api/po-files/process_po/
+WARNING 2026-02-27 12:46:26,191 log 6812 11560 Bad Request: /api/po-files/process_po/
+WARNING 2026-02-27 12:46:26,193 basehttp 6812 11560 "POST /api/po-files/process_po/ HTTP/1.1" 400 67
+WARNING 2026-02-27 12:46:26,193 basehttp 6812 11560 "POST /api/po-files/process_po/ HTTP/1.1" 400 67
+ERROR 2026-02-27 12:52:43,518 views 6812 17716 Login error for user admin: {'non_field_errors': [ErrorDetail(string='Unable to log in with provided credentials.', code='authorization')]}
+Traceback (most recent call last):
+  File "D:\SalesEdge\Sales_Tools__app\backend\accounts\views.py", line 28, in post
+    serializer.is_valid(raise_exception=True)
+  File "C:\Users\tushg\AppData\Local\Programs\Python\Python311\Lib\site-packages\rest_framework\serializers.py", line 231, in is_valid
+    raise ValidationError(self.errors)
+rest_framework.exceptions.ValidationError: {'non_field_errors': [ErrorDetail(string='Unable to log in with provided credentials.', code='authorization')]}
+WARNING 2026-02-27 12:52:43,523 log 6812 17716 Bad Request: /api/auth/login/
+WARNING 2026-02-27 12:52:43,523 log 6812 17716 Bad Request: /api/auth/login/
+WARNING 2026-02-27 12:52:43,526 basehttp 6812 17716 "POST /api/auth/login/ HTTP/1.1" 400 48

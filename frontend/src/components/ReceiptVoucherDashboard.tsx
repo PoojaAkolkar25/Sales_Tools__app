@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, RefreshCw, Eye, Search, Columns, ChevronDown } from 'lucide-react';
+import { Plus, RefreshCw, Eye, Columns, ChevronDown } from 'lucide-react';
 import api from '../api';
 import Pagination from './Pagination';
 import { formatToAppDate } from '../utils/dateUtils';
@@ -61,7 +61,6 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'UNRECONCILED' | 'RECONCILED'>('UNRECONCILED');
     const [currentPage, setCurrentPage] = useState(1);
-    const [showFilters] = useState(true);
     const [filters, setFilters] = useState<Record<string, string>>({
         receipt_no: '',
         customer_name: '',
@@ -432,15 +431,17 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
                                         userSelect: 'none',
-                                        paddingRight: '20px',
+                                        padding: '4px 20px 4px 6px',
                                         borderRight: '1px solid var(--border-secondary)',
                                         borderBottom: '1px solid var(--border-secondary)',
                                         zIndex: 12,
                                         top: 0,
                                         color: 'var(--text-secondary)',
-                                        textAlign: (col.key === 'amount_received') ? 'right' : 'left'
+                                        textAlign: (col.key === 'amount_received') ? 'right' : 'left',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 700
                                     }}>
-                                        <span title={col.label}>
+                                        <span title={col.label} style={{ textTransform: 'uppercase' }}>
                                             {getColWidth(col.key) < (SHORT_COL_WIDTHS[col.key] + 5)
                                                 ? col.shortLabel
                                                 : col.label}
@@ -471,43 +472,41 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                     borderBottom: '1px solid var(--border-secondary)'
                                 }}>Actions</th>
                             </tr>
-                            {showFilters && (
-                                <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
-                                    {ALL_COL_CONFIG.filter(col => {
-                                        if (!visibleColumns.includes(col.key)) return false;
-                                        if (col.key === 'reconciliation_date' && activeTab !== 'RECONCILED') return false;
-                                        return true;
-                                    }).map(col => (
-                                        <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px' }}>
-                                            <div className="ae-input-group" style={{ margin: 0, display: 'block' }}>
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters[col.key] || ''}
-                                                    onChange={e => setFilters({ ...filters, [col.key]: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    ))}
-                                    <th style={{
-                                        textAlign: 'center',
-                                        backgroundColor: 'var(--ae-filter-row-bg)',
-                                        borderBottom: '1px solid var(--border-secondary)'
-                                    }}>
-                                        <button
-                                            onClick={() => setFilters({
-                                                receipt_no: '', customer_name: '', payment_date: '',
-                                                reconciliation_date: '', amount_received: '', reference_number: '', status: ''
-                                            })}
-                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
-                                        >
-                                            Clear
-                                        </button>
+                            <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
+                                {ALL_COL_CONFIG.filter(col => {
+                                    if (!visibleColumns.includes(col.key)) return false;
+                                    if (col.key === 'reconciliation_date' && activeTab !== 'RECONCILED') return false;
+                                    return true;
+                                }).map(col => (
+                                    <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px 6px' }}>
+                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                            <input
+                                                className="ae-input"
+                                                placeholder="Filter..."
+                                                value={filters[col.key] || ''}
+                                                onChange={e => setFilters({ ...filters, [col.key]: e.target.value })}
+                                                style={{ height: '24px', fontSize: '11px', background: 'white', border: '1px solid var(--border-primary)', width: '100%', paddingLeft: '8px' }}
+                                            />
+                                        </div>
                                     </th>
-                                </tr>
-                            )}
+                                ))}
+                                <th style={{
+                                    textAlign: 'center',
+                                    backgroundColor: 'var(--ae-filter-row-bg)',
+                                    borderBottom: '1px solid var(--border-secondary)',
+                                    padding: '4px 6px'
+                                }}>
+                                    <button
+                                        onClick={() => setFilters({
+                                            receipt_no: '', customer_name: '', payment_date: '',
+                                            reconciliation_date: '', amount_received: '', reference_number: '', status: ''
+                                        })}
+                                        style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                    >
+                                        Clear
+                                    </button>
+                                </th>
+                            </tr>
                         </thead>
                         <tbody>
                             {loading ? (
@@ -531,7 +530,10 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
                                                 whiteSpace: 'nowrap',
-                                                fontSize: '0.8rem'
+                                                fontSize: '0.75rem',
+                                                padding: '4px 20px 4px 6px',
+                                                verticalAlign: 'middle',
+                                                borderBottom: '1px solid var(--border-secondary)'
                                             } as React.CSSProperties;
 
                                             switch (col.key) {
@@ -551,12 +553,13 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                                     return <td key={col.key} style={cellStyle}>
                                                         <span style={{
                                                             padding: '4px 10px',
-                                                            borderRadius: '6px',
-                                                            fontSize: '10px',
+                                                            borderRadius: '12px',
+                                                            fontSize: '0.65rem',
                                                             fontWeight: 700,
                                                             textTransform: 'uppercase',
-                                                            background: v.status === 'RECONCILED' ? 'rgba(0, 200, 83, 0.1)' : 'var(--bg-secondary)',
-                                                            color: v.status === 'RECONCILED' ? '#00C853' : 'var(--theme-primary)'
+                                                            background: v.status === 'RECONCILED' ? 'rgba(0, 200, 83, 0.08)' : 'rgba(255, 107, 0, 0.08)',
+                                                            color: v.status === 'RECONCILED' ? '#00C853' : 'var(--theme-primary)',
+                                                            border: v.status === 'RECONCILED' ? '1px solid rgba(0, 200, 83, 0.2)' : '1px solid rgba(255, 107, 0, 0.2)'
                                                         }}>
                                                             {v.status === 'UNRECONCILED' ? 'For Review' : 'Reconciled'}
                                                         </span>
@@ -565,35 +568,22 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                                     return null;
                                             }
                                         })}
-                                        <td style={{ textAlign: 'center' }}>
+                                        <td style={{ textAlign: 'center', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px 6px' }}>
                                             <button
                                                 onClick={() => onView(v.id)}
+                                                className="ae-btn-secondary"
                                                 style={{
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
                                                     gap: '6px',
-                                                    padding: '6px 12px',
-                                                    background: 'rgba(255,107,0,0.08)',
-                                                    color: 'var(--theme-primary)',
-                                                    border: '1px solid rgba(255,107,0,0.25)',
-                                                    borderRadius: '6px',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 600,
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                                onMouseOver={(e) => {
-                                                    e.currentTarget.style.background = 'var(--theme-primary)';
-                                                    e.currentTarget.style.color = 'white';
-                                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                }}
-                                                onMouseOut={(e) => {
-                                                    e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
-                                                    e.currentTarget.style.color = 'var(--theme-primary)';
-                                                    e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                    padding: '4px 14px',
+                                                    borderRadius: '20px',
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 700,
+                                                    height: '24px'
                                                 }}
                                             >
-                                                <Eye size={14} /> View
+                                                <Eye size={12} /> View
                                             </button>
                                         </td>
                                     </tr>

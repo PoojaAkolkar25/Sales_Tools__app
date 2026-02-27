@@ -92,8 +92,8 @@ const BankConnectionSetup: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '2px' }}></div>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1f36', margin: 0 }}>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                         Bank Account Connections
                     </h2>
                 </div>
@@ -109,30 +109,16 @@ const BankConnectionSetup: React.FC = () => {
                 }}>
                     <button
                         onClick={() => setShowForm(!showForm)}
+                        className="ae-btn-secondary"
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
                             padding: '6px 16px',
                             height: '32px',
-                            borderRadius: '8px',
+                            borderRadius: '20px',
                             fontSize: '0.85rem',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: '#F7FAFC',
-                            color: '#718096'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#FF6B00';
-                            e.currentTarget.style.color = 'white';
-                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 107, 0, 0.3)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#F7FAFC';
-                            e.currentTarget.style.color = '#718096';
-                            e.currentTarget.style.boxShadow = 'none';
+                            fontWeight: 700
                         }}
                     >
                         <Plus size={18} /> {showForm ? 'Cancel' : 'Connect New Bank'}
@@ -201,17 +187,17 @@ const BankConnectionSetup: React.FC = () => {
                     </div>
                 ) : (
                     connections.map(conn => (
-                        <div key={conn.id} className="glass-card" style={{ padding: '24px', position: 'relative' }}>
+                        <div key={conn.id} className="ae-card" style={{ padding: '24px', position: 'relative', border: '1px solid var(--border-primary)', borderRadius: '16px', background: 'white', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
                                 <div style={{
-                                    width: '48px', height: '48px', borderRadius: '12px', background: '#F7FAFC',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E2E8F0'
+                                    width: '48px', height: '48px', borderRadius: '12px', background: 'var(--bg-secondary)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-secondary)'
                                 }}>
-                                    <Building2 size={24} color="#4A5568" />
+                                    <Building2 size={24} color="var(--text-secondary)" />
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#1a1f36' }}>{conn.bank_name}</h3>
-                                    <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#718096', }}>
+                                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{conn.bank_name}</h3>
+                                    <p style={{ margin: '4px 0', fontSize: '0.85rem', color: 'var(--text-secondary)', }}>
                                         Acc: ****{conn.account_number.slice(-4)}
                                     </p>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
@@ -221,26 +207,26 @@ const BankConnectionSetup: React.FC = () => {
                                 </div>
                                 <button
                                     onClick={() => handleDelete(conn.id)}
-                                    style={{ background: 'none', border: 'none', color: '#CBD5E0', cursor: 'pointer', transition: 'color 0.2s' }}
+                                    style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', transition: 'color 0.2s' }}
                                     onMouseOver={e => (e.currentTarget.style.color = '#E53E3E')}
-                                    onMouseOut={e => (e.currentTarget.style.color = '#CBD5E0')}
+                                    onMouseOut={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
                                 >
                                     <Trash2 size={18} />
                                 </button>
                             </div>
 
                             <div style={{
-                                marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #F1F5F9',
+                                marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border-secondary)',
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                             }}>
                                 <button
                                     onClick={() => handleReconnect(conn)}
                                     className="ae-btn-secondary"
-                                    style={{ fontSize: '11px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                    style={{ fontSize: '0.7rem', padding: '6px 14px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '6px', height: '28px', fontWeight: 700 }}
                                 >
-                                    <RefreshCw size={12} /> Reconnect
+                                    <RefreshCw size={12} /> RECONNECT
                                 </button>
-                                <div style={{ color: '#CBD5E0' }}>
+                                <div style={{ color: 'var(--text-tertiary)' }}>
                                     <ShieldCheck size={20} />
                                 </div>
                             </div>

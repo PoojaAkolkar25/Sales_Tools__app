@@ -11,3 +11,6 @@ xhtml2pdf
 pypdf
 gunicorn
 XlsxWriter
+pdfplumber
+google-cloud-aiplatform
+PyPDF2

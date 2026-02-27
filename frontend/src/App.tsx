@@ -142,7 +142,7 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
       <aside className={`sidebar flex flex-col ${isSidebarExpanded ? 'expanded' : '!w-16'} overflow-hidden transition-all duration-300`}>
         <div className={`sidebar-logo !px-0 flex items-center ${isSidebarExpanded ? 'justify-start px-4' : 'justify-center'}`}>
           <img
-            src="/Salesedge1_logo.png"
+            src="/AutomationEdge_Logo.png"
             alt="SalesEdge Logo"
             className="sidebar-logo-img"
           />
@@ -263,6 +263,7 @@ const AppContent: React.FC = () => {
   const [authLoading, setAuthLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const [isDragging, setIsDragging] = useState(false);
 
   // Module Views
   const [leadView, setLeadView] = useState<'form' | 'dashboard'>('dashboard');
@@ -373,8 +374,7 @@ const AppContent: React.FC = () => {
     navigate('/login');
   };
 
-  const handleSOUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const processPOFile = async (file: File) => {
     if (!file) return;
 
     const formData = new FormData();
@@ -399,6 +399,11 @@ const AppContent: React.FC = () => {
       const errorMsg = error.response?.data?.error || error.response?.data?.message || 'Extraction failed, please create manually or try again.';
       showNotification(errorMsg, 'error');
     }
+  };
+
+  const handleSOUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processPOFile(file);
   };
 
 
@@ -1122,43 +1127,7 @@ const AppContent: React.FC = () => {
                       <LayoutDashboard size={18} /> Dashboard
                     </button>
 
-                    <label style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '6px 16px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: 700,
-                      border: 'none',
-                      cursor: isExtractingSO ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      background: 'transparent',
-                      color: '#718096',
-                      opacity: isExtractingSO ? 0.7 : 1
-                    }}
-                      onMouseEnter={(e) => {
-                        if (!isExtractingSO) {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isExtractingSO) {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = '#718096';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      {isExtractingSO ? <div className="w-4 h-4 border-2 border-[#718096] border-t-transparent rounded-full animate-spin" /> : <Upload size={18} />}
-                      {isExtractingSO ? 'Processing...' : 'Upload PO'}
-                      <input type="file" className="hidden" onChange={handleSOUpload} accept=".pdf" disabled={isExtractingSO} />
-                    </label>
+                    {/* Existing Upload Button removed as per user request to have one in the header */}
 
                     <button
                       onClick={handleCreateNewSalesOrder}
@@ -1193,6 +1162,83 @@ const AppContent: React.FC = () => {
                     >
                       <PlusCircle size={18} /> Create New
                     </button>
+                  </div>
+
+                  {/* Drag and Drop Upload Section - Relocated to button row */}
+                  <div
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsDragging(false);
+                      const file = e.dataTransfer.files[0];
+                      if (file) processPOFile(file);
+                    }}
+                    onClick={() => (document.getElementById('so-upload-input') as HTMLInputElement)?.click()}
+                    style={{
+                      border: isDragging ? '2px dashed var(--theme-primary)' : '2px dashed #E0E6ED',
+                      background: isDragging ? 'rgba(255, 107, 0, 0.05)' : '#FAFBFC',
+                      borderRadius: '12px',
+                      padding: '8px 20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      cursor: isExtractingSO ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease',
+                      maxWidth: '380px',
+                      position: 'relative',
+                      opacity: isExtractingSO ? 0.7 : 1,
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isExtractingSO) {
+                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.02)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isExtractingSO && !isDragging) {
+                        e.currentTarget.style.borderColor = '#E0E6ED';
+                        e.currentTarget.style.background = '#FAFBFC';
+                      }
+                    }}
+                  >
+                    <input
+                      id="so-upload-input"
+                      type="file"
+                      className="hidden"
+                      onChange={handleSOUpload}
+                      accept=".pdf"
+                      disabled={isExtractingSO}
+                    />
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      color: 'var(--theme-primary)',
+                      flexShrink: 0
+                    }}>
+                      {isExtractingSO ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <Upload size={18} />
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                        {isExtractingSO ? 'Processing PO...' : 'Upload PO (Max 10MB each)'}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.2 }}>
+                        Drag & Drop or Click (PDF only)
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1539,74 +1585,99 @@ const AppContent: React.FC = () => {
 
                 <div style={{
                   display: 'flex',
-                  gap: '12px',
-                  marginBottom: '24px',
-                  background: 'white',
-                  padding: '8px',
-                  borderRadius: '16px',
-                  width: 'fit-content',
-                  border: '1px solid #e2e8f0',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 8px',
+                  marginBottom: '12px',
+                  gap: '24px'
                 }}>
-                  <button
-                    onClick={() => setInventoryView('dashboard')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 24px',
-                      borderRadius: '12px',
-                      fontSize: '0.9rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      border: 'none',
-                      background: inventoryView === 'dashboard' ? '#FF6B00' : 'transparent',
-                      color: inventoryView === 'dashboard' ? 'white' : '#4a5568',
-                      boxShadow: inventoryView === 'dashboard' ? '0 8px 15px rgba(255, 107, 0, 0.25)' : 'none'
-                    }}
-                  >
-                    <div style={{
-                      display: 'flex',
-                      padding: '4px',
-                      borderRadius: '6px',
-                      background: inventoryView === 'dashboard' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)'
-                    }}>
-                      <Server size={18} />
-                    </div>
-                    Dashboard
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingInventoryId(null);
-                      setInventoryView('form');
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 24px',
-                      borderRadius: '12px',
-                      fontSize: '0.9rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      border: '1px solid ' + (inventoryView === 'form' ? '#FF6B00' : '#e2e8f0'),
-                      background: inventoryView === 'form' ? 'white' : 'transparent',
-                      color: inventoryView === 'form' ? '#FF6B00' : '#4a5568',
-                      boxShadow: inventoryView === 'form' ? '0 8px 15px rgba(255, 107, 0, 0.15)' : 'none'
-                    }}
-                  >
-                    <div style={{
-                      display: 'flex',
-                      padding: '4px',
-                      borderRadius: '6px',
-                      background: inventoryView === 'form' ? 'rgba(255,107,0,0.1)' : 'rgba(0,0,0,0.05)'
-                    }}>
-                      <PlusCircle size={18} />
-                    </div>
-                    Create New
-                  </button>
+                  <div style={{
+                    display: 'flex',
+                    gap: '4px',
+                    alignItems: 'center',
+                    background: 'var(--bg-primary)',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-primary)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                  }}>
+                    <button
+                      onClick={() => setInventoryView('dashboard')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: inventoryView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                        color: inventoryView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: inventoryView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (inventoryView !== 'dashboard') {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (inventoryView !== 'dashboard') {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }
+                      }}
+                    >
+                      <LayoutDashboard size={18} /> Dashboard
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingInventoryId(null);
+                        setInventoryView('form');
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 16px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: (inventoryView === 'form' && !editingInventoryId) ? 'var(--theme-primary)' : 'transparent',
+                        color: (inventoryView === 'form' && !editingInventoryId) ? 'white' : 'var(--text-secondary)',
+                        boxShadow: (inventoryView === 'form' && !editingInventoryId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (inventoryView !== 'form' || editingInventoryId) {
+                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                          e.currentTarget.style.color = 'var(--ae-orange)';
+                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (inventoryView !== 'form' || editingInventoryId) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.border = 'none';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }
+                      }}
+                    >
+                      <PlusCircle size={18} /> Create New
+                    </button>
+                  </div>
                 </div>
 
                 {inventoryView === 'form' ? (
@@ -1620,10 +1691,6 @@ const AppContent: React.FC = () => {
                   <ResourceDashboard
                     onView={(id: number) => {
                       setEditingInventoryId(id);
-                      setInventoryView('form');
-                    }}
-                    onCreate={() => {
-                      setEditingInventoryId(null);
                       setInventoryView('form');
                     }}
                   />

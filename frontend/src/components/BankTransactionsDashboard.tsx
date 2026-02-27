@@ -77,7 +77,6 @@ interface BankTransaction {
 const BankTransactionsDashboard: React.FC = () => {
     const { showNotification } = useNotification();
     const [transactions, setTransactions] = useState<BankTransaction[]>([]);
-    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'FOR_REVIEW' | 'CATEGORIZED' | 'EXCLUDED'>('FOR_REVIEW');
     const [currentPage, setCurrentPage] = useState(1);
     const [filters, setFilters] = useState({
@@ -155,14 +154,11 @@ const BankTransactionsDashboard: React.FC = () => {
     }, []);
 
     const fetchTransactions = async () => {
-        setLoading(true);
         try {
             const response = await api.get('/finance/bank-transactions/');
             setTransactions(response.data);
         } catch (error) {
             console.error('Error fetching transactions', error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -347,34 +343,16 @@ const BankTransactionsDashboard: React.FC = () => {
                     <button
                         onClick={handleSync}
                         disabled={syncing}
+                        className="ae-btn-secondary"
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
                             padding: '6px 16px',
                             height: '32px',
-                            borderRadius: '8px',
+                            borderRadius: '20px',
                             fontSize: '0.85rem',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: syncing ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.2s',
-                            background: 'var(--bg-secondary)',
-                            color: 'var(--text-secondary)'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (!syncing) {
-                                e.currentTarget.style.background = 'var(--theme-primary)';
-                                e.currentTarget.style.color = 'white';
-                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (!syncing) {
-                                e.currentTarget.style.background = 'var(--bg-secondary)';
-                                e.currentTarget.style.color = 'var(--text-secondary)';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }
+                            fontWeight: 700
                         }}
                     >
                         {syncing ? <RefreshCw className="animate-spin" size={16} /> : <Cloud size={16} />}
@@ -383,34 +361,16 @@ const BankTransactionsDashboard: React.FC = () => {
                     <button
                         onClick={handleUploadClick}
                         disabled={uploading}
+                        className="ae-btn-secondary"
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
                             padding: '6px 16px',
                             height: '32px',
-                            borderRadius: '8px',
+                            borderRadius: '20px',
                             fontSize: '0.85rem',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: uploading ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.2s',
-                            background: 'var(--bg-secondary)',
-                            color: 'var(--text-secondary)'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (!uploading) {
-                                e.currentTarget.style.background = 'var(--theme-primary)';
-                                e.currentTarget.style.color = 'white';
-                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (!uploading) {
-                                e.currentTarget.style.background = 'var(--bg-secondary)';
-                                e.currentTarget.style.color = 'var(--text-secondary)';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }
+                            fontWeight: 700
                         }}
                     >
                         {uploading ? <RefreshCw className="animate-spin" size={16} /> : <Upload size={16} />}
@@ -565,14 +525,16 @@ const BankTransactionsDashboard: React.FC = () => {
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
                                             userSelect: 'none',
-                                            paddingRight: '20px',
+                                            padding: '4px 20px 4px 6px',
                                             borderRight: '1px solid var(--border-secondary)',
                                             borderBottom: '1px solid var(--border-secondary)',
                                             zIndex: 12,
                                             top: 0,
-                                            color: 'var(--text-secondary)'
+                                            color: 'var(--text-secondary)',
+                                            fontSize: '0.7rem',
+                                            fontWeight: 700
                                         }}>
-                                            <span title={col.label}>
+                                            <span title={col.label} style={{ textTransform: 'uppercase' }}>
                                                 {getColWidth(col.key) < (SHORT_COL_WIDTHS[col.key] + 5)
                                                     ? col.shortLabel
                                                     : col.label}
@@ -600,30 +562,33 @@ const BankTransactionsDashboard: React.FC = () => {
                                         whiteSpace: 'nowrap',
                                         top: 0,
                                         color: 'var(--text-secondary)',
-                                        borderBottom: '1px solid var(--border-secondary)'
+                                        borderBottom: '1px solid var(--border-secondary)',
+                                        padding: '4px 6px',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 700
                                     }}>Actions</th>
                                 </tr>
                                 <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
                                     <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}></th>
                                     {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
-                                        <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
-                                            <div className="ae-input-group" style={{ margin: 0 }}>
+                                        <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px 6px' }}>
+                                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                                                 <input
                                                     className="ae-input"
                                                     placeholder="Filter..."
                                                     value={(filters as any)[col.key] || ''}
                                                     onChange={e => setFilters({ ...filters, [col.key]: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                    style={{ height: '24px', fontSize: '11px', background: 'white', border: '1px solid var(--border-primary)', width: '100%', paddingLeft: '8px' }}
                                                 />
                                             </div>
                                         </th>
                                     ))}
-                                    <th style={{ textAlign: 'center', backgroundColor: 'var(--ae-filter-row-bg)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                    <th style={{ textAlign: 'center', backgroundColor: 'var(--ae-filter-row-bg)', borderBottom: '1px solid var(--border-secondary)', padding: '4px 6px' }}>
                                         <button
                                             onClick={() => setFilters({
                                                 description: '', customer_name: '', amount: ''
                                             } as any)}
-                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                         >
                                             Clear
                                         </button>
@@ -635,7 +600,7 @@ const BankTransactionsDashboard: React.FC = () => {
                                     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
                                     return (
                                         <tr key={t.id} style={{ background: selectedTransaction?.id === t.id ? 'var(--bg-secondary)' : 'white' }} onClick={() => setSelectedTransaction(t)}>
-                                            <td style={{ textAlign: 'center', color: 'var(--text-tertiary)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                            <td style={{ textAlign: 'center', color: 'var(--text-tertiary)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px 6px', fontSize: '0.75rem' }}>
                                                 {startIndex + idx + 1}
                                             </td>
                                             {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => {
@@ -644,11 +609,11 @@ const BankTransactionsDashboard: React.FC = () => {
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
                                                     whiteSpace: 'nowrap',
-                                                    fontSize: '0.8rem',
+                                                    fontSize: '0.75rem',
                                                     borderRight: '1px solid var(--border-secondary)',
                                                     borderBottom: '1px solid var(--border-secondary)',
                                                     color: 'var(--text-primary)',
-                                                    padding: '0 10px',
+                                                    padding: '4px 20px 4px 6px',
                                                     textAlign: (key === 'withdrawal_amount' || key === 'deposit_amount' || key === 'balance') ? 'right' : 'left'
                                                 } as React.CSSProperties;
 
@@ -665,16 +630,68 @@ const BankTransactionsDashboard: React.FC = () => {
                                                     default: return null;
                                                 }
                                             })}
-                                            <td style={{ textAlign: 'right', position: 'sticky', right: 0, background: selectedTransaction?.id === t.id ? 'var(--bg-secondary)' : 'white', boxShadow: '-2px 0 5px rgba(0,0,0,0.05)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                            <td style={{ textAlign: 'right', position: 'sticky', right: 0, background: selectedTransaction?.id === t.id ? 'var(--bg-secondary)' : 'white', boxShadow: '-2px 0 5px rgba(0,0,0,0.05)', borderBottom: '1px solid var(--border-secondary)', padding: '4px 6px' }}>
                                                 {activeTab === 'FOR_REVIEW' && (
                                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', padding: '0 8px' }}>
-                                                        <button onClick={(e) => { e.stopPropagation(); handleMatchClick(t); }} className="ae-btn-secondary" style={{ padding: '4px 10px', fontSize: '11px' }}>Match</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); handleExclude(t); }} style={{ background: 'none', border: 'none', color: '#E53E3E', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}>Exclude</button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleMatchClick(t); }}
+                                                            className="ae-btn-secondary"
+                                                            style={{
+                                                                padding: '4px 12px',
+                                                                fontSize: '11px',
+                                                                borderRadius: '20px',
+                                                                background: 'rgba(56, 161, 105, 0.08)',
+                                                                color: '#38A169',
+                                                                border: '1px solid rgba(56, 161, 105, 0.2)'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.background = '#38A169';
+                                                                e.currentTarget.style.color = 'white';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = 'rgba(56, 161, 105, 0.08)';
+                                                                e.currentTarget.style.color = '#38A169';
+                                                            }}
+                                                        >
+                                                            Match
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleExclude(t); }}
+                                                            className="ae-btn-secondary"
+                                                            style={{
+                                                                padding: '4px 12px',
+                                                                fontSize: '11px',
+                                                                borderRadius: '20px',
+                                                                background: 'rgba(229, 62, 62, 0.08)',
+                                                                color: '#E53E3E',
+                                                                border: '1px solid rgba(229, 62, 62, 0.2)'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.background = '#E53E3E';
+                                                                e.currentTarget.style.color = 'white';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = 'rgba(229, 62, 62, 0.08)';
+                                                                e.currentTarget.style.color = '#E53E3E';
+                                                            }}
+                                                        >
+                                                            Exclude
+                                                        </button>
                                                     </div>
                                                 )}
                                                 {activeTab === 'EXCLUDED' && (
                                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', padding: '0 8px' }}>
-                                                        <button onClick={(e) => { e.stopPropagation(); handleUndoExclude(t); }} className="ae-btn-secondary" style={{ padding: '4px 10px', fontSize: '11px' }}>Undo</button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleUndoExclude(t); }}
+                                                            className="ae-btn-secondary"
+                                                            style={{
+                                                                padding: '4px 12px',
+                                                                fontSize: '11px',
+                                                                borderRadius: '20px'
+                                                            }}
+                                                        >
+                                                            Undo
+                                                        </button>
                                                     </div>
                                                 )}
                                             </td>

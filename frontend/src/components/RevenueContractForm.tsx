@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Save, RefreshCcw, DollarSign, FileText } from 'lucide-react';
+import { Save, Loader2, Calendar } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
+import { formatToAppDate } from '../utils/dateUtils';
 
 interface RevenueContractFormProps {
     id: number | null;
@@ -21,8 +22,9 @@ const REVENUE_TYPES = [
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'AED', 'SAR'];
 
 const RevenueContractForm: React.FC<RevenueContractFormProps> = ({ id, onBack, onSave }) => {
-    const { showNotification } = useNotification();
+    const { showNotification, showConfirm } = useNotification();
     const [loading, setLoading] = useState(false);
+    const [isCancelActive, setIsCancelActive] = useState(false);
     const [deals, setDeals] = useState<any[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
     const [formData, setFormData] = useState({
@@ -113,125 +115,115 @@ const RevenueContractForm: React.FC<RevenueContractFormProps> = ({ id, onBack, o
         }
     };
 
-    return (
-        <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between mb-8 border-b border-gray-100 pb-4">
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={onBack}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
-                    >
-                        <ChevronLeft size={24} />
-                    </button>
-                    <div>
-                        <h2 className="text-2xl font-black text-gray-800 tracking-tight">
-                            {id ? 'Edit Revenue Contract' : 'New Revenue Contract'}
-                        </h2>
-                        <p className="text-gray-500 text-sm font-medium">Configure revenue recognition rules and details</p>
-                    </div>
-                </div>
-                <div className="flex gap-3">
-                    <button
-                        onClick={onBack}
-                        className="px-6 py-2 rounded-xl text-gray-600 font-bold hover:bg-gray-100 transition-all"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        className="px-8 py-2 bg-[#FF6B00] text-white rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-orange-200 hover:scale-105 transition-all disabled:opacity-50 disabled:scale-100"
-                    >
-                        {loading ? <RefreshCcw className="animate-spin" size={20} /> : <Save size={20} />}
-                        {id ? 'Update Contract' : 'Create Contract'}
-                    </button>
-                </div>
+    const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
+        <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '16px',
+            marginTop: title === 'Basic Information' ? '0' : '32px'
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                    width: '4px',
+                    height: '18px',
+                    background: 'var(--ae-blue)',
+                    borderRadius: '2px'
+                }}></span>
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)', margin: 0 }}>
+                    {title}
+                </h3>
             </div>
+            {extra}
+        </div>
+    );
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Basic Info */}
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-orange-50 text-[#FF6B00] rounded-lg">
-                            <FileText size={20} />
+    return (
+        <div className="space-y-6" style={{ padding: '4px' }}>
+            <div style={{
+                background: 'white',
+                border: '1px solid #E0E6ED',
+                borderRadius: '12px',
+                width: '100%',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                padding: '24px'
+            }}>
+                <form onSubmit={handleSubmit} className="space-y-0">
+                    {/* Basic Info */}
+                    <section>
+                        <SectionHeader title="Basic Information" />
+                        <div className="ae-grid-5">
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Contract ID (Internal Reference)</label>
+                                <input
+                                    type="text"
+                                    name="contract_id"
+                                    value={formData.contract_id}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    style={{ minHeight: '34px' }}
+                                    placeholder="e.g. REV-2024-001"
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Revenue Type</label>
+                                <select
+                                    name="revenue_type"
+                                    value={formData.revenue_type}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    style={{ minHeight: '34px' }}
+                                >
+                                    {REVENUE_TYPES.map(type => (
+                                        <option key={type.value} value={type.value}>{type.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Link to Deal</label>
+                                <select
+                                    name="deal"
+                                    value={formData.deal}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    style={{ minHeight: '34px' }}
+                                >
+                                    <option value="">-- Select Deal --</option>
+                                    {deals.map(deal => (
+                                        <option key={deal.id} value={deal.id}>{deal.deal_no} - {deal.deal_name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer</label>
+                                <select
+                                    name="customer"
+                                    value={formData.customer}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    style={{ minHeight: '34px' }}
+                                >
+                                    <option value="">-- Select Customer --</option>
+                                    {customers.map(cust => (
+                                        <option key={cust.id} value={cust.id}>{cust.company_name || cust.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
-                        <h3 className="text-lg font-bold text-gray-800">Basic Information</h3>
-                    </div>
+                    </section>
 
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-bold text-gray-600 mb-1">Contract ID (Internal Reference)</label>
-                            <input
-                                type="text"
-                                name="contract_id"
-                                value={formData.contract_id}
-                                onChange={handleInputChange}
-                                required
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-                                placeholder="e.g. REV-2024-001"
-                            />
-                        </div>
+                    <div style={{ height: '1px', background: '#E0E6ED', margin: '32px 0' }} />
 
-                        <div>
-                            <label className="block text-sm font-bold text-gray-600 mb-1">Revenue Type</label>
-                            <select
-                                name="revenue_type"
-                                value={formData.revenue_type}
-                                onChange={handleInputChange}
-                                required
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
-                            >
-                                {REVENUE_TYPES.map(type => (
-                                    <option key={type.value} value={type.value}>{type.label}</option>
-                                ))}
-                            </select>
-                        </div>
+                    {/* Financials and Period */}
+                    <section>
+                        <SectionHeader title="Financials & Timeline" />
 
-                        <div>
-                            <label className="block text-sm font-bold text-gray-600 mb-1">Link to Deal</label>
-                            <select
-                                name="deal"
-                                value={formData.deal}
-                                onChange={handleInputChange}
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
-                            >
-                                <option value="">-- Select Deal --</option>
-                                {deals.map(deal => (
-                                    <option key={deal.id} value={deal.id}>{deal.deal_no} - {deal.deal_name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-600 mb-1">Customer</label>
-                            <select
-                                name="customer"
-                                value={formData.customer}
-                                onChange={handleInputChange}
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
-                            >
-                                <option value="">-- Select Customer --</option>
-                                {customers.map(cust => (
-                                    <option key={cust.id} value={cust.id}>{cust.company_name || cust.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Financials and Period */}
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                            <DollarSign size={20} />
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-800">Financials & Timeline</h3>
-                    </div>
-
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-600 mb-1">Total Amount</label>
+                        <div className="ae-grid-5">
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Total Amount</label>
                                 <input
                                     type="number"
                                     name="total_amount"
@@ -239,81 +231,202 @@ const RevenueContractForm: React.FC<RevenueContractFormProps> = ({ id, onBack, o
                                     onChange={handleInputChange}
                                     required
                                     step="0.01"
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                                    className="ae-input"
+                                    style={{ minHeight: '34px' }}
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-600 mb-1">Currency</label>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Currency</label>
                                 <select
                                     name="currency"
                                     value={formData.currency}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
+                                    className="ae-input"
+                                    style={{ minHeight: '34px' }}
                                 >
                                     {CURRENCIES.map(curr => <option key={curr} value={curr}>{curr}</option>)}
                                 </select>
                             </div>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-600 mb-1">Start Date</label>
-                                <div className="relative">
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Start Date</label>
+                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                                     <input
-                                        type="date"
+                                        type="text"
+                                        value={formData.start_date ? formatToAppDate(formData.start_date) : ''}
+                                        readOnly
+                                        className="ae-input"
+                                        style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px' }}
+                                        onClick={(e) => {
+                                            const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                            if (dateInput) dateInput.showPicker();
+                                        }}
+                                        placeholder="Select Date"
+                                    />
+                                    <input
                                         name="start_date"
-                                        value={formData.start_date}
+                                        type="date"
+                                        value={formData.start_date || ''}
                                         onChange={handleInputChange}
-                                        required
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                                        style={{
+                                            position: 'absolute',
+                                            visibility: 'hidden',
+                                            width: 0,
+                                            height: 0
+                                        }}
                                     />
+                                    <Calendar size={14} style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-600 mb-1">End Date</label>
-                                <div className="relative">
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>End Date</label>
+                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                                     <input
-                                        type="date"
-                                        name="end_date"
-                                        value={formData.end_date}
-                                        onChange={handleInputChange}
-                                        required
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                                        type="text"
+                                        value={formData.end_date ? formatToAppDate(formData.end_date) : ''}
+                                        readOnly
+                                        className="ae-input"
+                                        style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px' }}
+                                        onClick={(e) => {
+                                            const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                            if (dateInput) dateInput.showPicker();
+                                        }}
+                                        placeholder="Select Date"
                                     />
+                                    <input
+                                        name="end_date"
+                                        type="date"
+                                        value={formData.end_date || ''}
+                                        onChange={handleInputChange}
+                                        style={{
+                                            position: 'absolute',
+                                            visibility: 'hidden',
+                                            width: 0,
+                                            height: 0
+                                        }}
+                                    />
+                                    <Calendar size={14} style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
                                 </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Current Status</label>
+                                <select
+                                    name="status"
+                                    value={formData.status}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    style={{ minHeight: '34px' }}
+                                >
+                                    <option value="DRAFT">Draft</option>
+                                    <option value="ACTIVE">Active</option>
+                                    <option value="COMPLETED">Completed</option>
+                                    <option value="CANCELLED">Cancelled</option>
+                                </select>
                             </div>
                         </div>
+                    </section>
 
-                        <div>
-                            <label className="block text-sm font-bold text-gray-600 mb-1">Current Status</label>
-                            <select
-                                name="status"
-                                value={formData.status}
+                    <div style={{ height: '1px', background: '#E0E6ED', margin: '32px 0' }} />
+
+                    {/* Notes */}
+                    <section>
+                        <SectionHeader title="Internal Notes" />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <textarea
+                                name="notes"
+                                value={formData.notes}
                                 onChange={handleInputChange}
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
+                                rows={4}
+                                className="ae-input"
+                                placeholder="Additional details about the contract or recognition terms..."
+                                style={{ resize: 'vertical', minHeight: '80px' }}
+                            />
+                        </div>
+                    </section>
+
+                    {/* Submit Buttons */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+                        <div style={{
+                            display: 'flex',
+                            background: 'white',
+                            padding: '4px',
+                            borderRadius: '12px',
+                            border: '1px solid var(--border-primary)',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+                        }}>
+                            {/* Save — orange when not cancelling */}
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 16px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    background: isCancelActive ? 'transparent' : 'var(--theme-primary)',
+                                    color: isCancelActive ? 'var(--text-secondary)' : 'white',
+                                    boxShadow: isCancelActive ? 'none' : '0 2px 8px rgba(187, 77, 0, 0.3)'
+                                }}
                             >
-                                <option value="DRAFT">Draft</option>
-                                <option value="ACTIVE">Active</option>
-                                <option value="COMPLETED">Completed</option>
-                                <option value="CANCELLED">Cancelled</option>
-                            </select>
+                                {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                                <span>{loading ? 'Saving...' : id ? 'Update Contract' : 'Create Contract'}</span>
+                            </button>
+
+                            {/* Cancel — orange when active */}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsCancelActive(true);
+                                    showConfirm({
+                                        title: 'Are you sure you want to exit?',
+                                        onConfirm: () => onBack(),
+                                        onCancel: () => setIsCancelActive(false)
+                                    });
+                                }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 16px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    background: isCancelActive ? 'var(--theme-primary)' : 'transparent',
+                                    color: isCancelActive ? 'white' : 'var(--text-secondary)',
+                                    boxShadow: isCancelActive ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!isCancelActive) {
+                                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                        e.currentTarget.style.color = 'var(--ae-orange)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!isCancelActive) {
+                                        e.currentTarget.style.background = 'transparent';
+                                        e.currentTarget.style.color = 'var(--text-secondary)';
+                                    }
+                                }}
+                            >
+                                <span style={{ fontSize: '16px', lineHeight: '16px', fontWeight: 700 }}>×</span>
+                                <span>Cancel</span>
+                            </button>
                         </div>
                     </div>
-                </div>
-
-                {/* Notes */}
-                <div className="md:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                    <label className="block text-sm font-bold text-gray-600 mb-2">Internal Notes</label>
-                    <textarea
-                        name="notes"
-                        value={formData.notes}
-                        onChange={handleInputChange}
-                        rows={4}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-                        placeholder="Additional details about the contract or recognition terms..."
-                    />
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     );
 };

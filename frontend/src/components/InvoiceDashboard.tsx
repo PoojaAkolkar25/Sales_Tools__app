@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Download, CheckCircle, XCircle, Mail, BarChart3, Eye, ChevronDown, FileText, FileSpreadsheet, Columns } from 'lucide-react';
+import { Download, XCircle, BarChart3, ChevronDown, FileText, FileSpreadsheet, Columns } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -378,66 +378,82 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
             <div className="ae-table-container" style={{
                 marginTop: '12px',
                 marginBottom: '60px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden',
+                overflow: 'visible',
                 maxHeight: 'none',
-                overflowY: 'visible'
+                overflowY: 'visible',
+                background: 'white',
+                padding: '0'
             }}>
                 {/* Controls Status Tabs and Actions - Padded Header Area */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '8px',
+                    flexWrap: 'nowrap',
+                    gap: '12px',
                     padding: '12px 16px',
                     borderBottom: '1px solid var(--border-primary)',
-                    whiteSpace: 'nowrap',
                     position: 'relative'
                 }}>
                     {/* Status Tabs - Left Side */}
                     <div style={{
                         display: 'flex',
-                        gap: '2px',
-                        background: 'white',
-                        padding: '4px',
+                        gap: '4px',
+                        background: 'var(--bg-primary)',
+                        padding: '6px',
                         borderRadius: '12px',
                         border: '1px solid var(--border-primary)',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                        width: 'fit-content'
+                        boxShadow: 'var(--shadow-sm)'
                     }}>
-                        {statusFlow.map((flow) => (
-                            <button
-                                key={flow.value}
-                                onClick={() => setFilters({ ...filters, status: flow.value })}
-                                style={{
-                                    padding: '5px 10px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    background: filters.status === flow.value ? 'var(--theme-primary)' : 'transparent',
-                                    color: filters.status === flow.value ? 'white' : 'var(--text-secondary)',
-                                    boxShadow: filters.status === flow.value ? 'var(--shadow-md)' : 'none'
-                                }}
-                            >
-                                {flow.label}
-                            </button>
-                        ))}
+                        {statusFlow.map((flow) => {
+                            const isActive = filters.status === flow.value;
+                            return (
+                                <button
+                                    key={flow.value}
+                                    onClick={() => setFilters({ ...filters, status: flow.value })}
+                                    style={{
+                                        padding: '5px 12px',
+                                        borderRadius: '8px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        border: isActive ? '1px solid var(--theme-primary)' : '1px solid transparent',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        whiteSpace: 'nowrap',
+                                        background: isActive ? 'var(--theme-primary)' : 'transparent',
+                                        color: isActive ? 'white' : 'var(--text-secondary)',
+                                        boxShadow: isActive ? 'var(--shadow-md)' : 'none'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!isActive) {
+                                            e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isActive) {
+                                            e.currentTarget.style.border = '1px solid transparent';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }
+                                    }}
+                                >
+                                    {flow.label}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* Actions (Period, Export, Reports, Filters, Columns) - Right Side */}
-                    <div ref={wrapperRef} style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div ref={wrapperRef} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Period:</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Period:</span>
                             <select
                                 className="ae-input"
                                 value={filters.date_range}
                                 onChange={e => setFilters({ ...filters, date_range: e.target.value })}
-                                style={{ height: '32px', fontSize: '0.8rem', width: '130px', padding: '0 12px' }}
+                                style={{ height: '32px', fontSize: '0.8rem', width: '130px', padding: '0 12px', lineHeight: '32px' }}
                             >
                                 <option value="">All Time</option>
                                 <option value="last_month">Last Month</option>
@@ -458,23 +474,26 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     gap: '8px',
                                     padding: '6px 14px',
                                     fontSize: '0.8rem',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    background: 'white',
-                                    color: 'var(--text-secondary)',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    border: `1px solid ${showExportMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)'}`,
-                                    transition: 'all 0.2s'
+                                    fontWeight: 400,
+                                    color: '#000000',
+                                    border: (showExportMenu) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                    boxShadow: (showExportMenu) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none',
+                                    background: 'white'
                                 }}
                                 onMouseEnter={(e) => {
-                                    if (!isDownloading) e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.5)';
+                                    if (!isDownloading && !showExportMenu) {
+                                        e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                                    }
                                 }}
                                 onMouseLeave={(e) => {
-                                    if (!isDownloading) e.currentTarget.style.borderColor = showExportMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)';
+                                    if (!isDownloading && !showExportMenu) {
+                                        e.currentTarget.style.border = '1px solid var(--ae-gray-100)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }
                                 }}
                             >
-                                <Download size={16} /> Export <ChevronDown size={14} />
+                                <Download size={16} color="#000000" /> Export <ChevronDown size={14} color="#000000" />
                             </button>
                             {showExportMenu && (
                                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-primary)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
@@ -510,23 +529,26 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     gap: '8px',
                                     padding: '6px 14px',
                                     fontSize: '0.8rem',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    background: showReports ? 'var(--bg-secondary)' : 'white',
-                                    color: showReports ? 'var(--theme-primary)' : 'var(--text-secondary)',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    border: `1px solid ${showReports ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)'}`,
-                                    transition: 'all 0.2s'
+                                    fontWeight: 400,
+                                    color: '#000000',
+                                    border: (showReports) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                    boxShadow: (showReports) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none',
+                                    background: 'white'
                                 }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.5)';
+                                    if (!showReports) {
+                                        e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                                    }
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = showReports ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)';
+                                    if (!showReports) {
+                                        e.currentTarget.style.border = '1px solid var(--ae-gray-100)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }
                                 }}
                             >
-                                <BarChart3 size={16} /> Reports <ChevronDown size={14} />
+                                <BarChart3 size={16} color="#000000" /> Reports <ChevronDown size={14} color="#000000" />
                             </button>
                             {showReports && (
                                 <div style={{
@@ -616,23 +638,26 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     gap: '8px',
                                     padding: '6px 14px',
                                     fontSize: '0.8rem',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    background: 'white',
-                                    color: 'var(--text-secondary)',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    border: `1px solid ${showColumnMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)'}`,
-                                    transition: 'all 0.2s'
+                                    fontWeight: 400,
+                                    color: '#000000',
+                                    border: (showColumnMenu) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                    boxShadow: (showColumnMenu) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none',
+                                    background: 'white'
                                 }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.5)';
+                                    if (!showColumnMenu) {
+                                        e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                                    }
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = showColumnMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)';
+                                    if (!showColumnMenu) {
+                                        e.currentTarget.style.border = '1px solid var(--ae-gray-100)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }
                                 }}
                             >
-                                <Columns size={16} /> Columns <ChevronDown size={14} />
+                                <Columns size={16} color="#000000" /> Columns <ChevronDown size={14} color="#000000" />
                             </button>
                             {showColumnMenu && (
                                 <div style={{
@@ -694,42 +719,44 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                             Clear All
                                         </button>
                                     </div>
-                                    {ALL_COL_CONFIG.map(col => (
-                                        <label key={col.key} style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                            padding: '10px 16px',
-                                            fontSize: '0.85rem',
-                                            color: '#2D3748',
-                                            cursor: 'pointer',
-                                            userSelect: 'none',
-                                            transition: 'background 0.2s',
-                                            borderBottom: '1px solid var(--border-primary)'
-                                        }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={visibleColumns.includes(col.key)}
-                                                onChange={() => {
-                                                    if (visibleColumns.includes(col.key)) {
-                                                        setVisibleColumns(visibleColumns.filter(c => c !== col.key));
-                                                    } else {
-                                                        setVisibleColumns([...visibleColumns, col.key]);
-                                                    }
-                                                }}
-                                                style={{
-                                                    cursor: 'pointer',
-                                                    width: '16px',
-                                                    height: '16px',
-                                                    accentColor: 'var(--theme-primary)'
-                                                }}
-                                            />
-                                            <span style={{ fontWeight: 600 }}>{col.label}</span>
-                                        </label>
-                                    ))}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                                        {ALL_COL_CONFIG.map(col => (
+                                            <label key={col.key} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '12px',
+                                                padding: '10px 16px',
+                                                fontSize: '0.85rem',
+                                                color: 'var(--text-primary)',
+                                                cursor: 'pointer',
+                                                userSelect: 'none',
+                                                transition: 'background 0.2s',
+                                                borderBottom: '1px solid var(--border-primary)'
+                                            }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-primary)'}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={visibleColumns.includes(col.key)}
+                                                    onChange={() => {
+                                                        if (visibleColumns.includes(col.key)) {
+                                                            setVisibleColumns(visibleColumns.filter(c => c !== col.key));
+                                                        } else {
+                                                            setVisibleColumns([...visibleColumns, col.key]);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        cursor: 'pointer',
+                                                        width: '16px',
+                                                        height: '16px',
+                                                        accentColor: '#FF6B00'
+                                                    }}
+                                                />
+                                                <span style={{ fontWeight: 600 }}>{col.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -737,7 +764,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                 </div>
 
                 {/* Table Area */}
-                <div style={{ overflowX: 'auto' }}>
+                <div style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
                     <table className="ae-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                         <colgroup>
                             {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
@@ -754,13 +781,16 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
                                         userSelect: 'none',
-                                        paddingRight: '20px',
+                                        padding: '4px 20px 4px 6px',
                                         borderRight: '1px solid var(--border-secondary)',
                                         borderBottom: '1px solid var(--border-secondary)',
                                         zIndex: 12,
                                         top: 0,
                                         color: 'var(--text-secondary)',
-                                        textAlign: (col.key === 'amount') ? 'right' : 'left'
+                                        textAlign: (col.key === 'amount') ? 'right' : 'left',
+                                        textTransform: 'uppercase',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 700
                                     }}>
                                         <span title={col.label}>
                                             {getColWidth(col.key) < (SHORT_COL_WIDTHS[col.key] + 5)
@@ -790,8 +820,12 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     whiteSpace: 'nowrap',
                                     top: 0,
                                     color: 'var(--text-secondary)',
-                                    borderBottom: '1px solid var(--border-secondary)'
-                                }}>Actions</th>
+                                    borderBottom: '1px solid var(--border-secondary)',
+                                    textTransform: 'uppercase',
+                                    padding: '4px 6px',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700
+                                }}>Actions</th >
                             </tr>
                             {showFilters && (
                                 <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
@@ -846,14 +880,14 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                                 placeholder="Filter..."
                                                                 value={filters.amount_input}
                                                                 onChange={e => setFilters({ ...filters, amount_input: e.target.value })}
-                                                                style={{ height: '28px', fontSize: '11px', lineHeight: '28px', boxSizing: 'border-box' }}
+                                                                style={{ height: '24px', fontSize: '11px', padding: '0 8px' }}
                                                             />;
                                                         case 'type':
                                                             return <select
                                                                 className="ae-input"
                                                                 value={filters.type}
                                                                 onChange={e => setFilters({ ...filters, type: e.target.value })}
-                                                                style={{ height: '28px', fontSize: '11px', lineHeight: '28px', boxSizing: 'border-box' }}
+                                                                style={{ height: '24px', fontSize: '11px', padding: '0 4px' }}
                                                             >
                                                                 <option value="">All</option>
                                                                 <option value="Standard">Standard</option>
@@ -866,7 +900,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                                 className="ae-input"
                                                                 value={filters.status_input}
                                                                 onChange={e => setFilters({ ...filters, status_input: e.target.value })}
-                                                                style={{ height: '28px', fontSize: '11px', lineHeight: '28px', boxSizing: 'border-box' }}
+                                                                style={{ height: '24px', fontSize: '11px', padding: '0 4px' }}
                                                             >
                                                                 <option value="">All</option>
                                                                 <option value="DRAFT">Draft</option>
@@ -892,7 +926,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                 status: 'DRAFT', invoice_no: '', so_no: '', deal_no: '', customer_name: '',
                                                 type: '', date_range: '', period: '', date_input: '', amount_input: '', status_input: ''
                                             })}
-                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
                                         >
                                             Clear
                                         </button>
@@ -913,14 +947,17 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
                                                 whiteSpace: 'nowrap',
-                                                fontSize: '0.8rem'
+                                                fontSize: '0.75rem',
+                                                padding: '4px 20px 4px 6px',
+                                                verticalAlign: 'middle',
+                                                borderBottom: '1px solid var(--border-secondary)'
                                             } as React.CSSProperties;
 
                                             switch (key) {
                                                 case 'invoice_no':
                                                     return (
                                                         <td key={key}
-                                                            style={{ ...cellStyle, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
+                                                            style={{ ...cellStyle, fontWeight: 600, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
                                                             onClick={() => onView(inv.id)}
                                                         >
                                                             {inv.invoice_no}
@@ -934,7 +971,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                     );
                                                 case 'deal_no':
                                                     return <td key={key}
-                                                        style={{ ...cellStyle, color: 'var(--ae-blue)', cursor: 'pointer', textDecoration: 'underline' }}
+                                                        style={{ ...cellStyle, fontWeight: 600, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }}
                                                         onClick={() => navigate(`/deal?id=${inv.deal}`)}
                                                     >
                                                         {inv.deal_no}
@@ -955,13 +992,12 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                     const style = getStatusStyle(inv.status);
                                                     return <td key={key} style={cellStyle}>
                                                         <span style={{
-                                                            fontSize: '10px',
                                                             padding: '4px 10px',
-                                                            borderRadius: '6px',
+                                                            borderRadius: '99px',
+                                                            fontSize: '0.7rem',
                                                             fontWeight: 700,
-                                                            textTransform: 'uppercase',
-                                                            background: style.bg,
-                                                            color: style.color
+                                                            background: 'var(--bg-secondary)',
+                                                            color: 'var(--theme-primary)'
                                                         }}>
                                                             {style.label}
                                                         </span>
@@ -970,128 +1006,47 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                     return null;
                                             }
                                         })}
-                                        <td style={{ verticalAlign: 'middle' }}>
-                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                        <td style={{ textAlign: 'center', verticalAlign: 'middle', borderBottom: '1px solid var(--border-secondary)', padding: '4px 6px' }}>
+                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
                                                 <button
                                                     onClick={() => onView(inv.id)}
-                                                    title="View Invoice"
-                                                    style={{
-                                                        width: '32px',
-                                                        height: '32px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        borderRadius: '6px',
-                                                        background: 'rgba(255,107,0,0.08)',
-                                                        color: 'var(--theme-primary)',
-                                                        border: '1px solid rgba(255,107,0,0.25)',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.background = 'var(--theme-primary)';
-                                                        e.currentTarget.style.color = 'white';
-                                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
-                                                        e.currentTarget.style.color = 'var(--theme-primary)';
-                                                        e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
-                                                    }}
+                                                    className="ae-btn-secondary"
+                                                    style={{ height: '24px', padding: '4px 12px', fontSize: '0.72rem', borderRadius: '20px', fontWeight: 700 }}
                                                 >
-                                                    <Eye size={16} />
+                                                    View
                                                 </button>
-
                                                 <button
                                                     onClick={() => handleDownload(inv.id, inv.invoice_no)}
-                                                    title="Download PDF"
-                                                    style={{
-                                                        width: '32px',
-                                                        height: '32px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        borderRadius: '6px',
-                                                        background: 'white',
-                                                        color: 'var(--theme-primary)',
-                                                        border: '1px solid rgba(255,107,0,0.25)',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; }}
-                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--theme-primary)'; }}
+                                                    className="ae-btn-secondary"
+                                                    style={{ height: '24px', padding: '4px 12px', fontSize: '0.72rem', borderRadius: '20px', fontWeight: 700 }}
                                                 >
-                                                    <Download size={16} />
+                                                    Download
                                                 </button>
-
                                                 {inv.status === 'PENDING_APPROVAL' && (
                                                     <>
                                                         <button
                                                             onClick={() => handleAction(inv.id, 'approve')}
-                                                            title="Approve"
-                                                            style={{
-                                                                width: '32px',
-                                                                height: '32px',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                borderRadius: '6px',
-                                                                background: 'white',
-                                                                color: '#16A34A',
-                                                                border: '1px solid rgba(22,163,74,0.3)',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                            onMouseEnter={(e) => { e.currentTarget.style.background = '#16A34A'; e.currentTarget.style.color = 'white'; }}
-                                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#16A34A'; }}
+                                                            className="ae-btn-secondary"
+                                                            style={{ height: '24px', padding: '4px 12px', fontSize: '0.72rem', borderRadius: '20px', fontWeight: 700, color: '#16A34A', background: 'rgba(22, 163, 74, 0.05)', borderColor: 'rgba(22, 163, 74, 0.2)' }}
                                                         >
-                                                            <CheckCircle size={16} />
+                                                            Approve
                                                         </button>
                                                         <button
                                                             onClick={() => handleAction(inv.id, 'reject')}
-                                                            title="Reject"
-                                                            style={{
-                                                                width: '32px',
-                                                                height: '32px',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                borderRadius: '6px',
-                                                                background: 'white',
-                                                                color: '#DC2626',
-                                                                border: '1px solid rgba(220,38,38,0.3)',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                            onMouseEnter={(e) => { e.currentTarget.style.background = '#DC2626'; e.currentTarget.style.color = 'white'; }}
-                                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#DC2626'; }}
+                                                            className="ae-btn-secondary"
+                                                            style={{ height: '24px', padding: '4px 12px', fontSize: '0.72rem', borderRadius: '20px', fontWeight: 700, color: '#DC2626', background: 'rgba(220, 38, 38, 0.05)', borderColor: 'rgba(220, 38, 38, 0.2)' }}
                                                         >
-                                                            <XCircle size={16} />
+                                                            Reject
                                                         </button>
                                                     </>
                                                 )}
-
                                                 {inv.status === 'APPROVED' && (
                                                     <button
                                                         onClick={() => handleSendEmail(inv.id)}
-                                                        title="Send Email"
-                                                        style={{
-                                                            width: '32px',
-                                                            height: '32px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            borderRadius: '6px',
-                                                            background: 'white',
-                                                            color: 'var(--theme-primary)',
-                                                            border: '1px solid rgba(255,107,0,0.25)',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s'
-                                                        }}
-                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; }}
-                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--theme-primary)'; }}
+                                                        className="ae-btn-secondary"
+                                                        style={{ height: '24px', padding: '4px 12px', fontSize: '0.72rem', borderRadius: '20px', fontWeight: 700 }}
                                                     >
-                                                        <Mail size={16} />
+                                                        Email
                                                     </button>
                                                 )}
                                             </div>
