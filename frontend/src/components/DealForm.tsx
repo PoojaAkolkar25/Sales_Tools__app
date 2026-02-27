@@ -78,7 +78,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
         deal_date: new Date().toISOString().split('T')[0],
         lead: '',
         stage: 'DEAL_CREATED',
-        currency: 'INR',
+        currency: '', // Default to null/empty as requested
         fx_rate: 1.0,
         deal_amount: '0',
         deal_type: '',
@@ -144,6 +144,11 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                 data.deal_types = [{ type: '', description: '', amount: '0', quantity: 1 }];
             }
 
+            // Ensure customer is string for dropdown compatibility
+            if (data.customer) {
+                data.customer = data.customer.toString();
+            }
+
             setFormData(data);
             setAttachments(data.deal_attachments || []);
         } catch (error) {
@@ -152,6 +157,15 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
         } finally {
             setLoading(false);
         }
+    };
+
+    const getCurrencySymbol = (currencyCode: string) => {
+        if (!currencyCode) return '';
+        const code = currencyCode.toUpperCase();
+        if (code === 'INR') return '₹';
+        if (code === 'USD') return '$';
+        if (code === 'EUR' || code === 'EURO') return '€';
+        return '';
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -184,12 +198,20 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                 const matchedCustomer = customers.find(c => c.name === selectedLead.customer_name);
                 if (matchedCustomer) {
                     const matchedCompany = companies.find((c: any) => c.name === matchedCustomer.name);
+                    const linkedName = matchedCompany?.linked_company_profile_name || '';
+                    // Use matchedCompany.id if available, else fallback to matchedCustomer.id for end user filtering
+                    const linkedPartnerId = matchedCompany ? matchedCompany.id : matchedCustomer.id;
+
                     setFormData((prev: any) => ({
                         ...prev,
                         customer: matchedCustomer.id,
-                        company: matchedCompany
-                            ? (matchedCompany.entity === 'AE_IND' ? 'AE IND' : matchedCompany.entity === 'AE_USA' ? 'AE USA' : (matchedCompany.entity || prev.company))
-                            : prev.company
+                        customer_email: matchedCustomer.email || prev.customer_email,
+                        // Prioritize base_currency from Company Profile (User Management)
+                        currency: (matchedCompany?.base_currency === 'EUR' ? 'EURO' : matchedCompany?.base_currency) ||
+                            (matchedCustomer.currency === 'EUR' ? 'EURO' : matchedCustomer.currency) ||
+                            prev.currency || '',
+                        company: linkedName || prev.company,
+                        end_customer: '' // Keep blank for manual selection as requested
                     }));
                 }
             }
@@ -200,13 +222,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
             const selectedCustomer = customers.find(c => c.id === parseInt(value));
             if (selectedCustomer) {
                 const matchedCompany = companies.find((c: any) => c.name === selectedCustomer.name);
+                // Use matchedCompany.id if available, else fallback to selectedCustomer.id for end user filtering
                 const linkedPartnerId = matchedCompany ? matchedCompany.id : selectedCustomer.id;
-
-                // Auto-populate End Customer(s)
-                const associatedEndCustomers = endCustomers
-                    .filter(ec => ec.linked_partner === linkedPartnerId)
-                    .map(ec => ec.name)
-                    .join(', ');
 
                 setFormData((prev: any) => {
                     const linkedName = matchedCompany?.linked_company_profile_name || '';
@@ -214,9 +231,12 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     return {
                         ...prev,
                         customer_email: selectedCustomer.email || prev.customer_email,
-                        currency: selectedCustomer.currency || prev.currency,
+                        // Prioritize base_currency from Company Profile (User Management)
+                        currency: (matchedCompany?.base_currency === 'EUR' ? 'EURO' : matchedCompany?.base_currency) ||
+                            (selectedCustomer.currency === 'EUR' ? 'EURO' : selectedCustomer.currency) ||
+                            prev.currency || '',
                         company: linkedName || prev.company,
-                        end_customer: associatedEndCustomers
+                        end_customer: '' // Reset to blank for manual selection as requested
                     };
                 });
             }
@@ -544,9 +564,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     display: 'flex',
                     flexDirection: 'column'
                 }}>
-                    {/* 1. Deal Information */}
+                    {/* 1. Information */}
                     <div>
-                        <SectionHeader title="Deal Information" />
+                        <SectionHeader title="Information" />
                         <div className="ae-grid-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead Date</label>
@@ -595,8 +615,18 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
 
                         <div className="ae-grid-4 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Company Name *</label>
+                                <input
+                                    type="text"
+                                    value={formData.company || ''}
+                                    className="ae-input"
+                                    disabled
+                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
-                                    label="Customer/Partner Name *"
+                                    label="Customer/Partner Name * *"
                                     options={companies
                                         .filter((c, index, self) =>
                                             index === self.findIndex((t) => t.name === c.name)
@@ -615,24 +645,24 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Company Name *</label>
-                                <input
-                                    type="text"
-                                    value={formData.company || ''}
-                                    className="ae-input"
-                                    disabled
-                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
-                                />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>End user Name</label>
-                                <input
-                                    type="text"
+                                <SearchableDropdown
+                                    label="End user Name"
+                                    options={(() => {
+                                        // Find linked partner ID for filtering
+                                        const selectedCustomer = customers.find(c => c.id === parseInt(formData.customer));
+                                        if (!selectedCustomer) return [];
+
+                                        const matchedCompany = companies.find((c: any) => c.name === selectedCustomer.name);
+                                        const linkedPartnerId = matchedCompany ? matchedCompany.id : null;
+
+                                        return endCustomers
+                                            .filter(ec => ec.linked_partner === linkedPartnerId)
+                                            .map(ec => ({ value: ec.name, label: ec.name }));
+                                    })()}
                                     value={formData.end_customer}
-                                    className="ae-input"
-                                    placeholder="End user Name"
-                                    disabled
-                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
+                                    onChange={(val) => handleInputChange({ target: { name: 'end_customer', value: val } } as any)}
+                                    placeholder="Select End User"
+                                    disabled={!formData.customer}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -650,9 +680,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         </div>
                     </div>
 
-                    {/* 2 & 3 Combined. Deal Value */}
+                    {/* 2 & 3 Combined. Value */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
-                        <SectionHeader title="Deal Value" />
+                        <SectionHeader title="Value" />
 
                         <div style={{ overflow: 'visible' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '12px' }}>
@@ -723,7 +753,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                 </td>
                                                 <td style={{ padding: '6px 4px' }}>
                                                     <div style={{ height: '30px', padding: '4px 0', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        {formData.currency}
+                                                        {formData.currency === 'EUR' ? 'EURO' : (formData.currency || '')}
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '6px 4px' }}>
@@ -739,7 +769,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                 <td style={{ padding: '6px 4px' }}>
                                                     <div style={{ position: 'relative' }}>
                                                         <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: '#718096' }}>
-                                                            {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
+                                                            {getCurrencySymbol(formData.currency)}
                                                         </span>
                                                         <input
                                                             type="number"
@@ -752,6 +782,16 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                                 if (e.key === 'Tab' && !e.shiftKey && index === (formData.deal_types || []).length - 1) {
                                                                     e.preventDefault();
                                                                     addDealTypeRow();
+                                                                    // Focus the first field of the new row after it renders
+                                                                    setTimeout(() => {
+                                                                        const table = (e.target as HTMLElement).closest('table');
+                                                                        const rows = table?.querySelectorAll('tbody tr');
+                                                                        const lastRow = rows?.[rows.length - 1];
+                                                                        const firstInput = lastRow?.querySelector('select, input');
+                                                                        if (firstInput instanceof HTMLElement) {
+                                                                            firstInput.focus();
+                                                                        }
+                                                                    }, 100);
                                                                 }
                                                             }}
                                                             required
@@ -759,7 +799,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: '0.9rem', fontWeight: 700, color: '#1a1f36' }}>
-                                                    {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
+                                                    {getCurrencySymbol(formData.currency)}
                                                     {amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </td>
                                                 <td style={{ padding: '6px 4px', textAlign: 'center' }}>
@@ -782,7 +822,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     <tr style={{ background: '#F8FAFC' }}>
                                         <td colSpan={7} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: 'black' }}>Total Deal Value:</td>
                                         <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '0.95rem', fontWeight: 800, color: '#FF6B00' }}>
-                                            {formData.currency === 'INR' ? '₹' : formData.currency === 'USD' ? '$' : formData.currency === 'EURO' ? '€' : ''}
+                                            {getCurrencySymbol(formData.currency)}
                                             {parseFloat(formData.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                         <td></td>
@@ -829,7 +869,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                         type="text"
                                         value={formatToAppDate(formData.expected_close_date)}
                                         readOnly
-                                        placeholder="dd/Mon/yyyy"
+                                        placeholder="dd-Mon-yyyy"
                                         className="ae-input"
                                         style={{ width: '100%', cursor: 'pointer', paddingRight: '32px' }}
                                         onClick={() => {
@@ -870,9 +910,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         </div>
                     </div>
 
-                    {/* 4. Deal Team */}
+                    {/* 4. Team */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
-                        <SectionHeader title="Deal Team" />
+                        <SectionHeader title="Team" />
                         <div className="ae-grid-4">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown

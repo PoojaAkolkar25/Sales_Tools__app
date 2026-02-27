@@ -150,6 +150,8 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
     const [selectedCustomerName, setSelectedCustomerName] = useState('');
     const [leads, setLeads] = useState<Lead[]>([]);
+    const [customers, setCustomers] = useState<any[]>([]);
+    const [companies, setCompanies] = useState<any[]>([]);
     const [projectManager, setProjectManager] = useState('');
     const [salesPerson, setSalesPerson] = useState('');
     const [costSheetNo, setCostSheetNo] = useState('');
@@ -178,8 +180,11 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
 
     const getCurrencySymbol = (cur: string) => {
-        switch (cur) {
+        if (!cur) return '₹';
+        const code = cur.toUpperCase();
+        switch (code) {
             case 'USD': return '$';
+            case 'EUR':
             case 'EURO': return '€';
             default: return '₹';
         }
@@ -263,42 +268,76 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     }, [id]);
 
     useEffect(() => {
-        const fetchAllLeads = async () => {
+        const fetchInitialData = async () => {
             try {
-                const [leadsRes, dealsRes] = await Promise.all([
+                const [leadsRes, dealsRes, customersRes, companiesRes] = await Promise.all([
                     api.get('/leads/'),
-                    api.get('/deals/')
+                    api.get('/deals/'),
+                    api.get('/customers/'),
+                    api.get('/finance/company-profile/')
                 ]);
                 setLeads(leadsRes.data);
                 setDeals(dealsRes.data);
+                setCustomers(customersRes.data);
+                setCompanies(companiesRes.data);
             } catch (error) {
-                console.error('Error fetching data', error);
+                console.error('Error fetching initial data', error);
             }
         };
-        fetchAllLeads();
+        fetchInitialData();
     }, []);
 
     const handleCustomerChange = (customerName: string) => {
-        setSelectedCustomerName(customerName);
+        setSelectedCustomerName(customerName || '');
         if (!customerName) {
             setLead(null);
             setDealId(null);
             setProjectManager('');
             setSalesPerson('');
+            setProjectName('');
+            setCurrency('INR');
             return;
         }
 
-        // Find if there's only one lead for this customer
+        // Auto-populate currency from Customer/CompanyProfile
+        const matchedCustomer = customers.find(c => c.name === customerName);
+        const matchedCompany = companies.find(c => c.name === customerName);
+
+        if (matchedCompany?.base_currency) {
+            setCurrency(matchedCompany.base_currency === 'EUR' ? 'EURO' : matchedCompany.base_currency);
+        } else if (matchedCustomer?.currency) {
+            setCurrency(matchedCustomer.currency === 'EUR' ? 'EURO' : matchedCustomer.currency);
+        }
+
+        // Find relevant leads/deals for this customer
         const customerLeads = leads.filter(l => l.customer_name === customerName);
-        if (customerLeads.length === 1) {
-            setLead(customerLeads[0]);
-            setProjectManager(customerLeads[0].project_manager || '');
-            setSalesPerson(customerLeads[0].sales_person || '');
-            setProjectName(customerLeads[0].project_name || '');
+        const customerDeals = deals.filter(d => d.customer_name === customerName);
+
+        if (customerDeals.length > 0) {
+            // Pick first deal if multiple exist
+            const deal = customerDeals[0];
+            setDealId(deal.id);
+            setProjectManager(deal.project_manager || '');
+            setSalesPerson(deal.salesperson_name || '');
+            setProjectName(deal.deal_name || '');
+            if (deal.currency) setCurrency(deal.currency === 'EUR' ? 'EURO' : deal.currency);
+
+            if (deal.lead) {
+                const associatedLead = leads.find(l => l.id === deal.lead);
+                if (associatedLead) setLead(associatedLead);
+            }
+        } else if (customerLeads.length > 0) {
+            // Pick first lead if multiple exist
+            const lead = customerLeads[0];
+            setLead(lead);
+            setProjectManager(lead.project_manager || '');
+            setSalesPerson(lead.sales_person || '');
+            setProjectName(lead.project_name || '');
         } else {
-            // Multiple leads, let user pick Lead No.
             setLead(null);
             setDealId(null);
+            setProjectManager('');
+            setSalesPerson('');
             setProjectName('');
         }
     };

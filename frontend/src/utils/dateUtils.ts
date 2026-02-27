@@ -1,5 +1,5 @@
 /**
- * Formats a date string or Date object to DD/MMM/YYYY format (e.g., 02/Feb/2026)
+ * Formats a date string or Date object to DD-MMM-YYYY format (e.g., 02-Feb-2026)
  * @param dateInput Date object or ISO date string
  * @returns formatted date string
  */
@@ -15,7 +15,7 @@ export const formatToAppDate = (dateInput: string | Date | null | undefined): st
     const month = months[date.getMonth()];
     const year = date.getFullYear();
 
-    return `${day}/${month}/${year}`;
+    return `${day}-${month}-${year}`;
 };
 
 /**
