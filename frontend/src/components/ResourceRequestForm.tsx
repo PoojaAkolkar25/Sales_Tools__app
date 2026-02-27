@@ -103,6 +103,10 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     };
 
     const handleSubmitToIT = async () => {
+        if (!id) {
+            showNotification('Request must be saved first', 'error');
+            return;
+        }
         setSaving(true);
         try {
             await api.post(`/inventory/requests/${id}/submit_to_it/`);
@@ -240,6 +244,11 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                 await api.patch(`/inventory/requests/${requestId}/`, cleanedData);
             }
 
+            if (!requestId) {
+                showNotification('Could not determine request ID', 'error');
+                return;
+            }
+
             // Now transition to SUBMITTED
             await api.post(`/inventory/requests/${requestId}/submit/`);
             showNotification('Request created and submitted.', 'success');
@@ -266,6 +275,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     };
 
     const handleApproveIT = async () => {
+        if (!id) return;
         try {
             await api.post(`/inventory/requests/${id}/approve_it/`, { remarks: formData.it_head_remarks });
             showNotification('Approved by IT and sent to Finance', 'success');
@@ -290,6 +300,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     };
 
     const handleApproveFinance = async () => {
+        if (!id) return;
         try {
             await api.post(`/inventory/requests/${id}/approve_finance/`, { remarks: formData.finance_head_remarks });
             showNotification('Approved by Finance', 'success');
@@ -314,6 +325,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     };
 
     const handleReject = async () => {
+        if (!id) return;
         if (!rejectRemarks) {
             showNotification('Please enter rejection remarks', 'error');
             return;
@@ -335,6 +347,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     };
 
     const handleIssue = async () => {
+        if (!id) return;
         const resourceId = prompt('Enter Server Asset ID to assign:');
         if (!resourceId) return;
         try {

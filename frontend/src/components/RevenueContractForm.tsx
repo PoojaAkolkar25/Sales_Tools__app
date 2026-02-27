@@ -59,7 +59,7 @@ const RevenueContractForm: React.FC<RevenueContractFormProps> = ({ id, onBack, o
 
     const fetchCustomers = async () => {
         try {
-            const response = await api.get('/finance/customers/');
+            const response = await api.get('/finance/customer-partners/');
             setCustomers(response.data);
         } catch (error) {
             console.error('Error fetching customers', error);
