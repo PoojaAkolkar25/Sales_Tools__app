@@ -7,7 +7,10 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-    
+
+# Logs
+*.log
+backend/logs/
 
 # Django media (optional)
 backend/media/
@@ -19,3 +22,9 @@ node_modules/
 **/migrations/*.py
 !**/migrations/__init__.py
 inital.__pycache__
+
+# Environment
+.env
+.env.local
+.env.development
+.env.production
