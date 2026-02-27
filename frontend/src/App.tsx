@@ -55,6 +55,7 @@ import ResourceRequestForm from './components/ResourceRequestForm';
 import Settings from './components/Settings';
 import ResetPassword from './components/ResetPassword';
 import RevenueDashboard from './components/RevenueDashboard';
+import AuditTrailPage from './components/AuditTrailPage';
 
 
 
@@ -638,6 +639,15 @@ const AppContent: React.FC = () => {
           <ModuleWrapper {...commonWrapperProps}>
             <div className="main-route-container">
               <UserManagement />
+            </div>
+          </ModuleWrapper>
+        ) : <Navigate to="/login" />
+      } />
+      <Route path="/audit-trail" element={
+        user && user.role === 'app_admin' ? (
+          <ModuleWrapper {...commonWrapperProps}>
+            <div className="main-route-container">
+              <AuditTrailPage />
             </div>
           </ModuleWrapper>
         ) : <Navigate to="/login" />
