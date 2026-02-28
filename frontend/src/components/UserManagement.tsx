@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useLocation } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { UserPlus, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search, LayoutDashboard, PlusCircle, Paperclip, FileText, Eye, Download, ChevronLeft, ChevronRight, Columns, ChevronDown } from 'lucide-react';
+import { UserPlus, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search, LayoutDashboard, PlusCircle, Paperclip, FileText, Eye, Download, ChevronLeft, ChevronRight, Columns, ChevronDown, Building2, Plus, CheckCircle2, XCircle, UserSquare2, Calculator } from 'lucide-react';
 import { Country, State, City } from 'country-state-city';
 import SearchableDropdown from './SearchableDropdown';
+import Pagination from './Pagination';
 
 const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: string }[]> = {
     user: [
@@ -207,7 +208,13 @@ const UserManagement: React.FC = () => {
     };
 
     const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm,] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, columnFilters, viewMode]);
 
     const [companyFormData, setCompanyFormData] = useState({
         name: '',
@@ -341,7 +348,7 @@ const UserManagement: React.FC = () => {
         return defaults;
     });
 
-    const [colWidths] = useState<Record<string, number>>(() => {
+    const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
         const saved = localStorage.getItem('userManagement_colWidths');
         if (saved) return JSON.parse(saved);
         return DEFAULT_COL_WIDTHS;
@@ -350,8 +357,36 @@ const UserManagement: React.FC = () => {
     const tableScrollRef = useRef<HTMLDivElement>(null);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
     const columnMenuRef = useRef<HTMLDivElement>(null);
+    const resizingRef = useRef<{ colKey: string; startX: number; startWidth: number } | null>(null);
 
-    const getColWidth = (key: string) => colWidths[key] ?? 150;
+    const getColWidth = useCallback((key: string) => colWidths[key] ?? 150, [colWidths]);
+
+    const startResize = useCallback((e: React.MouseEvent, key: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resizingRef.current = { colKey: key, startX: e.clientX, startWidth: getColWidth(key) };
+
+        const onMouseMove = (ev: MouseEvent) => {
+            if (!resizingRef.current) return;
+            const resKey = resizingRef.current.colKey;
+            const delta = ev.clientX - resizingRef.current.startX;
+            const newWidth = Math.max(50, resizingRef.current.startWidth + delta);
+            setColWidths(prev => {
+                const next = { ...prev, [resKey]: newWidth };
+                localStorage.setItem('userManagement_colWidths', JSON.stringify(next));
+                return next;
+            });
+        };
+
+        const onMouseUp = () => {
+            resizingRef.current = null;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }, [getColWidth]);
 
     const handleEditClick = (mode: string, item: any) => {
         setEditingId(item.id);
@@ -477,24 +512,19 @@ const UserManagement: React.FC = () => {
         switch (colKey) {
             case 'username':
                 return (
-                    <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
-                            <UserIcon size={20} />
-                        </div>
-                        <div className="ml-4" style={{ cursor: 'pointer' }} onClick={() => handleEditClick('user', user)}>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ae-blue)', textDecoration: 'underline' }}>{user.username}</div>
-                        </div>
+                    <div style={{ cursor: 'pointer' }} onClick={() => handleEditClick('user', user)}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--theme-primary)', textDecoration: 'underline' }}>{user.username}</div>
                     </div>
                 );
-            case 'first_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.first_name || '-'}</div>;
-            case 'last_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.last_name || '-'}</div>;
+            case 'first_name': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{user.first_name || '-'}</div>;
+            case 'last_name': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{user.last_name || '-'}</div>;
             case 'employee_id': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{user.employee_id || '-'}</div>;
-            case 'email': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.email || '-'}</div>;
-            case 'mobile': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.mobile || '-'}</div>;
-            case 'department': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.department || '-'}</div>;
-            case 'region': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.region || '-'}</div>;
-            case 'reporting_to_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.reporting_to_name || '-'}</div>;
-            case 'role': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{user.role || '-'}</div>;
+            case 'email': return <div style={{ fontSize: '0.75rem', color: 'var(--theme-primary)', fontWeight: 500 }}>{user.email || '-'}</div>;
+            case 'mobile': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{user.mobile || '-'}</div>;
+            case 'department': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{user.department || '-'}</div>;
+            case 'region': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{user.region || '-'}</div>;
+            case 'reporting_to_name': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{user.reporting_to_name || '-'}</div>;
+            case 'role': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{user.role || '-'}</div>;
             case 'is_active':
                 return (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', background: user.is_active ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: user.is_active ? '#00C853' : '#F44336' }}>
@@ -510,33 +540,28 @@ const UserManagement: React.FC = () => {
         switch (colKey) {
             case 'name':
                 return (
-                    <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
-                            <Shield size={20} />
-                        </div>
-                        <div className="ml-4" style={{ cursor: 'pointer' }} onClick={() => handleEditClick('partner', p)}>
-                            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ae-blue)', textDecoration: 'underline' }}>{p.name}</div>
-                            <div style={{ fontSize: '0.8rem', color: '#718096' }}>{p.code}</div>
-                        </div>
+                    <div style={{ cursor: 'pointer' }} onClick={() => handleEditClick('partner', p)}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--theme-primary)', textDecoration: 'underline' }}>{p.name}</div>
+                        <div style={{ fontSize: '11px', color: '#1a1f36' }}>{p.code}</div>
                     </div>
                 );
-            case 'contact_person': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.contact_person || '-'}</div>;
-            case 'address_line_1': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.address_line_1 || '-'}</div>;
-            case 'city': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.city || '-'}</div>;
-            case 'state_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.state_name || p.state || '-'}</div>;
-            case 'pincode': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.pincode || '-'}</div>;
-            case 'phone_number': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.phone_number || '-'}</div>;
-            case 'mobile': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.mobile || '-'}</div>;
-            case 'email': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.email || '-'}</div>;
-            case 'website_url': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.website_url || '-'}</div>;
-            case 'base_currency': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 700 }}>{p.currency_symbol} ({p.base_currency})</div>;
-            case 'decimal_places': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.decimal_places}</div>;
+            case 'contact_person': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.contact_person || '-'}</div>;
+            case 'address_line_1': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.address_line_1 || '-'}</div>;
+            case 'city': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.city || '-'}</div>;
+            case 'state_name': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.state_name || p.state || '-'}</div>;
+            case 'pincode': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.pincode || '-'}</div>;
+            case 'phone_number': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.phone_number || '-'}</div>;
+            case 'mobile': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.mobile || '-'}</div>;
+            case 'email': return <div style={{ fontSize: '0.75rem', color: 'var(--theme-primary)', fontWeight: 500 }}>{p.email || '-'}</div>;
+            case 'website_url': return <div style={{ fontSize: '0.75rem', color: 'var(--theme-primary)', fontWeight: 500 }}>{p.website_url || '-'}</div>;
+            case 'base_currency': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 700 }}>{p.currency_symbol} ({p.base_currency})</div>;
+            case 'decimal_places': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.decimal_places}</div>;
             case 'gstin': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{p.gstin || '-'}</div>;
-            case 'pan': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.pan || '-'}</div>;
-            case 'tan': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.tan || '-'}</div>;
-            case 'cin': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.cin || '-'}</div>;
-            case 'msme_number': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.msme_number || '-'}</div>;
-            case 'payment_terms': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{p.payment_terms || '-'}</div>;
+            case 'pan': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.pan || '-'}</div>;
+            case 'tan': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.tan || '-'}</div>;
+            case 'cin': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.cin || '-'}</div>;
+            case 'msme_number': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.msme_number || '-'}</div>;
+            case 'payment_terms': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{p.payment_terms || '-'}</div>;
             default: return null;
         }
     };
@@ -545,24 +570,19 @@ const UserManagement: React.FC = () => {
         switch (colKey) {
             case 'name':
                 return (
-                    <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0 bg-[var(--ae-blue)]/10 text-[var(--ae-blue)] rounded-full flex items-center justify-center">
-                            <Users size={20} />
-                        </div>
-                        <div className="ml-4" style={{ cursor: 'pointer' }} onClick={() => handleEditClick('end_customer', ec)}>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ae-blue)', textDecoration: 'underline' }}>{ec.name}</div>
-                            <div style={{ fontSize: '0.65rem', color: '#718096' }}>{ec.end_customer_code}</div>
-                        </div>
+                    <div style={{ cursor: 'pointer' }} onClick={() => handleEditClick('end_customer', ec)}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--theme-primary)', textDecoration: 'underline' }}>{ec.name}</div>
+                        <div style={{ fontSize: '11px', color: '#1a1f36' }}>{ec.end_customer_code}</div>
                     </div>
                 );
             case 'end_customer_code': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{ec.end_customer_code}</div>;
-            case 'linked_partner_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.linked_partner_name || '-'}</div>;
-            case 'industry': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.industry || '-'}</div>;
-            case 'location': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.location || '-'}</div>;
-            case 'contact_person': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.contact_person || '-'}</div>;
-            case 'email': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.email || '-'}</div>;
-            case 'alias_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.alias_name || '-'}</div>;
-            case 'phone': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{ec.phone || '-'}</div>;
+            case 'linked_partner_name': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{ec.linked_partner_name || '-'}</div>;
+            case 'industry': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{ec.industry || '-'}</div>;
+            case 'location': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{ec.location || '-'}</div>;
+            case 'contact_person': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{ec.contact_person || '-'}</div>;
+            case 'email': return <div style={{ fontSize: '0.75rem', color: 'var(--theme-primary)', fontWeight: 500 }}>{ec.email || '-'}</div>;
+            case 'alias_name': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{ec.alias_name || '-'}</div>;
+            case 'phone': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{ec.phone || '-'}</div>;
             case 'status':
                 return (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', background: ec.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: ec.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
@@ -576,51 +596,49 @@ const UserManagement: React.FC = () => {
 
     const renderCompanyCell = (c: any, colKey: string) => {
         switch (colKey) {
-            case 'linked_company_profile_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 600 }}>{c.linked_company_profile_name || c.linked_company_profile_display || '-'}</div>;
+            case 'linked_company_profile_name': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 600 }}>{c.linked_company_profile_name || c.linked_company_profile_display || '-'}</div>;
             case 'name':
                 return (
-                    <div className="flex items-center">
-                        <div className="ml-4" style={{ cursor: 'pointer' }} onClick={() => handleEditClick('company', c)}>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ae-blue)', textDecoration: 'underline' }}>{c.name}</div>
-                            <div style={{ fontSize: '0.65rem', color: '#718096' }}>{c.customer_id}</div>
-                        </div>
+                    <div style={{ cursor: 'pointer' }} onClick={() => handleEditClick('company', c)}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--theme-primary)', textDecoration: 'underline' }}>{c.name}</div>
+                        <div style={{ fontSize: '11px', color: 'black' }}>{c.customer_id}</div>
                     </div>
                 );
 
             case 'customer_id': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{c.customer_id}</div>;
-            case 'region': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.region}</div>;
-            case 'contact_person': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.contact_person || '-'}</div>;
-            case 'alias_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.alias_name || '-'}</div>;
-            case 'address_line_1': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.address_line_1 || '-'}</div>;
-            case 'city': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.city}</div>;
-            case 'state_name': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.state_name || c.state || '-'}</div>;
-            case 'pincode': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.pincode}</div>;
-            case 'phone_number': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.phone_number || '-'}</div>;
-            case 'mobile_number': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.mobile_number || '-'}</div>;
-            case 'email': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.email || '-'}</div>;
-            case 'website_url': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.website_url || '-'}</div>;
-            case 'industry': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.industry || '-'}</div>;
-            case 'type': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 600 }}>{c.type}</div>;
-            case 'payment_terms': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.payment_terms || '-'}</div>;
-            case 'base_currency': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 700 }}>{c.currency_symbol} ({c.base_currency})</div>;
+            case 'region': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.region}</div>;
+            case 'contact_person': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.contact_person || '-'}</div>;
+            case 'alias_name': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.alias_name || '-'}</div>;
+            case 'address_line_1': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.address_line_1 || '-'}</div>;
+            case 'city': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.city}</div>;
+            case 'state_name': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.state_name || c.state || '-'}</div>;
+            case 'pincode': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.pincode}</div>;
+            case 'phone_number': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.phone_number || '-'}</div>;
+            case 'mobile_number': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.mobile_number || '-'}</div>;
+            case 'email': return <div style={{ fontSize: '0.75rem', color: 'var(--theme-primary)', fontWeight: 500 }}>{c.email || '-'}</div>;
+            case 'website_url': return <div style={{ fontSize: '0.75rem', color: 'var(--theme-primary)', fontWeight: 500 }}>{c.website_url || '-'}</div>;
+            case 'industry': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.industry || '-'}</div>;
+            case 'type': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 600 }}>{c.type}</div>;
+            case 'payment_terms': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.payment_terms || '-'}</div>;
+            case 'base_currency': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 700 }}>{c.currency_symbol} ({c.base_currency})</div>;
             case 'gstin': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{c.gstin || '-'}</div>;
-            case 'pan': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.pan || '-'}</div>;
-            case 'tan': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.tan || '-'}</div>;
-            case 'cin': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.cin || '-'}</div>;
-            case 'msme_number': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{c.msme_number || '-'}</div>;
+            case 'pan': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.pan || '-'}</div>;
+            case 'tan': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.tan || '-'}</div>;
+            case 'cin': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.cin || '-'}</div>;
+            case 'msme_number': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{c.msme_number || '-'}</div>;
             default: return null;
         }
     };
 
     const renderFYCell = (fy: any, colKey: string) => {
         switch (colKey) {
-            case 'label': return <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ae-blue)', textDecoration: 'underline', cursor: 'pointer' }} onClick={() => handleEditClick('financial_year', fy)}>{fy.label}</div>;
+            case 'label': return <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--theme-primary)', textDecoration: 'underline', cursor: 'pointer' }} onClick={() => handleEditClick('financial_year', fy)}>{fy.label}</div>;
             case 'code': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{fy.code}</div>;
-            case 'fy_year': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{fy.fy_year}</div>;
-            case 'start_date': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{fy.start_date}</div>;
-            case 'end_date': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{fy.end_date}</div>;
-            case 'first_month_of_fiscal_year': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{fy.first_month_of_fiscal_year}</div>;
-            case 'first_month_of_tax_year': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{fy.first_month_of_tax_year}</div>;
+            case 'fy_year': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{fy.fy_year}</div>;
+            case 'start_date': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{fy.start_date}</div>;
+            case 'end_date': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{fy.end_date}</div>;
+            case 'first_month_of_fiscal_year': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{fy.first_month_of_fiscal_year}</div>;
+            case 'first_month_of_tax_year': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{fy.first_month_of_tax_year}</div>;
             case 'is_current_fy':
                 return (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 800, background: fy.is_current_fy ? 'rgba(0, 200, 83, 0.1)' : 'rgba(113, 128, 150, 0.1)', color: fy.is_current_fy ? '#00C853' : '#718096' }}>
@@ -642,23 +660,21 @@ const UserManagement: React.FC = () => {
         switch (colKey) {
             case 'name':
                 return (
-                    <div className="flex items-center">
-                        <div className="ml-4" style={{ cursor: 'pointer' }} onClick={() => handleEditClick('product', product)}>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--ae-blue)', textDecoration: 'underline' }}>{product.name}</div>
-                            <div style={{ fontSize: '0.65rem', color: '#718096' }}>{product.product_code}</div>
-                        </div>
+                    <div style={{ cursor: 'pointer' }} onClick={() => handleEditClick('product', product)}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--theme-primary)', textDecoration: 'underline' }}>{product.name}</div>
+                        <div style={{ fontSize: '11px', color: '#1a1f36' }}>{product.product_code}</div>
                     </div>
                 );
             case 'product_code': return <div style={{ fontSize: '0.75rem', color: '#FF6B00', fontWeight: 700 }}>{product.product_code}</div>;
-            case 'category': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 600 }}>{product.category}</div>;
-            case 'subcategory': return <div style={{ fontSize: '0.75rem', color: '#718096', fontWeight: 500 }}>{product.subcategory || '-'}</div>;
-            case 'uom': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{product.uom}</div>;
-            case 'standard_price': return <div style={{ fontSize: '0.75rem', color: '#1a1f36', fontWeight: 700 }}>{product.currency === 'INR' ? '₹' : product.currency === 'USD' ? '$' : '€'} {product.standard_price}</div>;
-            case 'tax_percentage': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{product.tax_percentage}%</div>;
-            case 'hsn_sac_code': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{product.hsn_sac_code || '-'}</div>;
-            case 'industry': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{product.industry || '-'}</div>;
-            case 'currency': return <div style={{ fontSize: '0.75rem', color: '#4A5568', fontWeight: 500 }}>{product.currency}</div>;
-            case 'description': return <div style={{ fontSize: '0.7rem', color: '#718096', lineHeight: 1.4 }}>{product.description || '-'}</div>;
+            case 'category': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 600 }}>{product.category}</div>;
+            case 'subcategory': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{product.subcategory || '-'}</div>;
+            case 'uom': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{product.uom}</div>;
+            case 'standard_price': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 700 }}>{product.currency === 'INR' ? '₹' : product.currency === 'USD' ? '$' : '€'} {product.standard_price}</div>;
+            case 'tax_percentage': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{product.tax_percentage}%</div>;
+            case 'hsn_sac_code': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{product.hsn_sac_code || '-'}</div>;
+            case 'industry': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{product.industry || '-'}</div>;
+            case 'currency': return <div style={{ fontSize: '0.75rem', color: 'black', fontWeight: 500 }}>{product.currency}</div>;
+            case 'description': return <div style={{ fontSize: '0.7rem', color: 'black', lineHeight: 1.4 }}>{product.description || '-'}</div>;
             case 'status':
                 return (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', background: product.status === 'ACTIVE' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: product.status === 'ACTIVE' ? '#00C853' : '#F44336' }}>
@@ -1121,79 +1137,6 @@ const UserManagement: React.FC = () => {
         });
     };
 
-    const handleDeletePartner = async (id: number) => {
-        showConfirm({
-            title: 'Delete Company',
-            message: 'Are you sure you want to delete this company? This action cannot be undone.',
-            onConfirm: async () => {
-                try {
-                    await api.delete(`finance/customer-partners/${id}/`);
-                    fetchPartners();
-                    showNotification('Company deleted successfully', 'success');
-                } catch (err: any) {
-                    showNotification(parseError(err, 'Error deleting company'), 'error');
-                }
-            }
-        });
-    };
-
-    const handleDeleteEndCustomer = async (id: number) => {
-        showConfirm({
-            title: 'Delete End Customer',
-            message: 'Are you sure you want to delete this end customer? This action cannot be undone.',
-            onConfirm: async () => {
-                try {
-                    await api.delete(`finance/end-customers/${id}/`);
-                    fetchEndCustomers();
-                    showNotification('End customer deleted successfully', 'success');
-                } catch (err: any) {
-                    showNotification(parseError(err, 'Error deleting end customer'), 'error');
-                }
-            }
-        });
-    };
-
-    const handleDownloadReport = async (fy: any) => {
-        try {
-            const response = await api.get(`finance/invoices/report_register/`, {
-                params: {
-                    start_date: fy.start_date,
-                    end_date: fy.end_date
-                }
-            });
-
-            const data = response.data;
-            if (!data || data.length === 0) {
-                showNotification('No data found for this period', 'info');
-                return;
-            }
-
-            const headers = Object.keys(data[0]);
-            const csvRows = [
-                headers.join(','),
-                ...data.map((row: any) =>
-                    headers.map(header => {
-                        const val = row[header];
-                        return `"${String(val || '').replace(/"/g, '""')}"`;
-                    }).join(',')
-                )
-            ];
-            const csvContent = csvRows.join('\n');
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `Invoice_Register_${fy.code}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showNotification('Report downloaded successfully', 'success');
-        } catch (err: any) {
-            showNotification(parseError(err, 'Error downloading report'), 'error');
-        }
-    };
-
     const handleToggleStatus = async (id: number, type: 'user' | 'partner' | 'end_customer' | 'company') => {
         try {
             let endpoint = '';
@@ -1626,7 +1569,7 @@ const UserManagement: React.FC = () => {
             {/* Action Row - Only shown when not in form mode */}
             {
                 !showForm && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', marginBottom: '8px', gap: '16px' }}>
                         <div style={{
                             display: 'flex',
                             gap: '4px',
@@ -1636,8 +1579,7 @@ const UserManagement: React.FC = () => {
                             borderRadius: '12px',
                             border: '1px solid var(--border-primary)',
                             boxShadow: 'var(--shadow-sm)',
-                            flex: 1,
-                            marginRight: '16px'
+                            width: 'max-content'
                         }}>
                             <button
                                 onClick={() => { setViewMode('user'); setColumnFilters({}); }}
@@ -1656,7 +1598,7 @@ const UserManagement: React.FC = () => {
                                     gap: '8px'
                                 }}
                             >
-                                <UserIcon size={14} /> Users
+                                <UserSquare2 size={14} /> Users
                             </button>
                             <button
                                 onClick={() => { setViewMode('partner'); setColumnFilters({}); }}
@@ -1675,7 +1617,7 @@ const UserManagement: React.FC = () => {
                                     gap: '8px'
                                 }}
                             >
-                                <Shield size={14} /> Company
+                                <Building2 size={14} /> Company
                             </button>
                             <button
                                 onClick={() => { setViewMode('company'); setColumnFilters({}); }}
@@ -1694,7 +1636,7 @@ const UserManagement: React.FC = () => {
                                     gap: '8px'
                                 }}
                             >
-                                <Users size={14} /> Customer
+                                <UserSquare2 size={14} /> Customer
                             </button>
                             <button
                                 onClick={() => { setViewMode('end_customer'); setColumnFilters({}); }}
@@ -1856,7 +1798,7 @@ const UserManagement: React.FC = () => {
                             border: '1px solid var(--border-primary)'
                         }}>
                             {viewMode === 'user' ? (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                     {error && (
                                         <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem', gridColumn: '1 / -1' }}>
                                             {error}
@@ -2034,7 +1976,7 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Company Basic Details
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Company Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
@@ -2204,7 +2146,7 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Address Details
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div style={{ gridColumn: 'span 3' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Address Line
@@ -2266,7 +2208,7 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Business & Financial Settings
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <SearchableDropdown
                                                     label="Base Currency"
@@ -2332,7 +2274,7 @@ const UserManagement: React.FC = () => {
                                             Tax Registration Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 3', marginBottom: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 5', marginBottom: '8px' }}>
                                                 <input
                                                     type="checkbox"
                                                     id="is_gst_applicable_partner"
@@ -2414,7 +2356,7 @@ const UserManagement: React.FC = () => {
                                             MSME Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 3', marginBottom: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 5', marginBottom: '8px' }}>
                                                 <input
                                                     type="checkbox"
                                                     id="msme_registered_partner"
@@ -2452,7 +2394,7 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Identification Details
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     End Customer Code <span style={{ fontSize: '0.7rem', color: '#A0AEC0', fontWeight: 500 }}>(Auto-generated)</span>
@@ -2493,7 +2435,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Status *"
+                                                    label="Status"
                                                     options={[
                                                         { value: 'ACTIVE', label: 'Active' },
                                                         { value: 'INACTIVE', label: 'Inactive' }
@@ -2512,10 +2454,10 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Business Classification
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Industry *"
+                                                    label="Industry"
                                                     options={[
                                                         { value: 'IT', label: 'IT' },
                                                         { value: 'BFSI', label: 'BFSI' },
@@ -2537,7 +2479,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Linked Partner * (Select Partner)"
+                                                    label="Linked Partner (Select Partner)"
                                                     options={partners.map(p => ({ value: String(p.id), label: p.name }))}
                                                     value={endCustomerFormData.linked_partner}
                                                     onChange={(val) => setEndCustomerFormData({ ...endCustomerFormData, linked_partner: val as string })}
@@ -2553,7 +2495,7 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Contact & Location Details
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Location <span style={{ color: 'var(--theme-primary)' }}>*</span>
@@ -2597,9 +2539,9 @@ const UserManagement: React.FC = () => {
                                     </div>
                                 </div>
                             ) : viewMode === 'financial_year' ? (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                     {error && (
-                                        <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem', gridColumn: 'span 3' }}>
+                                        <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem', gridColumn: 'span 5' }}>
                                             {error}
                                         </div>
                                     )}
@@ -2665,7 +2607,7 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Identification Details
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Product Code <span style={{ fontSize: '0.7rem', color: '#A0AEC0', fontWeight: 500 }}>(Auto-generated)</span>
@@ -2693,7 +2635,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Status *"
+                                                    label="Status"
                                                     options={[
                                                         { value: 'ACTIVE', label: 'Active' },
                                                         { value: 'INACTIVE', label: 'Inactive' }
@@ -2712,10 +2654,10 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Classification Details
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Category *"
+                                                    label="Category"
                                                     options={[
                                                         { value: 'SOFTWARE', label: 'Software' },
                                                         { value: 'SERVICE', label: 'Service' }
@@ -2728,7 +2670,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Subcategory *"
+                                                    label="Subcategory"
                                                     options={[
                                                         { value: 'Automation', label: 'Automation' },
                                                         { value: 'Analytics', label: 'Analytics' },
@@ -2790,8 +2732,8 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Description & Measurement
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                                            <div style={{ gridColumn: 'span 2' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                            <div style={{ gridColumn: 'span 4' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Description <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
@@ -2805,7 +2747,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Unit of Measure (UOM) *"
+                                                    label="Unit of Measure (UOM)"
                                                     options={[
                                                         { value: 'License', label: 'License' },
                                                         { value: 'Hour', label: 'Hour' },
@@ -2831,10 +2773,10 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Pricing & Taxation
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Currency *"
+                                                    label="Currency"
                                                     options={[
                                                         { value: 'INR', label: 'INR' },
                                                         { value: 'USD', label: 'USD' },
@@ -2889,7 +2831,7 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Customer Basic Details
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <SearchableDropdown
                                                     label="Company Name (Select Company)"
@@ -2921,7 +2863,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Alias Name"
                                                     value={companyFormData.alias_name}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, alias_name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'black', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -3039,7 +2981,7 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Contact Details
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Contact Person
@@ -3096,7 +3038,7 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Address Details
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div style={{ gridColumn: 'span 3' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Address Line
@@ -3158,7 +3100,7 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Business & Financial Settings
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <SearchableDropdown
                                                     label="Base Currency (INR – Indian Rupee)"
@@ -3186,7 +3128,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                                    Decimal Places* (Default: 2)
+                                                    Decimal Places (Default: 2)
                                                 </label>
                                                 <input
                                                     type="text"
@@ -3199,7 +3141,7 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Payment Terms *"
+                                                    label="Payment Terms"
                                                     options={[
                                                         { value: 'NET_15', label: '15 Days' },
                                                         { value: 'NET_30', label: '30 Days' },
@@ -3221,8 +3163,8 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             Tax Registration Details
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 3', marginBottom: '8px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 5', marginBottom: '8px' }}>
                                                 <input
                                                     type="checkbox"
                                                     id="is_gst_applicable"
@@ -3303,8 +3245,8 @@ const UserManagement: React.FC = () => {
                                             <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                                             MSME Details
                                         </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 3', marginBottom: '8px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 5', marginBottom: '8px' }}>
                                                 <input
                                                     type="checkbox"
                                                     id="msme_registered"
@@ -3417,80 +3359,106 @@ const UserManagement: React.FC = () => {
                         </div>
                     </form >
                 ) : (
-                    <div className="section-panel !p-0" style={{ position: 'relative', overflow: 'visible', margin: '0 25px', borderRadius: '0px' }}>
+                    <div style={{ position: 'relative' }}>
                         {/* Scroll Buttons */}
                         <button
                             onClick={() => tableScrollRef.current?.scrollBy({ left: -150, behavior: 'smooth' })}
                             style={{
-                                position: 'absolute', left: '-20px', top: '50%', transform: 'translateY(-50%)',
-                                zIndex: 100, width: '40px', height: '40px', borderRadius: '50%',
-                                background: 'white', border: '1px solid var(--border-primary)',
+                                position: 'absolute', left: '-8px', top: '50%', transform: 'translateY(-50%)',
+                                zIndex: 100, width: '36px', height: '36px', borderRadius: '50%',
+                                background: 'var(--bg-primary)', border: '1px solid var(--border-primary)',
                                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)', display: 'flex',
                                 alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                                 color: 'var(--text-primary)', transition: 'all 0.2s',
                             }}
                             title="Scroll left"
                             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
                         >
-                            <ChevronLeft size={20} />
+                            <ChevronLeft size={18} />
                         </button>
                         <button
                             onClick={() => tableScrollRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
                             style={{
-                                position: 'absolute', right: '-20px', top: '50%', transform: 'translateY(-50%)',
-                                zIndex: 100, width: '40px', height: '40px', borderRadius: '50%',
-                                background: 'white', border: '1px solid var(--border-primary)',
+                                position: 'absolute', right: '-8px', top: '50%', transform: 'translateY(-50%)',
+                                zIndex: 100, width: '36px', height: '36px', borderRadius: '50%',
+                                background: 'var(--bg-primary)', border: '1px solid var(--border-primary)',
                                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)', display: 'flex',
                                 alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                                 color: 'var(--text-primary)', transition: 'all 0.2s',
                             }}
                             title="Scroll right"
                             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
                         >
-                            <ChevronRight size={20} />
+                            <ChevronRight size={18} />
                         </button>
 
-                        <div ref={tableScrollRef} style={{ overflowX: 'auto', width: '100%', background: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
-                            <table style={{ tableLayout: 'fixed', width: '100%', borderCollapse: 'collapse' }}>
+                        <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
+                            <table className="ae-table" style={{ tableLayout: 'fixed', width: 'max-content', minWidth: '100%' }}>
                                 <colgroup>
                                     {ALL_COLUMNS[viewMode]?.filter(col => visibleColumns[viewMode].includes(col.key)).map(col => (
                                         <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />
                                     ))}
-                                    <col style={{ width: '151px' }} />
+                                    <col style={{ width: '120px' }} />
                                 </colgroup>
                                 <thead>
-                                    <tr style={{ background: 'var(--ae-table-header-bg)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                    <tr>
                                         {ALL_COLUMNS[viewMode]?.filter(col => visibleColumns[viewMode].includes(col.key)).map(col => (
-                                            <th key={col.key} style={{ padding: '4px 10px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', borderRight: '1px solid var(--border-secondary)', backgroundColor: 'var(--ae-table-header-bg)' }}>
-                                                {col.label}
+                                            <th key={col.key} style={{
+                                                backgroundColor: 'var(--ae-table-header-bg)',
+                                                zIndex: 12,
+                                                position: 'relative',
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                userSelect: 'none',
+                                                paddingRight: '20px',
+                                                borderRight: '1px solid var(--border-secondary)',
+                                                borderBottom: '1px solid var(--border-secondary)'
+                                            }}>
+                                                <span style={{ fontWeight: 600 }}>{col.label}</span>
+                                                {/* Resize handle */}
+                                                <div
+                                                    onMouseDown={(e) => startResize(e, col.key)}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        right: 0,
+                                                        width: '6px',
+                                                        height: '100%',
+                                                        cursor: 'col-resize',
+                                                        background: 'transparent',
+                                                        zIndex: 20,
+                                                    }}
+                                                    title="Drag to resize"
+                                                />
                                             </th>
                                         ))}
-                                        <th style={{ padding: '4px 10px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', backgroundColor: 'var(--ae-table-header-bg)' }}>
+                                        <th style={{ backgroundColor: 'var(--ae-table-header-bg)', zIndex: 12, textAlign: 'center', whiteSpace: 'nowrap', borderBottom: '1px solid var(--border-secondary)' }}>
                                             Actions
                                         </th>
                                     </tr>
                                     {/* Filter Row */}
-                                    <tr style={{ background: 'var(--ae-filter-row-bg)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                    <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
                                         {ALL_COLUMNS[viewMode]?.filter(col => visibleColumns[viewMode].includes(col.key)).map(col => (
-                                            <th key={`filter-${col.key}`} style={{ padding: '4px 10px', borderRight: '1px solid var(--border-secondary)', backgroundColor: 'var(--ae-filter-row-bg)' }}>
-                                                <div className="ae-input-group !mb-0" style={{ margin: 0 }}>
-                                                    <Search className="ae-search-icon" size={12} />
+                                            <th key={`filter-${col.key}`} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                                <div className="ae-input-group" style={{ margin: 0 }}>
                                                     <input
                                                         className="ae-input"
                                                         placeholder="Filter..."
                                                         value={columnFilters[col.key] || ''}
                                                         onChange={(e) => setColumnFilters({ ...columnFilters, [col.key]: e.target.value })}
-                                                        style={{ height: '24px', fontSize: '11px', paddingTop: 0, paddingBottom: 0 }}
+                                                        style={{ height: '24px', fontSize: '11px', padding: '0 8px', borderRadius: '4px', border: '1px solid var(--border-primary)', backgroundColor: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', width: '100%' }}
                                                     />
                                                 </div>
                                             </th>
                                         ))}
-                                        <th style={{ padding: '4px 10px', textAlign: 'right', backgroundColor: 'var(--ae-filter-row-bg)' }}>
+                                        <th style={{ textAlign: 'center', backgroundColor: 'var(--ae-filter-row-bg)', borderBottom: '1px solid var(--border-secondary)', padding: '0 8px' }}>
                                             <button
-                                                onClick={() => { setColumnFilters({}); setSearchTerm(''); }}
-                                                style={{ height: '24px', width: '80px', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'white', border: '1px solid #E0E6ED', borderRadius: '6px' }}
+                                                onClick={() => setColumnFilters({})}
+                                                style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px', transition: 'all 0.2s' }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-primary)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.borderColor = 'var(--border-primary)'; }}
                                             >
                                                 Clear
                                             </button>
@@ -3504,56 +3472,55 @@ const UserManagement: React.FC = () => {
                                                 viewMode === 'company' ? filteredCompanies :
                                                     viewMode === 'financial_year' ? filteredFinancialYears :
                                                         filteredProducts
-                                    ).map((item) => (
-                                        <tr key={item.id} className="ae-table-row">
+                                    ).slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((item) => (
+                                        <tr key={item.id}>
                                             {ALL_COLUMNS[viewMode]?.filter(col => visibleColumns[viewMode].includes(col.key)).map(col => (
-                                                <td key={col.key} style={{ padding: '4px 10px', verticalAlign: 'middle' }}>
+                                                <td key={col.key}>
                                                     {renderCell(viewMode, item, col.key)}
                                                 </td>
                                             ))}
                                             {/* Action Column Body */}
-                                            <td style={{ padding: '4px 10px', textAlign: 'right', verticalAlign: 'middle' }}>
-                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                            <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                                                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                                                     {viewMode === 'user' ? (
                                                         <>
                                                             <button
                                                                 onClick={() => handleToggleStatus(item.id, 'user')}
-                                                                style={{ padding: '8px', color: '#FF6B00', border: '1px solid rgba(255, 107, 0, 0.3)', background: 'rgba(255, 107, 0, 0.08)', cursor: 'pointer', borderRadius: '8px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                                 title={item.is_active ? "Deactivate User" : "Activate User"}
+                                                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', background: 'rgba(187, 77, 0, 0.07)', color: 'var(--theme-primary)', border: '1px solid rgba(187, 77, 0, 0.25)', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.18s' }}
+                                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)'; }}
                                                             >
-                                                                <Power size={16} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDeleteUser(item.id)}
-                                                                style={{ padding: '8px', color: '#FF6B00', border: '1px solid rgba(255, 107, 0, 0.3)', background: 'rgba(255, 107, 0, 0.08)', cursor: 'pointer', borderRadius: '8px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                                title="Delete User"
-                                                            >
-                                                                <Trash2 size={16} />
+                                                                <Power size={14} />
                                                             </button>
                                                             <button
                                                                 onClick={() => handleEditClick(viewMode, item)}
-                                                                style={{ padding: '8px', color: 'white', border: 'none', background: '#FF6B00', cursor: 'pointer', borderRadius: '8px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                                 title="Edit User"
+                                                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', background: 'rgba(187, 77, 0, 0.07)', color: 'var(--theme-primary)', border: '1px solid rgba(187, 77, 0, 0.25)', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.18s' }}
+                                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)'; }}
                                                             >
-                                                                <Pencil size={16} />
+                                                                <Pencil size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteUser(item.id)}
+                                                                title="Delete User"
+                                                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', background: 'rgba(220, 38, 38, 0.07)', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.25)', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.18s' }}
+                                                                onMouseEnter={(e) => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#dc2626'; }}
+                                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(220, 38, 38, 0.07)'; e.currentTarget.style.color = '#dc2626'; e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.25)'; }}
+                                                            >
+                                                                <Trash2 size={14} />
                                                             </button>
                                                         </>
                                                     ) : (
                                                         <button
                                                             onClick={() => handleEditClick(viewMode, item)}
-                                                            style={{
-                                                                padding: '4px 16px',
-                                                                fontSize: '0.75rem',
-                                                                fontWeight: 700,
-                                                                color: '#FF6B00',
-                                                                background: 'rgba(255, 107, 0, 0.08)',
-                                                                border: '1px solid rgba(255, 107, 0, 0.3)',
-                                                                borderRadius: '18px',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s'
-                                                            }}
+                                                            title="View"
+                                                            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', background: 'rgba(187, 77, 0, 0.07)', color: 'var(--theme-primary)', border: '1px solid rgba(187, 77, 0, 0.25)', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.18s' }}
+                                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
+                                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)'; }}
                                                         >
-                                                            View
+                                                            <Eye size={14} />
                                                         </button>
                                                     )}
                                                 </div>
@@ -3563,6 +3530,19 @@ const UserManagement: React.FC = () => {
                                 </tbody>
                             </table >
                         </div >
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={
+                                viewMode === 'user' ? filteredUsers.length :
+                                    viewMode === 'partner' ? filteredPartners.length :
+                                        viewMode === 'end_customer' ? filteredEndCustomers.length :
+                                            viewMode === 'company' ? filteredCompanies.length :
+                                                viewMode === 'financial_year' ? filteredFinancialYears.length :
+                                                    filteredProducts.length
+                            }
+                            itemsPerPage={ITEMS_PER_PAGE}
+                            onPageChange={(page) => setCurrentPage(page)}
+                        />
                     </div >
                 )}
             </div>
