@@ -13,7 +13,6 @@ import {
   Users,
   LayoutDashboard,
   PlusCircle,
-  Server,
   Loader2,
   ChevronLeft,
   ChevronRight,
@@ -505,7 +504,7 @@ const AppContent: React.FC = () => {
       <Route path="/cost-sheet" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container">
+            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -517,103 +516,84 @@ const AppContent: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Cost Sheet</h1>
+
+                    <div style={{
+                      display: 'flex',
+                      gap: '4px',
+                      alignItems: 'center',
+                      background: 'var(--bg-primary)',
+                      padding: '6px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-primary)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                      <button
+                        onClick={() => setCostSheetView('dashboard')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: costSheetView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                          color: costSheetView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                          boxShadow: costSheetView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (costSheetView !== 'dashboard') {
+                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                            e.currentTarget.style.color = 'var(--ae-orange)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (costSheetView !== 'dashboard') {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }
+                        }}
+                      >
+                        <LayoutDashboard size={18} /> Dashboard
+                      </button>
+                      <button
+                        onClick={handleCreateNew}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: (costSheetView === 'form' && !editingId) ? 'var(--theme-primary)' : 'transparent',
+                          color: (costSheetView === 'form' && !editingId) ? 'white' : 'var(--text-secondary)',
+                          boxShadow: (costSheetView === 'form' && !editingId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (costSheetView !== 'form' || editingId) {
+                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                            e.currentTarget.style.color = 'var(--ae-orange)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (costSheetView !== 'form' || editingId) {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }
+                        }}
+                      >
+                        <PlusCircle size={18} /> Create New
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0 8px',
-                  marginBottom: '12px',
-                  gap: '24px'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    gap: '4px',
-                    alignItems: 'center',
-                    background: 'var(--bg-primary)',
-                    padding: '6px',
-                    borderRadius: '12px',
-                    border: '1px solid #E0E6ED',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                  }}>
-                    <button
-                      onClick={() => setCostSheetView('dashboard')}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: costSheetView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
-                        color: costSheetView === 'dashboard' ? 'white' : 'var(--text-secondary)',
-                        boxShadow: costSheetView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (costSheetView !== 'dashboard') {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (costSheetView !== 'dashboard') {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <LayoutDashboard size={18} /> Dashboard
-                    </button>
-                    <button
-                      onClick={handleCreateNew}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: (costSheetView === 'form' && !editingId) ? 'var(--theme-primary)' : 'transparent',
-                        color: (costSheetView === 'form' && !editingId) ? 'white' : 'var(--text-secondary)',
-                        boxShadow: (costSheetView === 'form' && !editingId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (costSheetView !== 'form' || editingId) {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (costSheetView !== 'form' || editingId) {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <PlusCircle size={18} /> Create New
-                    </button>
-                  </div>
-
-
                 </div>
 
                 {costSheetView === 'form' ? (
@@ -637,7 +617,7 @@ const AppContent: React.FC = () => {
       <Route path="/user-management" element={
         user && user.role === 'app_admin' ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container">
+            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
               <UserManagement />
             </div>
           </ModuleWrapper>
@@ -801,105 +781,88 @@ const AppContent: React.FC = () => {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '0 8px',
-                  marginBottom: '10px'
+                  marginBottom: '24px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Deal</h1>
-                  </div>
-                </div>
 
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-start',
-                  padding: '0 8px',
-                  marginBottom: '0',
-                  gap: '8px'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    gap: '4px',
-                    alignItems: 'center',
-                    background: 'var(--bg-primary)',
-                    padding: '6px',
-                    borderRadius: '12px',
-                    border: '1px solid #E0E6ED',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                  }}>
-                    <button
-                      onClick={() => setDealView('dashboard')}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: dealView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
-                        color: dealView === 'dashboard' ? 'white' : 'var(--text-secondary)',
-                        boxShadow: dealView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (dealView !== 'dashboard') {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (dealView !== 'dashboard') {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <LayoutDashboard size={18} /> Dashboard
-                    </button>
-                    <button
-                      onClick={handleCreateNewDeal}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: (dealView === 'form' && !editingDealId) ? 'var(--theme-primary)' : 'transparent',
-                        color: (dealView === 'form' && !editingDealId) ? 'white' : 'var(--text-secondary)',
-                        boxShadow: (dealView === 'form' && !editingDealId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (dealView !== 'form' || editingDealId) {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (dealView !== 'form' || editingDealId) {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <PlusCircle size={18} /> Create New
-                    </button>
+                    <div style={{
+                      display: 'flex',
+                      gap: '4px',
+                      alignItems: 'center',
+                      background: 'var(--bg-primary)',
+                      padding: '6px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-primary)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                      <button
+                        onClick={() => setDealView('dashboard')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: dealView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                          color: dealView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                          boxShadow: dealView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (dealView !== 'dashboard') {
+                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                            e.currentTarget.style.color = 'var(--ae-orange)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (dealView !== 'dashboard') {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }
+                        }}
+                      >
+                        <LayoutDashboard size={18} /> Dashboard
+                      </button>
+                      <button
+                        onClick={handleCreateNewDeal}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: (dealView === 'form' && !editingDealId) ? 'var(--theme-primary)' : 'transparent',
+                          color: (dealView === 'form' && !editingDealId) ? 'white' : 'var(--text-secondary)',
+                          boxShadow: (dealView === 'form' && !editingDealId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (dealView !== 'form' || editingDealId) {
+                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                            e.currentTarget.style.color = 'var(--ae-orange)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (dealView !== 'form' || editingDealId) {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }
+                        }}
+                      >
+                        <PlusCircle size={18} /> Create New
+                      </button>
+                    </div>
                   </div>
 
                   {dealView === 'form' && editingDealId && (
@@ -935,7 +898,7 @@ const AppContent: React.FC = () => {
       <Route path="/estimates" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container">
+            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -947,103 +910,87 @@ const AppContent: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Estimate</h1>
-                  </div>
-                </div>
 
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0 8px',
-                  marginBottom: '12px',
-                  gap: '24px'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    gap: '4px',
-                    alignItems: 'center',
-                    background: 'var(--bg-primary)',
-                    padding: '6px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--border-primary)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                  }}>
-                    <button
-                      onClick={() => setEstimateView('dashboard')}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: estimateView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
-                        color: estimateView === 'dashboard' ? 'white' : 'var(--text-secondary)',
-                        boxShadow: estimateView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (estimateView !== 'dashboard') {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (estimateView !== 'dashboard') {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <LayoutDashboard size={18} /> Dashboard
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingEstimateId(null);
-                        setEstimateView('form');
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: (estimateView === 'form' && !editingEstimateId) ? 'var(--theme-primary)' : 'transparent',
-                        color: (estimateView === 'form' && !editingEstimateId) ? 'white' : 'var(--text-secondary)',
-                        boxShadow: (estimateView === 'form' && !editingEstimateId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (estimateView !== 'form' || editingEstimateId) {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (estimateView !== 'form' || editingEstimateId) {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <PlusCircle size={18} /> Create New
-                    </button>
+                    <div style={{
+                      display: 'flex',
+                      gap: '4px',
+                      alignItems: 'center',
+                      background: 'var(--bg-primary)',
+                      padding: '6px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-primary)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                      <button
+                        onClick={() => setEstimateView('dashboard')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: estimateView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                          color: estimateView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                          boxShadow: estimateView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (estimateView !== 'dashboard') {
+                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                            e.currentTarget.style.color = 'var(--ae-orange)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (estimateView !== 'dashboard') {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }
+                        }}
+                      >
+                        <LayoutDashboard size={18} /> Dashboard
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingEstimateId(null);
+                          setEstimateView('form');
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: (estimateView === 'form' && !editingEstimateId) ? 'var(--theme-primary)' : 'transparent',
+                          color: (estimateView === 'form' && !editingEstimateId) ? 'white' : 'var(--text-secondary)',
+                          boxShadow: (estimateView === 'form' && !editingEstimateId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (estimateView !== 'form' || editingEstimateId) {
+                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                            e.currentTarget.style.color = 'var(--ae-orange)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (estimateView !== 'form' || editingEstimateId) {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }
+                        }}
+                      >
+                        <PlusCircle size={18} /> Create New
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1067,7 +1014,7 @@ const AppContent: React.FC = () => {
       < Route path="/sales-order" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container">
+            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -1076,105 +1023,71 @@ const AppContent: React.FC = () => {
                   padding: '0 8px',
                   marginBottom: '24px'
                 }}>
+                  {/* Left: Heading + buttons inline */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Sales Order</h1>
-                  </div>
-                </div>
 
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0 8px',
-                  marginBottom: '12px',
-                  gap: '24px'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    gap: '4px',
-                    alignItems: 'center',
-                    background: 'var(--bg-primary)',
-                    padding: '6px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--border-primary)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                  }}>
-                    <button
-                      onClick={() => setSalesOrderView('dashboard')}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: salesOrderView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
-                        color: salesOrderView === 'dashboard' ? 'white' : 'var(--text-secondary)',
-                        boxShadow: salesOrderView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (salesOrderView !== 'dashboard') {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (salesOrderView !== 'dashboard') {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <LayoutDashboard size={18} /> Dashboard
-                    </button>
-
-                    {/* Existing Upload Button removed as per user request to have one in the header */}
-
-                    <button
-                      onClick={handleCreateNewSalesOrder}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: (salesOrderView === 'form' && !editingSalesOrderId) ? 'var(--theme-primary)' : 'transparent',
-                        color: (salesOrderView === 'form' && !editingSalesOrderId) ? 'white' : 'var(--text-secondary)',
-                        boxShadow: (salesOrderView === 'form' && !editingSalesOrderId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (salesOrderView !== 'form' || editingSalesOrderId) {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (salesOrderView !== 'form' || editingSalesOrderId) {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                        }
-                      }}
-                    >
-                      <PlusCircle size={18} /> Create New
-                    </button>
+                    <div style={{
+                      display: 'flex',
+                      gap: '4px',
+                      alignItems: 'center',
+                      background: 'var(--bg-primary)',
+                      padding: '6px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-primary)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                      <button
+                        onClick={() => setSalesOrderView('dashboard')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: salesOrderView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                          color: salesOrderView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                          boxShadow: salesOrderView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => { if (salesOrderView !== 'dashboard') { e.currentTarget.style.background = 'rgba(255,107,0,0.05)'; e.currentTarget.style.color = 'var(--ae-orange)'; } }}
+                        onMouseLeave={(e) => { if (salesOrderView !== 'dashboard') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
+                      >
+                        <LayoutDashboard size={18} /> Dashboard
+                      </button>
+                      <button
+                        onClick={handleCreateNewSalesOrder}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: (salesOrderView === 'form' && !editingSalesOrderId) ? 'var(--theme-primary)' : 'transparent',
+                          color: (salesOrderView === 'form' && !editingSalesOrderId) ? 'white' : 'var(--text-secondary)',
+                          boxShadow: (salesOrderView === 'form' && !editingSalesOrderId) ? '0 2px 8px rgba(187,77,0,0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => { if (salesOrderView !== 'form' || editingSalesOrderId) { e.currentTarget.style.background = 'rgba(255,107,0,0.05)'; e.currentTarget.style.color = 'var(--ae-orange)'; } }}
+                        onMouseLeave={(e) => { if (salesOrderView !== 'form' || editingSalesOrderId) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
+                      >
+                        <PlusCircle size={18} /> Create New
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Drag and Drop Upload Section - Relocated to button row */}
+                  {/* Right: Upload PO */}
                   <div
                     onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
                     onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
@@ -1202,52 +1115,18 @@ const AppContent: React.FC = () => {
                       opacity: isExtractingSO ? 0.7 : 1,
                       boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                     }}
-                    onMouseEnter={(e) => {
-                      if (!isExtractingSO) {
-                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.02)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isExtractingSO && !isDragging) {
-                        e.currentTarget.style.borderColor = '#E0E6ED';
-                        e.currentTarget.style.background = '#FAFBFC';
-                      }
-                    }}
+                    onMouseEnter={(e) => { if (!isExtractingSO) { e.currentTarget.style.borderColor = 'var(--theme-primary)'; e.currentTarget.style.background = 'rgba(255,107,0,0.02)'; } }}
+                    onMouseLeave={(e) => { if (!isExtractingSO && !isDragging) { e.currentTarget.style.borderColor = '#E0E6ED'; e.currentTarget.style.background = '#FAFBFC'; } }}
                   >
-                    <input
-                      id="so-upload-input"
-                      type="file"
-                      className="hidden"
-                      onChange={handleSOUpload}
-                      accept=".pdf"
-                      disabled={isExtractingSO}
-                    />
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      background: 'white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                      color: 'var(--theme-primary)',
-                      flexShrink: 0
-                    }}>
-                      {isExtractingSO ? (
-                        <Loader2 size={18} className="animate-spin" />
-                      ) : (
-                        <Upload size={18} />
-                      )}
+                    <input id="so-upload-input" type="file" className="hidden" onChange={handleSOUpload} accept=".pdf" disabled={isExtractingSO} />
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', color: 'var(--theme-primary)', flexShrink: 0 }}>
+                      {isExtractingSO ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
                         {isExtractingSO ? 'Processing PO...' : 'Upload PO (Max 10MB each)'}
                       </span>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.2 }}>
-                        Drag & Drop or Click (PDF only)
-                      </span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.2 }}>Drag & Drop or Click (PDF only)</span>
                     </div>
                   </div>
                 </div>
@@ -1274,7 +1153,7 @@ const AppContent: React.FC = () => {
       < Route path="/invoice" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container">
+            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -1283,106 +1162,71 @@ const AppContent: React.FC = () => {
                   padding: '0 8px',
                   marginBottom: '24px'
                 }}>
+                  {/* Left: Heading + buttons inline */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Invoice</h1>
-                  </div>
-                </div>
 
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0 8px',
-                  marginBottom: '12px',
-                  gap: '24px'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    gap: '4px',
-                    alignItems: 'center',
-                    background: 'var(--bg-primary)',
-                    padding: '6px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--border-primary)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                  }}>
-                    <button
-                      onClick={() => setInvoiceView('dashboard')}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: invoiceView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
-                        color: invoiceView === 'dashboard' ? 'white' : 'var(--text-secondary)',
-                        boxShadow: invoiceView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (invoiceView !== 'dashboard') {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (invoiceView !== 'dashboard') {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <LayoutDashboard size={18} /> Dashboard
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingInvoiceId(null);
-                        setInvoiceView('form');
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: (invoiceView === 'form' && !editingInvoiceId) ? 'var(--theme-primary)' : 'transparent',
-                        color: (invoiceView === 'form' && !editingInvoiceId) ? 'white' : 'var(--text-secondary)',
-                        boxShadow: (invoiceView === 'form' && !editingInvoiceId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (invoiceView !== 'form' || editingInvoiceId) {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (invoiceView !== 'form' || editingInvoiceId) {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <PlusCircle size={18} /> Create New
-                    </button>
+                    <div style={{
+                      display: 'flex',
+                      gap: '4px',
+                      alignItems: 'center',
+                      background: 'var(--bg-primary)',
+                      padding: '6px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-primary)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                      <button
+                        onClick={() => setInvoiceView('dashboard')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: invoiceView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                          color: invoiceView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                          boxShadow: invoiceView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => { if (invoiceView !== 'dashboard') { e.currentTarget.style.background = 'rgba(255,107,0,0.05)'; e.currentTarget.style.color = 'var(--ae-orange)'; } }}
+                        onMouseLeave={(e) => { if (invoiceView !== 'dashboard') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
+                      >
+                        <LayoutDashboard size={18} /> Dashboard
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingInvoiceId(null);
+                          setInvoiceView('form');
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: (invoiceView === 'form' && !editingInvoiceId) ? 'var(--theme-primary)' : 'transparent',
+                          color: (invoiceView === 'form' && !editingInvoiceId) ? 'white' : 'var(--text-secondary)',
+                          boxShadow: (invoiceView === 'form' && !editingInvoiceId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => { if (invoiceView !== 'form' || editingInvoiceId) { e.currentTarget.style.background = 'rgba(255,107,0,0.05)'; e.currentTarget.style.color = 'var(--ae-orange)'; } }}
+                        onMouseLeave={(e) => { if (invoiceView !== 'form' || editingInvoiceId) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
+                      >
+                        <PlusCircle size={18} /> Create New
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1407,30 +1251,16 @@ const AppContent: React.FC = () => {
       < Route path="/payment" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container">
-              <div className="space-y-8">
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0 8px',
-                  marginBottom: '24px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Payment</h1>
-                  </div>
-                </div>
-                <Payment />
-              </div>
+            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
+              <Payment />
             </div>
-          </ModuleWrapper >
+          </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
       < Route path="/milestone" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container">
+            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -1439,109 +1269,72 @@ const AppContent: React.FC = () => {
                   padding: '0 8px',
                   marginBottom: '24px'
                 }}>
+                  {/* Left: Heading + buttons inline */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Milestone</h1>
+
+                    <div style={{
+                      display: 'flex',
+                      gap: '4px',
+                      alignItems: 'center',
+                      background: 'var(--bg-primary)',
+                      padding: '6px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-primary)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                      <button
+                        onClick={() => setMilestoneView('dashboard')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: milestoneView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                          color: milestoneView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                          boxShadow: milestoneView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => { if (milestoneView !== 'dashboard') { e.currentTarget.style.background = 'rgba(255,107,0,0.05)'; e.currentTarget.style.color = 'var(--ae-orange)'; } }}
+                        onMouseLeave={(e) => { if (milestoneView !== 'dashboard') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
+                      >
+                        <LayoutDashboard size={18} /> Dashboard
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingMilestoneId(null);
+                          setMilestoneView('form');
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: milestoneView === 'form' ? 'var(--theme-primary)' : 'transparent',
+                          color: milestoneView === 'form' ? 'white' : 'var(--text-secondary)',
+                          boxShadow: milestoneView === 'form' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => { if (milestoneView !== 'form') { e.currentTarget.style.background = 'rgba(255,107,0,0.05)'; e.currentTarget.style.color = 'var(--ae-orange)'; } }}
+                        onMouseLeave={(e) => { if (milestoneView !== 'form') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
+                      >
+                        <PlusCircle size={18} /> Create New
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0 8px',
-                  marginBottom: '12px',
-                  gap: '24px'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    gap: '4px',
-                    alignItems: 'center',
-                    background: 'var(--bg-primary)',
-                    padding: '6px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--border-primary)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                  }}>
-                    <button
-                      onClick={() => setMilestoneView('dashboard')}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: milestoneView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
-                        color: milestoneView === 'dashboard' ? 'white' : 'var(--text-secondary)',
-                        boxShadow: milestoneView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (milestoneView !== 'dashboard') {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (milestoneView !== 'dashboard') {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <LayoutDashboard size={18} /> Dashboard
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingMilestoneId(null);
-                        setMilestoneView('form');
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: milestoneView === 'form' ? '#FF6B00' : 'transparent',
-                        color: milestoneView === 'form' ? 'white' : '#718096',
-                        boxShadow: milestoneView === 'form' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (milestoneView !== 'form') {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (milestoneView !== 'form') {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = '#718096';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <PlusCircle size={18} /> Create New
-                    </button>
-                  </div>
-
-
                 </div>
 
                 {milestoneView === 'form' ? (
@@ -1582,111 +1375,103 @@ const AppContent: React.FC = () => {
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '20px 0',
-                  borderBottom: '1px solid #edf2f7',
-                  marginBottom: '10px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '4px', height: '24px', background: '#FF6B00', borderRadius: '4px' }}></div>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#1a1f36', margin: 0, letterSpacing: '-0.02em' }}>Resource</h1>
-                  </div>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
                   padding: '0 8px',
-                  marginBottom: '12px',
-                  gap: '24px'
+                  marginBottom: '16px',
+                  gap: '16px'
                 }}>
-                  <div style={{
-                    display: 'flex',
-                    gap: '4px',
-                    alignItems: 'center',
-                    background: 'var(--bg-primary)',
-                    padding: '6px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--border-primary)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                  }}>
-                    <button
-                      onClick={() => setInventoryView('dashboard')}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: inventoryView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
-                        color: inventoryView === 'dashboard' ? 'white' : 'var(--text-secondary)',
-                        boxShadow: inventoryView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (inventoryView !== 'dashboard') {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (inventoryView !== 'dashboard') {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <LayoutDashboard size={18} /> Dashboard
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingInventoryId(null);
-                        setInventoryView('form');
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: (inventoryView === 'form' && !editingInventoryId) ? 'var(--theme-primary)' : 'transparent',
-                        color: (inventoryView === 'form' && !editingInventoryId) ? 'white' : 'var(--text-secondary)',
-                        boxShadow: (inventoryView === 'form' && !editingInventoryId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (inventoryView !== 'form' || editingInventoryId) {
-                          e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                          e.currentTarget.style.color = 'var(--ae-orange)';
-                          e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (inventoryView !== 'form' || editingInventoryId) {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'var(--text-secondary)';
-                          e.currentTarget.style.border = 'none';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }
-                      }}
-                    >
-                      <PlusCircle size={18} /> Create New
-                    </button>
+                  {/* Left: Heading + nav buttons */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Inventory</h1>
+
+                    {/* Dashboard + Create New buttons */}
+                    <div style={{
+                      display: 'flex',
+                      gap: '4px',
+                      alignItems: 'center',
+                      background: 'var(--bg-primary)',
+                      padding: '6px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-primary)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                      <button
+                        onClick={() => setInventoryView('dashboard')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: inventoryView === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                          color: inventoryView === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                          boxShadow: inventoryView === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (inventoryView !== 'dashboard') {
+                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                            e.currentTarget.style.color = 'var(--ae-orange)';
+                            e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (inventoryView !== 'dashboard') {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                            e.currentTarget.style.border = 'none';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }
+                        }}
+                      >
+                        <LayoutDashboard size={18} /> Dashboard
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingInventoryId(null);
+                          setInventoryView('form');
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 16px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          background: (inventoryView === 'form' && !editingInventoryId) ? 'var(--theme-primary)' : 'transparent',
+                          color: (inventoryView === 'form' && !editingInventoryId) ? 'white' : 'var(--text-secondary)',
+                          boxShadow: (inventoryView === 'form' && !editingInventoryId) ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (inventoryView !== 'form' || editingInventoryId) {
+                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                            e.currentTarget.style.color = 'var(--ae-orange)';
+                            e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (inventoryView !== 'form' || editingInventoryId) {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                            e.currentTarget.style.border = 'none';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }
+                        }}
+                      >
+                        <PlusCircle size={18} /> Create New
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1710,13 +1495,13 @@ const AppContent: React.FC = () => {
           </ModuleWrapper >
         ) : <Navigate to="/login" />
       } />
-      <Route path="/revenue" element={
+      < Route path="/revenue" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container">
+            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
               <RevenueDashboard />
             </div>
-          </ModuleWrapper>
+          </ModuleWrapper >
         ) : <Navigate to="/login" />
       } />
       {

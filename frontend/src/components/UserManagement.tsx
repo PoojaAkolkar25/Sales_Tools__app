@@ -2,7 +2,7 @@
 import { useLocation } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { UserPlus, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search, LayoutDashboard, PlusCircle, Paperclip, FileText, Eye, Download, ChevronLeft, ChevronRight, Columns, ChevronDown, Building2, Plus, CheckCircle2, XCircle, UserSquare2, Calculator } from 'lucide-react';
+import { UserPlus, User as UserIcon, Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pencil, Filter, Search, LayoutDashboard, PlusCircle, Paperclip, FileText, Eye, Download, ChevronLeft, ChevronRight, Columns, ChevronDown, Building2, Plus, CheckCircle2, XCircle, UserSquare2, Calculator, Check } from 'lucide-react';
 import { Country, State, City } from 'country-state-city';
 import SearchableDropdown from './SearchableDropdown';
 import Pagination from './Pagination';
@@ -1413,7 +1413,14 @@ const UserManagement: React.FC = () => {
                 }
             `}</style>
             {/* Header Area */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, paddingBottom: '16px', borderBottom: showForm ? '1px solid #E0E6ED' : 'none', marginBottom: showForm ? '24px' : '0' }}>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 8px',
+                marginBottom: '24px'
+            }}>
+                {/* Left: Heading + buttons inline */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
@@ -1435,134 +1442,125 @@ const UserManagement: React.FC = () => {
                                                     'User Management'
                         )}
                     </h1>
-                </div>
-            </div>
 
-            {/* Dashboard / Create New Toggle */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingBottom: '12px',
-                gap: '24px'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    gap: '4px',
-                    alignItems: 'center',
-                    background: 'var(--bg-primary)',
-                    padding: '6px',
-                    borderRadius: '12px',
-                    border: '1px solid #E0E6ED',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                }}>
-                    <button
-                        onClick={() => setShowForm(false)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: !showForm ? 'var(--theme-primary)' : 'transparent',
-                            color: !showForm ? 'white' : 'var(--text-secondary)',
-                            boxShadow: !showForm ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (showForm) {
-                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                                e.currentTarget.style.color = 'var(--ae-orange)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (showForm) {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.color = 'var(--text-secondary)';
-                            }
-                        }}
-                    >
-                        <LayoutDashboard size={18} /> Dashboard
-                    </button>
-                    <button
-                        onClick={() => {
-                            setFormData({
-                                username: '', email: '', password: '',
-                                first_name: '', last_name: '', role: 'app_user',
-                                mobile: '', department: '', region: '', reporting_to: '', employee_id: ''
-                            });
-                            setPartnerFormData({
-                                name: '', contact_person: '', logo: null, address_line_1: '',
-                                country: 'India', state: '', city: '', pincode: '',
-                                phone_number: '', mobile: '', email: '', website_url: '',
-                                base_currency: 'INR',
-                                currency_symbol: '₹ / INR', decimal_places: 2,
-                                is_gst_applicable: true, gstin: '', state_code: '',
-                                msme_registered: false, msme_number: '', pan: '',
-                                tan: '', cin: '', status: 'ACTIVE', payment_terms: 'NET_30'
-                            });
-                            setEndCustomerFormData({
-                                end_customer_code: '',
-                                name: '', linked_partner: '', industry: '', location: '',
-                                contact_person: '', email: '', alias_name: '',
-                                status: 'ACTIVE'
-                            });
-                            setCompanyFormData({
-                                name: '', customer_id: '', region: '',
-                                contact_person: '', alias_name: '', logo: null, address_line_1: '',
-                                country: 'India', state: '', city: '', pincode: '', phone_number: '',
-                                mobile_number: '', email: '', website_url: '', linked_company_profile: '',
-                                industry: '', type: 'CUSTOMER',
-                                payment_terms: 'NET_30',
-                                base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
-                                is_gst_applicable: true, gstin: '', state_code: '',
-                                msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
-                            });
-                            setProductFormData({
-                                product_code: '', name: '', category: 'SOFTWARE', subcategory: '',
-                                description: '', uom: '', standard_price: '' as any, tax_percentage: '' as any,
-                                hsn_sac_code: '', currency: 'INR', industry: '', status: 'ACTIVE'
-                            });
-                            setEditingId(null);
-                            setError('');
-                            setCompanyError('');
-                            setShowForm(true);
-                        }}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            height: '32px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: showForm && !editingId ? 'var(--theme-primary)' : 'transparent',
-                            color: showForm && !editingId ? 'white' : 'var(--text-secondary)',
-                            boxShadow: showForm && !editingId ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (!showForm || editingId) {
-                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                                e.currentTarget.style.color = 'var(--ae-orange)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (!showForm || editingId) {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.color = 'var(--text-secondary)';
-                            }
-                        }}
-                    >
-                        <PlusCircle size={18} /> Create New
-                    </button>
+                    <div style={{
+                        display: 'flex',
+                        gap: '4px',
+                        alignItems: 'center',
+                        background: 'var(--bg-primary)',
+                        padding: '6px',
+                        borderRadius: '12px',
+                        border: '1px solid var(--border-primary)',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                        <button
+                            onClick={() => setShowForm(false)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: !showForm ? 'var(--theme-primary)' : 'transparent',
+                                color: !showForm ? 'white' : 'var(--text-secondary)',
+                                boxShadow: !showForm ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (showForm) {
+                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                    e.currentTarget.style.color = 'var(--ae-orange)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (showForm) {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = 'var(--text-secondary)';
+                                }
+                            }}
+                        >
+                            <LayoutDashboard size={18} /> Dashboard
+                        </button>
+                        <button
+                            onClick={() => {
+                                setFormData({
+                                    username: '', email: '', password: '',
+                                    first_name: '', last_name: '', role: 'app_user',
+                                    mobile: '', department: '', region: '', reporting_to: '', employee_id: ''
+                                });
+                                setPartnerFormData({
+                                    name: '', contact_person: '', logo: null, address_line_1: '',
+                                    country: 'India', state: '', city: '', pincode: '',
+                                    phone_number: '', mobile: '', email: '', website_url: '',
+                                    base_currency: 'INR',
+                                    currency_symbol: '₹ / INR', decimal_places: 2,
+                                    is_gst_applicable: true, gstin: '', state_code: '',
+                                    msme_registered: false, msme_number: '', pan: '',
+                                    tan: '', cin: '', status: 'ACTIVE', payment_terms: 'NET_30'
+                                });
+                                setEndCustomerFormData({
+                                    end_customer_code: '',
+                                    name: '', linked_partner: '', industry: '', location: '',
+                                    contact_person: '', email: '', alias_name: '',
+                                    status: 'ACTIVE'
+                                });
+                                setCompanyFormData({
+                                    name: '', customer_id: '', region: '',
+                                    contact_person: '', alias_name: '', logo: null, address_line_1: '',
+                                    country: 'India', state: '', city: '', pincode: '', phone_number: '',
+                                    mobile_number: '', email: '', website_url: '', linked_company_profile: '',
+                                    industry: '', type: 'CUSTOMER',
+                                    payment_terms: 'NET_30',
+                                    base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
+                                    is_gst_applicable: true, gstin: '', state_code: '',
+                                    msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
+                                });
+                                setProductFormData({
+                                    product_code: '', name: '', category: 'SOFTWARE', subcategory: '',
+                                    description: '', uom: '', standard_price: '' as any, tax_percentage: '' as any,
+                                    hsn_sac_code: '', currency: 'INR', industry: '', status: 'ACTIVE'
+                                });
+                                setEditingId(null);
+                                setError('');
+                                setCompanyError('');
+                                setShowForm(true);
+                            }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: showForm && !editingId ? 'var(--theme-primary)' : 'transparent',
+                                color: showForm && !editingId ? 'white' : 'var(--text-secondary)',
+                                boxShadow: showForm && !editingId ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!showForm || editingId) {
+                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                    e.currentTarget.style.color = 'var(--ae-orange)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!showForm || editingId) {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = 'var(--text-secondary)';
+                                }
+                            }}
+                        >
+                            <PlusCircle size={18} /> Create New
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1764,12 +1762,22 @@ const UserManagement: React.FC = () => {
                                                 userSelect: 'none',
                                                 borderBottom: '1px solid var(--border-primary)'
                                             }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={visibleColumns[viewMode].includes(col.key)}
-                                                    onChange={() => toggleColumn(viewMode, col.key)}
-                                                    style={{ cursor: 'pointer', accentColor: '#FF6B00' }}
-                                                />
+                                                <div
+                                                    onClick={() => toggleColumn(viewMode, col.key)}
+                                                    style={{
+                                                        width: '18px',
+                                                        height: '18px',
+                                                        borderRadius: '4px',
+                                                        border: `2px solid ${visibleColumns[viewMode].includes(col.key) ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                        background: visibleColumns[viewMode].includes(col.key) ? 'var(--ae-blue)' : 'white',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s',
+                                                        flexShrink: 0
+                                                    }}>
+                                                    {visibleColumns[viewMode].includes(col.key) && <Check size={12} color="white" strokeWidth={4} />}
+                                                </div>
                                                 <span style={{ fontWeight: 600 }}>{col.label}</span>
                                             </label>
                                         ))}
@@ -2274,14 +2282,45 @@ const UserManagement: React.FC = () => {
                                             Tax Registration Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 5', marginBottom: '8px' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    id="is_gst_applicable_partner"
-                                                    checked={partnerFormData.is_gst_applicable}
-                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, is_gst_applicable: e.target.checked })}
-                                                />
-                                                <label htmlFor="is_gst_applicable_partner" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black' }}>GST Applicable</label>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 5', marginBottom: '8px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Tax Configuration</label>
+                                                <div
+                                                    onClick={() => setPartnerFormData({ ...partnerFormData, is_gst_applicable: !partnerFormData.is_gst_applicable })}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '12px',
+                                                        cursor: 'pointer',
+                                                        background: partnerFormData.is_gst_applicable ? '#EBF8FF' : '#F8FAFC',
+                                                        padding: '0 16px',
+                                                        height: '38px',
+                                                        borderRadius: '8px',
+                                                        border: `1px solid ${partnerFormData.is_gst_applicable ? 'var(--ae-blue)' : '#E2E8F0'}`,
+                                                        width: 'fit-content',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    <div style={{
+                                                        width: '18px',
+                                                        height: '18px',
+                                                        borderRadius: '4px',
+                                                        border: `2px solid ${partnerFormData.is_gst_applicable ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                        background: partnerFormData.is_gst_applicable ? 'var(--ae-blue)' : 'white',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s'
+                                                    }}>
+                                                        {partnerFormData.is_gst_applicable && <Check size={12} color="white" strokeWidth={4} />}
+                                                    </div>
+                                                    <span style={{
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: 700,
+                                                        color: partnerFormData.is_gst_applicable ? 'var(--ae-blue)' : '#64748B'
+                                                    }}>
+                                                        GST Applicable
+                                                    </span>
+                                                </div>
                                             </div>
                                             {partnerFormData.is_gst_applicable && (
                                                 <>
@@ -2356,14 +2395,45 @@ const UserManagement: React.FC = () => {
                                             MSME Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 5', marginBottom: '8px' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    id="msme_registered_partner"
-                                                    checked={partnerFormData.msme_registered}
-                                                    onChange={(e) => setPartnerFormData({ ...partnerFormData, msme_registered: e.target.checked })}
-                                                />
-                                                <label htmlFor="msme_registered_partner" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black' }}>MSME Registered</label>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 5', marginBottom: '8px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Registration Status</label>
+                                                <div
+                                                    onClick={() => setPartnerFormData({ ...partnerFormData, msme_registered: !partnerFormData.msme_registered })}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '12px',
+                                                        cursor: 'pointer',
+                                                        background: partnerFormData.msme_registered ? '#EBF8FF' : '#F8FAFC',
+                                                        padding: '0 16px',
+                                                        height: '38px',
+                                                        borderRadius: '8px',
+                                                        border: `1px solid ${partnerFormData.msme_registered ? 'var(--ae-blue)' : '#E2E8F0'}`,
+                                                        width: 'fit-content',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    <div style={{
+                                                        width: '18px',
+                                                        height: '18px',
+                                                        borderRadius: '4px',
+                                                        border: `2px solid ${partnerFormData.msme_registered ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                        background: partnerFormData.msme_registered ? 'var(--ae-blue)' : 'white',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s'
+                                                    }}>
+                                                        {partnerFormData.msme_registered && <Check size={12} color="white" strokeWidth={4} />}
+                                                    </div>
+                                                    <span style={{
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: 700,
+                                                        color: partnerFormData.msme_registered ? 'var(--ae-blue)' : '#64748B'
+                                                    }}>
+                                                        MSME Registered
+                                                    </span>
+                                                </div>
                                             </div>
                                             {partnerFormData.msme_registered && (
                                                 <div>
@@ -2739,9 +2809,10 @@ const UserManagement: React.FC = () => {
                                                 </label>
                                                 <textarea
                                                     placeholder="Description"
+                                                    className="ae-input"
                                                     value={productFormData.description}
                                                     onChange={(e) => setProductFormData({ ...productFormData, description: e.target.value })}
-                                                    style={{ width: '100%', height: '60px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', resize: 'vertical' }}
+                                                    style={{ width: '100%', height: '48px', padding: '8px 12px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', resize: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -3164,14 +3235,45 @@ const UserManagement: React.FC = () => {
                                             Tax Registration Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 5', marginBottom: '8px' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    id="is_gst_applicable"
-                                                    checked={companyFormData.is_gst_applicable}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, is_gst_applicable: e.target.checked })}
-                                                />
-                                                <label htmlFor="is_gst_applicable" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black' }}>GST Applicable (Yes/No Toggle)</label>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 5', marginBottom: '8px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Tax Configuration</label>
+                                                <div
+                                                    onClick={() => setCompanyFormData({ ...companyFormData, is_gst_applicable: !companyFormData.is_gst_applicable })}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '12px',
+                                                        cursor: 'pointer',
+                                                        background: companyFormData.is_gst_applicable ? '#EBF8FF' : '#F8FAFC',
+                                                        padding: '0 16px',
+                                                        height: '38px',
+                                                        borderRadius: '8px',
+                                                        border: `1px solid ${companyFormData.is_gst_applicable ? 'var(--ae-blue)' : '#E2E8F0'}`,
+                                                        width: 'fit-content',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    <div style={{
+                                                        width: '18px',
+                                                        height: '18px',
+                                                        borderRadius: '4px',
+                                                        border: `2px solid ${companyFormData.is_gst_applicable ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                        background: companyFormData.is_gst_applicable ? 'var(--ae-blue)' : 'white',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s'
+                                                    }}>
+                                                        {companyFormData.is_gst_applicable && <Check size={12} color="white" strokeWidth={4} />}
+                                                    </div>
+                                                    <span style={{
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: 700,
+                                                        color: companyFormData.is_gst_applicable ? 'var(--ae-blue)' : '#64748B'
+                                                    }}>
+                                                        GST Applicable
+                                                    </span>
+                                                </div>
                                             </div>
                                             {companyFormData.is_gst_applicable && (
                                                 <>
@@ -3246,14 +3348,45 @@ const UserManagement: React.FC = () => {
                                             MSME Details
                                         </h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', gridColumn: 'span 5', marginBottom: '8px' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    id="msme_registered"
-                                                    checked={companyFormData.msme_registered}
-                                                    onChange={(e) => setCompanyFormData({ ...companyFormData, msme_registered: e.target.checked })}
-                                                />
-                                                <label htmlFor="msme_registered" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black' }}>MSME Registered</label>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 5', marginBottom: '8px' }}>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Registration Status</label>
+                                                <div
+                                                    onClick={() => setCompanyFormData({ ...companyFormData, msme_registered: !companyFormData.msme_registered })}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '12px',
+                                                        cursor: 'pointer',
+                                                        background: companyFormData.msme_registered ? '#EBF8FF' : '#F8FAFC',
+                                                        padding: '0 16px',
+                                                        height: '38px',
+                                                        borderRadius: '8px',
+                                                        border: `1px solid ${companyFormData.msme_registered ? 'var(--ae-blue)' : '#E2E8F0'}`,
+                                                        width: 'fit-content',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    <div style={{
+                                                        width: '18px',
+                                                        height: '18px',
+                                                        borderRadius: '4px',
+                                                        border: `2px solid ${companyFormData.msme_registered ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                        background: companyFormData.msme_registered ? 'var(--ae-blue)' : 'white',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s'
+                                                    }}>
+                                                        {companyFormData.msme_registered && <Check size={12} color="white" strokeWidth={4} />}
+                                                    </div>
+                                                    <span style={{
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: 700,
+                                                        color: companyFormData.msme_registered ? 'var(--ae-blue)' : '#64748B'
+                                                    }}>
+                                                        MSME Registered
+                                                    </span>
+                                                </div>
                                             </div>
                                             {companyFormData.msme_registered && (
                                                 <div>

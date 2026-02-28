@@ -6,7 +6,9 @@ import {
     ChevronLeft,
     ChevronRight,
     Download,
-    Columns
+    Columns,
+    Eye,
+    Check
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -706,10 +708,8 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-primary)'}
                                     >
-                                        <input
-                                            type="checkbox"
-                                            checked={visibleColumns.includes(col.key)}
-                                            onChange={() => {
+                                        <div
+                                            onClick={() => {
                                                 if (visibleColumns.includes(col.key)) {
                                                     setVisibleColumns(visibleColumns.filter(c => c !== col.key));
                                                 } else {
@@ -717,12 +717,19 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                                 }
                                             }}
                                             style={{
-                                                cursor: 'pointer',
-                                                width: '16px',
-                                                height: '16px',
-                                                accentColor: '#FF6B00'
-                                            }}
-                                        />
+                                                width: '18px',
+                                                height: '18px',
+                                                borderRadius: '4px',
+                                                border: `2px solid ${visibleColumns.includes(col.key) ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                background: visibleColumns.includes(col.key) ? 'var(--ae-blue)' : 'white',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'all 0.2s',
+                                                flexShrink: 0
+                                            }}>
+                                            {visibleColumns.includes(col.key) && <Check size={12} color="white" strokeWidth={4} />}
+                                        </div>
                                         <span style={{ fontWeight: 600 }}>{col.label}</span>
                                     </label>
                                 ))}
@@ -962,7 +969,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                                         e.currentTarget.style.boxShadow = 'none';
                                                     }}
                                                 >
-                                                    View
+                                                    <Eye size={18} />
                                                 </button>
                                             </td>
                                         </tr>

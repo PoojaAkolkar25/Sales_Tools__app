@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Save, Calendar, DollarSign, Paperclip, File as FileIcon, Download, Trash2, Eye } from 'lucide-react';
+import { Save, Calendar, DollarSign, Paperclip, File as FileIcon, Download, Trash2, Eye, Check } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
@@ -17,6 +17,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
     const [bankConnections, setBankConnections] = useState<any[]>([]);
     const [invoices, setInvoices] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [activeAction, setActiveAction] = useState<'save' | 'cancel' | null>('save');
 
     const [formData, setFormData] = useState({
         customer_name: '', // Changed from lead to customer_name
@@ -248,9 +249,10 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{
                     width: '4px',
-                    height: '18px',
+                    height: '20px',
                     background: 'var(--ae-blue)',
-                    borderRadius: '2px'
+                    borderRadius: '2px',
+                    flexShrink: 0
                 }}></span>
                 <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)', margin: 0 }}>
                     {title}
@@ -267,7 +269,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                 <span style={{
                     width: '4px',
                     height: '24px',
-                    background: 'var(--theme-primary)',
+                    background: 'var(--ae-blue)',
                     borderRadius: '2px'
                 }}></span>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
@@ -310,6 +312,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                         readOnly
                                         className="ae-input"
                                         value={formData.payment_date ? formatToAppDate(formData.payment_date) : ''}
+                                        placeholder="Enter date"
                                         style={{
                                             width: '100%', padding: '4px 32px 4px 12px',
                                             borderRadius: '8px', fontSize: '0.82rem', fontWeight: 500, color: '#1a1f36',
@@ -446,7 +449,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                         <div>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
-                                    <tr style={{ background: '#F8FAFC' }}>
+                                    <tr style={{ background: 'var(--bg-accent)' }}>
                                         <th style={{ padding: '10px 4px', width: '40px', borderBottom: '1px solid #E0E6ED' }}></th>
                                         <th style={{ width: '120px', padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>Inv. No</th>
                                         <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>Project</th>
@@ -479,21 +482,33 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                             return (
                                                 <tr key={inv.id} style={{ borderBottom: index === invoices.length - 1 ? 'none' : '1px solid #E0E6ED', background: isSelected ? 'rgba(255, 107, 0, 0.05)' : 'transparent' }}>
                                                     <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={isSelected}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    handleAdjustmentChange(inv.id, 'payment_amount', '0');
-                                                                } else {
+                                                        <div
+                                                            onClick={() => {
+                                                                if (isSelected) {
                                                                     setFormData({
                                                                         ...formData,
                                                                         adjustments: formData.adjustments.filter(a => a.invoice !== inv.id)
                                                                     });
+                                                                } else {
+                                                                    handleAdjustmentChange(inv.id, 'payment_amount', '0');
                                                                 }
                                                             }}
-                                                            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                                                        />
+                                                            style={{
+                                                                width: '20px',
+                                                                height: '20px',
+                                                                borderRadius: '4px',
+                                                                border: `2px solid ${isSelected ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                                background: isSelected ? 'var(--ae-blue)' : 'white',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                cursor: 'pointer',
+                                                                margin: '0 auto',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                        >
+                                                            {isSelected && <Check size={12} color="white" strokeWidth={4} />}
+                                                        </div>
                                                     </td>
                                                     <td style={{ padding: '6px 4px', fontSize: '0.85rem', fontWeight: 600, color: '#4A5568', verticalAlign: 'middle' }}>{inv.invoice_no}</td>
                                                     <td style={{ padding: '6px 4px', fontSize: '0.85rem', color: '#4A5568', verticalAlign: 'middle' }}>{inv.project_name}</td>
@@ -531,7 +546,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                 </tbody>
                                 {invoices.length > 0 && (
                                     <tfoot>
-                                        <tr style={{ background: '#F8FAFC', borderTop: '1px solid #E0E6ED' }}>
+                                        <tr style={{ background: 'var(--bg-accent)', borderTop: '1px solid #E0E6ED' }}>
                                             <td colSpan={7} style={{ textAlign: 'right', padding: '12px 16px', fontWeight: 800, fontSize: '0.85rem', color: '#1A202C' }}>TOTALS</td>
                                             <td style={{ textAlign: 'right', padding: '12px 16px', fontWeight: 800, fontSize: '0.95rem', color: 'var(--theme-primary)' }}>${totalAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                             <td style={{ textAlign: 'right', padding: '12px 16px', fontWeight: 800, fontSize: '0.95rem', color: 'var(--theme-primary)' }}>${totalTdsAdjusted.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
@@ -607,12 +622,12 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                                 alignItems: 'center',
                                                 gap: '8px',
                                                 padding: '4px 10px',
-                                                background: 'white',
+                                                background: 'rgba(255, 107, 0, 0.05)',
                                                 borderRadius: '8px',
-                                                border: '1px solid #E0E6ED',
+                                                border: '1px solid rgba(255, 107, 0, 0.2)',
                                                 minWidth: 'fit-content'
                                             }}>
-                                                <FileIcon size={12} style={{ color: 'var(--theme-primary)' }} />
+                                                <FileIcon size={12} style={{ color: 'var(--ae-orange)' }} />
                                                 <span style={{
                                                     fontSize: '0.8rem',
                                                     fontWeight: 600,
@@ -766,17 +781,24 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                 <button
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="ae-btn-primary"
                     style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
                         padding: '6px 20px',
+                        height: '32px',
                         borderRadius: '8px',
-                        fontSize: '0.8rem',
+                        fontSize: '0.85rem',
                         fontWeight: 700,
-                        height: '34px'
+                        border: 'none',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s',
+                        background: activeAction === 'save' ? 'var(--theme-primary)' : 'transparent',
+                        color: activeAction === 'save' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: activeAction === 'save' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                     }}
+                    onMouseEnter={() => setActiveAction('save')}
+                    onMouseLeave={() => setActiveAction(null)}
                 >
                     {loading ? <Save className="animate-spin" size={18} /> : <Save size={18} />}
                     {id ? 'Update Receipt' : 'Save Receipt'}
@@ -789,17 +811,24 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                             onCancel: () => { }
                         });
                     }}
-                    className="ae-btn-secondary"
                     style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
+                        gap: '8px',
                         padding: '6px 18px',
+                        height: '32px',
                         borderRadius: '8px',
-                        fontSize: '0.8rem',
+                        fontSize: '0.85rem',
                         fontWeight: 700,
-                        height: '34px'
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: activeAction === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: activeAction === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: activeAction === 'cancel' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                     }}
+                    onMouseEnter={() => setActiveAction('cancel')}
+                    onMouseLeave={() => setActiveAction(null)}
                 >
                     <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
                     <span>Cancel</span>

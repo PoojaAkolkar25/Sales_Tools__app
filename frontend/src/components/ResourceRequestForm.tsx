@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
-    Clock,
-    ChevronLeft,
     Send,
-    Server,
     Save,
     PlusCircle,
-    X,
     CheckCircle,
     XCircle,
-    Calendar
+    Calendar,
+    Check,
+    X,
+    Server,
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -26,7 +25,6 @@ interface ResourceRequestFormProps {
 
 const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onBack, onSave }) => {
     const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
     const [deals, setDeals] = useState<any[]>([]);
     const [formData, setFormData] = useState<any>({
         request_date: new Date().toISOString().split('T')[0],
@@ -64,7 +62,6 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
     });
 
 
-    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
     const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel' | 'approve' | 'reject' | 'issue'>('submit');
     const [isConfirmingExit, setIsConfirmingExit] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
@@ -107,7 +104,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
             showNotification('Request must be saved first', 'error');
             return;
         }
-        setSaving(true);
+        setLoading(true);
         try {
             await api.post(`/inventory/requests/${id}/submit_to_it/`);
             showNotification('Request submitted to IT Head', 'success');
@@ -120,7 +117,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
             }
             showNotification(errorMsg, 'error');
         } finally {
-            setSaving(false);
+            setLoading(false);
         }
     };
     const fetchRequestDetails = async () => {
@@ -168,7 +165,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
         });
 
         // Convert numerical strings to numbers
-        const numericalFields = ['cpu_cores', 'ram_gb', 'storage_size_gb', 'quantity', 'db_storage_gb', 'cpu_cores', 'ram_gb'];
+        const numericalFields = ['cpu_cores', 'ram_gb', 'storage_size_gb', 'quantity', 'db_storage_gb'];
         numericalFields.forEach(field => {
             if (cleaned[field] !== null && cleaned[field] !== undefined && cleaned[field] !== '') {
                 cleaned[field] = parseInt(cleaned[field], 10);
@@ -196,7 +193,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
 
     const handleSave = async () => {
         if (!validateForm(formData)) return;
-        setSaving(true);
+        setLoading(true);
         try {
             const cleanedData = prepareDataForSubmission(formData);
             if (id) {
@@ -224,13 +221,13 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
             }
             showNotification(errorMsg, 'error');
         } finally {
-            setSaving(false);
+            setLoading(false);
         }
     };
 
     const handleSubmit = async () => {
         if (!validateForm(formData)) return;
-        setSaving(true);
+        setLoading(true);
         try {
             const cleanedData = prepareDataForSubmission(formData);
             let requestId = id;
@@ -270,7 +267,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
             }
             showNotification(errorMsg, 'error');
         } finally {
-            setSaving(false);
+            setLoading(false);
         }
     };
 
@@ -739,62 +736,123 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Database / RDS Details" />
                         <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 2' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Database Required</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="radio" name="database_required" checked={formData.database_required === true} onChange={() => setFormData((p: any) => ({ ...p, database_required: true }))} disabled={isReadOnly} /> Yes
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="radio" name="database_required" checked={formData.database_required === false} onChange={() => setFormData((p: any) => ({ ...p, database_required: false, rds_type: '', database_engine: '', db_storage_gb: '' }))} disabled={isReadOnly} /> No
-                                    </label>
+                                <div style={{ display: 'flex', background: '#F1F5F9', padding: '3px', borderRadius: '8px', width: 'fit-content', height: '38px', alignItems: 'center' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => !isReadOnly && setFormData((p: any) => ({ ...p, database_required: true }))}
+                                        style={{
+                                            height: '32px',
+                                            padding: '0 16px',
+                                            borderRadius: '6px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                                            background: formData.database_required ? 'white' : 'transparent',
+                                            color: formData.database_required ? 'var(--ae-blue)' : '#64748B',
+                                            border: 'none',
+                                            boxShadow: formData.database_required ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >Yes</button>
+                                    <button
+                                        type="button"
+                                        onClick={() => !isReadOnly && setFormData((p: any) => ({ ...p, database_required: false, rds_type: '', database_engine: '', db_storage_gb: '' }))}
+                                        style={{
+                                            height: '32px',
+                                            padding: '0 16px',
+                                            borderRadius: '6px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                                            background: !formData.database_required ? 'white' : 'transparent',
+                                            color: !formData.database_required ? 'var(--ae-blue)' : '#64748B',
+                                            border: 'none',
+                                            boxShadow: !formData.database_required ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >No</button>
                                 </div>
                             </div>
 
                             {formData.database_required && (
                                 <>
-                                    <div style={{ display: 'contents' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>RDS Type</label>
-                                            <SearchableDropdown
-                                                options={[
-                                                    { value: 'db.t3.small', label: 'db.t3.small' },
-                                                    { value: 'db.t3.medium', label: 'db.t3.medium' },
-                                                    { value: 'db.m5.large', label: 'db.m5.large' }
-                                                ]}
-                                                value={formData.rds_type}
-                                                onChange={(val) => handleInputChange({ target: { name: 'rds_type', value: val } } as any)}
-                                                placeholder="Select Type"
-                                                className="w-full"
-                                                disabled={isReadOnly}
-                                            />
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Database Engine</label>
-                                            <SearchableDropdown
-                                                options={[
-                                                    { value: 'MySQL', label: 'MySQL' },
-                                                    { value: 'PostgreSQL', label: 'PostgreSQL' },
-                                                    { value: 'SQL Server', label: 'SQL Server' }
-                                                ]}
-                                                value={formData.database_engine}
-                                                onChange={(val) => handleInputChange({ target: { name: 'database_engine', value: val } } as any)}
-                                                placeholder="Select Engine"
-                                                className="w-full"
-                                                disabled={isReadOnly}
-                                            />
-                                        </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>RDS Type</label>
+                                        <SearchableDropdown
+                                            options={[
+                                                { value: 'db.t3.small', label: 'db.t3.small' },
+                                                { value: 'db.t3.medium', label: 'db.t3.medium' },
+                                                { value: 'db.m5.large', label: 'db.m5.large' }
+                                            ]}
+                                            value={formData.rds_type}
+                                            onChange={(val) => handleInputChange({ target: { name: 'rds_type', value: val } } as any)}
+                                            placeholder="Select Type"
+                                            className="w-full"
+                                            disabled={isReadOnly}
+                                        />
                                     </div>
-                                    <div style={{ display: 'contents' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>DB Storage (GB)</label>
-                                            <input type="number" name="db_storage_gb" value={formData.db_storage_gb} onChange={handleInputChange} className="ae-input" disabled={isReadOnly} />
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Backup Required</label>
-                                            <label className="flex items-center gap-2 cursor-pointer mt-2">
-                                                <input type="checkbox" name="backup_required" checked={formData.backup_required} onChange={(e) => setFormData((p: any) => ({ ...p, backup_required: e.target.checked }))} disabled={isReadOnly} /> Enable Daily Backup
-                                            </label>
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Database Engine</label>
+                                        <SearchableDropdown
+                                            options={[
+                                                { value: 'MySQL', label: 'MySQL' },
+                                                { value: 'PostgreSQL', label: 'PostgreSQL' },
+                                                { value: 'SQL Server', label: 'SQL Server' }
+                                            ]}
+                                            value={formData.database_engine}
+                                            onChange={(val) => handleInputChange({ target: { name: 'database_engine', value: val } } as any)}
+                                            placeholder="Select Engine"
+                                            className="w-full"
+                                            disabled={isReadOnly}
+                                        />
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>DB Storage (GB)</label>
+                                        <input
+                                            type="number"
+                                            name="db_storage_gb"
+                                            value={formData.db_storage_gb}
+                                            onChange={handleInputChange}
+                                            className="ae-input"
+                                            style={{ height: '38px' }}
+                                            disabled={isReadOnly}
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 2' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Backup Required</label>
+                                        <div
+                                            onClick={() => !isReadOnly && setFormData((p: any) => ({ ...p, backup_required: !formData.backup_required }))}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '12px',
+                                                cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                                                background: formData.backup_required ? '#EBF8FF' : '#F8FAFC',
+                                                padding: '0 16px',
+                                                height: '38px',
+                                                borderRadius: '8px',
+                                                border: `1px solid ${formData.backup_required ? '#3182CE' : '#E2E8F0'}`,
+                                                width: 'fit-content',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <div style={{
+                                                width: '18px',
+                                                height: '18px',
+                                                borderRadius: '4px',
+                                                border: `2px solid ${formData.backup_required ? '#3182CE' : '#CBD5E1'}`,
+                                                background: formData.backup_required ? '#3182CE' : 'white',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'all 0.2s'
+                                            }}>
+                                                {formData.backup_required && <Check size={14} color="white" strokeWidth={4} />}
+                                            </div>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: formData.backup_required ? '#2B6CB0' : '#64748B' }}>Enable Daily Backup</span>
                                         </div>
                                     </div>
                                 </>
@@ -808,11 +866,27 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Purpose of Request <span style={{ color: '#ef4444' }}>*</span></label>
-                                <textarea name="purpose_of_request" value={formData.purpose_of_request} onChange={handleInputChange} className="ae-input !h-20" disabled={isReadOnly} placeholder="Enter purpose"></textarea>
+                                <textarea
+                                    name="purpose_of_request"
+                                    value={formData.purpose_of_request}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    style={{ height: '48px', padding: '8px 12px', resize: 'none' }}
+                                    disabled={isReadOnly}
+                                    placeholder="Enter purpose"
+                                ></textarea>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Business Justification <span style={{ color: '#ef4444' }}>*</span></label>
-                                <textarea name="business_justification" value={formData.business_justification} onChange={handleInputChange} className="ae-input !h-20" disabled={isReadOnly} placeholder="Enter justification"></textarea>
+                                <textarea
+                                    name="business_justification"
+                                    value={formData.business_justification}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    style={{ height: '48px', padding: '8px 12px', resize: 'none' }}
+                                    disabled={isReadOnly}
+                                    placeholder="Enter justification"
+                                ></textarea>
                             </div>
                             <div style={{ display: 'contents' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -1219,13 +1293,15 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                             </p>
                             <textarea
                                 autoFocus
+                                className="ae-input"
                                 value={rejectRemarks}
                                 onChange={e => setRejectRemarks(e.target.value)}
                                 placeholder="Enter remarks here..."
                                 style={{
+                                    height: '48px',
+                                    padding: '8px 12px',
+                                    resize: 'none',
                                     width: '100%',
-                                    minHeight: '100px',
-                                    padding: '12px',
                                     borderRadius: '8px',
                                     border: '1px solid var(--border-primary)',
                                     outline: 'none',

@@ -62,14 +62,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     });
 
 
-    const [hoveredBtn, setHoveredBtn] = useState<string | null>('submit');
+    const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel'>('submit');
     const [isConfirmingExit, setIsConfirmingExit] = useState(false);
-
-    useEffect(() => {
-        if (isConfirmingExit) {
-            setHoveredBtn('cancel');
-        }
-    }, [isConfirmingExit]);
     const { showNotification, showConfirm } = useNotification();
 
     useEffect(() => {
@@ -525,7 +519,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     value={salesOrder.po_number || ''}
                                     onChange={handleInputChange}
                                     className="ae-input"
-                                    disabled={isSubmitted}
+                                    disabled={isSubmitted} placeholder="Purchase Order Number "
                                 />
                             </div>
 
@@ -545,7 +539,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                 const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
                                                 if (dateInput) dateInput.showPicker();
                                             }}
-                                            placeholder="Select Date"
+                                            placeholder="Enter date"
                                         />
                                         <input
                                             name="po_date"
@@ -580,7 +574,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                 const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
                                                 if (dateInput) dateInput.showPicker();
                                             }}
-                                            placeholder="Select Date"
+                                            placeholder="Enter date"
                                         />
                                         <input
                                             name="po_from_date"
@@ -615,7 +609,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                 const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
                                                 if (dateInput) dateInput.showPicker();
                                             }}
-                                            placeholder="Select Date"
+                                            placeholder="Enter date"
                                         />
                                         <input
                                             name="po_to_date"
@@ -643,7 +637,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                         <div>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
-                                    <tr style={{ background: '#F8FAFC' }}>
+                                    <tr style={{ background: 'var(--bg-accent)' }}>
                                         <th style={{ padding: '10px 4px', width: '40px', borderBottom: '1px solid #E0E6ED' }}></th>
                                         <th style={{ width: '60px', padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>Sr.No.</th>
                                         <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '100px' }}>Type</th>
@@ -724,12 +718,11 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                     className="ae-input custom-scrollbar"
                                                     style={{
                                                         width: '100%',
-                                                        minHeight: '30px',
                                                         height: '30px',
                                                         padding: '4px 8px',
                                                         fontSize: '0.85rem',
                                                         borderRadius: '6px',
-                                                        resize: 'vertical'
+                                                        resize: 'none'
                                                     }}
                                                     placeholder="Item Description"
                                                     disabled={isSubmitted}
@@ -750,7 +743,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                                 const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
                                                                 if (dateInput) dateInput.showPicker();
                                                             }}
-                                                            placeholder="Select Date"
+                                                            placeholder="Enter date"
                                                         />
                                                         <input
                                                             type="date"
@@ -782,7 +775,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                                 const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
                                                                 if (dateInput) dateInput.showPicker();
                                                             }}
-                                                            placeholder="Select Date"
+                                                            placeholder="Enter date"
                                                         />
                                                         <input
                                                             type="date"
@@ -828,21 +821,21 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                                 </div>
                                             </td>
                                             <td style={{ padding: '6px 4px', textAlign: 'center', minWidth: '80px', verticalAlign: 'middle' }}>
-                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '70px', margin: '0 auto' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', width: '80px', margin: '0 auto', border: '1px solid #E0E6ED', borderRadius: '8px', overflow: 'hidden', background: 'white' }}>
                                                     <input
                                                         type="number"
                                                         value={item.discount_percent || 0}
                                                         onChange={(e) => handleItemChange(index, 'discount_percent', e.target.value)}
-                                                        className="ae-input"
-                                                        style={{ width: '100%', padding: '4px 8px', fontSize: '0.85rem', color: '#C53030', textAlign: 'center', fontWeight: 600, height: '30px' }}
+                                                        style={{ width: '100%', padding: '4px 6px', fontSize: '0.85rem', color: '#C53030', textAlign: 'center', fontWeight: 600, height: '30px', border: 'none', outline: 'none', background: 'transparent' }}
                                                         min="0"
                                                         max="100"
                                                         step="0.01"
                                                         disabled={isSubmitted}
                                                     />
-                                                    <span style={{ position: 'absolute', right: '8px', color: '#C53030', fontSize: '0.85rem', pointerEvents: 'none' }}>%</span>
+                                                    <span style={{ padding: '0 6px 0 2px', color: '#C53030', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0, lineHeight: '30px', borderLeft: '1px solid #E0E6ED', background: '#FFF5F5' }}>%</span>
                                                 </div>
                                             </td>
+
                                             <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 700, fontSize: '0.85rem', color: '#2D3748', verticalAlign: 'middle' }}>
                                                 <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{getCurrencySymbol(salesOrder.currency)}</span>
                                                 {((parseFloat(item.qty as unknown as string) || 0) * (parseFloat(item.rate as unknown as string) || 0) * (1 - (parseFloat(item.discount_percent as unknown as string) || 0) / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -931,13 +924,11 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     onChange={handleInputChange}
                                     className="ae-input"
                                     style={{
-                                        minHeight: '60px',
-                                        height: '60px',
+                                        height: '48px',
+                                        padding: '8px 12px',
+                                        resize: 'none',
                                         ...getHighlightStyle(salesOrder.billing_address),
-                                        padding: '4px 8px',
-                                        fontSize: '0.85rem'
                                     }}
-                                    rows={2}
                                     disabled={isSubmitted}
                                     placeholder="Billing Address"
                                 />
@@ -950,13 +941,11 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     onChange={handleInputChange}
                                     className="ae-input"
                                     style={{
-                                        minHeight: '60px',
-                                        height: '60px',
+                                        height: '48px',
+                                        padding: '8px 12px',
+                                        resize: 'none',
                                         ...getHighlightStyle(salesOrder.shipping_address),
-                                        padding: '4px 8px',
-                                        fontSize: '0.85rem'
                                     }}
-                                    rows={2}
                                     disabled={isSubmitted}
                                     placeholder="Shipping Address"
                                 />
@@ -973,9 +962,9 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 alignItems: 'center',
                                 gap: '12px',
                                 padding: '10px 16px',
-                                background: '#F8FAFC',
+                                background: 'rgba(255, 107, 0, 0.05)',
                                 borderRadius: '16px',
-                                border: '1px solid #E2E8F0',
+                                border: '1px solid rgba(255, 107, 0, 0.2)',
                                 maxWidth: '100%',
                                 boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
                             }}>
@@ -990,13 +979,13 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     border: '1px solid #EDF2F7',
                                     flexShrink: 0
                                 }}>
-                                    <FileText size={18} style={{ color: 'var(--theme-primary)', margin: '0 auto' }} />
+                                    <FileText size={18} style={{ color: 'var(--ae-orange)', margin: '0 auto' }} />
                                 </div>
 
                                 <span style={{
                                     fontSize: '0.85rem',
                                     fontWeight: 700,
-                                    color: '#2D3748',
+                                    color: 'var(--ae-orange)',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
@@ -1070,11 +1059,6 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 marginLeft: 'auto'
             }}
                 className="button-container"
-                onMouseLeave={() => {
-                    if (!isConfirmingExit) {
-                        setHoveredBtn('submit');
-                    }
-                }}
             >
                 {!isSubmitted && (
                     <>
@@ -1093,12 +1077,11 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                background: hoveredBtn === 'draft' ? 'var(--theme-primary)' : 'transparent',
-                                color: hoveredBtn === 'draft' ? 'white' : 'var(--text-secondary)',
-                                boxShadow: hoveredBtn === 'draft' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                                background: activeAction === 'draft' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeAction === 'draft' ? 'white' : 'var(--text-secondary)',
+                                boxShadow: activeAction === 'draft' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                             }}
-                            onMouseEnter={() => !isConfirmingExit && setHoveredBtn('draft')}
-                            onMouseLeave={() => setHoveredBtn('')}
+                            onMouseEnter={() => setActiveAction('draft')}
                         >
                             {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
                             <span>Save as Draft</span>
@@ -1118,12 +1101,11 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                background: hoveredBtn === 'submit' ? 'var(--theme-primary)' : 'rgba(255, 107, 0, 0.05)',
-                                color: hoveredBtn === 'submit' ? 'white' : 'var(--ae-orange)',
-                                boxShadow: hoveredBtn === 'submit' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                                background: activeAction === 'submit' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeAction === 'submit' ? 'white' : 'var(--text-secondary)',
+                                boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                             }}
-                            onMouseEnter={() => !isConfirmingExit && setHoveredBtn('submit')}
-                            onMouseLeave={() => setHoveredBtn('')}
+                            onMouseEnter={() => setActiveAction('submit')}
                         >
                             <PlusCircle size={16} />
                             <span>Submit for Approval</span>
@@ -1204,15 +1186,15 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                         fontSize: '0.85rem',
                         fontWeight: 700,
                         border: 'none',
-                        background: hoveredBtn === 'cancel' ? 'rgba(255, 107, 0, 0.05)' : 'transparent',
-                        color: hoveredBtn === 'cancel' ? 'var(--ae-orange)' : 'var(--text-secondary)',
+                        cursor: 'pointer',
                         transition: 'all 0.2s',
-                        cursor: 'pointer'
+                        background: activeAction === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: activeAction === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: activeAction === 'cancel' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                     }}
-                    onMouseEnter={() => !isConfirmingExit && setHoveredBtn('cancel')}
-                    onMouseLeave={() => setHoveredBtn('')}
+                    onMouseEnter={() => setActiveAction('cancel')}
                 >
-                    <span style={{ fontSize: '16px', lineHeight: '16px', fontWeight: 700 }}>×</span>
+                    <XCircle size={16} />
                     <span>Cancel</span>
                 </button>
             </div>

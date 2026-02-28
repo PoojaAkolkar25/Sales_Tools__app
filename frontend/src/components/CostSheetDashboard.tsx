@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw, ChevronLeft, ChevronRight, Plus, Minus, PlusCircle, X, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import { FileSpreadsheet, Columns, Download, ChevronDown, RefreshCw, ChevronLeft, ChevronRight, Plus, Minus, PlusCircle, X, CheckCircle, XCircle, RotateCcw, Eye, Check } from 'lucide-react';
 import api from '../api';
 import { formatToAppDate } from '../utils/dateUtils';
 import Pagination from './Pagination';
@@ -108,6 +108,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
         totalPriceStr: ''
     });
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+    const [cancellingRowId, setCancellingRowId] = useState<number | null>(null);
 
     // Reject / Revert modal state
     const [rejectModal, setRejectModal] = useState<{ id: number } | null>(null);
@@ -728,10 +729,8 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                             onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                             onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-primary)'}
                                         >
-                                            <input
-                                                type="checkbox"
-                                                checked={visibleColumns.includes(col.key)}
-                                                onChange={() => {
+                                            <div
+                                                onClick={() => {
                                                     if (visibleColumns.includes(col.key)) {
                                                         setVisibleColumns(visibleColumns.filter(c => c !== col.key));
                                                     } else {
@@ -739,12 +738,19 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                     }
                                                 }}
                                                 style={{
-                                                    cursor: 'pointer',
-                                                    width: '16px',
-                                                    height: '16px',
-                                                    accentColor: 'var(--theme-primary)'
-                                                }}
-                                            />
+                                                    width: '18px',
+                                                    height: '18px',
+                                                    borderRadius: '4px',
+                                                    border: `2px solid ${visibleColumns.includes(col.key) ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                    background: visibleColumns.includes(col.key) ? 'var(--ae-blue)' : 'white',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    transition: 'all 0.2s',
+                                                    flexShrink: 0
+                                                }}>
+                                                {visibleColumns.includes(col.key) && <Check size={12} color="white" strokeWidth={4} />}
+                                            </div>
                                             <span style={{ fontWeight: 600 }}>{col.label}</span>
                                         </label>
                                     ))}
@@ -1080,7 +1086,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                             }}
                                                             title="View/Edit"
                                                         >
-                                                            View
+                                                            <Eye size={16} />
                                                         </button>
                                                         <button
                                                             onClick={(e) => {
@@ -1143,11 +1149,11 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                                                         <thead>
                                                                             <tr style={{ background: 'var(--theme-primary)', color: 'white' }}>
-                                                                                <th style={{ padding: '8px 16px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'left' }}>Category</th>
-                                                                                <th style={{ padding: '8px 16px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Total Est. Cost</th>
-                                                                                <th style={{ padding: '8px 16px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Total Est. Margin %</th>
-                                                                                <th style={{ padding: '8px 16px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Total Est. Margin</th>
-                                                                                <th style={{ padding: '8px 16px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Total Est. Price</th>
+                                                                                <th style={{ padding: '8px 8px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'left' }}>Category</th>
+                                                                                <th style={{ padding: '8px 8px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Total Est. Cost</th>
+                                                                                <th style={{ padding: '8px 8px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Total Est. Margin %</th>
+                                                                                <th style={{ padding: '8px 8px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Total Est. Margin</th>
+                                                                                <th style={{ padding: '8px 8px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Total Est. Price</th>
                                                                             </tr>
                                                                         </thead>
                                                                         <tbody>
@@ -1159,34 +1165,34 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                                                 { label: 'Other Category', data: totals.other }
                                                                             ].map((row, idx) => (
                                                                                 <tr key={row.label} style={{ borderBottom: idx === 4 ? 'none' : '1px solid #f1f5f9' }}>
-                                                                                    <td style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>{row.label}</td>
-                                                                                    <td style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textAlign: 'right' }}>
+                                                                                    <td style={{ padding: '8px 8px', fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>{row.label}</td>
+                                                                                    <td style={{ padding: '8px 8px', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textAlign: 'right' }}>
                                                                                         {currencySymbol}{row.data.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                     </td>
-                                                                                    <td style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 700, color: row.data.catMarginPercent >= 0 ? '#10b981' : '#ef4444', textAlign: 'right' }}>
+                                                                                    <td style={{ padding: '8px 8px', fontSize: '0.75rem', fontWeight: 700, color: row.data.catMarginPercent >= 0 ? '#10b981' : '#ef4444', textAlign: 'right' }}>
                                                                                         {row.data.catMarginPercent.toFixed(2)}%
                                                                                     </td>
-                                                                                    <td style={{ padding: '8px 16px', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textAlign: 'right' }}>
+                                                                                    <td style={{ padding: '8px 8px', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textAlign: 'right' }}>
                                                                                         {currencySymbol}{row.data.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                     </td>
-                                                                                    <td style={{ padding: '8px 16px', fontSize: '0.8rem', fontWeight: 800, color: 'var(--theme-accent)', textAlign: 'right' }}>
+                                                                                    <td style={{ padding: '8px 8px', fontSize: '0.8rem', fontWeight: 800, color: 'var(--theme-accent)', textAlign: 'right' }}>
                                                                                         {currencySymbol}{row.data.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                     </td>
                                                                                 </tr>
                                                                             ))}
                                                                             {/* Grand Total Row */}
                                                                             <tr style={{ background: '#f8fafc', borderTop: '2px solid var(--border-primary)' }}>
-                                                                                <td style={{ padding: '10px 16px', fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>Total</td>
-                                                                                <td style={{ padding: '10px 16px', fontSize: '0.8rem', fontWeight: 800, color: '#1e293b', textAlign: 'right' }}>
+                                                                                <td style={{ padding: '10px 8px', fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>Total</td>
+                                                                                <td style={{ padding: '10px 8px', fontSize: '0.8rem', fontWeight: 800, color: '#1e293b', textAlign: 'right' }}>
                                                                                     {currencySymbol}{grandTotalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                 </td>
-                                                                                <td style={{ padding: '10px 16px', fontSize: '0.8rem', fontWeight: 800, color: grandTotalMarginPercent >= 0 ? '#10b981' : '#ef4444', textAlign: 'right' }}>
+                                                                                <td style={{ padding: '10px 8px', fontSize: '0.8rem', fontWeight: 800, color: grandTotalMarginPercent >= 0 ? '#10b981' : '#ef4444', textAlign: 'right' }}>
                                                                                     {grandTotalMarginPercent.toFixed(2)}%
                                                                                 </td>
-                                                                                <td style={{ padding: '10px 16px', fontSize: '0.8rem', fontWeight: 800, color: '#1e293b', textAlign: 'right' }}>
+                                                                                <td style={{ padding: '10px 8px', fontSize: '0.8rem', fontWeight: 800, color: '#1e293b', textAlign: 'right' }}>
                                                                                     {currencySymbol}{grandTotalMargin.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                 </td>
-                                                                                <td style={{ padding: '10px 16px', fontSize: '0.8rem', fontWeight: 900, color: 'var(--theme-primary)', textAlign: 'right' }}>
+                                                                                <td style={{ padding: '10px 8px', fontSize: '0.8rem', fontWeight: 900, color: 'var(--theme-primary)', textAlign: 'right' }}>
                                                                                     {currencySymbol}{grandTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                 </td>
                                                                             </tr>
@@ -1250,10 +1256,40 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                                                 </>
                                                                             )}
                                                                             <button
-                                                                                onClick={() => toggleRow(cs.id)}
-                                                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '10px', border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-                                                                                onMouseOver={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-                                                                                onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                                                                onClick={() => {
+                                                                                    setCancellingRowId(cs.id);
+                                                                                    setTimeout(() => {
+                                                                                        toggleRow(cs.id);
+                                                                                        setCancellingRowId(null);
+                                                                                    }, 150);
+                                                                                }}
+                                                                                style={{
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: '8px',
+                                                                                    padding: '8px 16px',
+                                                                                    borderRadius: '10px',
+                                                                                    border: 'none',
+                                                                                    background: cancellingRowId === cs.id ? 'rgba(255, 107, 0, 0.1)' : 'transparent',
+                                                                                    color: cancellingRowId === cs.id ? 'var(--theme-primary)' : 'var(--text-primary)',
+                                                                                    fontSize: '0.75rem',
+                                                                                    fontWeight: 700,
+                                                                                    cursor: 'pointer',
+                                                                                    transition: 'all 0.2s',
+                                                                                    boxShadow: cancellingRowId === cs.id ? '0 2px 8px rgba(187, 77, 0, 0.2)' : 'none'
+                                                                                }}
+                                                                                onMouseEnter={(e) => {
+                                                                                    if (cancellingRowId !== cs.id) {
+                                                                                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                                                                        e.currentTarget.style.color = 'var(--ae-orange)';
+                                                                                    }
+                                                                                }}
+                                                                                onMouseLeave={(e) => {
+                                                                                    if (cancellingRowId !== cs.id) {
+                                                                                        e.currentTarget.style.background = 'transparent';
+                                                                                        e.currentTarget.style.color = 'var(--text-primary)';
+                                                                                    }
+                                                                                }}
                                                                             >
                                                                                 <X size={14} /> Cancel
                                                                             </button>

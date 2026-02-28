@@ -8,6 +8,7 @@ import {
     ChevronRight,
     Loader2,
     Columns,
+    Check,
     ChevronDown
 } from 'lucide-react';
 import api from '../api';
@@ -59,7 +60,7 @@ const RevenueDashboard: React.FC = () => {
         revenue_type: '',
         deal_no: '',
         customer_name: '',
-        status: 'ACTIVE' // Default status tab
+        status: 'DRAFT' // Default status tab
     });
 
     const [showColumnMenu, setShowColumnMenu] = useState(false);
@@ -165,105 +166,70 @@ const RevenueDashboard: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '0 8px',
-                marginBottom: '10px'
+                marginBottom: '24px'
             }}>
+                {/* Left: Heading + buttons inline */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Revenue</h1>
-                </div>
-            </div>
 
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 8px',
-                marginBottom: '12px',
-                gap: '24px'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    gap: '4px',
-                    alignItems: 'center',
-                    background: 'var(--bg-primary)',
-                    padding: '6px',
-                    borderRadius: '12px',
-                    border: '1px solid #E0E6ED',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                }}>
-                    <button
-                        onClick={() => { setActiveTab('dashboard'); setView('list'); setSelectedContractId(null); }}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: activeTab === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
-                            color: activeTab === 'dashboard' ? 'white' : 'var(--text-secondary)',
-                            boxShadow: activeTab === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (activeTab !== 'dashboard') {
-                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                                e.currentTarget.style.color = 'var(--ae-orange)';
-                                e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (activeTab !== 'dashboard') {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.color = 'var(--text-secondary)';
-                                e.currentTarget.style.border = 'none';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }
-                        }}
-                    >
-                        <LayoutDashboard size={18} /> Dashboard
-                    </button>
-                    <button
-                        onClick={() => { setActiveTab('create'); setSelectedContractId(null); }}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            height: '32px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: activeTab === 'create' ? 'var(--theme-primary)' : 'transparent',
-                            color: activeTab === 'create' ? 'white' : 'var(--text-secondary)',
-                            boxShadow: activeTab === 'create' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (activeTab !== 'create') {
-                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                                e.currentTarget.style.color = 'var(--ae-orange)';
-                                e.currentTarget.style.border = '1px solid var(--theme-primary)';
-                                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (activeTab !== 'create') {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.color = 'var(--text-secondary)';
-                                e.currentTarget.style.border = 'none';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }
-                        }}
-                    >
-                        <PlusCircle size={18} /> Create New
-                    </button>
+                    <div style={{
+                        display: 'flex',
+                        gap: '4px',
+                        alignItems: 'center',
+                        background: 'var(--bg-primary)',
+                        padding: '6px',
+                        borderRadius: '12px',
+                        border: '1px solid var(--border-primary)',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                        <button
+                            onClick={() => { setActiveTab('dashboard'); setView('list'); setSelectedContractId(null); }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: activeTab === 'dashboard' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeTab === 'dashboard' ? 'white' : 'var(--text-secondary)',
+                                boxShadow: activeTab === 'dashboard' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                            }}
+                            onMouseEnter={(e) => { if (activeTab !== 'dashboard') { e.currentTarget.style.background = 'rgba(255,107,0,0.05)'; e.currentTarget.style.color = 'var(--ae-orange)'; } }}
+                            onMouseLeave={(e) => { if (activeTab !== 'dashboard') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
+                        >
+                            <LayoutDashboard size={18} /> Dashboard
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('create'); setSelectedContractId(null); }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: activeTab === 'create' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeTab === 'create' ? 'white' : 'var(--text-secondary)',
+                                boxShadow: activeTab === 'create' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                            }}
+                            onMouseEnter={(e) => { if (activeTab !== 'create') { e.currentTarget.style.background = 'rgba(255,107,0,0.05)'; e.currentTarget.style.color = 'var(--ae-orange)'; } }}
+                            onMouseLeave={(e) => { if (activeTab !== 'create') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
+                        >
+                            <PlusCircle size={18} /> Create New
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -433,10 +399,8 @@ const RevenueDashboard: React.FC = () => {
                                             onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                             onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-primary)'}
                                         >
-                                            <input
-                                                type="checkbox"
-                                                checked={visibleColumns.includes(col.key)}
-                                                onChange={() => {
+                                            <div
+                                                onClick={() => {
                                                     if (visibleColumns.includes(col.key)) {
                                                         setVisibleColumns(visibleColumns.filter(c => c !== col.key));
                                                     } else {
@@ -444,12 +408,19 @@ const RevenueDashboard: React.FC = () => {
                                                     }
                                                 }}
                                                 style={{
-                                                    cursor: 'pointer',
-                                                    width: '16px',
-                                                    height: '16px',
-                                                    accentColor: '#FF6B00'
-                                                }}
-                                            />
+                                                    width: '18px',
+                                                    height: '18px',
+                                                    borderRadius: '4px',
+                                                    border: `2px solid ${visibleColumns.includes(col.key) ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                    background: visibleColumns.includes(col.key) ? 'var(--ae-blue)' : 'white',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    transition: 'all 0.2s',
+                                                    flexShrink: 0
+                                                }}>
+                                                {visibleColumns.includes(col.key) && <Check size={12} color="white" strokeWidth={4} />}
+                                            </div>
                                             <span style={{ fontWeight: 600 }}>{col.label}</span>
                                         </label>
                                     ))}

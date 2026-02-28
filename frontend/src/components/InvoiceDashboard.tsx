@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Download, XCircle, BarChart3, ChevronDown, FileText, FileSpreadsheet, Columns } from 'lucide-react';
+import { Download, XCircle, BarChart3, ChevronDown, FileText, FileSpreadsheet, Columns, Eye, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -736,10 +736,8 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                                 onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-primary)'}
                                             >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={visibleColumns.includes(col.key)}
-                                                    onChange={() => {
+                                                <div
+                                                    onClick={() => {
                                                         if (visibleColumns.includes(col.key)) {
                                                             setVisibleColumns(visibleColumns.filter(c => c !== col.key));
                                                         } else {
@@ -747,12 +745,19 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                         }
                                                     }}
                                                     style={{
-                                                        cursor: 'pointer',
-                                                        width: '16px',
-                                                        height: '16px',
-                                                        accentColor: '#FF6B00'
-                                                    }}
-                                                />
+                                                        width: '18px',
+                                                        height: '18px',
+                                                        borderRadius: '4px',
+                                                        border: `2px solid ${visibleColumns.includes(col.key) ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                        background: visibleColumns.includes(col.key) ? 'var(--ae-blue)' : 'white',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s',
+                                                        flexShrink: 0
+                                                    }}>
+                                                    {visibleColumns.includes(col.key) && <Check size={12} color="white" strokeWidth={4} />}
+                                                </div>
                                                 <span style={{ fontWeight: 600 }}>{col.label}</span>
                                             </label>
                                         ))}
@@ -1010,10 +1015,33 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                             <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
                                                 <button
                                                     onClick={() => onView(inv.id)}
-                                                    className="ae-btn-secondary"
-                                                    style={{ height: '24px', padding: '4px 12px', fontSize: '0.72rem', borderRadius: '20px', fontWeight: 700 }}
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        width: '28px',
+                                                        height: '28px',
+                                                        background: 'rgba(255,107,0,0.08)',
+                                                        color: 'var(--theme-primary)',
+                                                        border: '1px solid rgba(255,107,0,0.25)',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                        flexShrink: 0
+                                                    }}
+                                                    onMouseOver={(e) => {
+                                                        e.currentTarget.style.background = 'var(--theme-primary)';
+                                                        e.currentTarget.style.color = 'white';
+                                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                    }}
+                                                    onMouseOut={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                        e.currentTarget.style.color = 'var(--theme-primary)';
+                                                        e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                    }}
+                                                    title="View Invoice"
                                                 >
-                                                    View
+                                                    <Eye size={16} />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDownload(inv.id, inv.invoice_no)}

@@ -15,11 +15,11 @@ import {
     Trash2,
     Pencil,
     Sparkles,
-    PlusCircle,
     Paperclip,
-    File as FileIcon,
     Download,
-    Calendar
+    PlusCircle,
+    Calendar,
+    FileText as LucideFile,
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -63,15 +63,13 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const [estimate, setEstimate] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [activeAction, setActiveAction] = useState<'save' | 'submit' | 'cancel' | 'preview' | null>('submit');
-    const [isConfirmingExit, setIsConfirmingExit] = useState(false);
     const [formData, setFormData] = useState<any>(getInitialFormData());
 
     const [deals, setDeals] = useState<any[]>([]);
     const [costSheets, setCostSheets] = useState<any[]>([]);
     const [companyProfile, setCompanyProfile] = useState<any>(null);
-
-
+    const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel'>('submit');
+    const [isConfirmingExit, setIsConfirmingExit] = useState(false);
 
     const [emailModal, setEmailModal] = useState<{
         open: boolean;
@@ -236,15 +234,10 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.status === 'PENDING_APPROVAL' || estimate?.status === 'SUBMITTED' || estimate?.status === 'REWOUND';
 
     const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                    width: '4px',
-                    height: '18px',
-                    background: 'var(--ae-blue)',
-                    borderRadius: '2px'
-                }}></span>
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)', margin: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', padding: '0 4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '4px', height: '22px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
                     {title}
                 </h3>
             </div>
@@ -819,9 +812,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                 </div>
             </div>
 
-            {/* Top Information Section */}
+            {/* Unified Form Card */}
             <div style={{ padding: '24px', background: 'white', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '16px' }}>
-                <div className="ae-grid-4" style={{ gap: '16px' }}>
+                <div className="ae-grid-5" style={{ gap: '16px', alignItems: 'flex-start' }}>
                     {/* Cost Sheet Amount */}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>
@@ -962,678 +955,687 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                             {estimate?.estimate_id || 'Generating...'}
                         </div>
                     </div>
-                </div>
-
-                <div className="ae-grid-4" style={{ gap: '16px', marginTop: '16px' }}>
                     {/* Estimate Date */}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Estimate Date</label>
-                        <input
-                            type="text"
-                            className="ae-input"
-                            disabled
-                            value={formatToAppDate(formData.estimate_date)}
-                            style={{ background: '#f8fafc', fontWeight: 600 }}
-                        />
+                        <div className="ae-input" style={{ background: '#f8fafc', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                            {formatToAppDate(formData.estimate_date)}
+                        </div>
                     </div>
-                    {/* Proposal Attachment */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 3' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
-                            Proposal Attachment <span style={{ color: '#E53E3E' }}>*</span>
-                        </label>
+                </div> {/* END ae-grid-5 */}
+
+                {/* Proposal Attachment */}
+                <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
+                        Proposal Attachment <span style={{ color: '#E53E3E' }}>*</span>
+                    </label>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '0 12px',
+                        background: '#F8FAFC',
+                        borderRadius: '8px',
+                        border: '1px solid #E0E6ED',
+                        height: '34px',
+                        width: 'fit-content',
+                        maxWidth: '100%',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                    }}>
+                        <input
+                            type="file"
+                            id="proposal-upload"
+                            style={{ display: 'none' }}
+                            onChange={handleFileChange}
+                            disabled={estimate?.status === 'SUBMITTED'}
+                        />
+                        <button
+                            onClick={() => document.getElementById('proposal-upload')?.click()}
+                            disabled={estimate?.status === 'SUBMITTED'}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                background: 'var(--bg-primary)',
+                                color: estimate?.status === 'SUBMITTED' ? '#CBD5E0' : 'var(--text-primary)',
+                                border: '1px solid var(--border-primary)',
+                                height: '34px',
+                                padding: '0 12px',
+                                borderRadius: '8px',
+                                fontWeight: 700,
+                                fontSize: '0.85rem',
+                                cursor: estimate?.status === 'SUBMITTED' ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (estimate?.status !== 'SUBMITTED') {
+                                    e.currentTarget.style.background = 'var(--theme-primary)';
+                                    e.currentTarget.style.color = 'white';
+                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (estimate?.status !== 'SUBMITTED') {
+                                    e.currentTarget.style.background = 'var(--bg-primary)';
+                                    e.currentTarget.style.color = 'var(--text-primary)';
+                                    e.currentTarget.style.borderColor = 'var(--border-primary)';
+                                }
+                            }}
+                        >
+                            <Paperclip size={12} /> Attach
+                        </button>
+
+                        {/* File List pills */}
                         <div style={{
                             display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            padding: '0 12px',
-                            background: '#F8FAFC',
-                            borderRadius: '8px',
-                            border: '1px solid #E0E6ED',
-                            height: '34px',
-                            width: 'fit-content',
-                            maxWidth: '100%',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                            gap: '8px',
+                            overflowX: 'auto',
+                            alignItems: 'center'
                         }}>
-                            <input
-                                type="file"
-                                id="proposal-upload"
-                                style={{ display: 'none' }}
-                                onChange={handleFileChange}
-                                disabled={estimate?.status === 'SUBMITTED'}
-                            />
-                            <button
-                                onClick={() => document.getElementById('proposal-upload')?.click()}
-                                disabled={estimate?.status === 'SUBMITTED'}
-                                style={{
+                            {/* Pending File Pill */}
+                            {pendingFile && (
+                                <div style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '6px',
-                                    background: 'var(--bg-primary)',
-                                    color: estimate?.status === 'SUBMITTED' ? '#CBD5E0' : 'var(--text-primary)',
-                                    border: '1px solid var(--border-primary)',
-                                    height: '34px',
-                                    padding: '0 12px',
+                                    padding: '4px 10px',
+                                    background: 'rgba(255, 107, 0, 0.05)',
                                     borderRadius: '8px',
-                                    fontWeight: 700,
-                                    fontSize: '0.85rem',
-                                    cursor: estimate?.status === 'SUBMITTED' ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.2s ease',
+                                    border: '1px solid rgba(255, 107, 0, 0.2)',
                                     whiteSpace: 'nowrap'
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (estimate?.status !== 'SUBMITTED') {
-                                        e.currentTarget.style.background = 'var(--theme-primary)';
-                                        e.currentTarget.style.color = 'white';
-                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (estimate?.status !== 'SUBMITTED') {
-                                        e.currentTarget.style.background = 'var(--bg-primary)';
-                                        e.currentTarget.style.color = 'var(--text-primary)';
-                                        e.currentTarget.style.borderColor = 'var(--border-primary)';
-                                    }
-                                }}
-                            >
-                                <Paperclip size={12} /> Attach
-                            </button>
+                                }}>
+                                    <Clock size={10} style={{ color: 'var(--ae-orange)' }} />
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--ae-orange)' }}>{pendingFile.name} (Pending)</span>
+                                    <button
+                                        onClick={() => setPendingFile(null)}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', color: '#E53E3E', display: 'flex' }}
+                                    >
+                                        <X size={10} />
+                                    </button>
+                                </div>
+                            )}
 
-                            {/* File List pills */}
-                            <div style={{
-                                display: 'flex',
-                                gap: '8px',
-                                overflowX: 'auto',
-                                alignItems: 'center'
-                            }}>
-                                {/* Pending File Pill */}
-                                {pendingFile && (
-                                    <div style={{
+                            {/* Existing Proposals */}
+                            {(estimate?.proposals || []).length > 0 ? (
+                                [...estimate.proposals].reverse().map((prop: any) => (
+                                    <div key={prop.id} style={{
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '6px',
-                                        padding: '2px 8px',
-                                        background: '#FFF8F2',
-                                        borderRadius: '6px',
-                                        border: '1px solid #FF6B00',
+                                        padding: '4px 10px',
+                                        background: 'rgba(255, 107, 0, 0.05)',
+                                        borderRadius: '8px',
+                                        border: '1px solid rgba(255, 107, 0, 0.2)',
                                         whiteSpace: 'nowrap'
                                     }}>
-                                        <Clock size={10} style={{ color: 'var(--theme-primary)' }} />
-                                        <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>{pendingFile.name} (Pending)</span>
-                                        <button
-                                            onClick={() => setPendingFile(null)}
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', color: '#E53E3E', display: 'flex' }}
-                                        >
-                                            <X size={10} />
-                                        </button>
+                                        <LucideFile size={12} style={{ color: 'var(--ae-orange)' }} />
+                                        <span style={{ fontSize: '0.7rem', fontWeight: 600, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--ae-orange)' }}>
+                                            {prop.filename}
+                                        </span>
+                                        <div style={{ display: 'flex', gap: '2px' }}>
+                                            <Eye size={10} style={{ cursor: 'pointer', color: '#0369a1' }} onClick={() => handleView(prop)} />
+                                            <Download size={10} style={{ cursor: 'pointer', color: '#475569' }} onClick={() => handleDownload(prop)} />
+                                            {estimate?.status !== 'SUBMITTED' && (
+                                                <Trash2 size={10} style={{ cursor: 'pointer', color: '#ef4444' }} onClick={() => handleRemoveProposal(prop.id)} />
+                                            )}
+                                        </div>
                                     </div>
-                                )}
-
-                                {/* Existing Proposals */}
-                                {(estimate?.proposals || []).length > 0 ? (
-                                    [...estimate.proposals].reverse().map((prop: any) => (
-                                        <div key={prop.id} style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            padding: '4px 10px',
-                                            background: 'white',
-                                            borderRadius: '8px',
-                                            border: '1px solid #E0E6ED',
-                                            whiteSpace: 'nowrap'
+                                ))
+                            ) : (
+                                !pendingFile && <span style={{ fontSize: '0.75rem', color: '#A0AEC0', fontStyle: 'italic' }}>No attachments</span>
+                            )}
+                        </div>
+                    </div>
+                    {/* Line Items Table */}
+                    <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                        <SectionHeader title="Product Line Items" />
+                        <div style={{ border: '1.5px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ background: 'var(--bg-accent)' }}>
+                                        {!isReadOnly && <th style={{ padding: '10px 8px', width: '40px' }}></th>}
+                                        <th style={{
+                                            padding: '10px 4px',
+                                            textAlign: 'center',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            color: 'black',
+                                            textTransform: 'none',
+                                            letterSpacing: 'normal',
+                                            whiteSpace: 'nowrap',
+                                            width: '60px'
                                         }}>
-                                            <FileIcon size={12} style={{ color: '#FF6B00' }} />
-                                            <span style={{ fontSize: '0.7rem', fontWeight: 600, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                {prop.filename}
-                                            </span>
-                                            <div style={{ display: 'flex', gap: '2px' }}>
-                                                <Eye size={10} style={{ cursor: 'pointer', color: '#0369a1' }} onClick={() => handleView(prop)} />
-                                                <Download size={10} style={{ cursor: 'pointer', color: '#475569' }} onClick={() => handleDownload(prop)} />
-                                                {estimate?.status !== 'SUBMITTED' && (
-                                                    <Trash2 size={10} style={{ cursor: 'pointer', color: '#ef4444' }} onClick={() => handleRemoveProposal(prop.id)} />
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                {editingColumn === 'sr_no' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center' }}
+                                                        value={formData.column_labels.sr_no}
+                                                        onChange={(e) => handleHeaderChange('sr_no', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{formData.column_labels.sr_no || 'Sr.No.'}</span>
+                                                        {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('sr_no')} />}
+                                                    </>
                                                 )}
                                             </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    !pendingFile && <span style={{ fontSize: '0.75rem', color: '#A0AEC0', fontStyle: 'italic' }}>No attachments</span>
-                                )}
+                                        </th>
+                                        <th style={{
+                                            padding: '10px 4px',
+                                            textAlign: 'left',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            color: 'black',
+                                            whiteSpace: 'nowrap',
+                                            width: '120px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {editingColumn === 'item_type' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                        value={formData.column_labels.item_type}
+                                                        onChange={(e) => handleHeaderChange('item_type', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{formData.column_labels.item_type || 'Type'}</span>
+                                                        {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('item_type')} />}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{
+                                            padding: '10px 4px',
+                                            textAlign: 'left',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            color: 'black',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {editingColumn === 'particulars' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                        value={formData.column_labels.particulars}
+                                                        onChange={(e) => handleHeaderChange('particulars', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{formData.column_labels.particulars || 'Particulars'}</span>
+                                                        {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('particulars')} />}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{
+                                            padding: '10px 4px',
+                                            textAlign: 'left',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            color: 'black',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {editingColumn === 'description' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                        value={formData.column_labels.description}
+                                                        onChange={(e) => handleHeaderChange('description', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{formData.column_labels.description || 'Description'}</span>
+                                                        {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('description')} />}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{
+                                            padding: '10px 4px',
+                                            textAlign: 'left',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            color: 'black',
+                                            whiteSpace: 'nowrap',
+                                            width: '140px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {editingColumn === 'subscription_from' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                        value={formData.column_labels.subscription_from}
+                                                        onChange={(e) => handleHeaderChange('subscription_from', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{formData.column_labels.subscription_from || 'Sub. From'}</span>
+                                                        {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('subscription_from')} />}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{
+                                            padding: '10px 4px',
+                                            textAlign: 'left',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            color: 'black',
+                                            whiteSpace: 'nowrap',
+                                            width: '140px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {editingColumn === 'subscription_to' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                        value={formData.column_labels.subscription_to}
+                                                        onChange={(e) => handleHeaderChange('subscription_to', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{formData.column_labels.subscription_to || 'Sub. To'}</span>
+                                                        {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('subscription_to')} />}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{
+                                            padding: '10px 4px',
+                                            textAlign: 'center',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            color: 'black',
+                                            whiteSpace: 'nowrap',
+                                            width: '100px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                {editingColumn === 'qty' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
+                                                        value={formData.column_labels.qty}
+                                                        onChange={(e) => handleHeaderChange('qty', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{formData.column_labels.qty || 'Qty'}</span>
+                                                        {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('qty')} />}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{
+                                            padding: '10px 4px',
+                                            textAlign: 'right',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            color: 'black',
+                                            whiteSpace: 'nowrap',
+                                            width: '150px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                                {editingColumn === 'rate' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
+                                                        value={formData.column_labels.rate}
+                                                        onChange={(e) => handleHeaderChange('rate', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{formData.column_labels.rate || 'Rate'}</span>
+                                                        {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('rate')} />}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{
+                                            padding: '10px 4px',
+                                            textAlign: 'right',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            color: 'black',
+                                            whiteSpace: 'nowrap',
+                                            width: '100px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                                {editingColumn === 'discount' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
+                                                        value={formData.column_labels.discount}
+                                                        onChange={(e) => handleHeaderChange('discount', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{formData.column_labels.discount || 'Discount'}</span>
+                                                        {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('discount')} />}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{
+                                            padding: '10px 4px',
+                                            textAlign: 'right',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            color: 'black',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                                {editingColumn === 'amount' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
+                                                        value={formData.column_labels.amount}
+                                                        onChange={(e) => handleHeaderChange('amount', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{formData.column_labels.amount || 'Amount'}</span>
+                                                        {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('amount')} />}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        {!isReadOnly && <th style={{ padding: '6px 8px', width: '40px' }}></th>}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {formData.items.map((item: any, index: number) => (
+                                        <tr key={item.id} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
+                                            <td style={{ padding: '6px 4px', textAlign: 'center' }}>
+                                                {index === formData.items.length - 1 && !isReadOnly && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleAddItem}
+                                                        style={{
+                                                            padding: '4px',
+                                                            background: '#F0F9FF',
+                                                            border: '1px solid #BAE6FD',
+                                                            borderRadius: '6px',
+                                                            color: '#0284C7',
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            margin: '0 auto'
+                                                        }}
+                                                        title="Add row"
+                                                    >
+                                                        <Plus size={14} />
+                                                    </button>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: '0.85rem', color: '#4A5568', fontWeight: 600 }}>
+                                                {index + 1}
+                                            </td>
+                                            <td style={{ padding: '6px 4px' }}>
+                                                <select
+                                                    disabled={isReadOnly}
+                                                    value={item.item_type || 'License'}
+                                                    onChange={(e) => handleItemChange(item.id, 'item_type', e.target.value)}
+                                                    style={{
+                                                        fontSize: '0.85rem',
+                                                        padding: '4px 8px',
+                                                        height: '30px',
+                                                        borderRadius: '6px',
+                                                        width: '100%',
+                                                        cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                                                        fontWeight: 600,
+                                                        border: '1px solid #E2E8F0',
+                                                        background: 'white'
+                                                    }}
+                                                >
+                                                    <option value="License">License</option>
+                                                    <option value="Service">Service</option>
+                                                </select>
+                                            </td>
+                                            <td style={{ padding: '6px 4px' }}>
+                                                <input
+                                                    className="ae-input"
+                                                    style={{ height: '30px', padding: '4px 8px', width: '100%', fontSize: '0.85rem', borderRadius: '6px' }}
+                                                    value={item.particulars || ''}
+                                                    onChange={(e) => handleItemChange(item.id, 'particulars', e.target.value)}
+                                                    disabled={isReadOnly}
+                                                    placeholder="Enter particulars"
+                                                />
+                                            </td>
+                                            <td style={{ padding: '6px 4px' }}>
+                                                <textarea
+                                                    className="ae-input"
+                                                    style={{ height: '30px', padding: '4px 8px', width: '100%', resize: 'none', fontSize: '0.85rem', borderRadius: '6px' }}
+                                                    value={item.description || ''}
+                                                    onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
+                                                    disabled={isReadOnly}
+                                                    placeholder="Enter description"
+                                                />
+                                            </td>
+                                            <td style={{ padding: '6px 4px' }}>
+                                                <div style={{ position: 'relative' }}>
+                                                    <input
+                                                        type="text"
+                                                        readOnly
+                                                        className="ae-input"
+                                                        style={{ height: '30px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer', background: isReadOnly ? '#f7fafc' : 'white', borderRadius: '6px' }}
+                                                        value={item.subscription_from ? formatToAppDate(item.subscription_from) : ''}
+                                                        onClick={() => {
+                                                            if (!isReadOnly) {
+                                                                const picker = document.getElementById(`sub-from-${item.id}`) as HTMLInputElement;
+                                                                if (picker) picker.showPicker?.();
+                                                            }
+                                                        }}
+                                                        placeholder="Enter date"
+                                                    />
+                                                    <input
+                                                        type="date"
+                                                        id={`sub-from-${item.id}`}
+                                                        style={{ position: 'absolute', opacity: 0, inset: 0, width: '100%', pointerEvents: 'none' }}
+                                                        value={item.subscription_from || ''}
+                                                        onChange={(e) => handleItemChange(item.id, 'subscription_from', e.target.value)}
+                                                        disabled={isReadOnly}
+                                                    />
+                                                    <Calendar size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '6px 4px' }}>
+                                                <div style={{ position: 'relative' }}>
+                                                    <input
+                                                        type="text"
+                                                        readOnly
+                                                        className="ae-input"
+                                                        style={{ height: '30px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer', background: isReadOnly ? '#f7fafc' : 'white', borderRadius: '6px' }}
+                                                        value={item.subscription_to ? formatToAppDate(item.subscription_to) : ''}
+                                                        onClick={() => {
+                                                            if (!isReadOnly) {
+                                                                const picker = document.getElementById(`sub-to-${item.id}`) as HTMLInputElement;
+                                                                if (picker) picker.showPicker?.();
+                                                            }
+                                                        }}
+                                                        placeholder="Enter date"
+                                                    />
+                                                    <input
+                                                        type="date"
+                                                        id={`sub-to-${item.id}`}
+                                                        style={{ position: 'absolute', opacity: 0, inset: 0, width: '100%', pointerEvents: 'none' }}
+                                                        value={item.subscription_to || ''}
+                                                        onChange={(e) => handleItemChange(item.id, 'subscription_to', e.target.value)}
+                                                        disabled={isReadOnly}
+                                                    />
+                                                    <Calendar size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
+                                                </div>
+                                            </td>
+
+                                            <td style={{ padding: '6px 4px' }}>
+                                                <input
+                                                    type="number"
+                                                    className="ae-input"
+                                                    style={{ height: '30px', padding: '4px 8px', textAlign: 'center', width: '100%', fontSize: '0.85rem', fontWeight: 600 }}
+                                                    value={item.qty || ''}
+                                                    placeholder="0"
+                                                    onChange={(e) => handleItemChange(item.id, 'qty', e.target.value)}
+                                                    disabled={isReadOnly}
+                                                />
+                                            </td>
+                                            <td style={{ padding: '6px 4px' }}>
+                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                                    <span style={{ position: 'absolute', left: '8px', fontSize: '0.85rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
+                                                    <input
+                                                        type="number"
+                                                        className="ae-input"
+                                                        style={{ height: '30px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%', fontSize: '0.85rem', fontWeight: 600, borderRadius: '6px' }}
+                                                        value={item.rate || ''}
+                                                        placeholder="0"
+                                                        onChange={(e) => handleItemChange(item.id, 'rate', e.target.value)}
+                                                        disabled={isReadOnly}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Tab' && !e.shiftKey && index === formData.items.length - 1) {
+                                                                e.preventDefault();
+                                                                handleAddItem();
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '6px 4px' }}>
+                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                                    <span style={{ position: 'absolute', left: '8px', fontSize: '0.85rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
+                                                    <input
+                                                        type="number"
+                                                        className="ae-input"
+                                                        style={{ height: '30px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%', fontSize: '0.85rem', fontWeight: 600, borderRadius: '6px' }}
+                                                        value={item.discount || ''}
+                                                        placeholder="0"
+                                                        onChange={(e) => handleItemChange(item.id, 'discount', e.target.value)}
+                                                        disabled={isReadOnly}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Tab' && !e.shiftKey && index === formData.items.length - 1) {
+                                                                e.preventDefault();
+                                                                handleAddItem();
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '6px 4px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36' }}>
+                                                {getCurrencySymbol(formData.currency || 'INR')}{item.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}
+                                            </td>
+                                            <td style={{ padding: '6px 4px', textAlign: 'center' }}>
+                                                {formData.items.length > 1 && !isReadOnly && (
+                                                    <button
+                                                        onClick={() => handleRemoveItem(item.id)}
+                                                        style={{
+                                                            background: '#FFF5F5',
+                                                            border: '1px solid #FED7D7',
+                                                            borderRadius: '6px',
+                                                            color: '#E53E3E',
+                                                            cursor: 'pointer',
+                                                            padding: '6px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            transition: 'all 0.2s',
+                                                            margin: '0 auto'
+                                                        }}
+                                                        onMouseOver={(e) => { e.currentTarget.style.background = '#FED7D7'; }}
+                                                        onMouseOut={(e) => { e.currentTarget.style.background = '#FFF5F5'; }}
+                                                        title="Remove Row"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
+                                        <td colSpan={isReadOnly ? 9 : 10} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total Estimate Amount:</td>
+                                        <td style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.95rem', fontWeight: 800, color: 'var(--theme-primary)' }}>
+                                            {getCurrencySymbol(formData.currency || 'INR')}{calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        {/* Bottom Sections */}
+                        <div style={{ marginTop: '24px' }}>
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Description / Memo</label>
+                                <textarea
+                                    className="ae-input"
+                                    style={{
+                                        height: '48px',
+                                        padding: '8px 12px',
+                                        resize: 'none',
+                                        background: isReadOnly ? 'transparent' : 'white',
+                                    }}
+                                    placeholder="Description / Memo"
+                                    value={formData.description_memo || ''}
+                                    onChange={(e) => setFormData({ ...formData, description_memo: e.target.value })}
+                                    disabled={isReadOnly}
+                                />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Terms & Conditions</label>
+                                <textarea
+                                    className="ae-input"
+                                    style={{
+                                        height: '48px',
+                                        padding: '8px 12px',
+                                        resize: 'none',
+                                        background: isReadOnly ? 'transparent' : 'white',
+                                    }}
+                                    placeholder="Terms & Conditions"
+                                    value={formData.terms_conditions || ''}
+                                    onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}
+                                    disabled={isReadOnly}
+                                />
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> {/* END Line Items Section */}
+            </div> {/* END Unified Form Card */}
 
-                {/* Line Items Table */}
-                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
-                    <SectionHeader title="Product Line Items" />
-                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
-                        <thead>
-                            <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                                {!isReadOnly && <th style={{ padding: '6px 8px', width: '40px' }}></th>}
-                                <th style={{
-                                    padding: '10px 4px',
-                                    textAlign: 'center',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    whiteSpace: 'nowrap',
-                                    width: '60px'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                                        {editingColumn === 'sr_no' ? (
-                                            <input
-                                                autoFocus
-                                                className="ae-input-subtle"
-                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center' }}
-                                                value={formData.column_labels.sr_no}
-                                                onChange={(e) => handleHeaderChange('sr_no', e.target.value)}
-                                                onBlur={() => setEditingColumn(null)}
-                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
-                                            />
-                                        ) : (
-                                            <>
-                                                <span>{formData.column_labels.sr_no || 'Sr.No.'}</span>
-                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('sr_no')} />}
-                                            </>
-                                        )}
-                                    </div>
-                                </th>
-                                <th style={{
-                                    padding: '10px 4px',
-                                    textAlign: 'left',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    whiteSpace: 'nowrap',
-                                    width: '120px'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        {editingColumn === 'item_type' ? (
-                                            <input
-                                                autoFocus
-                                                className="ae-input-subtle"
-                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
-                                                value={formData.column_labels.item_type}
-                                                onChange={(e) => handleHeaderChange('item_type', e.target.value)}
-                                                onBlur={() => setEditingColumn(null)}
-                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
-                                            />
-                                        ) : (
-                                            <>
-                                                <span>{formData.column_labels.item_type || 'Type'}</span>
-                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('item_type')} />}
-                                            </>
-                                        )}
-                                    </div>
-                                </th>
-                                <th style={{
-                                    padding: '10px 4px',
-                                    textAlign: 'left',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    whiteSpace: 'nowrap'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        {editingColumn === 'particulars' ? (
-                                            <input
-                                                autoFocus
-                                                className="ae-input-subtle"
-                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
-                                                value={formData.column_labels.particulars}
-                                                onChange={(e) => handleHeaderChange('particulars', e.target.value)}
-                                                onBlur={() => setEditingColumn(null)}
-                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
-                                            />
-                                        ) : (
-                                            <>
-                                                <span>{formData.column_labels.particulars || 'Particulars'}</span>
-                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('particulars')} />}
-                                            </>
-                                        )}
-                                    </div>
-                                </th>
-                                <th style={{
-                                    padding: '10px 4px',
-                                    textAlign: 'left',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    whiteSpace: 'nowrap'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        {editingColumn === 'description' ? (
-                                            <input
-                                                autoFocus
-                                                className="ae-input-subtle"
-                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
-                                                value={formData.column_labels.description}
-                                                onChange={(e) => handleHeaderChange('description', e.target.value)}
-                                                onBlur={() => setEditingColumn(null)}
-                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
-                                            />
-                                        ) : (
-                                            <>
-                                                <span>{formData.column_labels.description || 'Description'}</span>
-                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('description')} />}
-                                            </>
-                                        )}
-                                    </div>
-                                </th>
-                                <th style={{
-                                    padding: '10px 4px',
-                                    textAlign: 'left',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    whiteSpace: 'nowrap',
-                                    width: '140px'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        {editingColumn === 'subscription_from' ? (
-                                            <input
-                                                autoFocus
-                                                className="ae-input-subtle"
-                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
-                                                value={formData.column_labels.subscription_from}
-                                                onChange={(e) => handleHeaderChange('subscription_from', e.target.value)}
-                                                onBlur={() => setEditingColumn(null)}
-                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
-                                            />
-                                        ) : (
-                                            <>
-                                                <span>{formData.column_labels.subscription_from || 'Sub. From'}</span>
-                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('subscription_from')} />}
-                                            </>
-                                        )}
-                                    </div>
-                                </th>
-                                <th style={{
-                                    padding: '10px 4px',
-                                    textAlign: 'left',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    whiteSpace: 'nowrap',
-                                    width: '140px'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        {editingColumn === 'subscription_to' ? (
-                                            <input
-                                                autoFocus
-                                                className="ae-input-subtle"
-                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
-                                                value={formData.column_labels.subscription_to}
-                                                onChange={(e) => handleHeaderChange('subscription_to', e.target.value)}
-                                                onBlur={() => setEditingColumn(null)}
-                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
-                                            />
-                                        ) : (
-                                            <>
-                                                <span>{formData.column_labels.subscription_to || 'Sub. To'}</span>
-                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('subscription_to')} />}
-                                            </>
-                                        )}
-                                    </div>
-                                </th>
-                                <th style={{
-                                    padding: '10px 4px',
-                                    textAlign: 'center',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    whiteSpace: 'nowrap',
-                                    width: '100px'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                                        {editingColumn === 'qty' ? (
-                                            <input
-                                                autoFocus
-                                                className="ae-input-subtle"
-                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
-                                                value={formData.column_labels.qty}
-                                                onChange={(e) => handleHeaderChange('qty', e.target.value)}
-                                                onBlur={() => setEditingColumn(null)}
-                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
-                                            />
-                                        ) : (
-                                            <>
-                                                <span>{formData.column_labels.qty || 'Qty'}</span>
-                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('qty')} />}
-                                            </>
-                                        )}
-                                    </div>
-                                </th>
-                                <th style={{
-                                    padding: '10px 4px',
-                                    textAlign: 'right',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    whiteSpace: 'nowrap',
-                                    width: '150px'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                                        {editingColumn === 'rate' ? (
-                                            <input
-                                                autoFocus
-                                                className="ae-input-subtle"
-                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
-                                                value={formData.column_labels.rate}
-                                                onChange={(e) => handleHeaderChange('rate', e.target.value)}
-                                                onBlur={() => setEditingColumn(null)}
-                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
-                                            />
-                                        ) : (
-                                            <>
-                                                <span>{formData.column_labels.rate || 'Rate'}</span>
-                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('rate')} />}
-                                            </>
-                                        )}
-                                    </div>
-                                </th>
-                                <th style={{
-                                    padding: '10px 4px',
-                                    textAlign: 'right',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    whiteSpace: 'nowrap',
-                                    width: '100px'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                                        {editingColumn === 'discount' ? (
-                                            <input
-                                                autoFocus
-                                                className="ae-input-subtle"
-                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
-                                                value={formData.column_labels.discount}
-                                                onChange={(e) => handleHeaderChange('discount', e.target.value)}
-                                                onBlur={() => setEditingColumn(null)}
-                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
-                                            />
-                                        ) : (
-                                            <>
-                                                <span>{formData.column_labels.discount || 'Discount'}</span>
-                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('discount')} />}
-                                            </>
-                                        )}
-                                    </div>
-                                </th>
-                                <th style={{
-                                    padding: '10px 4px',
-                                    textAlign: 'right',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: 'black',
-                                    whiteSpace: 'nowrap'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                                        {editingColumn === 'amount' ? (
-                                            <input
-                                                autoFocus
-                                                className="ae-input-subtle"
-                                                style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
-                                                value={formData.column_labels.amount}
-                                                onChange={(e) => handleHeaderChange('amount', e.target.value)}
-                                                onBlur={() => setEditingColumn(null)}
-                                                onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
-                                            />
-                                        ) : (
-                                            <>
-                                                <span>{formData.column_labels.amount || 'Amount'}</span>
-                                                {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('amount')} />}
-                                            </>
-                                        )}
-                                    </div>
-                                </th>
-                                {!isReadOnly && <th style={{ padding: '6px 8px', width: '40px' }}></th>}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {formData.items.map((item: any, index: number) => (
-                                <tr key={item.id} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
-                                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>
-                                        {index === formData.items.length - 1 && !isReadOnly && (
-                                            <button
-                                                type="button"
-                                                onClick={handleAddItem}
-                                                style={{
-                                                    padding: '4px',
-                                                    background: '#F0F9FF',
-                                                    border: '1px solid #BAE6FD',
-                                                    borderRadius: '6px',
-                                                    color: '#0284C7',
-                                                    cursor: 'pointer',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    margin: '0 auto'
-                                                }}
-                                                title="Add row"
-                                            >
-                                                <Plus size={14} />
-                                            </button>
-                                        )}
-                                    </td>
-                                    <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: '0.85rem', color: '#4A5568', fontWeight: 600 }}>
-                                        {index + 1}
-                                    </td>
-                                    <td style={{ padding: '6px 4px' }}>
-                                        <select
-                                            disabled={isReadOnly}
-                                            value={item.item_type || 'License'}
-                                            onChange={(e) => handleItemChange(item.id, 'item_type', e.target.value)}
-                                            style={{
-                                                fontSize: '0.85rem',
-                                                padding: '4px 8px',
-                                                height: '30px',
-                                                borderRadius: '6px',
-                                                width: '100%',
-                                                cursor: isReadOnly ? 'not-allowed' : 'pointer',
-                                                fontWeight: 600,
-                                                border: '1px solid #E2E8F0',
-                                                background: 'white'
-                                            }}
-                                        >
-                                            <option value="License">License</option>
-                                            <option value="Service">Service</option>
-                                        </select>
-                                    </td>
-                                    <td style={{ padding: '6px 4px' }}>
-                                        <input
-                                            className="ae-input"
-                                            style={{ height: '30px', padding: '4px 8px', width: '100%', fontSize: '0.85rem', borderRadius: '6px' }}
-                                            value={item.particulars || ''}
-                                            onChange={(e) => handleItemChange(item.id, 'particulars', e.target.value)}
-                                            disabled={isReadOnly}
-                                            placeholder="Enter particulars"
-                                        />
-                                    </td>
-                                    <td style={{ padding: '6px 4px' }}>
-                                        <textarea
-                                            className="ae-input"
-                                            style={{ padding: '4px 8px', minHeight: '30px', width: '100%', resize: 'vertical', fontSize: '0.85rem', borderRadius: '6px' }}
-                                            value={item.description || ''}
-                                            onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                                            disabled={isReadOnly}
-                                            placeholder="Enter description"
-                                        />
-                                    </td>
-                                    <td style={{ padding: '6px 4px' }}>
-                                        <div style={{ position: 'relative' }}>
-                                            <input
-                                                type="text"
-                                                readOnly
-                                                className="ae-input"
-                                                style={{ height: '30px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer', background: isReadOnly ? '#f7fafc' : 'white', borderRadius: '6px' }}
-                                                value={item.subscription_from ? formatToAppDate(item.subscription_from) : ''}
-                                                onClick={() => {
-                                                    if (!isReadOnly) {
-                                                        const picker = document.getElementById(`sub-from-${item.id}`) as HTMLInputElement;
-                                                        if (picker) picker.showPicker?.();
-                                                    }
-                                                }}
-                                                placeholder="DD/MMM/YYYY"
-                                            />
-                                            <input
-                                                type="date"
-                                                id={`sub-from-${item.id}`}
-                                                style={{ position: 'absolute', opacity: 0, inset: 0, width: '100%', pointerEvents: 'none' }}
-                                                value={item.subscription_from || ''}
-                                                onChange={(e) => handleItemChange(item.id, 'subscription_from', e.target.value)}
-                                                disabled={isReadOnly}
-                                            />
-                                            <Calendar size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
-                                        </div>
-                                    </td>
-                                    <td style={{ padding: '6px 4px' }}>
-                                        <div style={{ position: 'relative' }}>
-                                            <input
-                                                type="text"
-                                                readOnly
-                                                className="ae-input"
-                                                style={{ height: '30px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer', background: isReadOnly ? '#f7fafc' : 'white', borderRadius: '6px' }}
-                                                value={item.subscription_to ? formatToAppDate(item.subscription_to) : ''}
-                                                onClick={() => {
-                                                    if (!isReadOnly) {
-                                                        const picker = document.getElementById(`sub-to-${item.id}`) as HTMLInputElement;
-                                                        if (picker) picker.showPicker?.();
-                                                    }
-                                                }}
-                                                placeholder="DD/MMM/YYYY"
-                                            />
-                                            <input
-                                                type="date"
-                                                id={`sub-to-${item.id}`}
-                                                style={{ position: 'absolute', opacity: 0, inset: 0, width: '100%', pointerEvents: 'none' }}
-                                                value={item.subscription_to || ''}
-                                                onChange={(e) => handleItemChange(item.id, 'subscription_to', e.target.value)}
-                                                disabled={isReadOnly}
-                                            />
-                                            <Calendar size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
-                                        </div>
-                                    </td>
-
-                                    <td style={{ padding: '6px 4px' }}>
-                                        <input
-                                            type="number"
-                                            className="ae-input"
-                                            style={{ height: '30px', padding: '4px 8px', textAlign: 'center', width: '100%', fontSize: '0.85rem', fontWeight: 600 }}
-                                            value={item.qty || ''}
-                                            placeholder="0"
-                                            onChange={(e) => handleItemChange(item.id, 'qty', e.target.value)}
-                                            disabled={isReadOnly}
-                                        />
-                                    </td>
-                                    <td style={{ padding: '6px 4px' }}>
-                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                            <span style={{ position: 'absolute', left: '8px', fontSize: '0.85rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
-                                            <input
-                                                type="number"
-                                                className="ae-input"
-                                                style={{ height: '30px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%', fontSize: '0.85rem', fontWeight: 600, borderRadius: '6px' }}
-                                                value={item.rate || ''}
-                                                placeholder="0"
-                                                onChange={(e) => handleItemChange(item.id, 'rate', e.target.value)}
-                                                disabled={isReadOnly}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Tab' && !e.shiftKey && index === formData.items.length - 1) {
-                                                        e.preventDefault();
-                                                        handleAddItem();
-                                                    }
-                                                }}
-                                            />
-                                        </div>
-                                    </td>
-                                    <td style={{ padding: '6px 4px' }}>
-                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                            <span style={{ position: 'absolute', left: '8px', fontSize: '0.85rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
-                                            <input
-                                                type="number"
-                                                className="ae-input"
-                                                style={{ height: '30px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%', fontSize: '0.85rem', fontWeight: 600, borderRadius: '6px' }}
-                                                value={item.discount || ''}
-                                                placeholder="0"
-                                                onChange={(e) => handleItemChange(item.id, 'discount', e.target.value)}
-                                                disabled={isReadOnly}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Tab' && !e.shiftKey && index === formData.items.length - 1) {
-                                                        e.preventDefault();
-                                                        handleAddItem();
-                                                    }
-                                                }}
-                                            />
-                                        </div>
-                                    </td>
-                                    <td style={{ padding: '6px 4px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36' }}>
-                                        {getCurrencySymbol(formData.currency || 'INR')}{item.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}
-                                    </td>
-                                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>
-                                        {formData.items.length > 1 && !isReadOnly && (
-                                            <button
-                                                onClick={() => handleRemoveItem(item.id)}
-                                                style={{
-                                                    background: '#FFF5F5',
-                                                    border: '1px solid #FED7D7',
-                                                    borderRadius: '6px',
-                                                    color: '#E53E3E',
-                                                    cursor: 'pointer',
-                                                    padding: '6px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    transition: 'all 0.2s',
-                                                    margin: '0 auto'
-                                                }}
-                                                onMouseOver={(e) => { e.currentTarget.style.background = '#FED7D7'; }}
-                                                onMouseOut={(e) => { e.currentTarget.style.background = '#FFF5F5'; }}
-                                                title="Remove Row"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr style={{ background: '#F8FAFC' }}>
-                                <td colSpan={isReadOnly ? 9 : 10} style={{ padding: '10px 4px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)' }}>Total:</td>
-                                <td style={{ padding: '10px 4px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 900, color: 'var(--theme-primary)' }}>
-                                    {getCurrencySymbol(formData.currency || 'INR')}{calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                </td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-
-                {/* Bottom Sections */}
-                <div style={{ marginTop: '24px' }}>
-                    <div style={{ marginBottom: '16px' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Description / Memo</label>
-                        <textarea
-                            style={{ width: '100%', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px', minHeight: '80px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'white', fontSize: '0.85rem' }}
-                            placeholder="Description / Memo"
-                            value={formData.description_memo || ''}
-                            onChange={(e) => setFormData({ ...formData, description_memo: e.target.value })}
-                            disabled={isReadOnly}
-                        />
-                    </div>
-                    <div>
-                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Terms & Conditions</label>
-                        <textarea
-                            style={{ width: '100%', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px', minHeight: '80px', outline: 'none', background: isReadOnly ? '#f7fafc' : 'white', fontSize: '0.85rem' }}
-                            placeholder="Terms & Conditions"
-                            value={formData.terms_conditions || ''}
-                            onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}
-                            disabled={isReadOnly}
-                        />
-                    </div>
-                </div>
-            </div >
-
-            {/* Footer Actions (Outside Scroll Area) - Matching CostSheetForm floating pill style */}
+            {/* Footer Actions (Outside Scroll Area) */}
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1647,19 +1649,12 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                 flexShrink: 0,
                 zIndex: 10,
                 marginTop: '10px',
-                marginLeft: 'auto' // Align to the right
-            }}
-                onMouseLeave={() => {
-                    if (!isConfirmingExit) {
-                        setActiveAction('submit');
-                    }
-                }}
-            >
+                marginLeft: 'auto'
+            }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {id && (
                         <button
                             onClick={handlePreview}
-                            onMouseEnter={() => !isConfirmingExit && setActiveAction('preview')}
                             style={{
                                 height: '38px',
                                 padding: '0 18px',
@@ -1670,11 +1665,16 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 alignItems: 'center',
                                 gap: '8px',
                                 border: 'none',
-                                background: activeAction === 'preview' ? 'var(--theme-primary)' : 'transparent',
-                                color: activeAction === 'preview' ? 'white' : 'var(--text-secondary)',
+                                background: 'rgba(255, 107, 0, 0.1)',
+                                color: 'var(--theme-primary)',
                                 transition: 'all 0.2s',
-                                cursor: 'pointer',
-                                boxShadow: activeAction === 'preview' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                                cursor: 'pointer'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)';
                             }}
                         >
                             <Eye size={18} />
@@ -1685,52 +1685,50 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                         <>
                             <button
                                 onClick={() => handleSave(false)}
-                                onMouseEnter={() => !isConfirmingExit && setActiveAction('save')}
                                 disabled={saving}
                                 style={{
-                                    height: '38px',
-                                    padding: '0 18px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    borderRadius: '10px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
+                                    padding: '6px 16px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
                                     border: 'none',
-                                    background: activeAction === 'save' ? 'var(--theme-primary)' : 'transparent',
-                                    color: activeAction === 'save' ? 'white' : 'var(--text-secondary)',
-                                    transition: 'all 0.2s',
                                     cursor: 'pointer',
-                                    boxShadow: activeAction === 'save' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                                    transition: 'all 0.2s',
+                                    background: activeAction === 'draft' ? 'var(--theme-primary)' : 'transparent',
+                                    color: activeAction === 'draft' ? 'white' : 'var(--text-secondary)',
+                                    boxShadow: activeAction === 'draft' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                                 }}
+                                onMouseEnter={() => setActiveAction('draft')}
                             >
-                                <Save size={16} />
-                                <span>Save Draft</span>
+                                <Save size={16} /> Save Draft
                             </button>
 
                             <button
                                 onClick={handleSaveAndSubmit}
-                                onMouseEnter={() => !isConfirmingExit && setActiveAction('submit')}
                                 disabled={saving}
                                 style={{
-                                    height: '38px',
-                                    padding: '0 20px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    borderRadius: '10px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
+                                    padding: '6px 16px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
                                     background: activeAction === 'submit' ? 'var(--theme-primary)' : 'transparent',
                                     color: activeAction === 'submit' ? 'white' : 'var(--text-secondary)',
-                                    border: 'none',
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer',
-                                    boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                                    boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                                 }}
+                                onMouseEnter={() => setActiveAction('submit')}
                             >
-                                <PlusCircle size={18} />
-                                <span>Submit for Approval</span>
+                                <PlusCircle size={18} /> Submit for Approval
                             </button>
 
                             <button
@@ -1739,32 +1737,28 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     showConfirm({
                                         title: 'Are you sure you want to exit?',
                                         onConfirm: () => onBack(),
-                                        onCancel: () => {
-                                            setIsConfirmingExit(false);
-                                            setActiveAction('submit');
-                                        }
+                                        onCancel: () => setIsConfirmingExit(false)
                                     });
                                 }}
-                                onMouseEnter={() => !isConfirmingExit && setActiveAction('cancel')}
                                 style={{
-                                    height: '38px',
-                                    padding: '0 18px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    borderRadius: '8px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
+                                    padding: '6px 16px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
                                     border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
                                     background: activeAction === 'cancel' ? 'var(--theme-primary)' : 'transparent',
                                     color: activeAction === 'cancel' ? 'white' : 'var(--text-secondary)',
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer',
-                                    boxShadow: activeAction === 'cancel' ? '0 2px 8px rgba(255, 107, 0, 0.2)' : 'none'
+                                    boxShadow: activeAction === 'cancel' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                                 }}
+                                onMouseEnter={() => setActiveAction('cancel')}
                             >
-                                <X size={16} />
-                                <span>Cancel</span>
+                                <X size={18} /> Cancel
                             </button>
                         </>
                     )}
@@ -1947,7 +1941,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         className="ae-input"
                                         value={emailModal.body}
                                         onChange={(e) => setEmailModal({ ...emailModal, body: e.target.value })}
-                                        style={{ width: '100%', minHeight: '180px', padding: '12px', resize: 'vertical' }}
+                                        style={{ height: '180px', padding: '12px', resize: 'none' }}
                                         placeholder="Write your message here..."
                                     />
                                 </div>
@@ -2084,22 +2078,16 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         marginBottom: '8px'
                                     }}>Rejection Reason</label>
                                     <textarea
+                                        className="ae-input"
                                         value={rejectComment}
                                         onChange={e => setRejectComment(e.target.value)}
                                         placeholder="Type your reason here..."
                                         autoFocus
                                         style={{
-                                            width: '100%',
                                             height: '90px',
-                                            background: '#f8fafc',
-                                            border: '1.5px solid #e2e8f0',
-                                            borderRadius: '12px',
                                             padding: '12px 16px',
-                                            fontSize: '0.9rem',
-                                            color: '#1e293b',
-                                            outline: 'none',
                                             resize: 'none',
-                                            fontWeight: 500
+                                            background: '#f8fafc',
                                         }}
                                     />
                                 </div>
@@ -2141,8 +2129,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                     </div>
                 )
             }
-
-        </div >
+        </div>
     );
 };
 

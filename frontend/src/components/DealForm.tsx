@@ -567,13 +567,13 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     {/* 1. Information */}
                     <div>
                         <SectionHeader title="Information" />
-                        <div className="ae-grid-4">
+                        <div className="ae-grid-5">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead Date</label>
                                 <input
                                     type="text"
                                     value={formatToAppDate(formData.lead ? leads.find(l => l.id === parseInt(formData.lead))?.lead_date || '' : '')}
-                                    placeholder={formatToAppDate(new Date().toISOString())}
+                                    placeholder="Enter date"
                                     className="ae-input"
                                     disabled
                                     style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
@@ -595,7 +595,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     type="text"
                                     name="deal_date"
                                     value={formatToAppDate(formData.deal_date)}
-                                    placeholder={formatToAppDate(new Date().toISOString())}
+                                    placeholder="Enter date"
                                     className="ae-input"
                                     disabled
                                     style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
@@ -611,11 +611,10 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
                                 />
                             </div>
-                        </div>
-
-                        <div className="ae-grid-4 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Company Name *</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
+                                    Company Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                </label>
                                 <input
                                     type="text"
                                     value={formData.company || ''}
@@ -626,7 +625,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
-                                    label="Customer/Partner Name * *"
+                                    label="Customer/Partner Name"
                                     options={companies
                                         .filter((c, index, self) =>
                                             index === self.findIndex((t) => t.name === c.name)
@@ -666,7 +665,9 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Name *</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
+                                    Project Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                </label>
                                 <input
                                     type="text"
                                     name="deal_name"
@@ -687,10 +688,10 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         <div style={{ overflow: 'visible' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '12px' }}>
                                 <thead>
-                                    <tr style={{ background: '#F8FAFC' }}>
+                                    <tr style={{ background: 'var(--bg-accent)' }}>
                                         <th style={{ padding: '10px 4px', width: '40px' }}></th>
                                         <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '60px' }}>Sr.No.</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '130px' }}>Type *</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '130px' }}>Type <span style={{ color: 'var(--theme-primary)' }}>*</span></th>
                                         <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'black' }}>Description</th>
                                         <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '80px' }}>Currency</th>
                                         <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '70px' }}>Qty</th>
@@ -819,7 +820,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     })}
                                 </tbody>
                                 <tfoot>
-                                    <tr style={{ background: '#F8FAFC' }}>
+                                    <tr style={{ background: 'var(--bg-accent)' }}>
                                         <td colSpan={7} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: 'black' }}>Total Deal Value:</td>
                                         <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '0.95rem', fontWeight: 800, color: '#FF6B00' }}>
                                             {getCurrencySymbol(formData.currency)}
@@ -831,7 +832,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             </table>
                         </div>
 
-                        <div className="ae-grid-4 mt-6">
+                        <div className="ae-grid-5 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Stage</label>
                                 <input
@@ -869,7 +870,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                         type="text"
                                         value={formatToAppDate(formData.expected_close_date)}
                                         readOnly
-                                        placeholder="dd-Mon-yyyy"
+                                        placeholder="Enter date"
                                         className="ae-input"
                                         style={{ width: '100%', cursor: 'pointer', paddingRight: '32px' }}
                                         onClick={() => {
@@ -913,7 +914,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     {/* 4. Team */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Team" />
-                        <div className="ae-grid-4">
+                        <div className="ae-grid-5">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
                                     label="Inside Salesperson Name"
@@ -954,9 +955,6 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     allowCustom={true}
                                 />
                             </div>
-                        </div>
-
-                        <div className="ae-grid-4 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
                                     label="Project Manager"
@@ -1063,9 +1061,10 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                     alignItems: 'center',
                                                     gap: '8px',
                                                     padding: '4px 10px',
-                                                    background: 'white',
+                                                    background: 'rgba(255, 107, 0, 0.05)',
                                                     borderRadius: '8px',
-                                                    border: '1px solid #E0E6ED',
+                                                    border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                    color: 'var(--ae-orange)',
                                                     minWidth: 'fit-content',
                                                     height: '34px'
                                                 }}
@@ -1200,6 +1199,18 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 background: isCancelActive ? 'transparent' : 'var(--theme-primary)',
                                 color: isCancelActive ? 'var(--text-secondary)' : 'white',
                                 boxShadow: isCancelActive ? 'none' : '0 2px 8px rgba(187, 77, 0, 0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (isCancelActive) {
+                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                    e.currentTarget.style.color = 'var(--ae-orange)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (isCancelActive) {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = 'var(--text-secondary)';
+                                }
                             }}
                         >
                             {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}

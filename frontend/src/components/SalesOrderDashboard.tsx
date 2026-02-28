@@ -8,7 +8,9 @@ import {
     Columns,
     FileSpreadsheet,
     FileText,
-    Loader2
+    Loader2,
+    Check,
+    Eye
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -582,12 +584,22 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                                 onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-primary)'}
                                             >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={visibleColumns[id as keyof typeof visibleColumns]}
-                                                    onChange={() => toggleColumn(id as keyof typeof visibleColumns)}
-                                                    style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#FF6B00' }}
-                                                />
+                                                <div
+                                                    onClick={() => toggleColumn(id as keyof typeof visibleColumns)}
+                                                    style={{
+                                                        width: '18px',
+                                                        height: '18px',
+                                                        borderRadius: '4px',
+                                                        border: `2px solid ${visibleColumns[id as keyof typeof visibleColumns] ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                        background: visibleColumns[id as keyof typeof visibleColumns] ? 'var(--ae-blue)' : 'white',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s',
+                                                        flexShrink: 0
+                                                    }}>
+                                                    {visibleColumns[id as keyof typeof visibleColumns] && <Check size={12} color="white" strokeWidth={4} />}
+                                                </div>
                                                 <span style={{ fontWeight: 600 }}>{label}</span>
                                             </label>
                                         ))}
@@ -969,23 +981,75 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                         )}
                                         {visibleColumns.actions && (
                                             <td style={{ textAlign: 'center', verticalAlign: 'middle', borderBottom: '1px solid var(--border-secondary)', padding: '4px 6px' }}>
-                                                <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                                                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
+                                                    {/* View button */}
                                                     <button
                                                         onClick={() => onView(so.id)}
-                                                        className="ae-btn-secondary"
-                                                        style={{ height: '24px', padding: '4px 12px', fontSize: '0.72rem', borderRadius: '20px', fontWeight: 700 }}
+                                                        title="View"
+                                                        style={{
+                                                            height: '30px',
+                                                            width: '30px',
+                                                            padding: '0',
+                                                            borderRadius: '8px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            border: '1px solid rgba(255,107,0,0.3)',
+                                                            background: 'rgba(255,107,0,0.08)',
+                                                            color: 'var(--theme-primary)',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'var(--theme-primary)';
+                                                            e.currentTarget.style.color = 'white';
+                                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(255,107,0,0.35)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                            e.currentTarget.style.color = 'var(--theme-primary)';
+                                                            e.currentTarget.style.borderColor = 'rgba(255,107,0,0.3)';
+                                                            e.currentTarget.style.boxShadow = 'none';
+                                                        }}
                                                     >
-                                                        View
+                                                        <Eye size={15} />
                                                     </button>
+                                                    {/* Download button */}
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleDownloadReport(so.id, so.so_number);
                                                         }}
-                                                        className="ae-btn-secondary"
-                                                        style={{ height: '24px', padding: '4px 12px', fontSize: '0.72rem', borderRadius: '20px', fontWeight: 700 }}
+                                                        title="Download PDF"
+                                                        style={{
+                                                            height: '30px',
+                                                            width: '30px',
+                                                            padding: '0',
+                                                            borderRadius: '8px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            border: '1px solid rgba(255,107,0,0.3)',
+                                                            background: 'rgba(255,107,0,0.08)',
+                                                            color: 'var(--theme-primary)',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'var(--theme-primary)';
+                                                            e.currentTarget.style.color = 'white';
+                                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(255,107,0,0.35)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                            e.currentTarget.style.color = 'var(--theme-primary)';
+                                                            e.currentTarget.style.borderColor = 'rgba(255,107,0,0.3)';
+                                                            e.currentTarget.style.boxShadow = 'none';
+                                                        }}
                                                     >
-                                                        Download
+                                                        <Download size={15} />
                                                     </button>
                                                 </div>
                                             </td>

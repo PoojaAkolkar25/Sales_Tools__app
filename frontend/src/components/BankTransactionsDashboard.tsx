@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { CheckCircle, XCircle, RefreshCw, Upload, Cloud, Columns, ChevronDown } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, Upload, Cloud, Columns, ChevronDown, Check } from 'lucide-react';
 import api from '../api';
 import Pagination from './Pagination';
 import { useNotification } from '../context/NotificationContext';
@@ -448,18 +448,28 @@ const BankTransactionsDashboard: React.FC = () => {
                                             onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                             onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                         >
-                                            <input
-                                                type="checkbox"
-                                                checked={visibleColumns.includes(col.key)}
-                                                onChange={() => {
+                                            <div
+                                                onClick={() => {
                                                     if (visibleColumns.includes(col.key)) {
                                                         setVisibleColumns(visibleColumns.filter(c => c !== col.key));
                                                     } else {
                                                         setVisibleColumns([...visibleColumns, col.key]);
                                                     }
                                                 }}
-                                                style={{ cursor: 'pointer', accentColor: 'var(--theme-primary)' }}
-                                            />
+                                                style={{
+                                                    width: '18px',
+                                                    height: '18px',
+                                                    borderRadius: '4px',
+                                                    border: `2px solid ${visibleColumns.includes(col.key) ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                    background: visibleColumns.includes(col.key) ? 'var(--ae-blue)' : 'white',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    transition: 'all 0.2s',
+                                                    flexShrink: 0
+                                                }}>
+                                                {visibleColumns.includes(col.key) && <Check size={12} color="white" strokeWidth={4} />}
+                                            </div>
                                             <span style={{ fontWeight: 600 }}>{col.label}</span>
                                         </label>
                                     ))}

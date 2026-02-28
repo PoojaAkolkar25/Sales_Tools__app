@@ -18,9 +18,8 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
     const [milestones, setMilestones] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [activeAction, setActiveAction] = useState<'save' | 'cancel' | null>('save');
 
-    const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
-    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const { showNotification, showConfirm } = useNotification();
 
     const getCurrencySymbol = (currency: string) => {
@@ -432,7 +431,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                     ) : (
                         <div className="overflow-x-auto">
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
-                                <thead style={{ background: 'var(--bg-secondary)' }}>
+                                <thead style={{ background: 'var(--bg-accent)' }}>
                                     <tr>
                                         <th style={{ padding: '12px 8px', width: '40px', borderBottom: '1px solid #E0E6ED' }}></th>
                                         <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '80px' }}>Sr.No.</th>
@@ -488,8 +487,9 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                                                         value={milestone.description}
                                                         onChange={(e) => handleMilestoneChange(index, 'description', e.target.value)}
                                                         disabled={isInvoiced}
+                                                        className="ae-input"
                                                         style={{
-                                                            width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
+                                                            width: '100%', height: '48px', padding: '8px 12px', border: '1px solid #E2E8F0',
                                                             borderRadius: '6px', fontSize: '0.75rem', resize: 'none',
                                                             opacity: isInvoiced ? 0.7 : 1
                                                         }}
@@ -518,6 +518,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                                                                     if (dateInput) dateInput.showPicker();
                                                                 }
                                                             }}
+                                                            placeholder="Enter date"
                                                         />
                                                         <input
                                                             type="date"
@@ -598,7 +599,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                                     })}
                                 </tbody>
                                 <tfoot>
-                                    <tr style={{ background: 'var(--bg-secondary)' }}>
+                                    <tr style={{ background: 'var(--bg-accent)' }}>
                                         <td colSpan={5} style={{ padding: '16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Planned</td>
                                         <td style={{ padding: '16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: calculateTotal() > parseFloat(selectedSO.total_amount) ? '#C53030' : 'var(--text-primary)' }}>
                                             <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{getCurrencySymbol(selectedSO.currency)}</span>
@@ -637,9 +638,9 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '8px',
                 background: 'white',
-                padding: '6px',
+                padding: '8px',
                 borderRadius: '12px',
                 border: '1px solid #E0E6ED',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
@@ -653,20 +654,21 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                     style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
+                        gap: '8px',
                         padding: '6px 16px',
+                        height: '32px',
                         borderRadius: '8px',
-                        fontSize: '0.8rem',
-                        background: (!hoveredBtn || hoveredBtn === 'save') ? 'var(--theme-primary)' : 'transparent',
-                        color: ((!hoveredBtn || hoveredBtn === 'save') ? 'white' : 'var(--text-secondary)'),
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
                         border: 'none',
-                        cursor: 'pointer',
+                        cursor: (saving || !selectedSO) ? 'not-allowed' : 'pointer',
                         transition: 'all 0.2s',
-                        fontWeight: 800,
-                        boxShadow: (!hoveredBtn || hoveredBtn === 'save') ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                        background: activeAction === 'save' ? 'var(--theme-primary)' : 'transparent',
+                        color: activeAction === 'save' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: activeAction === 'save' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                     }}
-                    onMouseEnter={() => setHoveredBtn('save')}
-                    onMouseLeave={() => setHoveredBtn(null)}
+                    onMouseEnter={() => setActiveAction('save')}
+                    onMouseLeave={() => setActiveAction(null)}
                 >
                     {saving ? <Clock className="animate-spin" size={16} /> : <Save size={16} />}
                     <span>Save Milestone</span>
@@ -674,35 +676,30 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
 
                 <button
                     onClick={() => {
-                        setIsCancelModalOpen(true);
-                        setHoveredBtn('cancel');
                         showConfirm({
                             title: 'Are you sure you want to exit?',
                             onConfirm: () => onBack(),
-                            onCancel: () => setIsCancelModalOpen(false)
+                            onCancel: () => { }
                         });
                     }}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
+                        gap: '8px',
                         padding: '6px 16px',
+                        height: '32px',
                         borderRadius: '8px',
-                        fontSize: '0.8rem',
-                        background: (hoveredBtn === 'cancel' || isCancelModalOpen) ? 'var(--theme-primary)' : 'transparent',
-                        color: (hoveredBtn === 'cancel' || isCancelModalOpen) ? 'white' : 'var(--text-secondary)',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
                         border: 'none',
-                        fontWeight: 800,
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        boxShadow: (hoveredBtn === 'cancel' || isCancelModalOpen) ? '0 4px 12px rgba(187, 77, 0, 0.2)' : 'none'
+                        background: activeAction === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                        color: activeAction === 'cancel' ? 'white' : 'var(--text-secondary)',
+                        boxShadow: activeAction === 'cancel' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                     }}
-                    onMouseEnter={() => setHoveredBtn('cancel')}
-                    onMouseLeave={() => {
-                        if (!isCancelModalOpen) {
-                            setHoveredBtn(null);
-                        }
-                    }}
+                    onMouseEnter={() => setActiveAction('cancel')}
+                    onMouseLeave={() => setActiveAction(null)}
                 >
                     <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
                     <span>Cancel</span>

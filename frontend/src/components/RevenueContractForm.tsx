@@ -139,7 +139,7 @@ const RevenueContractForm: React.FC<RevenueContractFormProps> = ({ id, onBack, o
     );
 
     return (
-        <div className="space-y-6" style={{ padding: '4px' }}>
+        <form onSubmit={handleSubmit} className="space-y-6" style={{ padding: '4px' }}>
             <div style={{
                 background: 'white',
                 border: '1px solid #E0E6ED',
@@ -148,7 +148,7 @@ const RevenueContractForm: React.FC<RevenueContractFormProps> = ({ id, onBack, o
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                 padding: '24px'
             }}>
-                <form onSubmit={handleSubmit} className="space-y-0">
+                <div className="space-y-0">
                     {/* Basic Info */}
                     <section>
                         <SectionHeader title="Basic Information" />
@@ -337,97 +337,96 @@ const RevenueContractForm: React.FC<RevenueContractFormProps> = ({ id, onBack, o
                                 name="notes"
                                 value={formData.notes}
                                 onChange={handleInputChange}
-                                rows={4}
                                 className="ae-input"
                                 placeholder="Additional details about the contract or recognition terms..."
-                                style={{ resize: 'vertical', minHeight: '80px' }}
+                                style={{ height: '48px', padding: '8px 12px', resize: 'none' }}
                             />
                         </div>
                     </section>
-
-                    {/* Submit Buttons */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
-                        <div style={{
-                            display: 'flex',
-                            background: 'white',
-                            padding: '4px',
-                            borderRadius: '12px',
-                            border: '1px solid var(--border-primary)',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
-                        }}>
-                            {/* Save — orange when not cancelling */}
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '6px 16px',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    background: isCancelActive ? 'transparent' : 'var(--theme-primary)',
-                                    color: isCancelActive ? 'var(--text-secondary)' : 'white',
-                                    boxShadow: isCancelActive ? 'none' : '0 2px 8px rgba(187, 77, 0, 0.3)'
-                                }}
-                            >
-                                {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                                <span>{loading ? 'Saving...' : id ? 'Update Contract' : 'Create Contract'}</span>
-                            </button>
-
-                            {/* Cancel — orange when active */}
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsCancelActive(true);
-                                    showConfirm({
-                                        title: 'Are you sure you want to exit?',
-                                        onConfirm: () => onBack(),
-                                        onCancel: () => setIsCancelActive(false)
-                                    });
-                                }}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '6px 16px',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    background: isCancelActive ? 'var(--theme-primary)' : 'transparent',
-                                    color: isCancelActive ? 'white' : 'var(--text-secondary)',
-                                    boxShadow: isCancelActive ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (!isCancelActive) {
-                                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                                        e.currentTarget.style.color = 'var(--ae-orange)';
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (!isCancelActive) {
-                                        e.currentTarget.style.background = 'transparent';
-                                        e.currentTarget.style.color = 'var(--text-secondary)';
-                                    }
-                                }}
-                            >
-                                <span style={{ fontSize: '16px', lineHeight: '16px', fontWeight: 700 }}>×</span>
-                                <span>Cancel</span>
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
+
+            {/* Submit Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+                <div style={{
+                    display: 'flex',
+                    background: 'white',
+                    padding: '4px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-primary)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+                }}>
+                    {/* Save — orange when not cancelling */}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: isCancelActive ? 'transparent' : 'var(--theme-primary)',
+                            color: isCancelActive ? 'var(--text-secondary)' : 'white',
+                            boxShadow: isCancelActive ? 'none' : '0 2px 8px rgba(187, 77, 0, 0.3)'
+                        }}
+                    >
+                        {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                        <span>{loading ? 'Saving...' : id ? 'Update Contract' : 'Create Contract'}</span>
+                    </button>
+
+                    {/* Cancel — orange when active */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setIsCancelActive(true);
+                            showConfirm({
+                                title: 'Are you sure you want to exit?',
+                                onConfirm: () => onBack(),
+                                onCancel: () => setIsCancelActive(false)
+                            });
+                        }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: isCancelActive ? 'var(--theme-primary)' : 'transparent',
+                            color: isCancelActive ? 'white' : 'var(--text-secondary)',
+                            boxShadow: isCancelActive ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!isCancelActive) {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                e.currentTarget.style.color = 'var(--ae-orange)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!isCancelActive) {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
+                            }
+                        }}
+                    >
+                        <span style={{ fontSize: '16px', lineHeight: '16px', fontWeight: 700 }}>×</span>
+                        <span>Cancel</span>
+                    </button>
+                </div>
+            </div>
+        </form>
     );
 };
 

@@ -8,6 +8,7 @@ import {
     ChevronDown,
     FileSpreadsheet,
     FileText,
+    Check,
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
@@ -344,41 +345,58 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '16px',
+                    flexWrap: 'nowrap',
+                    gap: '12px',
                     padding: '12px 16px',
-                    borderBottom: '1px solid var(--border-primary)'
+                    borderBottom: '1px solid var(--border-primary)',
+                    position: 'relative'
                 }}>
                     {/* Status Tabs */}
                     <div style={{
                         display: 'flex',
                         gap: '4px',
-                        background: 'white',
+                        background: 'var(--bg-primary)',
                         padding: '6px',
                         borderRadius: '12px',
                         border: '1px solid var(--border-primary)',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                        boxShadow: 'var(--shadow-sm)'
                     }}>
-                        {statusFlow.map((flow) => (
-                            <button
-                                key={flow.value}
-                                onClick={() => setFilters({ ...filters, status: flow.value })}
-                                style={{
-                                    padding: '6px 14px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    background: filters.status === flow.value ? 'var(--theme-primary)' : 'transparent',
-                                    color: filters.status === flow.value ? 'white' : 'var(--text-secondary)',
-                                    boxShadow: filters.status === flow.value ? '0 2px 8px rgba(187, 77, 0, 0.2)' : 'none'
-                                }}
-                            >
-                                {flow.label}
-                            </button>
-                        ))}
+                        {statusFlow.map((flow) => {
+                            const isActive = filters.status === flow.value;
+                            return (
+                                <button
+                                    key={flow.value}
+                                    onClick={() => setFilters({ ...filters, status: flow.value })}
+                                    style={{
+                                        padding: '5px 12px',
+                                        borderRadius: '8px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        border: isActive ? '1px solid var(--theme-primary)' : '1px solid transparent',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        whiteSpace: 'nowrap',
+                                        background: isActive ? 'var(--theme-primary)' : 'transparent',
+                                        color: isActive ? 'white' : 'var(--text-secondary)',
+                                        boxShadow: isActive ? 'var(--shadow-md)' : 'none'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!isActive) {
+                                            e.currentTarget.style.border = '1px solid var(--theme-primary)';
+                                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isActive) {
+                                            e.currentTarget.style.border = '1px solid transparent';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }
+                                    }}
+                                >
+                                    {flow.label}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* Right Side Actions */}
@@ -421,7 +439,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                     borderRadius: '8px',
                                     background: 'white',
                                     color: 'var(--text-secondary)',
-                                    fontWeight: 700,
+                                    fontWeight: 400,
                                     cursor: 'pointer',
                                     border: `1px solid ${showExportMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)'}`,
                                     transition: 'all 0.2s'
@@ -474,7 +492,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                     borderRadius: '8px',
                                     background: 'white',
                                     color: 'var(--text-secondary)',
-                                    fontWeight: 700,
+                                    fontWeight: 400,
                                     cursor: 'pointer',
                                     border: `1px solid ${showColumnMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)'}`,
                                     transition: 'all 0.2s'
@@ -564,10 +582,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                                 onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
                                             >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={visibleColumns.includes(col.key)}
-                                                    onChange={() => {
+                                                <div
+                                                    onClick={() => {
                                                         if (visibleColumns.includes(col.key)) {
                                                             setVisibleColumns(visibleColumns.filter(c => c !== col.key));
                                                         } else {
@@ -575,12 +591,19 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                         }
                                                     }}
                                                     style={{
-                                                        cursor: 'pointer',
-                                                        width: '16px',
-                                                        height: '16px',
-                                                        accentColor: 'var(--theme-primary)'
-                                                    }}
-                                                />
+                                                        width: '18px',
+                                                        height: '18px',
+                                                        borderRadius: '4px',
+                                                        border: `2px solid ${visibleColumns.includes(col.key) ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                        background: visibleColumns.includes(col.key) ? 'var(--ae-blue)' : 'white',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s',
+                                                        flexShrink: 0
+                                                    }}>
+                                                    {visibleColumns.includes(col.key) && <Check size={12} color="white" strokeWidth={4} />}
+                                                </div>
                                                 <span style={{ fontWeight: 600 }}>{col.label}</span>
                                             </label>
                                         ))}
@@ -651,7 +674,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                         <ChevronRight size={18} />
                     </button>
 
-                    <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
+                    <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)', minHeight: '400px' }}>
                         <table className="ae-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                             <colgroup>
                                 {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
@@ -940,20 +963,20 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                 </div>
                                             </td>
                                         </tr>
-                            ))
+                                    ))
                                 )}
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
 
-            <Pagination
-                currentPage={currentPage}
-                totalItems={filteredMilestones.length}
-                itemsPerPage={ITEMS_PER_PAGE}
-                onPageChange={setCurrentPage}
-            />
-        </div>
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={filteredMilestones.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                />
+            </div>
         </div >
     );
 };

@@ -11,7 +11,8 @@ import {
     Mail,
     Building2,
     Columns,
-    ChevronDown
+    ChevronDown,
+    Check
 } from 'lucide-react';
 import api from '../api';
 
@@ -254,17 +255,28 @@ const CustomerDashboard: React.FC = () => {
                                         </div>
                                         {ALL_COL_CONFIG.map(col => (
                                             <label key={col.key} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', fontSize: '0.85rem', color: '#2D3748', cursor: 'pointer', borderBottom: '1px solid var(--border-secondary)' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={visibleColumns.includes(col.key)}
-                                                    onChange={() => {
+                                                <div
+                                                    onClick={() => {
                                                         if (visibleColumns.includes(col.key)) {
                                                             setVisibleColumns(visibleColumns.filter(c => c !== col.key));
                                                         } else {
                                                             setVisibleColumns([...visibleColumns, col.key]);
                                                         }
                                                     }}
-                                                />
+                                                    style={{
+                                                        width: '18px',
+                                                        height: '18px',
+                                                        borderRadius: '4px',
+                                                        border: `2px solid ${visibleColumns.includes(col.key) ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                        background: visibleColumns.includes(col.key) ? 'var(--ae-blue)' : 'white',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s',
+                                                        flexShrink: 0
+                                                    }}>
+                                                    {visibleColumns.includes(col.key) && <Check size={12} color="white" strokeWidth={4} />}
+                                                </div>
                                                 <span style={{ fontWeight: 600 }}>{col.label}</span>
                                             </label>
                                         ))}

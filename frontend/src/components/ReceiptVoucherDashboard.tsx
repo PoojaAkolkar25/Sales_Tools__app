@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, RefreshCw, Eye, Columns, ChevronDown } from 'lucide-react';
+import { Plus, RefreshCw, Eye, Columns, ChevronDown, Check } from 'lucide-react';
 import api from '../api';
 import Pagination from './Pagination';
 import { formatToAppDate } from '../utils/dateUtils';
@@ -290,14 +290,12 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                 color: 'var(--text-secondary)'
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.background = 'var(--theme-primary)';
-                                e.currentTarget.style.color = 'white';
-                                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                e.currentTarget.style.color = 'var(--ae-orange)';
                             }}
                             onMouseLeave={(e) => {
                                 e.currentTarget.style.background = 'transparent';
                                 e.currentTarget.style.color = 'var(--text-secondary)';
-                                e.currentTarget.style.boxShadow = 'none';
                             }}
                         >
                             <Plus size={16} /> Create Receipt
@@ -320,14 +318,12 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                     color: 'var(--text-secondary)'
                                 }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = 'var(--theme-primary)';
-                                    e.currentTarget.style.color = 'white';
-                                    e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                    e.currentTarget.style.color = 'var(--ae-orange)';
                                 }}
                                 onMouseLeave={(e) => {
                                     e.currentTarget.style.background = 'transparent';
                                     e.currentTarget.style.color = 'var(--text-secondary)';
-                                    e.currentTarget.style.boxShadow = 'none';
                                 }}
                             >
                                 <Columns size={16} /> Columns <ChevronDown size={14} />
@@ -383,18 +379,28 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
                                                 onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                             >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={visibleColumns.includes(col.key)}
-                                                    onChange={() => {
+                                                <div
+                                                    onClick={() => {
                                                         if (visibleColumns.includes(col.key)) {
                                                             setVisibleColumns(visibleColumns.filter(c => c !== col.key));
                                                         } else {
                                                             setVisibleColumns([...visibleColumns, col.key]);
                                                         }
                                                     }}
-                                                    style={{ cursor: 'pointer', accentColor: 'var(--theme-primary)' }}
-                                                />
+                                                    style={{
+                                                        width: '18px',
+                                                        height: '18px',
+                                                        borderRadius: '4px',
+                                                        border: `2px solid ${visibleColumns.includes(col.key) ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                        background: visibleColumns.includes(col.key) ? 'var(--ae-blue)' : 'white',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s',
+                                                        flexShrink: 0
+                                                    }}>
+                                                    {visibleColumns.includes(col.key) && <Check size={12} color="white" strokeWidth={4} />}
+                                                </div>
                                                 <span style={{ fontWeight: 600 }}>{col.label}</span>
                                             </label>
                                         ))}
@@ -571,19 +577,33 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                         <td style={{ textAlign: 'center', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px 6px' }}>
                                             <button
                                                 onClick={() => onView(v.id)}
-                                                className="ae-btn-secondary"
                                                 style={{
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
-                                                    gap: '6px',
-                                                    padding: '4px 14px',
-                                                    borderRadius: '20px',
-                                                    fontSize: '0.72rem',
-                                                    fontWeight: 700,
-                                                    height: '24px'
+                                                    justifyContent: 'center',
+                                                    width: '28px',
+                                                    height: '28px',
+                                                    background: 'rgba(255,107,0,0.08)',
+                                                    color: 'var(--theme-primary)',
+                                                    border: '1px solid rgba(255,107,0,0.25)',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    flexShrink: 0
                                                 }}
+                                                onMouseOver={(e) => {
+                                                    e.currentTarget.style.background = 'var(--theme-primary)';
+                                                    e.currentTarget.style.color = 'white';
+                                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                }}
+                                                onMouseOut={(e) => {
+                                                    e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                    e.currentTarget.style.color = 'var(--theme-primary)';
+                                                    e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                }}
+                                                title="View Receipt"
                                             >
-                                                <Eye size={12} /> View
+                                                <Eye size={16} />
                                             </button>
                                         </td>
                                     </tr>

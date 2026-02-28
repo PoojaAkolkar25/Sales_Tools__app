@@ -48,81 +48,121 @@ const Payment: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '0 8px',
-                marginBottom: '12px',
-                gap: '24px'
+                marginBottom: '24px'
             }}>
-                <div style={{
-                    display: 'flex',
-                    gap: '4px',
-                    alignItems: 'center',
-                    background: 'white',
-                    padding: '6px',
-                    borderRadius: '12px',
-                    border: '1px solid #E0E6ED',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                }}>
-                    <button
-                        onClick={() => { setActiveTab('RECEIPT'); setReceiptView('DASHBOARD'); }}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: activeTab === 'RECEIPT' ? '#FF6B00' : 'transparent',
-                            color: activeTab === 'RECEIPT' ? 'white' : '#718096',
-                            boxShadow: activeTab === 'RECEIPT' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                        }}
-                    >
-                        <FileText size={18} /> Receipt Vouchers
-                    </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Payment</h1>
 
-                    <button
-                        onClick={() => { setActiveTab('BANK_TX'); setReceiptView('DASHBOARD'); }}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: activeTab === 'BANK_TX' ? '#FF6B00' : 'transparent',
-                            color: activeTab === 'BANK_TX' ? 'white' : '#718096',
-                            boxShadow: activeTab === 'BANK_TX' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                        }}
-                    >
-                        <CreditCard size={18} /> Bank Transactions
-                    </button>
+                    <div style={{
+                        display: 'flex',
+                        gap: '4px',
+                        alignItems: 'center',
+                        background: 'var(--bg-primary)',
+                        padding: '6px',
+                        borderRadius: '12px',
+                        border: '1px solid #E0E6ED',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                        <button
+                            onClick={() => { setActiveTab('RECEIPT'); setReceiptView('DASHBOARD'); }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: activeTab === 'RECEIPT' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeTab === 'RECEIPT' ? 'white' : '#718096',
+                                boxShadow: activeTab === 'RECEIPT' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (activeTab !== 'RECEIPT') {
+                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                    e.currentTarget.style.color = 'var(--ae-orange)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (activeTab !== 'RECEIPT') {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = '#718096';
+                                }
+                            }}
+                        >
+                            <FileText size={18} /> Receipt Vouchers
+                        </button>
 
-                    <button
-                        onClick={() => { setActiveTab('BANK_SETUP'); setReceiptView('DASHBOARD'); }}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 16px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: activeTab === 'BANK_SETUP' ? '#FF6B00' : 'transparent',
-                            color: activeTab === 'BANK_SETUP' ? 'white' : '#718096',
-                            boxShadow: activeTab === 'BANK_SETUP' ? '0 2px 8px rgba(255, 107, 0, 0.3)' : 'none'
-                        }}
-                    >
-                        <Settings size={18} /> Bank Setup
-                    </button>
+                        <button
+                            onClick={() => { setActiveTab('BANK_TX'); setReceiptView('DASHBOARD'); }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: activeTab === 'BANK_TX' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeTab === 'BANK_TX' ? 'white' : '#718096',
+                                boxShadow: activeTab === 'BANK_TX' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (activeTab !== 'BANK_TX') {
+                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                    e.currentTarget.style.color = 'var(--ae-orange)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (activeTab !== 'BANK_TX') {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = '#718096';
+                                }
+                            }}
+                        >
+                            <CreditCard size={18} /> Bank Transactions
+                        </button>
+
+                        <button
+                            onClick={() => { setActiveTab('BANK_SETUP'); setReceiptView('DASHBOARD'); }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: activeTab === 'BANK_SETUP' ? 'var(--theme-primary)' : 'transparent',
+                                color: activeTab === 'BANK_SETUP' ? 'white' : '#718096',
+                                boxShadow: activeTab === 'BANK_SETUP' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (activeTab !== 'BANK_SETUP') {
+                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                    e.currentTarget.style.color = 'var(--ae-orange)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (activeTab !== 'BANK_SETUP') {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = '#718096';
+                                }
+                            }}
+                        >
+                            <Settings size={18} /> Bank Setup
+                        </button>
+                    </div>
                 </div>
             </div>
 

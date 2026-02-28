@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     CheckCircle2,
-    Upload,
     Mail,
     X,
     Download,
@@ -11,7 +10,10 @@ import {
     Columns,
     FileSpreadsheet,
     Loader2,
-    RefreshCcw
+    RefreshCcw,
+    Paperclip,
+    Eye,
+    Check
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -152,6 +154,9 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
 
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [hoveredExport, setHoveredExport] = useState(false);
+    const [hoveredColumn, setHoveredColumn] = useState(false);
+    const [hoveredTab, setHoveredTab] = useState<string | null>(null);
     const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
         const saved = localStorage.getItem('estimateDashboard_visibleColumns_v4');
         return saved ? JSON.parse(saved) : ALL_COL_CONFIG.map(col => col.key);
@@ -480,7 +485,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                     : { bg: 'var(--bg-secondary)', text: 'var(--text-secondary)', label: 'Draft' };
             case 'SUBMITTED': return { bg: 'rgba(49, 130, 206, 0.1)', text: '#3182CE', label: 'Submitted to Customer' };
             case 'REWOUND': return { bg: 'rgba(113, 128, 150, 0.1)', text: '#718096', label: 'Rewound' };
-            case 'NEGOTIATION': return { bg: 'rgba(187, 77, 0, 0.1)', text: 'var(--theme-primary)', label: 'Negotiation' };
+            case 'NEGOTIATION': return { bg: 'rgba(255, 107, 0, 0.1)', text: 'var(--theme-primary)', label: 'Negotiation' };
             case 'APPROVED': return { bg: 'rgba(56, 161, 105, 0.1)', text: '#38A169', label: 'Approved' };
             case 'REJECTED': return { bg: 'rgba(229, 62, 62, 0.1)', text: '#E53E3E', label: 'Rejected' };
             default: return { bg: 'var(--bg-secondary)', text: 'var(--text-secondary)', label: status };
@@ -543,26 +548,33 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                         border: '1px solid var(--border-primary)',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                     }}>
-                        {statusFlow.map((flow) => (
-                            <button
-                                key={flow.value}
-                                onClick={() => setFilters({ ...filters, status: flow.value })}
-                                style={{
-                                    padding: '5px 10px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    background: filters.status === flow.value ? 'var(--theme-primary)' : 'transparent',
-                                    color: filters.status === flow.value ? 'white' : 'var(--text-secondary)',
-                                    boxShadow: filters.status === flow.value ? 'var(--shadow-md)' : 'none'
-                                }}
-                            >
-                                {flow.label}
-                            </button>
-                        ))}
+                        {statusFlow.map((flow) => {
+                            const isActive = filters.status === flow.value;
+                            const isHovered = hoveredTab === flow.value;
+                            return (
+                                <button
+                                    key={flow.value}
+                                    onClick={() => setFilters({ ...filters, status: flow.value })}
+                                    onMouseEnter={() => setHoveredTab(flow.value)}
+                                    onMouseLeave={() => setHoveredTab(null)}
+                                    style={{
+                                        padding: '5px 12px',
+                                        borderRadius: '8px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        border: isActive ? '1px solid var(--theme-primary)' : (isHovered ? '1px solid var(--theme-primary)' : '1px solid transparent'),
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        whiteSpace: 'nowrap',
+                                        background: isActive ? 'var(--theme-primary)' : 'transparent',
+                                        color: isActive ? 'white' : 'black',
+                                        boxShadow: isActive ? 'var(--shadow-md)' : (isHovered ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none')
+                                    }}
+                                >
+                                    {flow.label}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* Right Side Actions */}
@@ -594,6 +606,8 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                             <button
                                 className="ae-btn-secondary"
                                 onClick={() => setShowExportMenu(!showExportMenu)}
+                                onMouseEnter={() => setHoveredExport(true)}
+                                onMouseLeave={() => setHoveredExport(false)}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -603,20 +617,11 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                     height: '32px',
                                     borderRadius: '8px',
                                     background: 'white',
-                                    color: 'var(--text-secondary)',
-                                    fontWeight: 700,
+                                    color: 'black',
+                                    fontWeight: 400,
                                     cursor: 'pointer',
-                                    border: '1px solid var(--border-primary)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = 'var(--bg-secondary)';
-                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                    e.currentTarget.style.color = 'var(--theme-primary)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'white';
-                                    e.currentTarget.style.borderColor = 'var(--border-primary)';
-                                    e.currentTarget.style.color = 'var(--text-secondary)';
+                                    border: (showExportMenu || hoveredExport) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                    boxShadow: (showExportMenu || hoveredExport) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none'
                                 }}
                             >
                                 <Download size={16} /> Export <ChevronDown size={14} />
@@ -625,17 +630,29 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-primary)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '1px solid var(--border-primary)', zIndex: 100, minWidth: '160px', overflow: 'hidden' }}>
                                     <button
                                         onClick={() => { exportToPDF(); setShowExportMenu(false); }}
-                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                            e.currentTarget.style.color = 'var(--ae-orange)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'none';
+                                            e.currentTarget.style.color = 'var(--text-primary)';
+                                        }}
                                     >
                                         <FileSpreadsheet size={16} style={{ color: '#DC2626' }} /> PDF Report
                                     </button>
                                     <button
                                         onClick={() => { exportToExcel(); setShowExportMenu(false); }}
-                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                        style={{ width: '100%', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                            e.currentTarget.style.color = 'var(--ae-orange)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'none';
+                                            e.currentTarget.style.color = 'var(--text-primary)';
+                                        }}
                                     >
                                         <FileSpreadsheet size={16} style={{ color: '#2563EB' }} /> Excel Report
                                     </button>
@@ -648,6 +665,8 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                             <button
                                 className="ae-btn-secondary"
                                 onClick={() => setShowColumnMenu(!showColumnMenu)}
+                                onMouseEnter={() => setHoveredColumn(true)}
+                                onMouseLeave={() => setHoveredColumn(false)}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -657,20 +676,11 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                     height: '32px',
                                     borderRadius: '8px',
                                     background: 'white',
-                                    color: 'var(--text-secondary)',
-                                    fontWeight: 700,
+                                    color: 'black',
+                                    fontWeight: 400,
                                     cursor: 'pointer',
-                                    border: '1px solid var(--border-primary)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = 'var(--bg-secondary)';
-                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                    e.currentTarget.style.color = 'var(--theme-primary)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'white';
-                                    e.currentTarget.style.borderColor = 'var(--border-primary)';
-                                    e.currentTarget.style.color = 'var(--text-secondary)';
+                                    border: (showColumnMenu || hoveredColumn) ? '1px solid var(--theme-primary)' : '1px solid var(--ae-gray-100)',
+                                    boxShadow: (showColumnMenu || hoveredColumn) ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none'
                                 }}
                             >
                                 <Columns size={16} /> Columns <ChevronDown size={14} />
@@ -748,13 +758,17 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                             transition: 'background 0.2s',
                                             borderBottom: '1px solid var(--border-primary)'
                                         }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                                e.currentTarget.style.color = 'var(--ae-orange)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'white';
+                                                e.currentTarget.style.color = '#2D3748';
+                                            }}
                                         >
-                                            <input
-                                                type="checkbox"
-                                                checked={visibleColumns.includes(col.key)}
-                                                onChange={() => {
+                                            <div
+                                                onClick={() => {
                                                     if (visibleColumns.includes(col.key)) {
                                                         setVisibleColumns(visibleColumns.filter(c => c !== col.key));
                                                     } else {
@@ -762,12 +776,19 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                     }
                                                 }}
                                                 style={{
-                                                    cursor: 'pointer',
-                                                    width: '16px',
-                                                    height: '16px',
-                                                    accentColor: 'var(--theme-primary)'
-                                                }}
-                                            />
+                                                    width: '18px',
+                                                    height: '18px',
+                                                    borderRadius: '4px',
+                                                    border: `2px solid ${visibleColumns.includes(col.key) ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                    background: visibleColumns.includes(col.key) ? 'var(--ae-blue)' : 'white',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    transition: 'all 0.2s',
+                                                    flexShrink: 0
+                                                }}>
+                                                {visibleColumns.includes(col.key) && <Check size={12} color="white" strokeWidth={4} />}
+                                            </div>
                                             <span style={{ fontWeight: 600 }}>{col.label}</span>
                                         </label>
                                     ))}
@@ -862,7 +883,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                             top: 0,
                                             color: 'var(--text-secondary)'
                                         }}>
-                                            <span title={col.label} style={{ fontSize: '0.8rem', fontWeight: 800 }}>
+                                            <span title={col.label} style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                                                 {getColWidth(col.key) < (SHORT_COL_WIDTHS[col.key] + 5)
                                                     ? col.shortLabel
                                                     : col.label}
@@ -891,10 +912,12 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         top: 0,
-                                        color: 'var(--text-secondary)',
+                                        color: 'black',
                                         borderBottom: '1px solid var(--border-secondary)',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 800
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.02em'
                                     }}>Actions</th>
                                 </tr>
                                 <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
@@ -1013,115 +1036,128 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                 {visibleColumns.includes('proposal') && (
                                                     <td style={{ overflow: 'hidden', padding: '4px 6px' }}>
                                                         {hasProposal ? (
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#38A169', fontSize: '0.75rem', fontWeight: 600 }}><CheckCircle2 size={14} /> Attached</div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#16a34a', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                                <CheckCircle2 size={14} /> Attached
+                                                            </div>
                                                         ) : (
                                                             <button
                                                                 onClick={() => onView(est.id)}
-                                                                className="ae-btn-secondary"
-                                                                style={{ padding: '4px 14px', fontSize: '0.72rem', height: '24px', borderRadius: '20px', fontWeight: 700 }}
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '6px',
+                                                                    background: 'rgba(255, 107, 0, 0.1)',
+                                                                    color: 'var(--theme-primary)',
+                                                                    border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                                    padding: '4px 12px',
+                                                                    borderRadius: '20px',
+                                                                    fontSize: '0.72rem',
+                                                                    fontWeight: 700,
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                    e.currentTarget.style.color = 'white';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)';
+                                                                    e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                }}
                                                             >
-                                                                <Upload size={12} /> Attach
+                                                                <Paperclip size={12} /> Attach
                                                             </button>
                                                         )}
                                                     </td>
                                                 )}
                                                 <td style={{ padding: '4px 6px' }}>
-                                                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                                                         <button
                                                             onClick={() => onView(est.id)}
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
-                                                                gap: '4px',
-                                                                background: 'rgba(187, 77, 0, 0.07)',
+                                                                justifyContent: 'center',
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                background: 'rgba(255, 107, 0, 0.08)',
                                                                 color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(187, 77, 0, 0.25)',
-                                                                padding: '4px 14px',
-                                                                borderRadius: '20px',
-                                                                fontSize: '0.72rem',
-                                                                fontWeight: 700,
+                                                                border: '1px solid rgba(255, 107, 0, 0.15)',
+                                                                borderRadius: '8px',
                                                                 cursor: 'pointer',
-                                                                transition: 'all 0.18s',
+                                                                transition: 'all 0.2s',
                                                             }}
                                                             onMouseEnter={(e) => {
                                                                 e.currentTarget.style.background = 'var(--theme-primary)';
                                                                 e.currentTarget.style.color = 'white';
-                                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
+                                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
                                                             }}
                                                             onMouseLeave={(e) => {
-                                                                e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
+                                                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
                                                                 e.currentTarget.style.color = 'var(--theme-primary)';
-                                                                e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
                                                                 e.currentTarget.style.boxShadow = 'none';
                                                             }}
-                                                            title="View"
+                                                            title="View Estimate"
                                                         >
-                                                            View
+                                                            <Eye size={16} />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDownloadPDF(est.id, est.estimate_id)}
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
-                                                                gap: '4px',
-                                                                background: 'rgba(187, 77, 0, 0.07)',
+                                                                justifyContent: 'center',
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                background: 'rgba(255, 107, 0, 0.08)',
                                                                 color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(187, 77, 0, 0.25)',
-                                                                padding: '4px 14px',
-                                                                borderRadius: '20px',
-                                                                fontSize: '0.72rem',
-                                                                fontWeight: 700,
+                                                                border: '1px solid rgba(255, 107, 0, 0.15)',
+                                                                borderRadius: '8px',
                                                                 cursor: 'pointer',
-                                                                transition: 'all 0.18s',
+                                                                transition: 'all 0.2s',
                                                             }}
                                                             onMouseEnter={(e) => {
                                                                 e.currentTarget.style.background = 'var(--theme-primary)';
                                                                 e.currentTarget.style.color = 'white';
-                                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
+                                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
                                                             }}
                                                             onMouseLeave={(e) => {
-                                                                e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
+                                                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
                                                                 e.currentTarget.style.color = 'var(--theme-primary)';
-                                                                e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
                                                                 e.currentTarget.style.boxShadow = 'none';
                                                             }}
-                                                            title="Download"
+                                                            title="Download PDF"
                                                         >
-                                                            Download
+                                                            <Download size={16} />
                                                         </button>
                                                         <button
                                                             onClick={() => setEmailModal({ ...emailModal, open: true, estimateId: est.id, to: est.customer_email || '', subject: `Proposal for ${est.project_name}` })}
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
-                                                                gap: '4px',
-                                                                background: 'rgba(187, 77, 0, 0.07)',
+                                                                justifyContent: 'center',
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                background: 'rgba(255, 107, 0, 0.08)',
                                                                 color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(187, 77, 0, 0.25)',
-                                                                padding: '4px 14px',
-                                                                borderRadius: '20px',
-                                                                fontSize: '0.72rem',
-                                                                fontWeight: 700,
+                                                                border: '1px solid rgba(255, 107, 0, 0.15)',
+                                                                borderRadius: '8px',
                                                                 cursor: 'pointer',
-                                                                transition: 'all 0.18s',
+                                                                transition: 'all 0.2s',
                                                             }}
                                                             onMouseEnter={(e) => {
                                                                 e.currentTarget.style.background = 'var(--theme-primary)';
                                                                 e.currentTarget.style.color = 'white';
-                                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
+                                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
                                                             }}
                                                             onMouseLeave={(e) => {
-                                                                e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
+                                                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
                                                                 e.currentTarget.style.color = 'var(--theme-primary)';
-                                                                e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
                                                                 e.currentTarget.style.boxShadow = 'none';
                                                             }}
-                                                            title="Email"
+                                                            title="Send via Email"
                                                         >
-                                                            Email
+                                                            <Mail size={16} />
                                                         </button>
                                                     </div>
                                                 </td>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Trash2, CheckCircle, Eye, Plus } from 'lucide-react';
+import { Save, Trash2, CheckCircle, Eye, Plus, Check } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
@@ -24,8 +24,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
     const [loading, setLoading] = useState(false);
     const [isReadOnly, setIsReadOnly] = useState(false);
     const [status, setStatus] = useState('DRAFT');
-    const [activeAction, setActiveAction] = useState<'preview' | 'save' | 'submit' | 'cancel'>('submit');
-    const [isConfirmingExit, setIsConfirmingExit] = useState(false);
+
 
     const [formData, setFormData] = useState({
         invoice_no: '',
@@ -370,9 +369,10 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{
                     width: '4px',
-                    height: '18px',
+                    height: '20px',
                     background: 'var(--ae-blue)',
-                    borderRadius: '2px'
+                    borderRadius: '2px',
+                    flexShrink: 0
                 }}></span>
                 <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)', margin: 0 }}>
                     {title}
@@ -440,10 +440,46 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 {formData.customer_gstin || 'Not Provided'}
                             </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', paddingTop: '30px' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-                                <input type="checkbox" disabled={isReadOnly} checked={formData.is_gst_applicable} onChange={e => setFormData({ ...formData, is_gst_applicable: e.target.checked })} /> GST Applicable
-                            </label>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Tax Configuration</label>
+                            <div
+                                onClick={() => !isReadOnly && setFormData({ ...formData, is_gst_applicable: !formData.is_gst_applicable })}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                                    background: '#F8FAFC',
+                                    padding: '0 16px',
+                                    height: '38px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #E2E8F0',
+                                    width: '100%',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <div style={{
+                                    width: '18px',
+                                    height: '18px',
+                                    borderRadius: '4px',
+                                    border: `2px solid ${formData.is_gst_applicable ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                    background: formData.is_gst_applicable ? 'var(--ae-blue)' : 'white',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s',
+                                    flexShrink: 0
+                                }}>
+                                    {formData.is_gst_applicable && <Check size={12} color="white" strokeWidth={4} />}
+                                </div>
+                                <span style={{
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    color: formData.is_gst_applicable ? 'var(--ae-blue)' : '#64748B'
+                                }}>
+                                    GST Applicable
+                                </span>
+                            </div>
                         </div>
                         {formData.invoice_type === 'USA' && (
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -483,7 +519,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                         zIndex: 10
                     }}>
                         <table className="ae-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
-                            <thead style={{ background: '#F8FAFC' }}>
+                            <thead style={{ background: 'var(--bg-accent)' }}>
                                 <tr>
                                     <th style={{ width: '50px', padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>SR.NO.</th>
                                     <th style={{ width: '120px', padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>TYPE *</th>
@@ -558,9 +594,8 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                                     width: '100%',
                                                     resize: 'none',
                                                     borderRadius: '8px',
-                                                    minHeight: '36px'
+                                                    height: '48px'
                                                 }}
-                                                rows={1}
                                                 value={item.description}
                                                 onChange={e => updateLineItem(index, 'description', e.target.value)}
                                             />
@@ -627,7 +662,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 ))}
                             </tbody>
                             <tfoot>
-                                <tr style={{ background: '#F8FAFC', borderTop: '1px solid #E0E6ED' }}>
+                                <tr style={{ background: 'var(--bg-accent)', borderTop: '1px solid #E0E6ED' }}>
                                     <td colSpan={6} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Invoice Value:</td>
                                     <td style={{ padding: '8px 16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
                                         <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{formData.currency === 'INR' ? '₹' : '$'}</span>
@@ -705,7 +740,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             <textarea
                                 className="ae-input"
                                 disabled={isReadOnly}
-                                style={{ width: '100%', minHeight: '100px', resize: 'vertical', lineHeight: '1.5', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem' }}
+                                style={{ width: '100%', height: '48px', padding: '8px 12px', resize: 'none', lineHeight: '1.5', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem' }}
                                 value={formData.lut_declaration}
                                 onChange={e => setFormData({ ...formData, lut_declaration: e.target.value })}
                             />
@@ -716,7 +751,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             <textarea
                                 className="ae-input"
                                 disabled={isReadOnly}
-                                style={{ width: '100%', minHeight: '100px', resize: 'vertical', lineHeight: '1.5', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem' }}
+                                style={{ width: '100%', height: '48px', padding: '8px 12px', resize: 'none', lineHeight: '1.5', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem' }}
                                 value={formData.gst_declaration}
                                 onChange={e => setFormData({ ...formData, gst_declaration: e.target.value })}
                             />
@@ -750,11 +785,11 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                     </div>
                 </div>
 
-                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px', marginTop: '32px' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Description / Memo</label>
+                <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                    <SectionHeader title="Description / Memo" />
                     <textarea
                         className="ae-input"
-                        style={{ width: '100%', minHeight: '100px', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem', resize: 'vertical' }}
+                        style={{ width: '100%', height: '48px', padding: '8px 12px', resize: 'none', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem' }}
                         placeholder="Add internal notes or additional descriptions here..."
                         value={formData.memo}
                         onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
@@ -775,13 +810,11 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                         border: '1px solid #E0E6ED',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
                     }}
-                    onMouseLeave={() => { if (!isConfirmingExit) setActiveAction('submit'); }}
                 >
                     {/* Preview */}
                     <button
                         type="button"
                         onClick={() => handlePreview()}
-                        onMouseEnter={() => !isConfirmingExit && setActiveAction('preview')}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -794,9 +827,16 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             border: 'none',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
-                            background: activeAction === 'preview' ? 'var(--theme-primary)' : 'transparent',
-                            color: activeAction === 'preview' ? 'white' : 'var(--text-secondary)',
-                            boxShadow: activeAction === 'preview' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                            background: 'transparent',
+                            color: 'var(--text-secondary)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                            e.currentTarget.style.color = 'var(--ae-orange)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
                         }}
                     >
                         <Eye size={16} /> <span>Preview</span>
@@ -809,7 +849,6 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 type="button"
                                 onClick={handleSubmit}
                                 disabled={loading}
-                                onMouseEnter={() => !isConfirmingExit && setActiveAction('save')}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -822,9 +861,20 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                     border: 'none',
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.2s',
-                                    background: activeAction === 'save' ? 'var(--theme-primary)' : 'transparent',
-                                    color: activeAction === 'save' ? 'white' : 'var(--text-secondary)',
-                                    boxShadow: activeAction === 'save' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                                    background: 'transparent',
+                                    color: 'var(--text-secondary)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!loading) {
+                                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                        e.currentTarget.style.color = 'var(--ae-orange)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!loading) {
+                                        e.currentTarget.style.background = 'transparent';
+                                        e.currentTarget.style.color = 'var(--text-secondary)';
+                                    }
                                 }}
                             >
                                 <Save size={16} /> <span>{loading ? 'Saving...' : 'Save Draft'}</span>
@@ -835,7 +885,6 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 type="button"
                                 onClick={handleSubmitForApproval}
                                 disabled={loading}
-                                onMouseEnter={() => !isConfirmingExit && setActiveAction('submit')}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -848,9 +897,19 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                     border: 'none',
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.2s',
-                                    background: activeAction === 'submit' ? 'var(--theme-primary)' : 'rgba(255, 107, 0, 0.05)',
-                                    color: activeAction === 'submit' ? 'white' : 'var(--ae-orange)',
-                                    boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                                    background: 'var(--theme-primary)',
+                                    color: 'white',
+                                    boxShadow: '0 2px 8px rgba(187, 77, 0, 0.3)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!loading) {
+                                        e.currentTarget.style.background = '#e65c00'; // Darker orange on hover
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!loading) {
+                                        e.currentTarget.style.background = 'var(--theme-primary)';
+                                    }
                                 }}
                             >
                                 <CheckCircle size={16} /> <span>{loading ? 'Submitting...' : 'Submit for Approval'}</span>
@@ -863,17 +922,12 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                         <button
                             type="button"
                             onClick={() => {
-                                setIsConfirmingExit(true);
                                 showConfirm({
                                     title: 'Are you sure you want to exit?',
                                     onConfirm: () => onBack(),
-                                    onCancel: () => {
-                                        setIsConfirmingExit(false);
-                                        setActiveAction('submit');
-                                    }
+                                    onCancel: () => { }
                                 });
                             }}
-                            onMouseEnter={() => !isConfirmingExit && setActiveAction('cancel')}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -886,8 +940,16 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                background: activeAction === 'cancel' ? 'rgba(255, 107, 0, 0.05)' : 'transparent',
-                                color: activeAction === 'cancel' ? 'var(--ae-orange)' : 'var(--text-secondary)'
+                                background: 'transparent',
+                                color: 'var(--text-secondary)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                e.currentTarget.style.color = 'var(--ae-orange)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
                             }}
                         >
                             <span style={{ fontSize: '16px', lineHeight: '16px', fontWeight: 700 }}>×</span>
