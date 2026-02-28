@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -68,7 +68,7 @@ const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: stri
         { key: 'alias_name', label: 'Alias Name', shortLabel: 'Alias' },
         { key: 'status', label: 'Status', shortLabel: 'St' },
         { key: 'industry', label: 'Industry', shortLabel: 'Ind' },
-        { key: 'linked_partner_name', label: 'Linked Partner', shortLabel: 'LP' },
+        { key: 'linked_partner_name', label: 'Linked Customer', shortLabel: 'LC' },
         { key: 'location', label: 'Location', shortLabel: 'Loc' },
         { key: 'contact_person', label: 'Contact Person', shortLabel: 'CP' },
         { key: 'email', label: 'Email', shortLabel: 'Mail' },
@@ -2479,11 +2479,11 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Linked Partner (Select Partner)"
+                                                    label="Linked Partner * (Select Partner)"
                                                     options={partners.map(p => ({ value: String(p.id), label: p.name }))}
                                                     value={endCustomerFormData.linked_partner}
                                                     onChange={(val) => setEndCustomerFormData({ ...endCustomerFormData, linked_partner: val as string })}
-                                                    placeholder="Select Partner"
+                                                    placeholder="Select Customer"
                                                     required
                                                 />
                                             </div>

@@ -172,7 +172,7 @@ class CustomerPartnerSerializer(serializers.ModelSerializer):
         return value
 
 class EndCustomerSerializer(serializers.ModelSerializer):
-    partner_name = serializers.CharField(source='linked_partner.name', read_only=True)
+    linked_partner_name = serializers.CharField(source='linked_partner.name', read_only=True)
     
     class Meta:
         model = EndCustomer
