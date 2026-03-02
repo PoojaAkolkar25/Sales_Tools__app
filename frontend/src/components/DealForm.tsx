@@ -13,7 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { formatToAppDate } from '../utils/dateUtils';
+import { formatToAppDate, getCurrentDateForInput } from '../utils/dateUtils';
 import SearchableDropdown from './SearchableDropdown';
 import {
     insideSalespersonNames,
@@ -75,7 +75,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
     const [formData, setFormData] = useState<any>({
         company: '',
         deal_name: '',
-        deal_date: new Date().toISOString().split('T')[0],
+        deal_date: getCurrentDateForInput(),
         lead: '',
         stage: 'DEAL_CREATED',
         currency: '', // Default to null/empty as requested
@@ -100,6 +100,16 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
         last_synced_at: '',
         deal_types: [{ type: '', description: '', amount: '', quantity: '' }]
     });
+
+    // Ensure deal_date is current date for new deals
+    useEffect(() => {
+        if (!id) {
+            setFormData((prev: any) => ({
+                ...prev,
+                deal_date: getCurrentDateForInput()
+            }));
+        }
+    }, [id, refreshTrigger]);
 
     useEffect(() => {
         fetchInitialData();
@@ -572,7 +582,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead Date</label>
                                 <input
                                     type="text"
-                                    value={formatToAppDate(formData.lead ? leads.find(l => l.id === parseInt(formData.lead))?.lead_date || '' : '')}
+                                    value={formatToAppDate(formData.lead ? leads.find(l => l.id === parseInt(formData.lead))?.lead_date || '' : getCurrentDateForInput())}
                                     placeholder="Enter date"
                                     className="ae-input"
                                     disabled
@@ -598,7 +608,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     placeholder="Enter date"
                                     className="ae-input"
                                     disabled
-                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
+                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -608,7 +618,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     value={id ? formData.deal_id : 'System Generated'}
                                     className="ae-input"
                                     disabled
-                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
+                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -620,7 +630,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                     value={formData.company || ''}
                                     className="ae-input"
                                     disabled
-                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'not-allowed' }}
+                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -781,6 +791,14 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                             style={{ height: '30px', padding: '4px 8px 4px 24px', textAlign: 'left' }}
                                                             onKeyDown={(e) => {
                                                                 if (e.key === 'Tab' && !e.shiftKey && index === (formData.deal_types || []).length - 1) {
+                                                                    // Check if current row is empty (ignore quantity as it defaults to 1 or empty)
+                                                                    const isEmpty = !item.type && !item.description && (!item.amount || item.amount === '0' || item.amount === '');
+
+                                                                    if (isEmpty) {
+                                                                        // If empty, let the default Tab behavior happen to move focus to next section
+                                                                        return;
+                                                                    }
+
                                                                     e.preventDefault();
                                                                     addDealTypeRow();
                                                                     // Focus the first field of the new row after it renders

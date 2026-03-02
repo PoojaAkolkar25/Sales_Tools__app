@@ -1136,8 +1136,7 @@ const AppContent: React.FC = () => {
                     id={editingSalesOrderId}
                     onBack={() => setSalesOrderView('dashboard')}
                     onSave={() => setSalesOrderView('dashboard')}
-                    onUploadPO={handleSOUpload}
-                    isExtractingSO={isExtractingSO}
+                    user={user}
                   />
                 ) : (
                   <SalesOrderDashboard

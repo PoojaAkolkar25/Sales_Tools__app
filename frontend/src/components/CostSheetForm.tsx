@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, Eye, Calendar, RotateCcw } from 'lucide-react';
+import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download, PlusCircle, Sparkles, Plus, Eye, RotateCcw } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
@@ -922,7 +922,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     className="ae-input"
                                     value={lead?.lead_no ? `${lead.lead_no} (${lead.project_name || 'No Project Name'})` : '—'}
                                     disabled
-                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'default' }}
+                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
                                 />
                             </div>
 
@@ -959,7 +959,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                         className="ae-input"
                                         value={costSheetNo || 'Auto-generated'}
                                         disabled
-                                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', cursor: 'default' }}
+                                        style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
                                     />
                                 ) : (
                                     <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FF6B00', padding: '6px 0' }}>
@@ -972,14 +972,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             <div>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Cost Sheet Date</label>
                                 {!isReadOnly ? (
-                                    <div className="ae-input-group" style={{ margin: 0 }}>
-                                        <input
-                                            type="date"
-                                            className="ae-input"
-                                            value={costSheetDate}
-                                            onChange={(e) => setCostSheetDate(e.target.value)}
-                                        />
-                                    </div>
+                                    <input
+                                        type="text"
+                                        className="ae-input"
+                                        value={formatToAppDate(costSheetDate)}
+                                        disabled
+                                        style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
+                                    />
                                 ) : (
                                     <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#2D3748', padding: '6px 0' }}>
                                         {formatToAppDate(costSheetDate) || '—'}
@@ -1089,6 +1088,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     placeholder="Remark"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === licenseItems.length - 1) {
+                                                            const isEmpty = !item.name && !item.type && (!item.rate || item.rate === 0) && (!item.qty || item.qty === 0) && !item.period;
+                                                            if (isEmpty) return;
+                                                            e.preventDefault();
                                                             addItem('license');
                                                         }
                                                     }}
@@ -1184,6 +1186,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     placeholder="Remark"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === implementationItems.length - 1) {
+                                                            const isEmpty = !item.category && (!item.num_resources || item.num_resources === 0) && (!item.num_days || item.num_days === 0) && (!item.rate_per_day || item.rate_per_day === 0);
+                                                            if (isEmpty) return;
+                                                            e.preventDefault();
                                                             addItem('implementation');
                                                         }
                                                     }}
@@ -1279,6 +1284,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     placeholder="Remark"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === supportItems.length - 1) {
+                                                            const isEmpty = !item.category && (!item.num_resources || item.num_resources === 0) && (!item.num_days || item.num_days === 0) && (!item.rate_per_day || item.rate_per_day === 0);
+                                                            if (isEmpty) return;
+                                                            e.preventDefault();
                                                             addItem('support');
                                                         }
                                                     }}
@@ -1372,6 +1380,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     placeholder="Remark"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === infraItems.length - 1) {
+                                                            const isEmpty = !item.name && (!item.qty || item.qty === 0) && (!item.months || item.months === 0) && (!item.rate_per_month || item.rate_per_month === 0);
+                                                            if (isEmpty) return;
+                                                            e.preventDefault();
                                                             addItem('infra');
                                                         }
                                                     }}
@@ -1462,6 +1473,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     placeholder="Remark"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === otherItems.length - 1) {
+                                                            const isEmpty = !item.description && (!item.estimated_cost || item.estimated_cost === 0);
+                                                            if (isEmpty) return;
+                                                            e.preventDefault();
                                                             addItem('other');
                                                         }
                                                     }}

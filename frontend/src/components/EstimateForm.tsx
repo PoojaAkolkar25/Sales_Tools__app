@@ -19,6 +19,7 @@ import {
     Download,
     PlusCircle,
     Calendar,
+    RotateCcw,
     FileText as LucideFile,
 } from 'lucide-react';
 import api from '../api';
@@ -69,7 +70,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const [costSheets, setCostSheets] = useState<any[]>([]);
     const [companyProfile, setCompanyProfile] = useState<any>(null);
     const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel'>('submit');
-    const [isConfirmingExit, setIsConfirmingExit] = useState(false);
 
     const [emailModal, setEmailModal] = useState<{
         open: boolean;
@@ -95,6 +95,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const [editingColumn, setEditingColumn] = useState<string | null>(null);
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectComment, setRejectComment] = useState('');
+    const [showRevertModal, setShowRevertModal] = useState(false);
+    const [revertComment, setRevertComment] = useState('');
 
     const EMAIL_TEMPLATES = {
         standard: {
@@ -480,6 +482,12 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
             return;
         }
 
+        const hasInvalidTypes = (formData.items || []).some((item: any) => !item.item_type);
+        if (hasInvalidTypes) {
+            showNotification('Please select a Type for all Product Line Items', 'warning');
+            return;
+        }
+
         const validFromDates = formData.items.map((i: any) => i.subscription_from).filter(Boolean).sort();
         const earliestFrom = validFromDates.length > 0 ? validFromDates[0] : '';
 
@@ -633,6 +641,32 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         }
     };
 
+    const handleRevert = async () => {
+        // Validation: Only Sales Head or App Admin (Finance Manager roles in groups) can revert
+        const isSalesHead = user?.role === 'sales_head' || user?.groups?.some((g: any) => g.name === 'Sales Head');
+        const isFinanceManager = user?.role === 'finance_manager' || user?.groups?.some((g: any) => g.name === 'Finance Manager');
+        const isAdmin = user?.role === 'app_admin' || user?.is_superuser;
+
+        if (!isAdmin && !isSalesHead && !isFinanceManager) {
+            showNotification('Only admin approve', 'error');
+            return;
+        }
+
+        if (!revertComment) {
+            showNotification('Revert comments are required', 'error');
+            return;
+        }
+        try {
+            await api.post(`/estimates/${id}/revert/`, { notes: revertComment });
+            showNotification('Estimate reverted successfully', 'success');
+            setShowRevertModal(false);
+            setRevertComment('');
+            fetchEstimateDetails();
+        } catch (error: any) {
+            showNotification(error.response?.data?.error || 'Failed to revert estimate', 'error');
+        }
+    };
+
     const getApprovalStatusBadge = () => {
         if (!estimate) return null;
 
@@ -689,13 +723,31 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         <div className="space-y-6" style={{ background: '#fff', color: '#333' }}>
             {/* Read Only Banner */}
             {isReadOnly && (
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r shadow-sm flex items-center gap-3">
-                    <div className="bg-blue-100 p-2 rounded-full">
-                        <CheckCircle2 size={20} className="text-blue-600" />
+                <div style={{
+                    background: 'rgba(49, 130, 206, 0.04)',
+                    border: '1px solid rgba(49, 130, 206, 0.1)',
+                    borderLeft: '4px solid #3182CE',
+                    borderRadius: '16px',
+                    padding: '12px 20px',
+                    marginBottom: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    boxShadow: 'var(--shadow-sm)'
+                }}>
+                    <div style={{
+                        background: 'rgba(49, 130, 206, 0.1)',
+                        padding: '8px',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <CheckCircle2 size={18} className="text-blue-600" />
                     </div>
                     <div>
-                        <p className="font-bold text-blue-900 text-sm">Read Only Mode</p>
-                        <p className="text-blue-700 text-xs mt-0.5">
+                        <p style={{ margin: 0, fontWeight: 800, color: '#2c5282', fontSize: '0.85rem' }}>Read Only Mode</p>
+                        <p style={{ margin: '2px 0 0 0', color: '#3182ce', fontSize: '0.75rem', fontWeight: 500 }}>
                             This estimate is <strong>{estimate.approval_status === 'APPROVED' ? 'Approved' : 'Submitted'}</strong> and cannot be edited.
                             {estimate.approval_status === 'APPROVED' && " Use Rewind to create a new version for negotiation."}
                         </p>
@@ -709,18 +761,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                     {getApprovalStatusBadge()}
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
-                    {/* Approval Actions for Sales Head/Finance Manager - ONLY visible after saving (ID exists) */}
-                    {id && estimate?.status === 'PENDING_APPROVAL' && (
-                        <>
-                            <button onClick={handleApprove} className="ae-btn-secondary" style={{ color: '#38A169', borderColor: '#38A169' }}>
-                                <ThumbsUp size={18} /> Approve
-                            </button>
-                            <button onClick={() => setShowRejectModal(true)} className="ae-btn-secondary" style={{ color: '#E53E3E', borderColor: '#E53E3E' }}>
-                                <ThumbsDown size={18} /> Reject
-                            </button>
-                        </>
-                    )}
-
                     {/* Rejection Comments Banner */}
                     {estimate?.approval_status === 'REJECTED' && estimate?.approval_notes && (
                         <div style={{
@@ -729,7 +769,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                             borderLeft: '4px solid #EF4444',
                             borderRadius: '16px',
                             padding: '12px 20px',
-                            margin: '0 24px 20px 24px'
+                            marginBottom: '20px'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#EF4444', marginBottom: '8px' }}>
                                 <XCircle size={16} strokeWidth={2.5} />
@@ -1090,11 +1130,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                     {/* Line Items Table */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Product Line Items" />
-                        <div style={{ border: '1.5px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <div style={{ border: '1.5px solid #E2E8F0', borderRadius: '12px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                                 <thead>
                                     <tr style={{ background: 'var(--bg-accent)' }}>
-                                        {!isReadOnly && <th style={{ padding: '10px 8px', width: '40px' }}></th>}
+                                        <th style={{ padding: '10px 8px', width: '40px' }}></th>
                                         <th style={{
                                             padding: '10px 4px',
                                             textAlign: 'center',
@@ -1132,7 +1172,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             fontWeight: 700,
                                             color: 'black',
                                             whiteSpace: 'nowrap',
-                                            width: '120px'
+                                            width: '130px'
                                         }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                 {editingColumn === 'item_type' ? (
@@ -1148,6 +1188,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                 ) : (
                                                     <>
                                                         <span>{formData.column_labels.item_type || 'Type'}</span>
+                                                        <span style={{ color: 'var(--theme-primary)', marginLeft: '2px' }}>*</span>
                                                         {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('item_type')} />}
                                                     </>
                                                 )}
@@ -1374,14 +1415,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                 )}
                                             </div>
                                         </th>
-                                        {!isReadOnly && <th style={{ padding: '6px 8px', width: '40px' }}></th>}
+                                        <th style={{ padding: '6px 8px', width: '40px' }}></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {formData.items.map((item: any, index: number) => (
                                         <tr key={item.id} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0' }}>
                                             <td style={{ padding: '6px 4px', textAlign: 'center' }}>
-                                                {index === formData.items.length - 1 && !isReadOnly && (
+                                                {!isReadOnly && index === formData.items.length - 1 && (
                                                     <button
                                                         type="button"
                                                         onClick={handleAddItem}
@@ -1407,25 +1448,18 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                 {index + 1}
                                             </td>
                                             <td style={{ padding: '6px 4px' }}>
-                                                <select
-                                                    disabled={isReadOnly}
+                                                <SearchableDropdown
+                                                    options={[
+                                                        { value: 'License', label: 'License' },
+                                                        { value: 'Service', label: 'Service' }
+                                                    ]}
                                                     value={item.item_type || 'License'}
-                                                    onChange={(e) => handleItemChange(item.id, 'item_type', e.target.value)}
-                                                    style={{
-                                                        fontSize: '0.85rem',
-                                                        padding: '4px 8px',
-                                                        height: '30px',
-                                                        borderRadius: '6px',
-                                                        width: '100%',
-                                                        cursor: isReadOnly ? 'not-allowed' : 'pointer',
-                                                        fontWeight: 600,
-                                                        border: '1px solid #E2E8F0',
-                                                        background: 'white'
-                                                    }}
-                                                >
-                                                    <option value="License">License</option>
-                                                    <option value="Service">Service</option>
-                                                </select>
+                                                    onChange={(val) => handleItemChange(item.id, 'item_type', val)}
+                                                    placeholder="Select Type"
+                                                    disabled={isReadOnly}
+                                                    className="w-full"
+                                                    required={true}
+                                                />
                                             </td>
                                             <td style={{ padding: '6px 4px' }}>
                                                 <input
@@ -1526,6 +1560,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                         disabled={isReadOnly}
                                                         onKeyDown={(e) => {
                                                             if (e.key === 'Tab' && !e.shiftKey && index === formData.items.length - 1) {
+                                                                const isEmpty = (item.item_type === 'License' || !item.item_type) && !item.particulars && !item.description && !item.rate && !item.discount;
+                                                                if (isEmpty) return;
+
                                                                 e.preventDefault();
                                                                 handleAddItem();
                                                             }
@@ -1546,6 +1583,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                         disabled={isReadOnly}
                                                         onKeyDown={(e) => {
                                                             if (e.key === 'Tab' && !e.shiftKey && index === formData.items.length - 1) {
+                                                                const isEmpty = (item.item_type === 'License' || !item.item_type) && !item.particulars && !item.description && !item.rate && !item.discount;
+                                                                if (isEmpty) return;
+
                                                                 e.preventDefault();
                                                                 handleAddItem();
                                                             }
@@ -1557,7 +1597,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                 {getCurrencySymbol(formData.currency || 'INR')}{item.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}
                                             </td>
                                             <td style={{ padding: '6px 4px', textAlign: 'center' }}>
-                                                {formData.items.length > 1 && !isReadOnly && (
+                                                {!isReadOnly && formData.items.length > 1 && (
                                                     <button
                                                         onClick={() => handleRemoveItem(item.id)}
                                                         style={{
@@ -1586,7 +1626,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 </tbody>
                                 <tfoot>
                                     <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
-                                        <td colSpan={isReadOnly ? 9 : 10} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total Estimate Amount:</td>
+                                        <td colSpan={10} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total Estimate Amount:</td>
                                         <td style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.95rem', fontWeight: 800, color: 'var(--theme-primary)' }}>
                                             {getCurrencySymbol(formData.currency || 'INR')}{calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
@@ -1640,10 +1680,10 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: 'white',
+                background: 'rgba(255, 107, 0, 0.05)',
                 padding: '6px',
                 borderRadius: '12px',
-                border: '1px solid #E0E6ED',
+                border: '1px solid var(--border-primary)',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                 width: 'fit-content',
                 flexShrink: 0,
@@ -1765,20 +1805,70 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                 </div>
                 {
                     estimate?.status === 'PENDING_APPROVAL' && (
-                        <span style={{
-                            padding: '6px 16px',
-                            borderRadius: '8px',
-                            background: '#FFFAF0',
-                            color: '#DD6B20',
-                            fontWeight: 700,
-                            fontSize: '0.85rem',
-                            border: '1px solid #FBD38D',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}>
-                            <Clock size={18} /> Pending Approval
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <button
+                                onClick={handleApprove}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 16px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    background: '#00C853',
+                                    color: 'white',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#00ad48'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#00C853'}
+                            >
+                                <CheckCircle2 size={15} /> Approve
+                            </button>
+                            <button
+                                onClick={() => setShowRevertModal(true)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 16px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #D69E2E',
+                                    background: 'rgba(214, 158, 46, 0.08)',
+                                    color: '#B7791F',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <RotateCcw size={14} /> Revert
+                            </button>
+                            <button
+                                onClick={() => setShowRejectModal(true)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 16px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(229, 62, 62, 0.4)',
+                                    background: 'rgba(229, 62, 62, 0.06)',
+                                    color: '#E53E3E',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <XCircle size={15} /> Reject
+                            </button>
+                        </div>
                     )
                 }
                 {

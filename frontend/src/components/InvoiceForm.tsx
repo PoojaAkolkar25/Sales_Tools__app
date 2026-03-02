@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Trash2, CheckCircle, Eye, Plus, Check } from 'lucide-react';
+import { Save, Trash2, CheckCircle, Eye, Plus, Check, Pencil, RotateCcw, XCircle, X } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
@@ -24,6 +24,11 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
     const [loading, setLoading] = useState(false);
     const [isReadOnly, setIsReadOnly] = useState(false);
     const [status, setStatus] = useState('DRAFT');
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [showRevertModal, setShowRevertModal] = useState(false);
+    const [rejectComment, setRejectComment] = useState('');
+    const [revertComment, setRevertComment] = useState('');
+    const [activeAction, setActiveAction] = useState<string | null>(null);
 
 
     const [formData, setFormData] = useState({
@@ -57,6 +62,16 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
 
     const [signatureFile, setSignatureFile] = useState<File | null>(null);
     const [sealFile, setSealFile] = useState<File | null>(null);
+    const [editingColumn, setEditingColumn] = useState<string | null>(null);
+    const [column_labels, setColumnLabels] = useState({
+        type: 'TYPE',
+        description: 'ITEM & DESCRIPTION',
+        currency: 'CURRENCY',
+        quantity: 'QTY',
+        rate: 'RATE',
+        gst_rate: 'GST %',
+        amount: 'AMOUNT'
+    });
 
     const [lineItems, setLineItems] = useState<LineItem[]>([
         { type: 'Service', description: '', hsn_sac: '', quantity: 0, rate: 0, discount: 0, gst_rate: 18 }
@@ -98,6 +113,61 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         } catch (error) {
             console.error('Error submitting for approval', error);
             showNotification('Error submitting for approval', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleApprove = async () => {
+        if (!invoiceId) return;
+        try {
+            setLoading(true);
+            await api.post(`/finance/invoices/${invoiceId}/approve/`);
+            showNotification('Invoice approved successfully', 'success');
+            fetchInvoiceDetails();
+        } catch (error) {
+            console.error('Error approving invoice', error);
+            showNotification('Error approving invoice', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleReject = async () => {
+        if (!invoiceId || !rejectComment.trim()) {
+            showNotification('Please provide a rejection reason', 'warning');
+            return;
+        }
+        try {
+            setLoading(true);
+            await api.post(`/finance/invoices/${invoiceId}/reject/`, { comment: rejectComment });
+            showNotification('Invoice rejected', 'success');
+            setShowRejectModal(false);
+            setRejectComment('');
+            fetchInvoiceDetails();
+        } catch (error) {
+            console.error('Error rejecting invoice', error);
+            showNotification('Error rejecting invoice', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRevert = async () => {
+        if (!invoiceId || !revertComment.trim()) {
+            showNotification('Please provide a reason for revert', 'warning');
+            return;
+        }
+        try {
+            setLoading(true);
+            await api.post(`/finance/invoices/${invoiceId}/revert/`, { comment: revertComment });
+            showNotification('Invoice reverted to draft', 'success');
+            setShowRevertModal(false);
+            setRevertComment('');
+            fetchInvoiceDetails();
+        } catch (error) {
+            console.error('Error reverting invoice', error);
+            showNotification('Error reverting invoice', 'error');
         } finally {
             setLoading(false);
         }
@@ -284,8 +354,23 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
         setLineItems(newItems);
     };
 
+    const handleHeaderChange = (column: string, value: string) => {
+        setColumnLabels(prev => ({
+            ...prev,
+            [column]: value
+        }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validation: Mandatory Type
+        const hasInvalidTypes = lineItems.some(item => !item.type);
+        if (hasInvalidTypes) {
+            showNotification('Please select a Type for all Invoice Item rows', 'warning');
+            return;
+        }
+
         setLoading(true);
         try {
             const data = new FormData();
@@ -519,55 +604,204 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                         zIndex: 10
                     }}>
                         <table className="ae-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+                            <colgroup>
+                                <col style={{ width: '40px' }} />
+                                <col style={{ width: '60px' }} />
+                                <col style={{ width: '130px' }} />
+                                <col style={{ width: 'auto' }} />
+                                <col style={{ width: '80px' }} />
+                                <col style={{ width: '80px' }} />
+                                <col style={{ width: '120px' }} />
+                                <col style={{ width: '100px' }} />
+                                <col style={{ width: '130px' }} />
+                                <col style={{ width: '40px' }} />
+                            </colgroup>
                             <thead style={{ background: 'var(--bg-accent)' }}>
                                 <tr>
-                                    <th style={{ width: '50px', padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>SR.NO.</th>
-                                    <th style={{ width: '120px', padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>TYPE *</th>
-                                    <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>ITEM & DESCRIPTION</th>
-                                    <th style={{ width: '80px', padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>QTY</th>
-                                    <th style={{ width: '130px', padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>RATE</th>
-                                    <th style={{ width: '100px', padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>GST %</th>
-                                    <th style={{ width: '140px', padding: '10px 4px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>AMOUNT</th>
-                                    <th style={{ width: '40px', padding: '10px 4px', borderBottom: '1px solid #E0E6ED' }}></th>
+                                    <th style={{ padding: '10px 4px', borderBottom: '1px solid #E0E6ED' }}></th>
+                                    <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>SR.NO.</th>
+                                    <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            {editingColumn === 'type' ? (
+                                                <input
+                                                    autoFocus
+                                                    className="ae-input-subtle"
+                                                    style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                    value={column_labels.type}
+                                                    onChange={(e) => handleHeaderChange('type', e.target.value)}
+                                                    onBlur={() => setEditingColumn(null)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                />
+                                            ) : (
+                                                <>
+                                                    <span>{column_labels.type || 'TYPE'}</span>
+                                                    <span style={{ color: 'var(--theme-primary)', marginLeft: '2px' }}>*</span>
+                                                    {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('type')} />}
+                                                </>
+                                            )}
+                                        </div>
+                                    </th>
+                                    <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            {editingColumn === 'description' ? (
+                                                <input
+                                                    autoFocus
+                                                    className="ae-input-subtle"
+                                                    style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                    value={column_labels.description}
+                                                    onChange={(e) => handleHeaderChange('description', e.target.value)}
+                                                    onBlur={() => setEditingColumn(null)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                />
+                                            ) : (
+                                                <>
+                                                    <span>{column_labels.description || 'ITEM & DESCRIPTION'}</span>
+                                                    {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('description')} />}
+                                                </>
+                                            )}
+                                        </div>
+                                    </th>
+                                    <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                            {editingColumn === 'currency' ? (
+                                                <input
+                                                    autoFocus
+                                                    className="ae-input-subtle"
+                                                    style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center' }}
+                                                    value={column_labels.currency}
+                                                    onChange={(e) => handleHeaderChange('currency', e.target.value)}
+                                                    onBlur={() => setEditingColumn(null)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                />
+                                            ) : (
+                                                <>
+                                                    <span>{column_labels.currency || 'CURRENCY'}</span>
+                                                    {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('currency')} />}
+                                                </>
+                                            )}
+                                        </div>
+                                    </th>
+                                    <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                            {editingColumn === 'quantity' ? (
+                                                <input
+                                                    autoFocus
+                                                    className="ae-input-subtle"
+                                                    style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center' }}
+                                                    value={column_labels.quantity}
+                                                    onChange={(e) => handleHeaderChange('quantity', e.target.value)}
+                                                    onBlur={() => setEditingColumn(null)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                />
+                                            ) : (
+                                                <>
+                                                    <span>{column_labels.quantity || 'QTY'}</span>
+                                                    {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('quantity')} />}
+                                                </>
+                                            )}
+                                        </div>
+                                    </th>
+                                    <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                            {editingColumn === 'rate' ? (
+                                                <input
+                                                    autoFocus
+                                                    className="ae-input-subtle"
+                                                    style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center' }}
+                                                    value={column_labels.rate}
+                                                    onChange={(e) => handleHeaderChange('rate', e.target.value)}
+                                                    onBlur={() => setEditingColumn(null)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                />
+                                            ) : (
+                                                <>
+                                                    <span>{column_labels.rate || 'RATE'}</span>
+                                                    {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('rate')} />}
+                                                </>
+                                            )}
+                                        </div>
+                                    </th>
+                                    <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                            {editingColumn === 'gst_rate' ? (
+                                                <input
+                                                    autoFocus
+                                                    className="ae-input-subtle"
+                                                    style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center' }}
+                                                    value={column_labels.gst_rate}
+                                                    onChange={(e) => handleHeaderChange('gst_rate', e.target.value)}
+                                                    onBlur={() => setEditingColumn(null)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                />
+                                            ) : (
+                                                <>
+                                                    <span>{column_labels.gst_rate || 'GST %'}</span>
+                                                    {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('gst_rate')} />}
+                                                </>
+                                            )}
+                                        </div>
+                                    </th>
+                                    <th style={{ padding: '10px 4px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                            {editingColumn === 'amount' ? (
+                                                <input
+                                                    autoFocus
+                                                    className="ae-input-subtle"
+                                                    style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'right' }}
+                                                    value={column_labels.amount}
+                                                    onChange={(e) => handleHeaderChange('amount', e.target.value)}
+                                                    onBlur={() => setEditingColumn(null)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                />
+                                            ) : (
+                                                <>
+                                                    <span>{column_labels.amount || 'AMOUNT'}</span>
+                                                    {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('amount')} />}
+                                                </>
+                                            )}
+                                        </div>
+                                    </th>
+                                    <th style={{ padding: '10px 4px', borderBottom: '1px solid #E0E6ED' }}></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {lineItems.map((item, index) => (
                                     <tr key={index} style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
-                                        <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '12px 8px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                                {!isReadOnly && index === lineItems.length - 1 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={addLineItem}
-                                                        style={{
-                                                            width: '22px',
-                                                            height: '22px',
-                                                            borderRadius: '4px',
-                                                            background: '#F0F9FF',
-                                                            color: '#0284C7',
-                                                            border: '1px solid #BAE6FD',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            e.currentTarget.style.background = '#E0F2FE';
-                                                            e.currentTarget.style.borderColor = '#7DD3FC';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.currentTarget.style.background = '#F0F9FF';
-                                                            e.currentTarget.style.borderColor = '#BAE6FD';
-                                                        }}
-                                                        title="Add Row"
-                                                    >
-                                                        <Plus size={13} />
-                                                    </button>
-                                                )}
-                                                <span style={{ color: '#4A5568', fontWeight: 400, fontSize: '0.85rem' }}>{index + 1}</span>
-                                            </div>
+                                        <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '12px 4px' }}>
+                                            {!isReadOnly && index === lineItems.length - 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={addLineItem}
+                                                    style={{
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        borderRadius: '4px',
+                                                        background: '#F0F9FF',
+                                                        color: '#0284C7',
+                                                        border: '1px solid #BAE6FD',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                        margin: '0 auto'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = '#E0F2FE';
+                                                        e.currentTarget.style.borderColor = '#7DD3FC';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = '#F0F9FF';
+                                                        e.currentTarget.style.borderColor = '#BAE6FD';
+                                                    }}
+                                                    title="Add Row"
+                                                >
+                                                    <Plus size={13} />
+                                                </button>
+                                            )}
+                                        </td>
+                                        <td style={{ textAlign: 'center', verticalAlign: 'middle', padding: '12px 4px' }}>
+                                            <span style={{ color: '#4A5568', fontWeight: 400, fontSize: '0.85rem' }}>{index + 1}</span>
                                         </td>
                                         <td style={{ padding: '8px' }}>
                                             <SearchableDropdown
@@ -599,6 +833,11 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                                 value={item.description}
                                                 onChange={e => updateLineItem(index, 'description', e.target.value)}
                                             />
+                                        </td>
+                                        <td style={{ padding: '4px' }}>
+                                            <div style={{ height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', color: '#4A5568', fontWeight: 600 }}>
+                                                {formData.currency}
+                                            </div>
                                         </td>
                                         <td style={{ textAlign: 'center', padding: '8px' }}>
                                             <input
@@ -663,7 +902,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             </tbody>
                             <tfoot>
                                 <tr style={{ background: 'var(--bg-accent)', borderTop: '1px solid #E0E6ED' }}>
-                                    <td colSpan={6} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Invoice Value:</td>
+                                    <td colSpan={8} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Invoice Value:</td>
                                     <td style={{ padding: '8px 16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
                                         <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{formData.currency === 'INR' ? '₹' : '$'}</span>
                                         {totals.grand_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -917,6 +1156,89 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                         </>
                     )}
 
+                    {status === 'PENDING_APPROVAL' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button
+                                type="button"
+                                onClick={handleApprove}
+                                disabled={loading}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 16px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    border: 'none',
+                                    background: activeAction === 'approve' ? '#00ad48' : '#00C853',
+                                    color: 'white',
+                                    transition: 'all 0.2s',
+                                    cursor: 'pointer',
+                                    boxShadow: activeAction === 'approve' ? '0 4px 12px rgba(0, 200, 83, 0.3)' : '0 2px 8px rgba(0, 200, 83, 0.2)'
+                                }}
+                                onMouseEnter={() => setActiveAction('approve')}
+                                onMouseLeave={() => setActiveAction(null)}
+                            >
+                                <CheckCircle size={16} />
+                                <span>Approve</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setShowRevertModal(true)}
+                                disabled={loading}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 16px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    border: activeAction === 'revert' ? '1px solid #BB4D00' : '1px solid #E2E8F0',
+                                    background: activeAction === 'revert' ? 'rgba(187, 77, 0, 0.05)' : 'white',
+                                    color: activeAction === 'revert' ? '#BB4D00' : '#4A5568',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={() => setActiveAction('revert')}
+                                onMouseLeave={() => setActiveAction(null)}
+                            >
+                                <RotateCcw size={15} />
+                                <span>Revert</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setShowRejectModal(true)}
+                                disabled={loading}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 16px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    border: activeAction === 'reject' ? '1px solid #E53E3E' : '1px solid #E2E8F0',
+                                    background: activeAction === 'reject' ? 'rgba(229, 62, 62, 0.05)' : 'white',
+                                    color: activeAction === 'reject' ? '#E53E3E' : '#4A5568',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={() => setActiveAction('reject')}
+                                onMouseLeave={() => setActiveAction(null)}
+                            >
+                                <XCircle size={15} />
+                                <span>Reject</span>
+                            </button>
+                        </div>
+                    )}
+
                     {/* Cancel */}
                     {status !== 'APPROVED' && status !== 'PAID' && (
                         <button
@@ -940,17 +1262,11 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                background: 'transparent',
-                                color: 'var(--text-secondary)'
+                                background: activeAction === 'cancel' ? 'rgba(255, 107, 0, 0.05)' : 'transparent',
+                                color: activeAction === 'cancel' ? 'var(--ae-orange)' : 'var(--text-secondary)'
                             }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                                e.currentTarget.style.color = 'var(--ae-orange)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.color = 'var(--text-secondary)';
-                            }}
+                            onMouseEnter={() => setActiveAction('cancel')}
+                            onMouseLeave={() => setActiveAction(null)}
                         >
                             <span style={{ fontSize: '16px', lineHeight: '16px', fontWeight: 700 }}>×</span>
                             <span>Cancel</span>
@@ -959,6 +1275,148 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                 </div>
             </div>
 
+            {/* Branded Action Modal (For Reject/Revert) */}
+            {(showRejectModal || showRevertModal) && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10000,
+                    background: 'rgba(0, 0, 0, 0.45)',
+                    backdropFilter: 'blur(12px)',
+                    padding: '24px',
+                }}>
+                    <div style={{
+                        background: 'white',
+                        width: '100%',
+                        maxWidth: '400px',
+                        borderRadius: '24px',
+                        boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
+                        overflow: 'hidden',
+                        position: 'relative',
+                    }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{
+                            background: showRejectModal ? '#E53E3E' : '#BB4D00',
+                            padding: '28px 24px 24px',
+                            position: 'relative',
+                        }}>
+                            <button
+                                onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
+                                style={{
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: 'white',
+                                    opacity: 0.7,
+                                }}
+                            >
+                                <X size={16} strokeWidth={3} />
+                            </button>
+
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    background: 'rgba(255,255,255,0.2)',
+                                    borderRadius: '10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    {showRejectModal ? <XCircle size={18} color="white" /> : <RotateCcw size={18} color="white" />}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <h3 style={{
+                                        fontSize: '1.25rem',
+                                        fontWeight: 800,
+                                        color: 'white',
+                                        margin: '0 0 4px 0',
+                                        lineHeight: 1.2
+                                    }}>{showRejectModal ? 'Reject Invoice' : 'Revert Invoice'}</h3>
+                                    <p style={{
+                                        margin: 0,
+                                        color: 'rgba(255,255,255,0.95)',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 500,
+                                        lineHeight: 1.4
+                                    }}>
+                                        {showRejectModal ? 'Provide a reason for rejecting this invoice.' : 'Provide a reason for reverting this invoice.'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    color: '#1e293b',
+                                    marginBottom: '8px'
+                                }}>{showRejectModal ? 'Rejection Reason' : 'Revert Reason'}</label>
+                                <textarea
+                                    className="ae-input"
+                                    value={showRejectModal ? rejectComment : revertComment}
+                                    onChange={e => showRejectModal ? setRejectComment(e.target.value) : setRevertComment(e.target.value)}
+                                    placeholder="Type your reason here..."
+                                    autoFocus
+                                    style={{
+                                        height: '90px',
+                                        padding: '12px 16px',
+                                        resize: 'none',
+                                        background: '#f8fafc',
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                <button
+                                    onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
+                                    style={{
+                                        padding: '10px 20px',
+                                        borderRadius: '12px',
+                                        background: '#f1f5f9',
+                                        color: '#475569',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        border: 'none',
+                                        cursor: 'pointer'
+                                    }}
+                                >Cancel</button>
+                                <button
+                                    onClick={showRejectModal ? handleReject : handleRevert}
+                                    style={{
+                                        padding: '10px 24px',
+                                        borderRadius: '12px',
+                                        background: showRejectModal ? '#E53E3E' : '#BB4D00',
+                                        color: 'white',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        border: 'none',
+                                        cursor: 'pointer'
+                                    }}
+                                >{showRejectModal ? 'Reject' : 'Revert'}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
