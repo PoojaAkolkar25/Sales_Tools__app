@@ -1054,34 +1054,32 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                                 return null;
                                                         }
                                                     })}
-                                                    <td style={{ textAlign: 'center', minWidth: '100px', display: 'flex', gap: '4px', justifyContent: 'center', alignSelf: 'center' }}>
+                                                    <td style={{ textAlign: 'center', minWidth: '100px', display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
                                                         <button
                                                             onClick={() => onView?.(cs.id)}
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
-                                                                gap: '4px',
-                                                                background: 'rgba(187, 77, 0, 0.07)',
+                                                                justifyContent: 'center',
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                background: 'rgba(255, 107, 0, 0.08)',
                                                                 color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(187, 77, 0, 0.25)',
-                                                                padding: '4px 14px',
-                                                                borderRadius: '20px',
-                                                                fontSize: '0.72rem',
-                                                                fontWeight: 700,
+                                                                border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                                borderRadius: '8px',
                                                                 cursor: 'pointer',
-                                                                letterSpacing: '0.04em',
-                                                                transition: 'all 0.18s',
+                                                                transition: 'all 0.2s',
                                                             }}
                                                             onMouseEnter={(e) => {
                                                                 e.currentTarget.style.background = 'var(--theme-primary)';
                                                                 e.currentTarget.style.color = 'white';
                                                                 e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
+                                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
                                                             }}
                                                             onMouseLeave={(e) => {
-                                                                e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
+                                                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
                                                                 e.currentTarget.style.color = 'var(--theme-primary)';
-                                                                e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
+                                                                e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
                                                                 e.currentTarget.style.boxShadow = 'none';
                                                             }}
                                                             title="View/Edit"
@@ -1096,33 +1094,31 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
-                                                                gap: '4px',
-                                                                background: 'rgba(187, 77, 0, 0.07)',
+                                                                justifyContent: 'center',
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                background: 'rgba(255, 107, 0, 0.08)',
                                                                 color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(187, 77, 0, 0.25)',
-                                                                padding: '4px 14px',
-                                                                borderRadius: '20px',
-                                                                fontSize: '0.72rem',
-                                                                fontWeight: 700,
+                                                                border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                                borderRadius: '8px',
                                                                 cursor: 'pointer',
-                                                                letterSpacing: '0.04em',
-                                                                transition: 'all 0.18s',
+                                                                transition: 'all 0.2s',
                                                             }}
                                                             onMouseEnter={(e) => {
                                                                 e.currentTarget.style.background = 'var(--theme-primary)';
                                                                 e.currentTarget.style.color = 'white';
                                                                 e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
+                                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
                                                             }}
                                                             onMouseLeave={(e) => {
-                                                                e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
+                                                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
                                                                 e.currentTarget.style.color = 'var(--theme-primary)';
-                                                                e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
+                                                                e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
                                                                 e.currentTarget.style.boxShadow = 'none';
                                                             }}
                                                             title="Download Cost Sheet"
                                                         >
-                                                            <Download size={14} />
+                                                            <Download size={16} />
                                                         </button>
                                                     </td>
                                                 </tr>

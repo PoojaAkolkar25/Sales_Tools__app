@@ -10,7 +10,10 @@ import {
     Eye,
     Calendar,
     FileText,
-    Loader2
+    Loader2,
+    RotateCcw,
+    X,
+    Pencil
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -21,11 +24,10 @@ interface SalesOrderFormProps {
     id: number | null;
     onBack: () => void;
     onSave: () => void;
-    onUploadPO?: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
-    isExtractingSO?: boolean;
+    user: any;
 }
 
-const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) => {
+const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, user }) => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [customers, setCustomers] = useState<any[]>([]);
@@ -58,12 +60,27 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
             amount: 0
         }],
         total_amount: 0,
-        status: 'DRAFT'
+        status: 'DRAFT',
+        column_labels: {
+            item_type: 'Type',
+            product_name: 'Product',
+            description: 'Description',
+            start_date: 'Start Date',
+            end_date: 'End Date',
+            qty: 'Qty',
+            rate: 'Rate',
+            discount_percent: 'Disc%'
+        }
     });
 
 
-    const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel'>('submit');
-    const [isConfirmingExit, setIsConfirmingExit] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectComment, setRejectComment] = useState('');
+    const [showRevertModal, setShowRevertModal] = useState(false);
+    const [revertComment, setRevertComment] = useState('');
+    const [editingColumn, setEditingColumn] = useState<string | null>(null);
+
+    const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel' | 'approve' | 'reject' | 'revert'>('submit');
     const { showNotification, showConfirm } = useNotification();
 
     useEffect(() => {
@@ -194,10 +211,26 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
         setSalesOrder((prev: any) => ({ ...prev, items: newItems, total_amount: total }));
     };
 
+    const handleHeaderChange = (column: string, value: string) => {
+        setSalesOrder((prev: any) => ({
+            ...prev,
+            column_labels: {
+                ...prev.column_labels,
+                [column]: value
+            }
+        }));
+    };
+
     const handleSave = async () => {
         // Basic Validation
         if (!salesOrder.po_number?.trim()) {
             showNotification('PO Number is required even for draft.', 'error');
+            return;
+        }
+
+        const hasEmptyType = salesOrder.items.some((item: any) => !item.item_type);
+        if (hasEmptyType) {
+            showNotification('Item Type is mandatory for all line items.', 'error');
             return;
         }
 
@@ -265,6 +298,12 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
         }
         if (!salesOrder.po_to_date) {
             showNotification('PO Valid To Date is mandatory.', 'error');
+            return;
+        }
+
+        const hasEmptyType = salesOrder.items.some((item: any) => !item.item_type);
+        if (hasEmptyType) {
+            showNotification('Item Type is mandatory for all line items.', 'error');
             return;
         }
 
@@ -359,30 +398,87 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
     const isSubmitted = ['SUBMITTED', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'CANCELLED'].includes(salesOrder.status);
 
     const handleApprove = async () => {
+        // Validation: Only Sales Head, Finance Manager or App Admin can approve
+        const isSalesHead = user?.role === 'sales_head' || user?.groups?.some((g: any) => g.name === 'Sales Head');
+        const isFinanceManager = user?.role === 'finance_manager' || user?.groups?.some((g: any) => g.name === 'Finance Manager');
+        const isAdmin = user?.role === 'app_admin' || user?.is_superuser;
+
+        if (!isAdmin && !isSalesHead && !isFinanceManager) {
+            showNotification('Only admin approve', 'error');
+            return;
+        }
+
         if (!window.confirm('Are you sure you want to Approve this Sales Order?')) return;
         setSaving(true);
         try {
-            await api.post(`/sales-orders/${id}/approve/`);
+            await api.post(`/sales-orders/${id}/approve/`, { notes: 'Approved' });
             showNotification('Sales Order Approved successfully', 'success');
             fetchSalesOrderDetails();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Approve Error', error);
-            showNotification('Failed to Approve Sales Order', 'error');
+            showNotification(error.response?.data?.error || 'Failed to Approve Sales Order', 'error');
         } finally {
             setSaving(false);
         }
     };
 
     const handleReject = async () => {
-        if (!window.confirm('Are you sure you want to Reject this Sales Order?')) return;
+        // Validation: Only Sales Head, Finance Manager or App Admin can reject
+        const isSalesHead = user?.role === 'sales_head' || user?.groups?.some((g: any) => g.name === 'Sales Head');
+        const isFinanceManager = user?.role === 'finance_manager' || user?.groups?.some((g: any) => g.name === 'Finance Manager');
+        const isAdmin = user?.role === 'app_admin' || user?.is_superuser;
+
+        if (!isAdmin && !isSalesHead && !isFinanceManager) {
+            showNotification('Only admin approve', 'error');
+            return;
+        }
+
+        if (!rejectComment) {
+            showNotification('Rejection comments are required', 'error');
+            return;
+        }
+
         setSaving(true);
         try {
-            await api.post(`/sales-orders/${id}/reject/`);
-            showNotification('Sales Order Rejected', 'info');
+            await api.post(`/sales-orders/${id}/reject/`, { notes: rejectComment });
+            showNotification('Sales Order Rejected successfully', 'success');
+            setShowRejectModal(false);
+            setRejectComment('');
             fetchSalesOrderDetails();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Reject Error', error);
-            showNotification('Failed to Reject Sales Order', 'error');
+            showNotification(error.response?.data?.error || 'Failed to Reject Sales Order', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleRevert = async () => {
+        // Validation: Only Sales Head, Finance Manager or App Admin can revert
+        const isSalesHead = user?.role === 'sales_head' || user?.groups?.some((g: any) => g.name === 'Sales Head');
+        const isFinanceManager = user?.role === 'finance_manager' || user?.groups?.some((g: any) => g.name === 'Finance Manager');
+        const isAdmin = user?.role === 'app_admin' || user?.is_superuser;
+
+        if (!isAdmin && !isSalesHead && !isFinanceManager) {
+            showNotification('Only admin approve', 'error');
+            return;
+        }
+
+        if (!revertComment) {
+            showNotification('Revert comments are required', 'error');
+            return;
+        }
+
+        setSaving(true);
+        try {
+            await api.post(`/sales-orders/${id}/revert/`, { notes: revertComment });
+            showNotification('Sales Order reverted successfully', 'success');
+            setShowRevertModal(false);
+            setRevertComment('');
+            fetchSalesOrderDetails();
+        } catch (error: any) {
+            console.error('Revert Error', error);
+            showNotification(error.response?.data?.error || 'Failed to revert Sales Order', 'error');
         } finally {
             setSaving(false);
         }
@@ -640,14 +736,167 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                     <tr style={{ background: 'var(--bg-accent)' }}>
                                         <th style={{ padding: '10px 4px', width: '40px', borderBottom: '1px solid #E0E6ED' }}></th>
                                         <th style={{ width: '60px', padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>Sr.No.</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '100px' }}>Type</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '180px' }}>Product</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '180px' }}>Description</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '150px' }}>Start Date</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '150px' }}>End Date</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '80px' }}>Qty</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '130px' }}>Rate</th>
-                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '80px' }}>Disc%</th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '100px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {editingColumn === 'item_type' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                        value={salesOrder.column_labels?.item_type}
+                                                        onChange={(e) => handleHeaderChange('item_type', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{salesOrder.column_labels?.item_type || 'Type'}</span>
+                                                        <span style={{ color: 'var(--theme-primary)', marginLeft: '2px' }}>*</span>
+                                                        <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('item_type')} />
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '180px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {editingColumn === 'product_name' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                        value={salesOrder.column_labels?.product_name}
+                                                        onChange={(e) => handleHeaderChange('product_name', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{salesOrder.column_labels?.product_name || 'Product'}</span>
+                                                        <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('product_name')} />
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '180px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {editingColumn === 'description' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                        value={salesOrder.column_labels?.description}
+                                                        onChange={(e) => handleHeaderChange('description', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{salesOrder.column_labels?.description || 'Description'}</span>
+                                                        <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('description')} />
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '150px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {editingColumn === 'start_date' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                        value={salesOrder.column_labels?.start_date}
+                                                        onChange={(e) => handleHeaderChange('start_date', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{salesOrder.column_labels?.start_date || 'Start Date'}</span>
+                                                        <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('start_date')} />
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '150px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {editingColumn === 'end_date' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem' }}
+                                                        value={salesOrder.column_labels?.end_date}
+                                                        onChange={(e) => handleHeaderChange('end_date', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{salesOrder.column_labels?.end_date || 'End Date'}</span>
+                                                        <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('end_date')} />
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '80px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                {editingColumn === 'qty' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
+                                                        value={salesOrder.column_labels?.qty}
+                                                        onChange={(e) => handleHeaderChange('qty', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{salesOrder.column_labels?.qty || 'Qty'}</span>
+                                                        <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('qty')} />
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '130px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {editingColumn === 'rate' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'left', fontSize: '0.75rem' }}
+                                                        value={salesOrder.column_labels?.rate}
+                                                        onChange={(e) => handleHeaderChange('rate', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{salesOrder.column_labels?.rate || 'Rate'}</span>
+                                                        <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('rate')} />
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED', minWidth: '80px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                {editingColumn === 'discount_percent' ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="ae-input-subtle"
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
+                                                        value={salesOrder.column_labels?.discount_percent}
+                                                        onChange={(e) => handleHeaderChange('discount_percent', e.target.value)}
+                                                        onBlur={() => setEditingColumn(null)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <span>{salesOrder.column_labels?.discount_percent || 'Disc%'}</span>
+                                                        <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('discount_percent')} />
+                                                    </>
+                                                )}
+                                            </div>
+                                        </th>
                                         <th style={{ padding: '10px 4px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>Total</th>
                                         {!isSubmitted && <th style={{ padding: '10px 4px', borderBottom: '1px solid #E0E6ED', width: '40px' }}></th>}
                                     </tr>
@@ -902,18 +1151,37 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Order Date</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Order Date <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
                                 {isSubmitted ? (
                                     <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', ...getHighlightStyle(salesOrder.order_date) }}>{salesOrder.order_date ? formatToAppDate(salesOrder.order_date) : ''}</div>
                                 ) : (
-                                    <input
-                                        name="order_date"
-                                        type="date"
-                                        value={salesOrder.order_date || ''}
-                                        onChange={handleInputChange}
-                                        className="ae-input"
-                                        style={{ ...getHighlightStyle(salesOrder.order_date), height: '34px' }}
-                                    />
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            value={salesOrder.order_date ? formatToAppDate(salesOrder.order_date) : ''}
+                                            readOnly
+                                            className="ae-input"
+                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px', height: '34px', ...getHighlightStyle(salesOrder.order_date) }}
+                                            onClick={(e) => {
+                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                                if (dateInput) dateInput.showPicker();
+                                            }}
+                                            placeholder="Enter date"
+                                        />
+                                        <input
+                                            name="order_date"
+                                            type="date"
+                                            value={salesOrder.order_date || ''}
+                                            onChange={handleInputChange}
+                                            style={{
+                                                position: 'absolute',
+                                                visibility: 'hidden',
+                                                width: 0,
+                                                height: 0
+                                            }}
+                                        />
+                                        <Calendar size={14} style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
+                                    </div>
                                 )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -1114,7 +1382,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                 )}
 
                 {(salesOrder.status === 'PENDING_APPROVAL' || salesOrder.status === 'SUBMITTED') && (
-                    <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <button
                             onClick={handleApprove}
                             disabled={saving}
@@ -1128,20 +1396,20 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 fontSize: '0.85rem',
                                 fontWeight: 700,
                                 border: 'none',
-                                background: '#00C853',
+                                background: activeAction === 'approve' ? '#00ad48' : '#00C853',
                                 color: 'white',
                                 transition: 'all 0.2s',
                                 cursor: 'pointer',
-                                boxShadow: '0 2px 8px rgba(0, 200, 83, 0.2)'
+                                boxShadow: activeAction === 'approve' ? '0 4px 12px rgba(0, 200, 83, 0.3)' : '0 2px 8px rgba(0, 200, 83, 0.2)'
                             }}
-                            onMouseOver={(e) => { e.currentTarget.style.background = '#00ad48'; }}
-                            onMouseOut={(e) => { e.currentTarget.style.background = '#00C853'; }}
+                            onMouseEnter={() => setActiveAction('approve')}
                         >
                             <CheckCircle size={16} />
                             <span>Approve</span>
                         </button>
+
                         <button
-                            onClick={handleReject}
+                            onClick={() => setShowRevertModal(true)}
                             disabled={saving}
                             style={{
                                 display: 'flex',
@@ -1150,32 +1418,48 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                                 padding: '6px 16px',
                                 height: '32px',
                                 borderRadius: '8px',
+                                border: activeAction === 'revert' ? '1px solid #BB4D00' : '1px solid #E2E8F0',
+                                background: activeAction === 'revert' ? 'rgba(187, 77, 0, 0.05)' : 'white',
+                                color: activeAction === 'revert' ? '#BB4D00' : '#4A5568',
                                 fontSize: '0.85rem',
                                 fontWeight: 700,
-                                background: 'rgba(229,62,62,0.06)',
-                                color: '#E53E3E',
-                                border: '1px solid rgba(229,62,62,0.4)',
-                                transition: 'all 0.2s',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
                             }}
-                            onMouseOver={(e) => { e.currentTarget.style.background = '#E53E3E'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#E53E3E'; }}
-                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(229,62,62,0.06)'; e.currentTarget.style.color = '#E53E3E'; e.currentTarget.style.borderColor = 'rgba(229,62,62,0.4)'; }}
+                            onMouseEnter={() => setActiveAction('revert')}
                         >
-                            <XCircle size={16} />
+                            <RotateCcw size={15} />
+                            <span>Revert</span>
+                        </button>
+
+                        <button
+                            onClick={() => setShowRejectModal(true)}
+                            disabled={saving}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '6px 16px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                border: activeAction === 'reject' ? '1px solid #E53E3E' : '1px solid #E2E8F0',
+                                background: activeAction === 'reject' ? 'rgba(229, 62, 62, 0.05)' : 'white',
+                                color: activeAction === 'reject' ? '#E53E3E' : '#4A5568',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={() => setActiveAction('reject')}
+                        >
+                            <XCircle size={15} />
                             <span>Reject</span>
                         </button>
-                    </>
+                    </div>
                 )}
 
                 <button
-                    onClick={() => {
-                        setIsConfirmingExit(true);
-                        showConfirm({
-                            title: 'Are you sure you want to exit?',
-                            onConfirm: () => onBack(),
-                            onCancel: () => setIsConfirmingExit(false)
-                        });
-                    }}
+                    onClick={onBack}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -1194,12 +1478,153 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave }) =
                     }}
                     onMouseEnter={() => setActiveAction('cancel')}
                 >
-                    <XCircle size={16} />
+                    <X size={16} />
                     <span>Cancel</span>
                 </button>
             </div>
 
+            {/* Branded Action Modal (For Reject/Revert) */}
+            {(showRejectModal || showRevertModal) && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10000,
+                    background: 'rgba(0, 0, 0, 0.45)',
+                    backdropFilter: 'blur(12px)',
+                    padding: '24px',
+                }}>
+                    <div style={{
+                        background: 'white',
+                        width: '100%',
+                        maxWidth: '400px',
+                        borderRadius: '24px',
+                        boxShadow: '0 40px 120px rgba(0,0,0,0.3)',
+                        overflow: 'hidden',
+                        position: 'relative',
+                    }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{
+                            background: showRejectModal ? '#E53E3E' : '#BB4D00',
+                            padding: '28px 24px 24px',
+                            position: 'relative',
+                        }}>
+                            <button
+                                onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
+                                style={{
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: 'white',
+                                    opacity: 0.7,
+                                }}
+                            >
+                                <X size={16} strokeWidth={3} />
+                            </button>
 
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    background: 'rgba(255,255,255,0.2)',
+                                    borderRadius: '10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    {showRejectModal ? <XCircle size={18} color="white" /> : <RotateCcw size={18} color="white" />}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <h3 style={{
+                                        fontSize: '1.25rem',
+                                        fontWeight: 800,
+                                        color: 'white',
+                                        margin: '0 0 4px 0',
+                                        lineHeight: 1.2
+                                    }}>{showRejectModal ? 'Reject Sales Order' : 'Revert Sales Order'}</h3>
+                                    <p style={{
+                                        margin: 0,
+                                        color: 'rgba(255,255,255,0.95)',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 500,
+                                        lineHeight: 1.4
+                                    }}>
+                                        {showRejectModal ? 'Provide a reason for rejecting this order.' : 'Provide a reason for reverting this order.'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ padding: '24px' }}>
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    color: '#1e293b',
+                                    marginBottom: '8px'
+                                }}>{showRejectModal ? 'Rejection Reason' : 'Revert Reason'}</label>
+                                <textarea
+                                    className="ae-input"
+                                    value={showRejectModal ? rejectComment : revertComment}
+                                    onChange={e => showRejectModal ? setRejectComment(e.target.value) : setRevertComment(e.target.value)}
+                                    placeholder="Type your reason here..."
+                                    autoFocus
+                                    style={{
+                                        height: '90px',
+                                        padding: '12px 16px',
+                                        resize: 'none',
+                                        background: '#f8fafc',
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                <button
+                                    onClick={() => { setShowRejectModal(false); setShowRevertModal(false); }}
+                                    style={{
+                                        padding: '10px 20px',
+                                        borderRadius: '12px',
+                                        background: '#f1f5f9',
+                                        color: '#475569',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        border: 'none',
+                                        cursor: 'pointer'
+                                    }}
+                                >Cancel</button>
+                                <button
+                                    onClick={showRejectModal ? handleReject : handleRevert}
+                                    style={{
+                                        padding: '10px 24px',
+                                        borderRadius: '12px',
+                                        background: showRejectModal ? '#E53E3E' : '#BB4D00',
+                                        color: 'white',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        border: 'none',
+                                        cursor: 'pointer'
+                                    }}
+                                >{showRejectModal ? 'Reject' : 'Revert'}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

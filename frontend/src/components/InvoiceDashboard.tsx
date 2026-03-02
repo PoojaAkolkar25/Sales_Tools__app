@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Download, XCircle, BarChart3, ChevronDown, FileText, FileSpreadsheet, Columns, Eye, Check } from 'lucide-react';
+import { Download, XCircle, BarChart3, ChevronDown, FileText, FileSpreadsheet, Columns, Eye, Check, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -209,16 +209,6 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
         }
     };
 
-    const handleAction = async (id: number, action: 'approve' | 'reject' | 'submit_for_approval') => {
-        try {
-            await api.post(`/finance/invoices/${id}/${action}/`);
-            let label = action === 'submit_for_approval' ? 'submitted' : `${action}d`;
-            showNotification(`Invoice ${label} successfully`, 'success');
-            fetchInvoices();
-        } catch (error) {
-            showNotification(`Error performing action`, 'error');
-        }
-    };
 
     const handleSendEmail = async (id: number) => {
         try {
@@ -1045,36 +1035,64 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                 </button>
                                                 <button
                                                     onClick={() => handleDownload(inv.id, inv.invoice_no)}
-                                                    className="ae-btn-secondary"
-                                                    style={{ height: '24px', padding: '4px 12px', fontSize: '0.72rem', borderRadius: '20px', fontWeight: 700 }}
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        width: '28px',
+                                                        height: '28px',
+                                                        background: 'rgba(59,130,246,0.08)',
+                                                        color: '#2563EB',
+                                                        border: '1px solid rgba(59,130,246,0.25)',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                        flexShrink: 0
+                                                    }}
+                                                    onMouseOver={(e) => {
+                                                        e.currentTarget.style.background = '#2563EB';
+                                                        e.currentTarget.style.color = 'white';
+                                                        e.currentTarget.style.borderColor = '#2563EB';
+                                                    }}
+                                                    onMouseOut={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(59,130,246,0.08)';
+                                                        e.currentTarget.style.color = '#2563EB';
+                                                        e.currentTarget.style.borderColor = 'rgba(59,130,246,0.25)';
+                                                    }}
+                                                    title="Download Invoice"
                                                 >
-                                                    Download
+                                                    <Download size={15} />
                                                 </button>
-                                                {inv.status === 'PENDING_APPROVAL' && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handleAction(inv.id, 'approve')}
-                                                            className="ae-btn-secondary"
-                                                            style={{ height: '24px', padding: '4px 12px', fontSize: '0.72rem', borderRadius: '20px', fontWeight: 700, color: '#16A34A', background: 'rgba(22, 163, 74, 0.05)', borderColor: 'rgba(22, 163, 74, 0.2)' }}
-                                                        >
-                                                            Approve
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleAction(inv.id, 'reject')}
-                                                            className="ae-btn-secondary"
-                                                            style={{ height: '24px', padding: '4px 12px', fontSize: '0.72rem', borderRadius: '20px', fontWeight: 700, color: '#DC2626', background: 'rgba(220, 38, 38, 0.05)', borderColor: 'rgba(220, 38, 38, 0.2)' }}
-                                                        >
-                                                            Reject
-                                                        </button>
-                                                    </>
-                                                )}
                                                 {inv.status === 'APPROVED' && (
                                                     <button
                                                         onClick={() => handleSendEmail(inv.id)}
-                                                        className="ae-btn-secondary"
-                                                        style={{ height: '24px', padding: '4px 12px', fontSize: '0.72rem', borderRadius: '20px', fontWeight: 700 }}
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            width: '28px',
+                                                            height: '28px',
+                                                            background: 'rgba(16,185,129,0.08)',
+                                                            color: '#059669',
+                                                            border: '1px solid rgba(16,185,129,0.25)',
+                                                            borderRadius: '6px',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s',
+                                                            flexShrink: 0
+                                                        }}
+                                                        onMouseOver={(e) => {
+                                                            e.currentTarget.style.background = '#059669';
+                                                            e.currentTarget.style.color = 'white';
+                                                            e.currentTarget.style.borderColor = '#059669';
+                                                        }}
+                                                        onMouseOut={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(16,185,129,0.08)';
+                                                            e.currentTarget.style.color = '#059669';
+                                                            e.currentTarget.style.borderColor = 'rgba(16,185,129,0.25)';
+                                                        }}
+                                                        title="Send Email"
                                                     >
-                                                        Email
+                                                        <Mail size={15} />
                                                     </button>
                                                 )}
                                             </div>

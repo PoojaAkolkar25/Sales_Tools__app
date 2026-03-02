@@ -8,7 +8,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Loader2,
-    Check
+    Check,
+    Eye
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -833,35 +834,36 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                                                 <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
                                                     <button
                                                         onClick={() => onView(req.id)}
+                                                        className="ae-btn-secondary"
                                                         style={{
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            padding: 0,
                                                             display: 'inline-flex',
                                                             alignItems: 'center',
-                                                            gap: '4px',
-                                                            background: 'rgba(187, 77, 0, 0.07)',
+                                                            justifyContent: 'center',
+                                                            borderRadius: '8px',
+                                                            background: 'transparent',
+                                                            border: '1px solid var(--theme-primary)',
                                                             color: 'var(--theme-primary)',
-                                                            border: '1px solid rgba(187, 77, 0, 0.25)',
-                                                            padding: '4px 14px',
-                                                            borderRadius: '20px',
-                                                            fontSize: '0.72rem',
-                                                            fontWeight: 700,
-                                                            cursor: 'pointer',
-                                                            letterSpacing: '0.04em',
-                                                            transition: 'all 0.18s',
+                                                            transition: 'all 0.2s',
+                                                            cursor: 'pointer'
                                                         }}
                                                         onMouseEnter={(e) => {
                                                             e.currentTarget.style.background = 'var(--theme-primary)';
                                                             e.currentTarget.style.color = 'white';
-                                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(187,77,0,0.3)';
+                                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
                                                         }}
                                                         onMouseLeave={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(187, 77, 0, 0.07)';
+                                                            e.currentTarget.style.background = 'transparent';
                                                             e.currentTarget.style.color = 'var(--theme-primary)';
-                                                            e.currentTarget.style.borderColor = 'rgba(187, 77, 0, 0.25)';
+                                                            e.currentTarget.style.transform = 'none';
                                                             e.currentTarget.style.boxShadow = 'none';
                                                         }}
+                                                        title="View Details"
                                                     >
-                                                        View
+                                                        <Eye size={16} />
                                                     </button>
                                                 </td>
                                             </tr>

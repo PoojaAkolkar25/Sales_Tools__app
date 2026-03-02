@@ -6,9 +6,16 @@
 export const formatToAppDate = (dateInput: string | Date | null | undefined): string => {
     if (!dateInput) return '';
 
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    let date: Date;
 
-    if (isNaN(date.getTime())) return String(dateInput);
+    if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+        const [year, month, day] = dateInput.split('-').map(Number);
+        date = new Date(year, month - 1, day);
+    } else {
+        date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput as Date;
+    }
+
+    if (!date || isNaN(date.getTime())) return String(dateInput);
 
     const day = String(date.getDate()).padStart(2, '0');
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -22,5 +29,9 @@ export const formatToAppDate = (dateInput: string | Date | null | undefined): st
  * Returns current date in YYYY-MM-DD format for HTML5 date inputs
  */
 export const getCurrentDateForInput = (): string => {
-    return new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };

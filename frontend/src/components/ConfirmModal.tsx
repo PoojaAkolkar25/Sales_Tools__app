@@ -75,7 +75,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                             fontSize: '1rem',
                             fontWeight: 700,
                             border: 'none',
-                            background: '#FF6B00',
+                            background: 'var(--theme-primary, #FF6B00)',
                             color: 'white',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
@@ -83,12 +83,14 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                             boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#e66000';
+                            e.currentTarget.style.background = 'var(--ae-orange-dark, #e66000)';
                             e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(187, 77, 0, 0.4)';
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#FF6B00';
+                            e.currentTarget.style.background = 'var(--theme-primary, #FF6B00)';
                             e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
                         }}
                     >
                         {confirmText}
@@ -99,8 +101,8 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                             padding: '10px 32px',
                             borderRadius: '8px',
                             fontSize: '1rem',
-                            fontWeight: 600,
-                            border: '1px solid #E2E8F0',
+                            fontWeight: 700,
+                            border: '1px solid var(--ae-gray-100, #E2E8F0)',
                             background: 'white',
                             color: '#475569',
                             cursor: 'pointer',
@@ -108,10 +110,14 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                             minWidth: '100px'
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#f8fafc';
+                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                            e.currentTarget.style.color = 'var(--ae-orange, #FF6B00)';
+                            e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
                         }}
                         onMouseLeave={(e) => {
                             e.currentTarget.style.background = 'white';
+                            e.currentTarget.style.color = '#475569';
+                            e.currentTarget.style.borderColor = 'var(--ae-gray-100, #E2E8F0)';
                         }}
                     >
                         {cancelText}
