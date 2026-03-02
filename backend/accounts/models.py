@@ -20,10 +20,17 @@ class UserProfile(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.employee_id:
+            from django.db.models import Max
             import re
-            last = UserProfile.objects.all().order_by('employee_id').last()
-            if last and last.employee_id.startswith('EMP'):
-                match = re.search(r'(\d+)$', last.employee_id)
+            
+            # Filter for IDs that follow the EMP pattern and get the max
+            last_emp = UserProfile.objects.filter(
+                employee_id__startswith='EMP'
+            ).aggregate(max_id=Max('employee_id'))['max_id']
+            
+            if last_emp:
+                # Find the numeric part to increment
+                match = re.search(r'(\d+)$', last_emp)
                 if match:
                     last_num = int(match.group(1))
                     self.employee_id = f"EMP{last_num + 1:04d}"
