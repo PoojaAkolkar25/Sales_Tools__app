@@ -210,7 +210,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     const matchedCompany = companies.find((c: any) => c.name === matchedCustomer.name);
                     const linkedName = matchedCompany?.linked_company_profile_name || '';
                     // Use matchedCompany.id if available, else fallback to matchedCustomer.id for end user filtering
-                    const linkedPartnerId = matchedCompany ? matchedCompany.id : matchedCustomer.id;
+                    // const linkedPartnerId = matchedCompany ? matchedCompany.id : matchedCustomer.id;
 
                     setFormData((prev: any) => ({
                         ...prev,
@@ -233,7 +233,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
             if (selectedCustomer) {
                 const matchedCompany = companies.find((c: any) => c.name === selectedCustomer.name);
                 // Use matchedCompany.id if available, else fallback to selectedCustomer.id for end user filtering
-                const linkedPartnerId = matchedCompany ? matchedCompany.id : selectedCustomer.id;
+                // const linkedPartnerId = matchedCompany ? matchedCompany.id : selectedCustomer.id;
 
                 setFormData((prev: any) => {
                     const linkedName = matchedCompany?.linked_company_profile_name || '';
