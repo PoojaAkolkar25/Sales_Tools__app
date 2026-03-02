@@ -8,8 +8,6 @@ import {
     History,
     Clock,
     XCircle,
-    ThumbsUp,
-    ThumbsDown,
     Mail,
     Eye,
     Trash2,
@@ -19,7 +17,6 @@ import {
     Download,
     PlusCircle,
     Calendar,
-    RotateCcw,
     FileText as LucideFile,
 } from 'lucide-react';
 import api from '../api';
@@ -95,8 +92,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const [editingColumn, setEditingColumn] = useState<string | null>(null);
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectComment, setRejectComment] = useState('');
-    const [showRevertModal, setShowRevertModal] = useState(false);
-    const [revertComment, setRevertComment] = useState('');
 
     const EMAIL_TEMPLATES = {
         standard: {
@@ -641,31 +636,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         }
     };
 
-    const handleRevert = async () => {
-        // Validation: Only Sales Head or App Admin (Finance Manager roles in groups) can revert
-        const isSalesHead = user?.role === 'sales_head' || user?.groups?.some((g: any) => g.name === 'Sales Head');
-        const isFinanceManager = user?.role === 'finance_manager' || user?.groups?.some((g: any) => g.name === 'Finance Manager');
-        const isAdmin = user?.role === 'app_admin' || user?.is_superuser;
-
-        if (!isAdmin && !isSalesHead && !isFinanceManager) {
-            showNotification('Only admin approve', 'error');
-            return;
-        }
-
-        if (!revertComment) {
-            showNotification('Revert comments are required', 'error');
-            return;
-        }
-        try {
-            await api.post(`/estimates/${id}/revert/`, { notes: revertComment });
-            showNotification('Estimate reverted successfully', 'success');
-            setShowRevertModal(false);
-            setRevertComment('');
-            fetchEstimateDetails();
-        } catch (error: any) {
-            showNotification(error.response?.data?.error || 'Failed to revert estimate', 'error');
-        }
-    };
 
     const getApprovalStatusBadge = () => {
         if (!estimate) return null;
@@ -1773,11 +1743,10 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
                             <button
                                 onClick={() => {
-                                    setIsConfirmingExit(true);
                                     showConfirm({
                                         title: 'Are you sure you want to exit?',
                                         onConfirm: () => onBack(),
-                                        onCancel: () => setIsConfirmingExit(false)
+                                        onCancel: () => { }
                                     });
                                 }}
                                 style={{
@@ -1827,26 +1796,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 onMouseLeave={(e) => e.currentTarget.style.background = '#00C853'}
                             >
                                 <CheckCircle2 size={15} /> Approve
-                            </button>
-                            <button
-                                onClick={() => setShowRevertModal(true)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '6px 16px',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    border: '1px solid #D69E2E',
-                                    background: 'rgba(214, 158, 46, 0.08)',
-                                    color: '#B7791F',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <RotateCcw size={14} /> Revert
                             </button>
                             <button
                                 onClick={() => setShowRejectModal(true)}

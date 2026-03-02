@@ -1,4 +1,4 @@
-import React, { useState, useEffect, type ChangeEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Trash2,
     Save,
@@ -81,7 +81,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
     const [editingColumn, setEditingColumn] = useState<string | null>(null);
 
     const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel' | 'approve' | 'reject' | 'revert'>('submit');
-    const { showNotification, showConfirm } = useNotification();
+    const { showNotification } = useNotification();
 
     useEffect(() => {
         fetchCustomers();

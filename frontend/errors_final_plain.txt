@@ -1,0 +1,7 @@
+src/components/CostSheetForm.tsx(1868,48): error TS6133: 'e' is declared but its value is never read.
+src/components/CostSheetForm.tsx(1893,48): error TS6133: 'e' is declared but its value is never read.
+src/components/CostSheetForm.tsx(1954,40): error TS6133: 'e' is declared but its value is never read.
+src/components/EstimateForm.tsx(20,5): error TS6133: 'RotateCcw' is declared but its value is never read.
+src/components/EstimateForm.tsx(1747,37): error TS2304: Cannot find name 'setIsConfirmingExit'.
+src/components/EstimateForm.tsx(1751,57): error TS2304: Cannot find name 'setIsConfirmingExit'.
+src/components/UserManagement.tsx(5,201): error TS6133: 'CheckCircle2' is declared but its value is never read.

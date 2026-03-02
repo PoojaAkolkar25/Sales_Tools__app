@@ -1865,7 +1865,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     color: activeAction === 'draft' ? 'white' : 'var(--text-secondary)',
                                     boxShadow: activeAction === 'draft' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                                 }}
-                                onMouseEnter={(e) => {
+                                onMouseEnter={() => {
                                     setActiveAction('draft');
                                 }}
                             >
@@ -1890,7 +1890,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     color: activeAction === 'submit' ? 'white' : 'var(--text-secondary)',
                                     boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                                 }}
-                                onMouseEnter={(e) => {
+                                onMouseEnter={() => {
                                     setActiveAction('submit');
                                 }}
                             >
@@ -1951,7 +1951,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             color: activeAction === 'cancel' ? 'white' : 'var(--text-secondary)',
                             boxShadow: activeAction === 'cancel' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                         }}
-                        onMouseEnter={(e) => {
+                        onMouseEnter={() => {
                             setActiveAction('cancel');
                         }}
                     >

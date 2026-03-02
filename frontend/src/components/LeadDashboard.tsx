@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
     TrendingUp,
@@ -83,7 +82,6 @@ const MAX_COL_WIDTHS: Record<string, number> = {
 };
 
 const LeadDashboard: React.FC<LeadDashboardProps> = ({ onView }) => {
-    const navigate = useNavigate();
     const { showNotification } = useNotification();
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);

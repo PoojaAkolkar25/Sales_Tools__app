@@ -1,0 +1,20 @@
+﻿src/components/CostSheetForm.tsx(1594,49): error TS2304: Cannot find name 'e'.
+src/components/CostSheetForm.tsx(1595,49): error TS2304: Cannot find name 'e'.
+src/components/CostSheetForm.tsx(1596,49): error TS2304: Cannot find name 'e'.
+src/components/CostSheetForm.tsx(1748,29): error TS2304: Cannot find name 'e'.
+src/components/CostSheetForm.tsx(1749,29): error TS2304: Cannot find name 'e'.
+src/components/CostSheetForm.tsx(1897,34): error TS2304: Cannot find name 'PlusCircle'.
+src/components/CostSheetForm.tsx(1916,34): error TS2304: Cannot find name 'RotateCcw'.
+src/components/CostSheetForm.tsx(2116,38): error TS2304: Cannot find name 'RotateCcw'.
+src/components/CostSheetForm.tsx(2177,46): error TS2304: Cannot find name 'RotateCcw'.
+src/components/EstimateForm.tsx(96,12): error TS6133: 'isConfirmingExit' is declared but its value is never read.
+src/components/EstimateForm.tsx(1804,48): error TS2552: Cannot find name 'setShowRevertModal'. Did you mean 'setShowRejectModal'?
+src/components/UserManagement.tsx(5,10): error TS6133: 'UserPlus' is declared but its value is never read.
+src/components/UserManagement.tsx(5,28): error TS6133: 'UserIcon' is declared but its value is never read.
+src/components/UserManagement.tsx(5,114): error TS6133: 'Filter' is declared but its value is never read.
+src/components/UserManagement.tsx(5,122): error TS6133: 'Search' is declared but its value is never read.
+src/components/UserManagement.tsx(5,170): error TS6133: 'FileText' is declared but its value is never read.
+src/components/UserManagement.tsx(5,255): error TS6133: 'Plus' is declared but its value is never read.
+src/components/UserManagement.tsx(5,261): error TS6133: 'CheckCircle2' is declared but its value is never read.
+src/components/UserManagement.tsx(5,275): error TS6133: 'XCircle' is declared but its value is never read.
+src/components/UserManagement.tsx(5,297): error TS6133: 'Calculator' is declared but its value is never read.

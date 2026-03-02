@@ -1,0 +1,3 @@
+﻿src/components/EstimateForm.tsx(20,5): error TS6133: 'RotateCcw' is declared but its value is never read.
+src/components/EstimateForm.tsx(1747,37): error TS2304: Cannot find name 'setIsConfirmingExit'.
+src/components/EstimateForm.tsx(1751,57): error TS2304: Cannot find name 'setIsConfirmingExit'.
