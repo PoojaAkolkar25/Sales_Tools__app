@@ -18,6 +18,8 @@ import io
 import xlsxwriter
 import logging
 
+logger = logging.getLogger(__name__)
+
 class EstimateViewSet(viewsets.ModelViewSet):
     queryset = Estimate.objects.all()
     serializer_class = EstimateSerializer
@@ -126,9 +128,6 @@ class EstimateViewSet(viewsets.ModelViewSet):
     def submit(self, request, pk=None):
         estimate = self.get_object()
         
-        # Debug logging
-        import logging
-        logger = logging.getLogger(__name__)
         logger.info(f"Submitting estimate {estimate.estimate_id}")
         logger.info(f"Cost sheet status: {estimate.cost_sheet.status}")
         logger.info(f"Items count: {estimate.items.count()}")
@@ -427,7 +426,6 @@ class EstimateViewSet(viewsets.ModelViewSet):
         status_code = 'SENT'
         error_msg = ''
         try:
-            logger = logging.getLogger(__name__)
             # Process CC and BCC strings into lists
             cc_list = [e.strip() for e in cc_emails.split(',') if e.strip()]
             bcc_list = [e.strip() for e in bcc_emails.split(',') if e.strip()]

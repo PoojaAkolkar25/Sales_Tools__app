@@ -207,15 +207,14 @@
         <tr>
             <td class="company-info">
                 <div class="company-name">{{ company.name|upper }}</div>
-                <div>{{ company.address_line_1 }}{% if company.address_line_2 %}, {{ company.address_line_2 }}{% endif
-                    %}</div>
+                <div>{{ company.address_line_1 }}{% if company.address_line_2 %}, {{ company.address_line_2 }}{% endif %}</div>
                 <div>{{ company.city }}{% if company.pincode %} - {{ company.pincode }}{% endif %}</div>
                 {% if company.gstin %}
                 <div><span class="bold blue">GSTIN/UIN:</span> {{ company.gstin }}</div>
                 {% endif %}
                 {% if company.state %}
-                <div><span class="bold blue">State Name :</span> {{ company.state.name }}, <span class="bold blue">Code
-                        :</span> {{ company.state.code }}</div>
+                <div><span class="bold blue">State Name :</span> {{ company.state.name }}, <span
+                        class="bold blue">Code:</span> {{ company.state.code }}</div>
                 {% endif %}
                 {% if company.msme_number %}
                 <div><span class="bold blue">MSME Number -</span> {{ company.msme_number }}</div>
@@ -251,8 +250,7 @@
                     {% if po_number %}
                     <tr>
                         <td class="meta-label">PO & DATE</td>
-                        <td class="meta-value">: {{ po_number }} {% if po_date %} - {{ po_date|date:"d-M-Y" }}{% endif
-                            %}</td>
+                        <td class="meta-value">: {{ po_number }} {% if po_date %} - {{ po_date|date:"d-M-Y" }}{% endif %}</td>
                     </tr>
                     {% endif %}
                     {% if estimate.deal.deal_id %}
@@ -282,10 +280,7 @@
                 <div><span class="bold">PAN/TIN No.:</span> {{ estimate.deal.customer.pan }}</div>
                 {% endif %}
                 {% if estimate.deal.customer.state %}
-                <div><span class="bold">State Name:</span> {{
-                    estimate.deal.customer.state.name|default:estimate.deal.customer.state }}, <span
-                        class="bold">Code:</span> {{
-                    estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
+                <div><span class="bold">State Name:</span> {{ estimate.deal.customer.state.name|default:estimate.deal.customer.state }}, <span class="bold">Code:</span> {{ estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
                 {% endif %}
             </td>
             <td class="address-col">
@@ -300,10 +295,7 @@
                 <div><span class="bold">PAN/TIN No.:</span> {{ estimate.deal.customer.pan }}</div>
                 {% endif %}
                 {% if estimate.deal.customer.state %}
-                <div><span class="bold">State Name:</span> {{
-                    estimate.deal.customer.state.name|default:estimate.deal.customer.state }}, <span
-                        class="bold">Code:</span> {{
-                    estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
+                <div><span class="bold">State Name:</span> {{ estimate.deal.customer.state.name|default:estimate.deal.customer.state }}, <span class="bold">Code:</span> {{ estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
                 {% endif %}
             </td>
         </tr>
@@ -335,8 +327,7 @@
                     <div style="font-size: 7.5pt; color: #555;">{{ item.description|linebreaksbr }}</div>
                     {% if item.subscription_from or item.subscription_to %}
                     <div style="font-size: 7pt; color: #777;">
-                        Period: {{ item.subscription_from|date:"d/m/Y"|default:"-" }} to {{
-                        item.subscription_to|date:"d/m/Y"|default:"-" }}
+                        Period: {{ item.subscription_from|date:"d/m/Y"|default:"-" }} to {{ item.subscription_to|date:"d/m/Y"|default:"-" }}
                     </div>
                     {% endif %}
                 </td>
