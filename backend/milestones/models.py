@@ -3,7 +3,7 @@ from sales_orders.models import SalesOrder
 from finance.models import Invoice
 
 class MilestoneStatus(models.TextChoices):
-    PENDING = 'PENDING', 'Pending for Invoice'
+    DRAFT = 'DRAFT', 'Draft'
     INVOICED = 'INVOICED', 'Invoiced'
 
 class Milestone(models.Model):
@@ -23,7 +23,7 @@ class Milestone(models.Model):
     status = models.CharField(
         max_length=20, 
         choices=MilestoneStatus.choices, 
-        default=MilestoneStatus.PENDING
+        default=MilestoneStatus.DRAFT
     )
     
     # Link to Invoice when created

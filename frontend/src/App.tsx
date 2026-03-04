@@ -1353,16 +1353,25 @@ const AppContent: React.FC = () => {
                 {milestoneView === 'form' ? (
                   <MilestoneForm
                     id={editingMilestoneId}
+                    initialSoId={initialSoId}
                     onBack={() => setMilestoneView('dashboard')}
                   />
                 ) : (
                   <MilestoneDashboard
-                    onView={(id: number) => {
-                      setEditingMilestoneId(id);
+                    onView={(id: any) => {
+                      if (typeof id === 'string' && id.startsWith('virtual-')) {
+                        const soId = parseInt(id.replace('virtual-', ''));
+                        setInitialSoId(soId);
+                        setEditingMilestoneId(null);
+                      } else {
+                        setEditingMilestoneId(id);
+                        setInitialSoId(null);
+                      }
                       setMilestoneView('form');
                     }}
                     onCreate={() => {
                       setEditingMilestoneId(null);
+                      setInitialSoId(null);
                       setMilestoneView('form');
                     }}
                   />

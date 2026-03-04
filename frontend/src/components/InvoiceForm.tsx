@@ -26,6 +26,7 @@ const InvoiceForm: React.FC<{
     const [leads, setLeads] = useState<any[]>([]);
     const [milestones, setMilestones] = useState<any[]>([]);
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
+    const [companyProfiles, setCompanyProfiles] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [isReadOnly, setIsReadOnly] = useState(false);
@@ -183,14 +184,16 @@ const InvoiceForm: React.FC<{
 
     const fetchInitialData = async () => {
         try {
-            const [leadsRes, statesRes, soRes] = await Promise.all([
+            const [leadsRes, statesRes, soRes, cpRes] = await Promise.all([
                 api.get('/leads/'),
                 api.get('/finance/state-masters/'),
-                api.get('/sales-orders/?status=APPROVED')
+                api.get('/sales-orders/?status=APPROVED'),
+                api.get('/finance/company-profile/')
             ]);
             setLeads(leadsRes.data);
             setStates(statesRes.data);
             setSalesOrders(soRes.data);
+            setCompanyProfiles(cpRes.data);
 
             // If we are creating a new invoice and have an initial SO ID
             if (!invoiceId && initialSoId) {
@@ -207,16 +210,21 @@ const InvoiceForm: React.FC<{
     const prePopulateFromSo = async (soId: number, currentSalesOrders: any[], currentLeads: any[]) => {
         const so = currentSalesOrders.find(s => s.id === soId);
         if (so) {
+            const lead = so.customer_name ? (currentLeads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : null;
+            const cp = so.customer_name ? (companyProfiles.find(c => c.name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : (lead ? (companyProfiles.find(c => c.name?.toLowerCase().trim() === lead.customer_name?.toLowerCase().trim())) : null);
+            const gstin = cp?.gstin || lead?.gstin || '';
+
             setFormData(prev => ({
                 ...prev,
                 sales_order: soId.toString(),
-                lead: so.customer_name ? (currentLeads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())?.id?.toString() || prev.lead) : prev.lead,
+                lead: lead ? lead.id.toString() : prev.lead,
+                customer_gstin: gstin,
+                customer_state: cp?.state?.toString() || prev.customer_state,
                 currency: so.currency || prev.currency,
-                billing_address: so.billing_address || prev.billing_address,
-                shipping_address: so.shipping_address || prev.shipping_address,
+                billing_address: so.billing_address || cp?.address_line_1 || (lead ? lead.address : prev.billing_address),
+                shipping_address: so.shipping_address || cp?.address_line_1 || (lead ? lead.address : prev.shipping_address),
                 po_number: so.po_number || prev.po_number,
                 po_date: so.po_date || prev.po_date,
-                customer_gstin: (currentLeads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())?.gstin || prev.customer_gstin),
                 milestone: initialMilestoneId ? initialMilestoneId.toString() : prev.milestone
             }));
 
@@ -307,18 +315,20 @@ const InvoiceForm: React.FC<{
         }
     };
 
-
-
-
     const handleLeadChange = async (leadId: string | number) => {
         const lead = leads.find(l => l.id.toString() === leadId.toString());
         if (lead) {
+            // Find GSTIN from CompanyProfile based on customer name
+            const cp = companyProfiles.find(c => c.name?.toLowerCase().trim() === lead.customer_name?.toLowerCase().trim());
+            const gstin = cp?.gstin || lead.gstin || '';
+
             setFormData(prev => ({
                 ...prev,
                 lead: leadId.toString(),
-                customer_gstin: lead.gstin || '',
-                billing_address: lead.address || prev.billing_address,
-                shipping_address: lead.address || prev.shipping_address,
+                customer_gstin: gstin,
+                customer_state: cp?.state?.toString() || prev.customer_state,
+                billing_address: cp?.address_line_1 || lead.address || prev.billing_address,
+                shipping_address: cp?.address_line_1 || lead.address || prev.shipping_address,
                 // Clear SO/Milestone if customer changes
                 sales_order: '',
                 milestone: ''
@@ -329,16 +339,64 @@ const InvoiceForm: React.FC<{
         }
     };
 
+
+
+
+    const handleMilestoneChange = async (milestoneId: string) => {
+        const ms = milestones.find(m => m.id.toString() === milestoneId.toString());
+        if (ms) {
+            const soId = ms.sales_order?.toString() || ms.sales_order_details?.id?.toString();
+
+            setFormData(prev => ({
+                ...prev,
+                milestone: milestoneId.toString(),
+                sales_order: soId || prev.sales_order,
+                // Autopopulate other fields from Milestone if needed (e.g. amount if standard)
+            }));
+
+            if (soId) {
+                const so = salesOrders.find(s => s.id.toString() === soId);
+                if (so) {
+                    const lead = so.customer_name ? (leads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : null;
+                    const cp = so.customer_name ? (companyProfiles.find(c => c.name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : null;
+                    const gstin = cp?.gstin || lead?.gstin || '';
+
+                    if (lead) {
+                        setFormData(prev => ({
+                            ...prev,
+                            lead: lead.id.toString(),
+                            customer_gstin: gstin,
+                            customer_state: cp?.state?.toString() || prev.customer_state,
+                            billing_address: so.billing_address || cp?.address_line_1 || lead.address || prev.billing_address,
+                            shipping_address: so.shipping_address || cp?.address_line_1 || lead.address || prev.shipping_address,
+                            po_number: so.po_number || prev.po_number,
+                            po_date: so.po_date || prev.po_date,
+                            currency: so.currency || prev.currency
+                        }));
+                    }
+                }
+            }
+        } else {
+            setFormData(prev => ({ ...prev, milestone: milestoneId }));
+        }
+    };
+
     const handleSalesOrderChange = async (soId: string) => {
         const so = salesOrders.find(s => s.id.toString() === soId.toString());
         if (so) {
+            const lead = so.customer_name ? (leads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : null;
+            const cp = so.customer_name ? (companyProfiles.find(c => c.name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : null;
+            const gstin = cp?.gstin || lead?.gstin || '';
+
             setFormData(prev => ({
                 ...prev,
                 sales_order: soId.toString(),
-                lead: so.customer_name ? (leads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())?.id?.toString() || prev.lead) : prev.lead,
+                lead: lead ? lead.id.toString() : prev.lead,
+                customer_gstin: gstin,
+                customer_state: cp?.state?.toString() || prev.customer_state,
                 currency: so.currency || prev.currency,
-                billing_address: so.billing_address || prev.billing_address,
-                shipping_address: so.shipping_address || prev.shipping_address,
+                billing_address: so.billing_address || cp?.address_line_1 || (lead ? lead.address : prev.billing_address),
+                shipping_address: so.shipping_address || cp?.address_line_1 || (lead ? lead.address : prev.shipping_address),
                 po_number: so.po_number || prev.po_number,
                 po_date: so.po_date || prev.po_date,
             }));
@@ -556,7 +614,7 @@ const InvoiceForm: React.FC<{
                     <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Milestone Reference</label>
-                            <select className="ae-input" disabled={isReadOnly} value={formData.milestone} onChange={e => setFormData({ ...formData, milestone: e.target.value })}>
+                            <select className="ae-input" disabled={isReadOnly} value={formData.milestone} onChange={e => handleMilestoneChange(e.target.value)}>
                                 <option value="">Select Milestone (Optional)</option>
                                 {milestones.map(m => (
                                     <option key={m.id} value={m.id.toString()}>{m.milestone_no} - {m.description}</option>
@@ -570,13 +628,9 @@ const InvoiceForm: React.FC<{
                                 {salesOrders
                                     .filter(so => {
                                         if (!formData.lead) return true;
-                                        // If the SO ID matches what's currently in formData, always show it
                                         if (so.id.toString() === formData.sales_order) return true;
-
                                         const selectedLead = leads.find(l => l.id.toString() === formData.lead);
                                         if (!selectedLead) return true;
-
-                                        // Robust matching by customer name
                                         return so.customer_name?.toLowerCase().trim() === selectedLead.customer_name?.toLowerCase().trim();
                                     })
                                     .map(so => (

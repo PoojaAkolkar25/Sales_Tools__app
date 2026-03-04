@@ -8,9 +8,10 @@ import { formatToAppDate } from '../utils/dateUtils';
 interface MilestoneFormProps {
     onBack: () => void;
     id?: number | null;
+    initialSoId?: number | null;
 }
 
-const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
+const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }) => {
     const [customers, setCustomers] = useState<any[]>([]);
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -42,8 +43,34 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
     useEffect(() => {
         if (id && customers.length > 0) {
             fetchMilestoneForEdit(id);
+        } else if (!id && initialSoId && customers.length > 0) {
+            handleInitialSo(initialSoId);
         }
-    }, [id, customers]);
+    }, [id, initialSoId, customers]);
+
+    const handleInitialSo = async (soId: number) => {
+        setLoading(true);
+        try {
+            const soRes = await api.get(`/sales-orders/${soId}/`);
+            const so = soRes.data;
+            if (so.customer) {
+                const customer = customers.find(c => c.id === so.customer);
+                setSelectedCustomer(customer || null);
+
+                // Fetch all SOs for this customer to populate dropdown
+                const sosRes = await api.get(`/sales-orders/?customer=${so.customer}`);
+                setSalesOrders(sosRes.data);
+                setSelectedSO(so);
+
+                // Initialize milestones for this SO
+                await handleSOChange(soId);
+            }
+        } catch (err) {
+            console.error('Error loading initial Sales Order', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
 
 
@@ -250,13 +277,13 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                     qty: m.qty || 1,
                     rate: m.rate || 0,
                     amount: m.amount || 0,
-                    status: m.status || 'PENDING'
+                    status: m.status || 'DRAFT'
                 }))
             };
 
             const response = await api.post('/milestones/bulk_save/', payload);
 
-            const msg = response.data?.message || 'Milestones saved and draft invoices generated successfully';
+            const msg = response.data?.message || 'Milestones saved as draft';
             showNotification(msg, 'success');
             onBack();
         } catch (error: any) {

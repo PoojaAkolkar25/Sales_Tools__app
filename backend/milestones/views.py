@@ -288,202 +288,91 @@ class MilestoneViewSet(viewsets.ModelViewSet):
         saved_milestones = []
         invoices_created = 0
         already_invoiced = False
+        today = timezone.now().date()
+        seven_days_from_now = today + timedelta(days=7)
 
+        from .services import MilestoneService
+        
         for m_data in milestones_data:
             milestone_id = m_data.get('id')
-            
+            due_date_str = m_data.get('due_date')
+
+            # Parse due_date
+            due_date_val = None
+            if due_date_str:
+                try:
+                    if isinstance(due_date_str, str):
+                        due_date_val = datetime.datetime.strptime(due_date_str, '%Y-%m-%d').date()
+                    else:
+                        due_date_val = due_date_str
+                except (ValueError, TypeError):
+                    pass
+
+            # Determine appropriate status:
+            # - If already INVOICED, keep INVOICED
+            # - Otherwise, save as DRAFT
+            incoming_status = m_data.get('status', MilestoneStatus.DRAFT)
+            if incoming_status == MilestoneStatus.INVOICED or incoming_status == 'INVOICED':
+                save_status = MilestoneStatus.INVOICED
+            else:
+                save_status = MilestoneStatus.DRAFT
+
             # Prepare internal data structure
             payload = {
                 'sales_order': sales_order,
                 'milestone_no': m_data.get('milestone_no'),
                 'period_from': m_data.get('period_from'),
                 'period_to': m_data.get('period_to'),
-                'due_date': m_data.get('due_date'),
+                'due_date': due_date_str,
                 'description': m_data.get('description'),
                 'qty': m_data.get('qty', 1),
                 'rate': m_data.get('rate', 0),
                 'amount': m_data.get('amount', 0),
-                'status': m_data.get('status', MilestoneStatus.PENDING)
+                'status': save_status
             }
 
             if milestone_id:
+                # Preserve INVOICED status if already invoiced
+                existing = Milestone.objects.filter(id=milestone_id).first()
+                if existing and (existing.status == MilestoneStatus.INVOICED or existing.status == 'INVOICED'):
+                    payload.pop('status', None)  # Don't downgrade from INVOICED
                 Milestone.objects.filter(id=milestone_id).update(**payload)
                 milestone = Milestone.objects.get(id=milestone_id)
             else:
                 milestone = Milestone.objects.create(**payload)
 
-            # 3. Create invoice if pending and not already invoiced
-            if (milestone.status == MilestoneStatus.PENDING or milestone.status == 'PENDING') and not milestone.invoice:
-                self._internal_create_invoice(milestone)
-                invoices_created += 1
+            # Auto-create draft invoice if due date is within 7 days and not already invoiced
+            if not milestone.invoice and milestone.status != MilestoneStatus.INVOICED and milestone.status != 'INVOICED':
+                if due_date_val and due_date_val <= seven_days_from_now:
+                    MilestoneService.create_invoice_for_milestone(milestone)
+                    invoices_created += 1
             elif getattr(milestone, 'invoice', None) or milestone.status == MilestoneStatus.INVOICED or milestone.status == 'INVOICED':
                 already_invoiced = True
-            
+
             saved_milestones.append(milestone)
 
         if invoices_created > 0:
-            msg = f"Milestones saved. {invoices_created} draft invoice(s) generated successfully."
+            msg = f"Milestones saved as draft. {invoices_created} draft invoice(s) generated (due within 7 days)."
             if already_invoiced:
-                 msg += " Some milestones were already invoiced."
+                msg += " Some milestones were already invoiced."
         elif already_invoiced:
             msg = "Milestones saved. Note: Invoices were already created for these milestones."
         else:
-            msg = "Milestones saved successfully."
+            msg = "Milestones saved as draft. Invoices will be automatically generated 1 week before the due date."
 
         return Response({
             "message": msg,
             "data": MilestoneSerializer(saved_milestones, many=True).data
         })
 
-    def _internal_create_invoice(self, milestone):
-        """
-        Internal helper to create a draft invoice for a milestone.
-        """
-        sales_order = milestone.sales_order
-        
-        # Logic to find or create Lead/Deal (Shared with create_invoice action)
-        lead, deal, cost_sheet = self._find_context_for_invoice(sales_order)
-
-        from finance.services import InvoiceService
-        from finance.models import Invoice, InvoiceLineItem, InvoiceStatus
-        import datetime
-        
-        new_invoice_no = InvoiceService.generate_invoice_number()
-        
-        line_items_data = [{
-            'type': 'Service',
-            'description': f"{milestone.milestone_no}: {milestone.description}",
-            'hsn_sac': '998311',
-            'quantity': milestone.qty or 1,
-            'rate': milestone.amount or 0,
-            'discount': 0,
-            'gst_rate': 18
-        }]
-        
-        customer_state_id = self._get_customer_state_id(sales_order)
-
-        invoice_data = {
-            'lead': lead.id if lead else None,
-            'deal': deal.id if deal else None,
-            'is_gst_applicable': True,
-            'customer_state': customer_state_id
-        }
-
-        calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
-        
-        invoice = Invoice.objects.create(
-            invoice_no=new_invoice_no,
-            invoice_date=datetime.date.today(),
-            due_date=milestone.due_date or datetime.date.today(),
-            lead=lead,
-            deal=deal,
-            cost_sheet=cost_sheet,
-            billing_address=sales_order.billing_address,
-            shipping_address=sales_order.shipping_address,
-            currency=sales_order.currency,
-            invoice_type=calc_results['invoice_type'],
-            subtotal=calc_results['subtotal'],
-            total_discount=calc_results['total_discount'],
-            taxable_amount=calc_results['taxable_amount'],
-            total_tax=calc_results['total_tax'],
-            sales_tax_rate=calc_results['sales_tax_rate'],
-            sales_tax_amount=calc_results['sales_tax_amount'],
-            round_off=calc_results['round_off'],
-            total_amount=calc_results['total_amount'],
-            open_balance=calc_results['total_amount'],
-            grand_total_words=calc_results['grand_total_words'],
-            status=InvoiceStatus.DRAFT
-        )
-        
-        for idx, item in enumerate(calc_results['processed_items'], 1):
-            InvoiceLineItem.objects.create(
-                invoice=invoice,
-                sr_no=idx,
-                description=item.get('description'),
-                hsn_sac=item.get('hsn_sac'),
-                quantity=item.get('quantity', 1),
-                rate=item.get('rate', 0),
-                taxable_value=item.get('taxable_value'),
-                discount=item.get('discount', 0),
-                cgst_rate=item.get('cgst_rate', 0),
-                cgst_amount=item.get('cgst_amount', 0),
-                sgst_rate=item.get('sgst_rate', 0),
-                sgst_amount=item.get('sgst_amount', 0),
-                igst_rate=item.get('igst_rate', 0),
-                igst_amount=item.get('igst_amount', 0),
-                total_amount=item.get('total_amount')
-            )
-        
-        milestone.invoice = invoice
-        milestone.status = MilestoneStatus.INVOICED
-        milestone.save()
-        return invoice
-
-    def _find_context_for_invoice(self, sales_order):
-        lead = None
-        deal = None
-        cost_sheet = None
-        
-        estimates = sales_order.estimates.all()
-        if estimates.exists():
-             estimate = estimates.first()
-             deal = estimate.deal
-             cost_sheet = estimate.cost_sheet
-             if estimate.cost_sheet and estimate.cost_sheet.lead:
-                 lead = estimate.cost_sheet.lead
-        
-        if not lead and sales_order.customer:
-             customer_deals = sales_order.customer.deals.all()
-             if customer_deals.exists():
-                 latest_deal = customer_deals.order_by('-created_at').first()
-                 if not deal:
-                     deal = latest_deal
-                 if latest_deal and latest_deal.lead:
-                     lead = latest_deal.lead
-             
-             if not lead:
-                 from leads.models import Lead
-                 lead = Lead.objects.filter(customer_name__iexact=sales_order.customer.name).first()
-
-        if not lead:
-             try:
-                 from leads.models import Lead
-                 import time
-                 timestamp = int(time.time())
-                 new_lead_no = f"L-AUTO-{timestamp}"
-                 customer_name = sales_order.customer.name if sales_order.customer else sales_order.customer_name
-                 if not customer_name: customer_name = "Unknown Customer"
-
-                 lead = Lead.objects.create(
-                    lead_no=new_lead_no,
-                    customer_name=customer_name,
-                    project_name=f"Generated from SO {sales_order.so_number}",
-                    sales_person=sales_order.assigned_to.username if sales_order.assigned_to else 'System'
-                 )
-             except: pass
-        
-        return lead, deal, cost_sheet
-
-    def _get_customer_state_id(self, sales_order):
-        if not sales_order.customer:
-            return None
-        from finance.models import StateMaster
-        state_id = None
-        if sales_order.customer.state_code:
-            state_obj = StateMaster.objects.filter(code=sales_order.customer.state_code).first()
-            if state_obj: state_id = state_obj.id
-        if not state_id and sales_order.customer.state:
-            state_obj = StateMaster.objects.filter(name__iexact=sales_order.customer.state).first()
-            if state_obj: state_id = state_obj.id
-        return state_id
-
     @action(detail=True, methods=['post'])
     def create_invoice(self, request, pk=None):
+        from .services import MilestoneService
         milestone = self.get_object()
         if milestone.status == MilestoneStatus.INVOICED:
             return Response({"error": "Invoice already created for this milestone"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            self._internal_create_invoice(milestone)
+            MilestoneService.create_invoice_for_milestone(milestone)
             return Response(MilestoneSerializer(milestone).data)
         except Exception as e:
             logger.error(f"Error in create_invoice action: {str(e)}", exc_info=True)
