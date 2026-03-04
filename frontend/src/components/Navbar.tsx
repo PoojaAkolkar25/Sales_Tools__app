@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import {
     Bell,
     LogOut,
-    HelpCircle
+    HelpCircle,
+    User
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -11,9 +12,10 @@ interface NavbarProps {
     isSidebarExpanded?: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarExpanded }) => {
+const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarExpanded, user }) => {
     const [showNotifications, setShowNotifications] = useState(false);
     const [showHelpModal, setShowHelpModal] = useState(false);
+    const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
     return (
         <header className={`ae-navbar ${isSidebarExpanded ? 'sidebar-expanded' : ''}`}>
@@ -30,16 +32,16 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarExpanded }) => {
                         style={{ position: 'relative' }}
                         onClick={() => setShowNotifications(!showNotifications)}
                     >
-                        <Bell size={20} />
+                        <Bell size={16} />
                         <span style={{
                             position: 'absolute',
-                            top: '4px',
-                            right: '4px',
-                            width: '8px',
-                            height: '8px',
+                            top: '2px',
+                            right: '2px',
+                            width: '6px',
+                            height: '6px',
                             background: 'var(--theme-primary)',
                             borderRadius: '50%',
-                            border: '2px solid var(--ae-navy)'
+                            border: '1.5px solid var(--ae-navy)'
                         }}></span>
                     </button>
 
@@ -71,20 +73,102 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarExpanded }) => {
                     className="ae-icon-btn"
                     title="Help"
                 >
-                    <HelpCircle size={20} />
+                    <HelpCircle size={16} />
                 </button>
 
 
 
 
-                {/* Logout Button */}
-                <button
-                    onClick={() => onLogout()}
-                    className="ae-icon-btn"
-                    title="Logout"
-                >
-                    <LogOut size={20} />
-                </button>
+                {/* User Profile & Logout Dropdown */}
+                <div style={{ position: 'relative' }}>
+                    <button
+                        onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                        className={`ae-icon-btn ${showProfileDropdown ? 'active' : ''}`}
+                        title="User Profile"
+                        style={{
+                            background: showProfileDropdown ? 'rgba(255, 255, 255, 0.2)' : undefined,
+                            borderColor: showProfileDropdown ? 'rgba(255, 255, 255, 0.4)' : undefined
+                        }}
+                    >
+                        <User size={16} />
+                    </button>
+
+                    {showProfileDropdown && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            right: 0,
+                            marginTop: '12px',
+                            width: '240px',
+                            background: 'var(--bg-primary)',
+                            borderRadius: '12px',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                            border: '1px solid var(--border-primary)',
+                            zIndex: 100,
+                            overflow: 'hidden',
+                            animation: 'modalSlideUp 0.2s ease-out'
+                        }}>
+                            {/* User Info Header */}
+                            <div style={{
+                                padding: '16px',
+                                borderBottom: '1px solid var(--border-primary)',
+                                background: 'var(--bg-secondary)'
+                            }}>
+                                <div style={{
+                                    fontWeight: 700,
+                                    color: 'var(--text-primary)',
+                                    fontSize: '14px',
+                                    marginBottom: '2px'
+                                }}>
+                                    {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : user?.username || 'User'}
+                                </div>
+                                <div style={{
+                                    fontSize: '11px',
+                                    color: 'var(--theme-primary)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    fontWeight: 600
+                                }}>
+                                    {user?.role?.replace('_', ' ') || 'Member'}
+                                </div>
+                            </div>
+
+                            {/* Dropdown Actions */}
+                            <div style={{ padding: '8px' }}>
+                                <button
+                                    onClick={() => {
+                                        setShowProfileDropdown(false);
+                                        onLogout();
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        padding: '10px 12px',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        color: '#E53E3E',
+                                        fontSize: '13px',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(229, 62, 62, 0.1)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'transparent';
+                                    }}
+                                >
+                                    <LogOut size={16} />
+                                    <span>Logout</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Help Modal */}

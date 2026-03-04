@@ -170,7 +170,7 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Header Area */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
@@ -193,7 +193,9 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '12px 16px',
-                    borderBottom: '1px solid var(--border-primary)'
+                    borderBottom: '1px solid var(--border-primary)',
+                    flexWrap: 'wrap',
+                    gap: '12px'
                 }}>
                     <div style={{
                         display: 'flex',
@@ -413,7 +415,7 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
 
                 {/* Table Area */}
                 <div style={{ overflowX: 'auto' }}>
-                    <table className="ae-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+                    <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                         <colgroup>
                             {ALL_COL_CONFIG.filter(col => {
                                 if (!visibleColumns.includes(col.key)) return false;

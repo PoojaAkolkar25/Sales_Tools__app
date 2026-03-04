@@ -327,7 +327,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                         Selection & Summary
                     </h3>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '16px' }}>
+                    <div className="ae-grid-2" style={{ gap: '16px', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
                                 Select Customer <span style={{ color: 'var(--theme-primary)' }}>*</span>
@@ -365,7 +365,8 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                             border: '1px solid var(--border-primary)',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '40px'
+                            flexWrap: 'wrap',
+                            gap: '20px'
                         }}>
                             <div style={{ flexShrink: 0 }}>
                                 <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', margin: 0 }}>Order Details</h4>
@@ -429,7 +430,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id }) => {
                             Please select a Sales Order to define milestones.
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
+                        <div className="ae-table-wrapper" style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
                                 <thead style={{ background: 'var(--bg-accent)' }}>
                                     <tr>

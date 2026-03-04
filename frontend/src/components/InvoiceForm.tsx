@@ -552,7 +552,7 @@ const InvoiceForm: React.FC<{
             }}>
                 <div>
                     <SectionHeader title="Invoice Details" />
-                    <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                    <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Milestone Reference</label>
                             <select className="ae-input" disabled={isReadOnly} value={formData.milestone} onChange={e => setFormData({ ...formData, milestone: e.target.value })}>
@@ -684,11 +684,11 @@ const InvoiceForm: React.FC<{
 
                 <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                     <SectionHeader title="Invoice Items" />
-                    <div className="ae-table-container" style={{
+                    <div className="ae-table-wrapper" style={{
                         marginTop: '24px',
                         borderRadius: '12px',
                         border: '1px solid #E2E8F0',
-                        overflow: 'visible',
+                        overflowX: 'auto',
                         background: 'white',
                         position: 'relative',
                         zIndex: 10
@@ -1007,7 +1007,7 @@ const InvoiceForm: React.FC<{
                 {/* e-Invoice Details Section - Positioned after Items Table */}
                 <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                     <SectionHeader title="e-Invoice Details" />
-                    <div className="ae-grid-5">
+                    <div className="ae-grid-responsive-5">
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>IRN</label>
                             <input

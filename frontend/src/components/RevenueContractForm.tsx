@@ -152,7 +152,7 @@ const RevenueContractForm: React.FC<RevenueContractFormProps> = ({ id, onBack, o
                     {/* Basic Info */}
                     <section>
                         <SectionHeader title="Basic Information" />
-                        <div className="ae-grid-5">
+                        <div className="ae-grid-responsive-5">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Contract ID (Internal Reference)</label>
                                 <input
@@ -221,7 +221,7 @@ const RevenueContractForm: React.FC<RevenueContractFormProps> = ({ id, onBack, o
                     <section>
                         <SectionHeader title="Financials & Timeline" />
 
-                        <div className="ae-grid-5">
+                        <div className="ae-grid-responsive-5">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Total Amount</label>
                                 <input
@@ -354,7 +354,9 @@ const RevenueContractForm: React.FC<RevenueContractFormProps> = ({ id, onBack, o
                     padding: '4px',
                     borderRadius: '12px',
                     border: '1px solid var(--border-primary)',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                    flexWrap: 'wrap',
+                    justifyContent: 'flex-end'
                 }}>
                     {/* Save — orange when not cancelling */}
                     <button

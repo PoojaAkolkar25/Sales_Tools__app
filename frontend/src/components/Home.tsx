@@ -28,13 +28,13 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                 <div className="ae-hero-bg-glow" style={{ top: '-50%', left: '-10%', background: 'var(--theme-primary)' }}></div>
                 <div className="ae-hero-bg-glow" style={{ bottom: '-50%', right: '-10%', background: 'var(--ae-blue)' }}></div>
 
-                <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
 
                     <div style={{ textAlign: 'left' }}>
                         <h1 className="ae-hero-title" style={{ fontSize: '1.25rem', marginBottom: '4px' }}>
                             SalesEdge
                         </h1>
-                        <p className="ae-hero-text" style={{ fontSize: '0.85rem', margin: '0', maxWidth: '500px' }}>
+                        <p className="ae-hero-text" style={{ fontSize: '0.85rem', margin: '0', maxWidth: '500px', color: 'white' }}>
                             Streamline your workflow, manage leads, and close deals faster.
                         </p>
                     </div>
@@ -103,7 +103,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
 
 
                 {/* Lower Section */}
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', flex: 1, overflow: 'hidden' }}>
+                <div className="ae-grid-2-1-responsive" style={{ flex: 1, overflow: 'hidden' }}>
 
                     {/* Activity Feed */}
                     <div className="ae-panel" style={{ padding: '16px', overflowY: 'auto' }}>

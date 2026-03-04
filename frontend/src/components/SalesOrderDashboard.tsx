@@ -319,7 +319,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    flexWrap: 'nowrap',
+                    flexWrap: 'wrap',
                     gap: '12px',
                     padding: '12px 16px',
                     borderBottom: '1px solid var(--border-primary)',
@@ -671,7 +671,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                     </button>
 
                     <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
-                        <table className="ae-table" style={{ tableLayout: 'fixed', width: 'max-content' }}>
+                        <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: 'max-content' }}>
                             <colgroup>
                                 {ALL_COL_CONFIG.filter(col => visibleColumns[col.key as keyof typeof visibleColumns]).map(col => (
                                     <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />

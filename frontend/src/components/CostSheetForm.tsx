@@ -4,6 +4,7 @@ import { Trash2, Save, CheckCircle, XCircle, Clock, File, Paperclip, X, Download
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
+import AutoExpandingTextarea from './AutoExpandingTextarea';
 import { formatToAppDate } from '../utils/dateUtils';
 
 interface Lead {
@@ -62,18 +63,15 @@ const TableHeader = ({ columns, isReadOnly }: { columns: string[], isReadOnly: b
     );
 };
 
-const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly, onKeyDown, symbol = "", suffix = "", placeholder }: any) => {
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly, onKeyDown, symbol = "", suffix = "", placeholder, maxRows }: any) => {
+    const handleChange = (e: any) => {
         const val = e.target.value;
         if (type === 'number') {
-            // Allow empty string
             if (val === '') {
                 onChange('');
                 return;
             }
-            // Prevent negatives
             if (val.startsWith('-')) return;
-            // Allow numbers and decimals
             if (!isNaN(Number(val)) || val.endsWith('.')) {
                 onChange(val);
             }
@@ -82,7 +80,6 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly,
         }
     };
 
-    // Display empty string if value is 0 or "0" to show placeholder
     const displayValue = (type === 'number' && (value === 0 || value === '0' || value === '')) ? '' : value;
 
     return (
@@ -94,35 +91,57 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly,
                 background: 'white',
                 border: '1px solid #E2E8F0',
                 borderRadius: '6px',
-                height: '30px',
-                padding: '0 8px',
+                height: type === 'textarea' ? 'auto' : '30px',
+                minHeight: type === 'textarea' ? '30px' : 'none',
+                padding: type === 'textarea' ? '4px 8px' : '0 8px',
                 transition: 'all 0.2s',
             }}
                 className={`${className} input-container`}
             >
                 {symbol && <span style={{ marginRight: '4px', fontSize: '0.85rem', color: '#718096', fontWeight: 600 }}>{symbol}</span>}
-                <input
-                    style={{
-                        flex: 1,
-                        width: '100%',
-                        height: '100%',
-                        padding: '0',
-                        border: 'none',
-                        outline: 'none',
-                        fontSize: '0.85rem',
-                        fontWeight: 400,
-                        color: 'var(--text-primary)',
-                        background: 'transparent',
-                        textAlign: 'left'
-                    }}
-                    className="placeholder-gray-400"
-                    type={type}
-                    value={displayValue}
-                    placeholder={placeholder || (type === 'number' ? "0" : "")}
-                    readOnly={isReadOnly}
-                    onChange={handleChange}
-                    onKeyDown={onKeyDown}
-                />
+                {type === 'textarea' ? (
+                    <AutoExpandingTextarea
+                        value={displayValue}
+                        onChange={handleChange}
+                        placeholder={placeholder}
+                        disabled={isReadOnly}
+                        className="placeholder-gray-400"
+                        style={{
+                            flex: 1,
+                            width: '100%',
+                            border: 'none',
+                            outline: 'none',
+                            fontSize: '0.85rem',
+                            padding: '0',
+                            background: 'transparent'
+                        }}
+                        onKeyDown={onKeyDown}
+                        maxRows={maxRows}
+                    />
+                ) : (
+                    <input
+                        style={{
+                            flex: 1,
+                            width: '100%',
+                            height: '100%',
+                            padding: '0',
+                            border: 'none',
+                            outline: 'none',
+                            fontSize: '0.85rem',
+                            fontWeight: 400,
+                            color: 'var(--text-primary)',
+                            background: 'transparent',
+                            textAlign: 'left'
+                        }}
+                        className="placeholder-gray-400"
+                        type={type}
+                        value={displayValue}
+                        placeholder={placeholder || (type === 'number' ? "0" : "")}
+                        readOnly={isReadOnly}
+                        onChange={handleChange}
+                        onKeyDown={onKeyDown}
+                    />
+                )}
                 {suffix && <span style={{ marginLeft: '4px', fontSize: '0.85rem', color: '#718096', fontWeight: 600 }}>{suffix}</span>}
             </div>
         </td>
@@ -770,9 +789,8 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                 padding: '6px',
                 borderRadius: '12px',
                 border: '1px solid var(--border-primary)',
-                width: 'fit-content',
-                margin: '0 auto',
-                boxShadow: 'var(--shadow-sm)'
+                flexWrap: 'wrap',
+                justifyContent: 'center'
             }}>
                 <button
                     onClick={() => setActiveTab('form')}
@@ -897,7 +915,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     <div className="metadata-section">
                         <SectionHeader title="Cost Sheet Information" />
                         {/* Row 1: Customer Name, Lead No, Project Name */}
-                        <div className="ae-grid-5">
+                        <div className="ae-grid-responsive-5">
                             {/* Customer Name */}
                             <div>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Customer Name</label>
@@ -1037,7 +1055,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                     <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="License" />
-                        <div style={{ overflowX: 'auto' }}>
+                        <div className="ae-table-wrapper" style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1100px', marginTop: '12px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['License Name', 'License Type', 'Rate/Month', 'Qty', 'Month', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
@@ -1086,6 +1104,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     value={item.remark}
                                                     onChange={(v: string) => updateItem(idx, 'remark', v, licenseItems, setLicenseItems)}
                                                     placeholder="Remark"
+                                                    type="textarea"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === licenseItems.length - 1) {
                                                             const isEmpty = !item.name && !item.type && (!item.rate || item.rate === 0) && (!item.qty || item.qty === 0) && !item.period;
@@ -1094,6 +1113,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                             addItem('license');
                                                         }
                                                     }}
+                                                    maxRows={5}
                                                 />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
@@ -1135,7 +1155,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                     <section className="implementation-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Services - Implementation" />
-                        <div style={{ overflowX: 'auto' }}>
+                        <div className="ae-table-wrapper" style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1100px', marginTop: '12px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
@@ -1170,7 +1190,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                         )}
                                                     </td>
                                                 )}
-                                                <InputCell isReadOnly={isReadOnly} value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, implementationItems, setImplementationItems)} placeholder="Resource Category" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, implementationItems, setImplementationItems)} placeholder="Resource Category" maxRows={5} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.num_resources} onChange={(v: number) => updateItem(idx, 'num_resources', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.num_days} onChange={(v: number) => updateItem(idx, 'num_days', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" />
                                                 <ReadOnlyCell value={totalDays} />
@@ -1184,6 +1204,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     value={item.remark}
                                                     onChange={(v: string) => updateItem(idx, 'remark', v, implementationItems, setImplementationItems)}
                                                     placeholder="Remark"
+                                                    type="textarea"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === implementationItems.length - 1) {
                                                             const isEmpty = !item.category && (!item.num_resources || item.num_resources === 0) && (!item.num_days || item.num_days === 0) && (!item.rate_per_day || item.rate_per_day === 0);
@@ -1192,6 +1213,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                             addItem('implementation');
                                                         }
                                                     }}
+                                                    maxRows={5}
                                                 />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
@@ -1233,7 +1255,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                     <section className="support-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Services - Support" />
-                        <div style={{ overflowX: 'auto' }}>
+                        <div className="ae-table-wrapper" style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1100px', marginTop: '12px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['Resource Category', 'No. of Resources', 'No. of Days', 'Total Days', 'Rate/Day', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
@@ -1268,7 +1290,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                         )}
                                                     </td>
                                                 )}
-                                                <InputCell isReadOnly={isReadOnly} value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, supportItems, setSupportItems)} placeholder="Resource Category" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, supportItems, setSupportItems)} placeholder="Resource Category" maxRows={5} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.num_resources} onChange={(v: number) => updateItem(idx, 'num_resources', v, supportItems, setSupportItems)} type="number" className="no-spinner" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.num_days} onChange={(v: number) => updateItem(idx, 'num_days', v, supportItems, setSupportItems)} type="number" className="no-spinner" />
                                                 <ReadOnlyCell value={totalDays} />
@@ -1282,6 +1304,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     value={item.remark}
                                                     onChange={(v: string) => updateItem(idx, 'remark', v, supportItems, setSupportItems)}
                                                     placeholder="Remark"
+                                                    type="textarea"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === supportItems.length - 1) {
                                                             const isEmpty = !item.category && (!item.num_resources || item.num_resources === 0) && (!item.num_days || item.num_days === 0) && (!item.rate_per_day || item.rate_per_day === 0);
@@ -1290,6 +1313,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                             addItem('support');
                                                         }
                                                     }}
+                                                    maxRows={5}
                                                 />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
@@ -1331,7 +1355,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                     <section className="infra-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Infrastructure Cost" />
-                        <div style={{ overflowX: 'auto' }}>
+                        <div className="ae-table-wrapper" style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1100px', marginTop: '12px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['Platform', 'Type', 'Rate/Month', 'Qty', 'Month', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
@@ -1365,7 +1389,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                         )}
                                                     </td>
                                                 )}
-                                                <InputCell isReadOnly={isReadOnly} value={item.name} onChange={(v: string) => updateItem(idx, 'name', v, infraItems, setInfraItems)} placeholder="Infra Name" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.name} onChange={(v: string) => updateItem(idx, 'name', v, infraItems, setInfraItems)} placeholder="Infra Name" maxRows={5} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.qty} onChange={(v: number) => updateItem(idx, 'qty', v, infraItems, setInfraItems)} type="number" className="no-spinner" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.months} onChange={(v: number) => updateItem(idx, 'months', v, infraItems, setInfraItems)} type="number" className="no-spinner" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.rate_per_month} onChange={(v: number) => updateItem(idx, 'rate_per_month', v, infraItems, setInfraItems)} type="number" className="no-spinner" symbol={currencySymbol} />
@@ -1378,6 +1402,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     value={item.remark}
                                                     onChange={(v: string) => updateItem(idx, 'remark', v, infraItems, setInfraItems)}
                                                     placeholder="Remark"
+                                                    type="textarea"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === infraItems.length - 1) {
                                                             const isEmpty = !item.name && (!item.qty || item.qty === 0) && (!item.months || item.months === 0) && (!item.rate_per_month || item.rate_per_month === 0);
@@ -1386,6 +1411,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                             addItem('infra');
                                                         }
                                                     }}
+                                                    maxRows={5}
                                                 />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
@@ -1427,7 +1453,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
 
                     <section className="other-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Other Category" />
-                        <div style={{ overflowX: 'auto' }}>
+                        <div className="ae-table-wrapper" style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px', marginTop: '12px' }}>
                                 <TableHeader isReadOnly={isReadOnly} columns={['Description', 'Est. Cost', 'Margin %', 'Est. Margin', 'Est. Price', 'Remark']} />
                                 <tbody>
@@ -1461,7 +1487,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                         )}
                                                     </td>
                                                 )}
-                                                <InputCell isReadOnly={isReadOnly} value={item.description} onChange={(v: string) => updateItem(idx, 'description', v, otherItems, setOtherItems)} placeholder="Description" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.description} onChange={(v: string) => updateItem(idx, 'description', v, otherItems, setOtherItems)} placeholder="Description" type="textarea" maxRows={5} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.estimated_cost} onChange={(v: number) => updateItem(idx, 'estimated_cost', v, otherItems, setOtherItems)} type="number" className="no-spinner" symbol={currencySymbol} />
                                                 <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, otherItems, setOtherItems)} type="number" suffix="%" />
                                                 <ReadOnlyCell value={marginAmount} symbol={currencySymbol} />
@@ -1471,6 +1497,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     value={item.remark}
                                                     onChange={(v: string) => updateItem(idx, 'remark', v, otherItems, setOtherItems)}
                                                     placeholder="Remark"
+                                                    type="textarea"
                                                     onKeyDown={(e: any) => {
                                                         if (e.key === 'Tab' && !e.shiftKey && idx === otherItems.length - 1) {
                                                             const isEmpty = !item.description && (!item.estimated_cost || item.estimated_cost === 0);
@@ -1479,6 +1506,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                             addItem('other');
                                                         }
                                                     }}
+                                                    maxRows={5}
                                                 />
                                                 {!isReadOnly && (
                                                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
@@ -1521,16 +1549,14 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     <section className="remarks-section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Description/Remark" />
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <textarea
-                                className="ae-input"
+                            <AutoExpandingTextarea
                                 value={overallRemarks}
                                 onChange={(e) => setOverallRemarks(e.target.value)}
-                                readOnly={isReadOnly}
+                                disabled={isReadOnly}
                                 placeholder="Description/Remark"
                                 style={{
-                                    height: '48px',
+                                    minHeight: '48px',
                                     padding: '8px 12px',
-                                    resize: 'none',
                                     width: '100%',
                                     border: isReadOnly ? 'none' : '1px solid #E2E8F0',
                                     borderRadius: '6px',
@@ -1836,7 +1862,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                     padding: '4px',
                     borderRadius: '12px',
                     border: '1px solid var(--border-primary)',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                    flexWrap: 'wrap',
+                    justifyContent: 'flex-end'
                 }}
                     className="button-container"
                     onMouseLeave={() => {
@@ -2124,22 +2152,20 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             <p style={{ margin: '0 0 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                                 Please provide a reason for {showRevertModal ? 'reverting' : 'rejection'}:
                             </p>
-                            <textarea
+                            <AutoExpandingTextarea
                                 autoFocus
                                 value={showRevertModal ? revertComment : rejectComment}
                                 onChange={e => showRevertModal ? setRevertComment(e.target.value) : setRejectComment(e.target.value)}
                                 placeholder={showRevertModal ? "Enter revert comments..." : "Enter rejection comments..."}
-                                rows={3}
                                 style={{
                                     width: '100%',
                                     borderRadius: '8px',
                                     border: '1px solid var(--border-primary)',
                                     padding: '10px 12px',
                                     fontSize: '0.82rem',
-                                    resize: 'vertical',
-                                    fontFamily: 'inherit',
                                     outline: 'none',
-                                    boxSizing: 'border-box'
+                                    boxSizing: 'border-box',
+                                    minHeight: '80px'
                                 }}
                             />
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>

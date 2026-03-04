@@ -142,7 +142,7 @@ const AuditTrailPage: React.FC = () => {
                 background: 'var(--bg-secondary)',
                 color: 'var(--text-primary)'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <History size={24} color="var(--theme-primary)" />
                         <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>Audit Trail Repository</h2>
@@ -175,10 +175,13 @@ const AuditTrailPage: React.FC = () => {
             {/* Module Selection Bar */}
             <div style={{
                 display: 'flex',
-                gap: '8px',
-                padding: '16px 24px',
-                background: 'var(--bg-primary)',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
                 borderBottom: '1px solid var(--border-primary)',
+                flexWrap: 'wrap',
+                gap: '12px',
+                background: 'var(--bg-primary)',
                 overflowX: 'auto',
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none'

@@ -297,7 +297,7 @@ const BankTransactionsDashboard: React.FC = () => {
             />
 
             {/* Header & Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
@@ -313,7 +313,8 @@ const BankTransactionsDashboard: React.FC = () => {
                     padding: '6px 12px',
                     borderRadius: '12px',
                     border: '1px solid var(--border-primary)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                    flexWrap: 'wrap'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#718096' }}>Format:</label>

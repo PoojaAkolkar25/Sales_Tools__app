@@ -532,10 +532,10 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '8px',
+                    flexWrap: 'wrap',
+                    gap: '12px',
                     padding: '12px 16px',
                     borderBottom: '1px solid var(--border-primary)',
-                    whiteSpace: 'nowrap',
                     position: 'relative'
                 }}>
                     {/* Status Tabs */}
@@ -859,7 +859,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                     </button>
 
                     <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '4px', border: '1px solid var(--border-primary)' }}>
-                        <table className="ae-table" style={{ tableLayout: 'fixed', width: 'max-content' }}>
+                        <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: 'max-content' }}>
                             <colgroup>
                                 {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
                                     <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />

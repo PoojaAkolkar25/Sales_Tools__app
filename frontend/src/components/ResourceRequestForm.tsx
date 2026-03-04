@@ -14,6 +14,7 @@ import {
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
+import AutoExpandingTextarea from './AutoExpandingTextarea';
 import { formatToAppDate } from '../utils/dateUtils';
 
 interface ResourceRequestFormProps {
@@ -412,7 +413,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     {/* Request Information */}
                     <div>
                         <SectionHeader title="Request Information" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                        <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Request Date <span style={{ color: '#ef4444' }}>*</span></label>
                                 {isReadOnly ? (
@@ -471,7 +472,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     {/* Requestor Details */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Requestor Details" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                        <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Employee ID <span style={{ color: '#ef4444' }}>*</span></label>
                                 <input type="text" name="employee_id" value={formData.employee_id} onChange={handleInputChange} className="ae-input" placeholder="EMP1023" disabled={isReadOnly} />
@@ -525,7 +526,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     {/* Project Details */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Project Details" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                        <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Project Name <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
@@ -583,7 +584,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     {/* Server Configuration */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Server Configuration" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                        <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Resource Type <span style={{ color: '#ef4444' }}>*</span></label>
                                 <SearchableDropdown
@@ -735,7 +736,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     {/* Database / RDS Details */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Database / RDS Details" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                        <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Database Required</label>
                                 <div style={{ display: 'flex', background: '#F1F5F9', padding: '3px', borderRadius: '8px', width: 'fit-content', height: '38px', alignItems: 'center' }}>
@@ -863,30 +864,44 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     {/* Usage & Justification */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Usage & Justification" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                        <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Purpose of Request <span style={{ color: '#ef4444' }}>*</span></label>
-                                <textarea
+                                <AutoExpandingTextarea
                                     name="purpose_of_request"
                                     value={formData.purpose_of_request}
                                     onChange={handleInputChange}
-                                    className="ae-input"
-                                    style={{ height: '48px', padding: '8px 12px', resize: 'none' }}
                                     disabled={isReadOnly}
                                     placeholder="Enter purpose"
-                                ></textarea>
+                                    style={{
+                                        minHeight: '48px',
+                                        padding: '8px 12px',
+                                        width: '100%',
+                                        border: '1px solid #E2E8F0',
+                                        borderRadius: '6px',
+                                        fontSize: '0.85rem'
+                                    }}
+                                    maxRows={5}
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Business Justification <span style={{ color: '#ef4444' }}>*</span></label>
-                                <textarea
+                                <AutoExpandingTextarea
                                     name="business_justification"
                                     value={formData.business_justification}
                                     onChange={handleInputChange}
-                                    className="ae-input"
-                                    style={{ height: '48px', padding: '8px 12px', resize: 'none' }}
                                     disabled={isReadOnly}
                                     placeholder="Enter justification"
-                                ></textarea>
+                                    style={{
+                                        minHeight: '48px',
+                                        padding: '8px 12px',
+                                        width: '100%',
+                                        border: '1px solid #E2E8F0',
+                                        borderRadius: '6px',
+                                        fontSize: '0.85rem'
+                                    }}
+                                    maxRows={5}
+                                />
                             </div>
                             <div style={{ display: 'contents' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -956,7 +971,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     {/* Issuance Details */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Issuance Details" />
-                        <div className="ae-grid-5" style={{ marginBottom: '16px' }}>
+                        <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Server Asset ID</label>
                                 <input
@@ -1291,16 +1306,14 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                             <p style={{ margin: '0 0 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                                 Please provide a reason for rejection:
                             </p>
-                            <textarea
+                            <AutoExpandingTextarea
                                 autoFocus
-                                className="ae-input"
                                 value={rejectRemarks}
                                 onChange={e => setRejectRemarks(e.target.value)}
                                 placeholder="Enter remarks here..."
                                 style={{
-                                    height: '48px',
+                                    minHeight: '48px',
                                     padding: '8px 12px',
-                                    resize: 'none',
                                     width: '100%',
                                     borderRadius: '8px',
                                     border: '1px solid var(--border-primary)',

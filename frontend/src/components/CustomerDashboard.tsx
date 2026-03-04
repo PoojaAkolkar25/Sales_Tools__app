@@ -233,11 +233,13 @@ const CustomerDashboard: React.FC = () => {
                                         overflowY: 'auto'
                                     }}>
                                         <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
                                             padding: '12px 16px',
                                             borderBottom: '1px solid var(--border-primary)',
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
+                                            flexWrap: 'wrap',
+                                            gap: '12px',
                                             background: 'var(--bg-secondary)'
                                         }}>
                                             <button

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  FileText,
   Handshake,
-  FileSpreadsheet,
   Gavel,
   ShoppingBag,
   Milestone,
@@ -21,7 +19,9 @@ import {
   Settings as SettingsIcon,
   Palette,
   ChevronDown,
-  History
+  History,
+  Calculator,
+  ClipboardList
 } from 'lucide-react';
 
 
@@ -73,8 +73,8 @@ const getNavItems = (user: any): NavItem[] => {
     { id: 'home', label: 'Home', icon: LayoutDashboard, path: '/home' },
     { id: 'lead', label: 'Lead', icon: Users, path: '/lead' },
     { id: 'deal', label: 'Deal', icon: Handshake, path: '/deal' },
-    { id: 'cost-sheet', label: 'Cost Sheet', icon: FileText, path: '/cost-sheet' },
-    { id: 'estimates', label: 'Estimates', icon: FileSpreadsheet, path: '/estimates' },
+    { id: 'cost-sheet', label: 'Cost Sheet', icon: Calculator, path: '/cost-sheet' },
+    { id: 'estimates', label: 'Estimates', icon: ClipboardList, path: '/estimates' },
     { id: 'sales-order', label: 'Sales Order', icon: ShoppingBag, path: '/sales-order' },
     { id: 'milestone', label: 'Milestone', icon: Milestone, path: '/milestone' },
     { id: 'inventory', label: 'Inventory', icon: Boxes, path: '/inventory' },
@@ -510,7 +510,7 @@ const AppContent: React.FC = () => {
       <Route path="/cost-sheet" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
+            <div className="main-route-container" style={{ background: '#FFFFF0', padding: '0' }}>
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -623,7 +623,7 @@ const AppContent: React.FC = () => {
       <Route path="/user-management" element={
         user && user.role === 'app_admin' ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
+            <div className="main-route-container" style={{ background: '#FFFFF0', padding: '0' }}>
               <UserManagement />
             </div>
           </ModuleWrapper>
@@ -780,7 +780,7 @@ const AppContent: React.FC = () => {
       <Route path="/deal" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
+            <div className="main-route-container" style={{ background: '#FFFFF0', padding: '0' }}>
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -904,7 +904,7 @@ const AppContent: React.FC = () => {
       <Route path="/estimates" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
+            <div className="main-route-container" style={{ background: '#FFFFF0', padding: '0' }}>
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -1020,7 +1020,7 @@ const AppContent: React.FC = () => {
       < Route path="/sales-order" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
+            <div className="main-route-container" style={{ background: '#FFFFF0', padding: '0' }}>
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -1125,7 +1125,7 @@ const AppContent: React.FC = () => {
                     onMouseLeave={(e) => { if (!isExtractingSO && !isDragging) { e.currentTarget.style.borderColor = '#E0E6ED'; e.currentTarget.style.background = '#FAFBFC'; } }}
                   >
                     <input id="so-upload-input" type="file" className="hidden" onChange={handleSOUpload} accept=".pdf" disabled={isExtractingSO} />
-                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', color: 'var(--theme-primary)', flexShrink: 0 }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#FFFFF0', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', color: 'var(--theme-primary)', flexShrink: 0 }}>
                       {isExtractingSO ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -1158,7 +1158,7 @@ const AppContent: React.FC = () => {
       < Route path="/invoice" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
+            <div className="main-route-container" style={{ background: '#FFFFF0', padding: '0' }}>
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -1264,7 +1264,7 @@ const AppContent: React.FC = () => {
       < Route path="/payment" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
+            <div className="main-route-container" style={{ background: '#FFFFF0', padding: '0' }}>
               <Payment />
             </div>
           </ModuleWrapper>
@@ -1273,7 +1273,7 @@ const AppContent: React.FC = () => {
       < Route path="/milestone" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
+            <div className="main-route-container" style={{ background: '#FFFFF0', padding: '0' }}>
               <div className="space-y-8">
                 <div style={{
                   display: 'flex',
@@ -1511,7 +1511,7 @@ const AppContent: React.FC = () => {
       < Route path="/revenue" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
-            <div className="main-route-container" style={{ background: 'white', padding: '0' }}>
+            <div className="main-route-container" style={{ background: '#FFFFF0', padding: '0' }}>
               <RevenueDashboard />
             </div>
           </ModuleWrapper >

@@ -129,7 +129,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
                             {id ? 'Edit Lead Information' : 'Create New Lead'}
                         </h2>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
+                    <div className="ae-grid-4" style={{ marginBottom: '16px' }}>
                         {/* Company Name */}
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>

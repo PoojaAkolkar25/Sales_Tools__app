@@ -166,10 +166,12 @@ const RevenueDashboard: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '0 8px',
-                marginBottom: '24px'
+                marginBottom: '24px',
+                flexWrap: 'wrap',
+                gap: '16px'
             }}>
                 {/* Left: Heading + buttons inline */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Revenue</h1>
 
@@ -256,7 +258,7 @@ const RevenueDashboard: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        flexWrap: 'nowrap',
+                        flexWrap: 'wrap',
                         gap: '12px',
                         padding: '12px 16px',
                         borderBottom: '1px solid var(--border-primary)',
@@ -269,7 +271,8 @@ const RevenueDashboard: React.FC = () => {
                             padding: '6px',
                             borderRadius: '12px',
                             border: '1px solid var(--border-primary)',
-                            boxShadow: 'var(--shadow-sm)'
+                            boxShadow: 'var(--shadow-sm)',
+                            flexWrap: 'wrap'
                         }}>
                             {statusTabs.map((tab) => {
                                 const isActive = filters.status === tab.value;
@@ -486,8 +489,8 @@ const RevenueDashboard: React.FC = () => {
                             <ChevronRight size={18} />
                         </button>
 
-                        <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
-                            <table className="ae-table" style={{ tableLayout: 'auto', width: '100%', minWidth: '1000px' }}>
+                        <div ref={tableScrollRef} className="ae-table-wrapper" style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
+                            <table className="ae-table compact-table" style={{ tableLayout: 'auto', width: '100%', minWidth: '1000px' }}>
                                 <thead>
                                     <tr>
                                         {visibleColumns.map(key => {
@@ -576,7 +579,7 @@ const RevenueDashboard: React.FC = () => {
                                                             return (
                                                                 <td key={key}>
                                                                     <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: 'var(--bg-secondary)', color: 'var(--theme-primary)' }}>
-                                                                        {contract.status.replace('_', ' ')}
+                                                                        {(contract.status || '').replace('_', ' ')}
                                                                     </span>
                                                                 </td>
                                                             );

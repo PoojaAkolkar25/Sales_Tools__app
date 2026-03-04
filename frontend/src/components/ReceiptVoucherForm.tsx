@@ -25,10 +25,10 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
         reference_number: '',
         payment_method: 'Bank Transfer (NEFT)',
         deposit_to: '',
-        amount_received: '0',
-        tds_receivable: '0',
-        tds_percentage: '0',
-        bank_charges: '0',
+        amount_received: '',
+        tds_receivable: '',
+        tds_percentage: '',
+        bank_charges: '',
         exchange_rate: '1',
         adjustments: [] as any[],
         attachments: [] as File[]
@@ -171,10 +171,10 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                 reference_number: voucher.reference_number || '',
                 payment_method: voucher.payment_method || 'Bank Transfer (NEFT)',
                 deposit_to: voucher.deposit_to || '',
-                amount_received: voucher.amount_received || '0',
-                tds_receivable: voucher.tds_receivable || '0',
-                tds_percentage: '0',
-                bank_charges: '0',
+                amount_received: voucher.amount_received || '',
+                tds_receivable: voucher.tds_receivable || '',
+                tds_percentage: '',
+                bank_charges: '',
                 exchange_rate: voucher.exchange_rate || '1',
                 adjustments: voucher.adjustments || [],
                 attachments: [] // Attachments not loaded for now, can be added if API supports
@@ -291,7 +291,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                     {/* 1. Basic Info Section */}
                     <section>
                         <SectionHeader title={id ? 'Edit Receipt Voucher' : 'Create Receipt Voucher'} />
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px' }}>
+                        <div className="ae-grid-responsive-5" style={{ gap: '16px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Name</label>
                                 <SearchableDropdown
@@ -389,6 +389,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                         style={{ width: '100%', padding: '4px 12px 4px 32px', background: 'white', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 500, color: '#1a1f36', height: '34px' }}
                                         value={formData.amount_received}
                                         onChange={e => setFormData({ ...formData, amount_received: e.target.value })}
+                                        placeholder="0"
                                     />
                                 </div>
                             </div>
@@ -402,6 +403,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                         style={{ width: '100%', padding: '4px 12px 4px 32px', background: 'white', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 500, color: '#1a1f36', height: '34px' }}
                                         value={formData.bank_charges}
                                         onChange={e => setFormData({ ...formData, bank_charges: e.target.value })}
+                                        placeholder="0"
                                     />
                                 </div>
                             </div>
@@ -426,6 +428,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                                     style={{ width: '100%', padding: '4px 12px', background: 'white', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 500, color: '#1a1f36', height: '34px' }}
                                     value={formData.tds_percentage}
                                     onChange={e => setFormData({ ...formData, tds_percentage: e.target.value })}
+                                    placeholder="0"
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -446,7 +449,7 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                     <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Outstanding Transactions" />
 
-                        <div>
+                        <div className="ae-table-wrapper" style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ background: 'var(--bg-accent)' }}>
@@ -728,7 +731,8 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                             display: 'flex',
                             justifyContent: 'flex-end',
                             gap: '32px',
-                            border: '1px solid #E2E8F0'
+                            border: '1px solid #E2E8F0',
+                            flexWrap: 'wrap'
                         }}>
                             <div style={{ textAlign: 'right' }}>
                                 <div style={{ fontSize: '0.75rem', color: '#718096', marginBottom: '4px', fontWeight: 600 }}>Bank Charges Diff:</div>
