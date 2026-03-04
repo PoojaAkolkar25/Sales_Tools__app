@@ -56,7 +56,7 @@ html {
   /* Dimensions */
   --nav-height: 56px;
   --sidebar-width: 64px;
-  --sidebar-width-expanded: 160px;
+  --sidebar-width-expanded: 190px;
   --sidebar-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Shadows */
@@ -1074,24 +1074,30 @@ option {
 
 
 .sidebar-logo {
-  padding: 8px;
+  padding: 12px 0;
   background: rgba(0, 0, 0, 0.2);
   transition: all var(--sidebar-transition);
   display: flex;
   align-items: center;
-  min-height: var(--nav-height);
+  justify-content: center;
+  min-height: 64px;
 }
+
 
 .sidebar.expanded .sidebar-logo {
-  padding: 8px 16px;
+  padding: 12px 20px;
+  justify-content: flex-start;
 }
 
+
 .sidebar-logo-img {
-  width: 36px;
+  width: 52px;
   height: auto;
   transition: all var(--sidebar-transition);
   flex-shrink: 0;
 }
+
+
 
 
 
@@ -1103,11 +1109,15 @@ option {
 
 .sidebar.expanded .sidebar-logo h1 {
   display: block;
-  font-size: 1.30rem;
+  font-size: 1.4rem;
   font-weight: 800;
-  margin: 3px;
+  margin: 0;
+  margin-left: 14px;
   color: white;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
 }
+
 
 
 

@@ -582,6 +582,18 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                 padding: '24px'
             }}>
                 {/* Main Form Area - Single Column Stack */}
+                <style>
+                    {`
+                        .ae-no-spinner::-webkit-outer-spin-button,
+                        .ae-no-spinner::-webkit-inner-spin-button {
+                            -webkit-appearance: none;
+                            margin: 0;
+                        }
+                        .ae-no-spinner {
+                            -moz-appearance: textfield;
+                        }
+                    `}
+                </style>
                 <div className="space-y-0">
                     {/* 1. Basic Info Section */}
                     <section>
@@ -823,6 +835,90 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                 )}
                             </div>
 
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Currency</label>
+                                <SearchableDropdown
+                                    options={[
+                                        { value: 'INR', label: 'INR - Indian Rupee' },
+                                        { value: 'USD', label: 'USD - US Dollar' }
+                                    ]}
+                                    value={salesOrder.currency}
+                                    onChange={(val) => handleInputChange({ target: { name: 'currency', value: val } } as any)}
+                                    placeholder="Select Currency"
+                                    className="w-full"
+                                    disabled={isSubmitted}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Order Date <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
+                                {isSubmitted ? (
+                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', ...getHighlightStyle(salesOrder.order_date) }}>{salesOrder.order_date ? formatToAppDate(salesOrder.order_date) : ''}</div>
+                                ) : (
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            value={salesOrder.order_date ? formatToAppDate(salesOrder.order_date) : ''}
+                                            readOnly
+                                            className="ae-input"
+                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px', height: '34px', ...getHighlightStyle(salesOrder.order_date) }}
+                                            onClick={(e) => {
+                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                                if (dateInput) dateInput.showPicker();
+                                            }}
+                                            placeholder="Enter date"
+                                        />
+                                        <input
+                                            name="order_date"
+                                            type="date"
+                                            value={salesOrder.order_date || ''}
+                                            onChange={handleInputChange}
+                                            tabIndex={-1}
+                                            style={{
+                                                position: 'absolute',
+                                                visibility: 'hidden',
+                                                width: 0,
+                                                height: 0
+                                            }}
+                                        />
+                                        <Calendar size={14} focusable="false" style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
+                                    </div>
+                                )}
+                            </div>
+
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Billing Address</label>
+                                <AutoExpandingTextarea
+                                    name="billing_address"
+                                    value={salesOrder.billing_address || ''}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    style={{
+                                        minHeight: '48px',
+                                        padding: '4px 12px',
+                                        ...getHighlightStyle(salesOrder.billing_address),
+                                    }}
+                                    disabled={isSubmitted}
+                                    placeholder="Billing Address"
+                                />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Shipping Address</label>
+                                <AutoExpandingTextarea
+                                    name="shipping_address"
+                                    value={salesOrder.shipping_address || ''}
+                                    onChange={handleInputChange}
+                                    className="ae-input"
+                                    style={{
+                                        minHeight: '48px',
+                                        padding: '4px 12px',
+                                        ...getHighlightStyle(salesOrder.shipping_address),
+                                    }}
+                                    disabled={isSubmitted}
+                                    placeholder="Shipping Address"
+                                />
+                            </div>
                         </div>
                     </section>
 
@@ -1022,7 +1118,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                         }}
                                                         title="Add row"
                                                     >
-                                                        <Plus size={16} />
+                                                        <Plus size={16} focusable="false" />
                                                     </button>
                                                 )}
                                             </td>
@@ -1097,6 +1193,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                             type="date"
                                                             value={item.start_date || ''}
                                                             onChange={(e) => handleItemChange(index, 'start_date', e.target.value)}
+                                                            tabIndex={-1}
                                                             style={{
                                                                 position: 'absolute',
                                                                 visibility: 'hidden',
@@ -1104,7 +1201,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                                 height: 0
                                                             }}
                                                         />
-                                                        <Calendar size={14} style={{ position: 'absolute', right: '8px', color: '#718096', pointerEvents: 'none' }} />
+                                                        <Calendar size={14} focusable="false" style={{ position: 'absolute', right: '8px', color: '#718096', pointerEvents: 'none' }} />
                                                     </div>
                                                 )}
                                             </td>
@@ -1129,6 +1226,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                             type="date"
                                                             value={item.end_date || ''}
                                                             onChange={(e) => handleItemChange(index, 'end_date', e.target.value)}
+                                                            tabIndex={-1}
                                                             style={{
                                                                 position: 'absolute',
                                                                 visibility: 'hidden',
@@ -1136,7 +1234,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                                 height: 0
                                                             }}
                                                         />
-                                                        <Calendar size={14} style={{ position: 'absolute', right: '8px', color: '#718096', pointerEvents: 'none' }} />
+                                                        <Calendar size={14} focusable="false" style={{ position: 'absolute', right: '8px', color: '#718096', pointerEvents: 'none' }} />
                                                     </div>
                                                 )}
                                             </td>
@@ -1176,14 +1274,40 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                         type="number"
                                                         value={item.discount_percent ?? ''}
                                                         onChange={(e) => handleItemChange(index, 'discount_percent', e.target.value)}
-                                                        style={{ width: '100%', padding: '4px 6px', fontSize: '0.85rem', color: '#C53030', textAlign: 'center', fontWeight: 600, height: '30px', border: 'none', outline: 'none', background: 'transparent' }}
+                                                        className="ae-no-spinner"
+                                                        style={{ width: '100%', padding: '4px 2px 4px 12px', fontSize: '0.85rem', color: '#C53030', textAlign: 'center', fontWeight: 600, height: '30px', border: 'none', outline: 'none', background: 'transparent' }}
                                                         min="0"
                                                         max="100"
                                                         step="0.01"
                                                         placeholder="0"
                                                         disabled={isSubmitted}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Tab' && !e.shiftKey && index === salesOrder.items.length - 1) {
+                                                                // Check if current row is empty (ignore default type)
+                                                                const isEmpty = !item.product_name && !item.description && (!item.qty || item.qty === '0') && (!item.rate || item.rate === '0');
+
+                                                                if (isEmpty) {
+                                                                    return;
+                                                                }
+
+                                                                e.preventDefault();
+                                                                handleAddItem();
+                                                                setTimeout(() => {
+                                                                    const table = (e.target as HTMLElement).closest('table');
+                                                                    const rows = table?.querySelectorAll('tbody tr');
+                                                                    const lastRow = rows?.[rows.length - 1];
+                                                                    if (lastRow) {
+                                                                        // Focus the first SearchableDropdown input or the Product name textarea
+                                                                        const targetInput = lastRow.querySelector('input, textarea');
+                                                                        if (targetInput instanceof HTMLElement) {
+                                                                            targetInput.focus();
+                                                                        }
+                                                                    }
+                                                                }, 100);
+                                                            }
+                                                        }}
                                                     />
-                                                    <span style={{ padding: '0 6px 0 2px', color: '#C53030', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0, lineHeight: '30px', borderLeft: '1px solid #E0E6ED', background: '#FFF5F5' }}>%</span>
+                                                    <span style={{ padding: '0 8px 0 0', color: '#C53030', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0, lineHeight: '30px', background: 'transparent' }}>%</span>
                                                 </div>
                                             </td>
 
@@ -1212,7 +1336,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                             onMouseOut={(e) => { e.currentTarget.style.background = '#FFF5F5'; }}
                                                             title="Remove Item"
                                                         >
-                                                            <Trash2 size={16} />
+                                                            <Trash2 size={16} focusable="false" />
                                                         </button>
                                                     )}
                                                 </td>
@@ -1234,92 +1358,6 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                         </div>
                     </section>
 
-                    {/* 3. Logistics & Currency Section */}
-                    <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
-                        <SectionHeader title="Logistics & Currency" />
-                        <div style={{ display: 'grid', gridTemplateColumns: '150px 150px 1fr 1fr', gap: '16px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Currency</label>
-                                <SearchableDropdown
-                                    options={[
-                                        { value: 'INR', label: 'INR - Indian Rupee' },
-                                        { value: 'USD', label: 'USD - US Dollar' }
-                                    ]}
-                                    value={salesOrder.currency}
-                                    onChange={(val) => handleInputChange({ target: { name: 'currency', value: val } } as any)}
-                                    placeholder="Select Currency"
-                                    className="w-full"
-                                    disabled={isSubmitted}
-                                />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Order Date <span style={{ color: 'var(--theme-primary)' }}>*</span></label>
-                                {isSubmitted ? (
-                                    <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', ...getHighlightStyle(salesOrder.order_date) }}>{salesOrder.order_date ? formatToAppDate(salesOrder.order_date) : ''}</div>
-                                ) : (
-                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                        <input
-                                            type="text"
-                                            value={salesOrder.order_date ? formatToAppDate(salesOrder.order_date) : ''}
-                                            readOnly
-                                            className="ae-input"
-                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px', height: '34px', ...getHighlightStyle(salesOrder.order_date) }}
-                                            onClick={(e) => {
-                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
-                                                if (dateInput) dateInput.showPicker();
-                                            }}
-                                            placeholder="Enter date"
-                                        />
-                                        <input
-                                            name="order_date"
-                                            type="date"
-                                            value={salesOrder.order_date || ''}
-                                            onChange={handleInputChange}
-                                            style={{
-                                                position: 'absolute',
-                                                visibility: 'hidden',
-                                                width: 0,
-                                                height: 0
-                                            }}
-                                        />
-                                        <Calendar size={14} style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
-                                    </div>
-                                )}
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Billing Address</label>
-                                <AutoExpandingTextarea
-                                    name="billing_address"
-                                    value={salesOrder.billing_address || ''}
-                                    onChange={handleInputChange}
-                                    className="ae-input"
-                                    style={{
-                                        minHeight: '48px',
-                                        padding: '8px 12px',
-                                        ...getHighlightStyle(salesOrder.billing_address),
-                                    }}
-                                    disabled={isSubmitted}
-                                    placeholder="Billing Address"
-                                />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Shipping Address</label>
-                                <AutoExpandingTextarea
-                                    name="shipping_address"
-                                    value={salesOrder.shipping_address || ''}
-                                    onChange={handleInputChange}
-                                    className="ae-input"
-                                    style={{
-                                        minHeight: '48px',
-                                        padding: '8px 12px',
-                                        ...getHighlightStyle(salesOrder.shipping_address),
-                                    }}
-                                    disabled={isSubmitted}
-                                    placeholder="Shipping Address"
-                                />
-                            </div>
-                        </div>
-                    </section>
 
                     {/* 4. Source Document Section */}
                     {salesOrder.po_file_url && (

@@ -6,6 +6,8 @@ import { Shield, Loader2, Trash2, X, Users, CheckCircle, AlertCircle, Power, Pen
 import { Country, State, City } from 'country-state-city';
 import SearchableDropdown from './SearchableDropdown';
 import Pagination from './Pagination';
+import AutoExpandingTextarea from './AutoExpandingTextarea';
+
 
 const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: string }[]> = {
     user: [
@@ -188,6 +190,16 @@ const UserManagement: React.FC = () => {
     });
     const [error, setError] = useState('');
     const [companyError, setCompanyError] = useState('');
+
+    const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '4px', height: '18px', background: 'var(--ae-blue)', borderRadius: '2px' }}></span>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)' }}>{title}</h3>
+            </div>
+            {extra}
+        </div>
+    );
 
     const parseError = (err: any, fallback: string) => {
         console.error(fallback, err);
@@ -1794,7 +1806,7 @@ const UserManagement: React.FC = () => {
                 )
             }
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', flex: 1, overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' }}>
                 {showForm ? (
                     <form onSubmit={
                         viewMode === 'user' ? handleCreateUser :
@@ -1803,177 +1815,180 @@ const UserManagement: React.FC = () => {
                                     viewMode === 'financial_year' ? handleCreateFinancialYear :
                                         viewMode === 'product' ? handleCreateProduct :
                                             handleCreateCompany
-                    } style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    } style={{ display: 'flex', flexDirection: 'column' }}>
                         <div style={{
-                            background: '#FFFFF0',
+                            background: '#FFFFFF',
                             borderRadius: '12px',
                             padding: '24px',
                             border: '1px solid var(--border-primary)'
                         }}>
                             {viewMode === 'user' ? (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
-                                    {error && (
-                                        <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem', gridColumn: '1 / -1' }}>
-                                            {error}
+                                <div className="section">
+                                    <SectionHeader title="User Details" />
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
+                                        {error && (
+                                            <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem', gridColumn: '1 / -1' }}>
+                                                {error}
+                                            </div>
+                                        )}
+                                        {/* 1. Username* */}
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                Username <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="Username"
+                                                value={formData.username}
+                                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                                style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                required
+                                                autoComplete="off"
+                                            />
                                         </div>
-                                    )}
-                                    {/* 1. Username* */}
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Username <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Username"
-                                            value={formData.username}
-                                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                            required
-                                            autoComplete="off"
-                                        />
-                                    </div>
-                                    {/* 2. Email Address* */}
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Email Address <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <input
-                                            type="email"
-                                            placeholder="Email Address"
-                                            value={formData.email}
-                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                            required
-                                        />
-                                    </div>
-                                    {/* 3. Password* */}
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Password <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <input
-                                            type="password"
-                                            placeholder="Password"
-                                            value={formData.password}
-                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                            required
-                                            autoComplete="new-password"
-                                        />
-                                    </div>
-                                    {/* 4. First Name* */}
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            First Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="First Name"
-                                            value={formData.first_name}
-                                            onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                            required
-                                        />
-                                    </div>
-                                    {/* 5. Last Name* */}
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Last Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Last Name"
-                                            value={formData.last_name}
-                                            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                            required
-                                        />
-                                    </div>
-                                    {/* 6. Employee ID */}
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Employee ID
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="employee_id"
-                                            placeholder="Enter Employee ID"
-                                            value={formData.employee_id}
-                                            onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        />
-                                    </div>
-                                    {/* 7. Mobile Number */}
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Mobile Number
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Mobile Number"
-                                            value={formData.mobile}
-                                            onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        />
-                                    </div>
-                                    {/* 8. Department */}
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Department
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Department"
-                                            value={formData.department}
-                                            onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        />
-                                    </div>
-                                    {/* 9. Region */}
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Region
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Region"
-                                            value={formData.region}
-                                            onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                        />
-                                    </div>
-                                    {/* 10. Role */}
-                                    <div>
-                                        <SearchableDropdown
-                                            label="Role"
-                                            options={[
-                                                { value: 'app_admin', label: 'Admin' },
-                                                { value: 'sales_head', label: 'Sales Head' },
-                                                { value: 'inside_sales_head', label: 'Inside Sales Head' },
-                                                { value: 'pm_head', label: 'PM Head' },
-                                                { value: 'salesperson', label: 'Salesperson' },
-                                                { value: 'finance_manager', label: 'Finance Manager' },
-                                                { value: 'app_user', label: 'User' }
-                                            ]}
-                                            value={formData.role}
-                                            onChange={(val) => setFormData({ ...formData, role: val as string })}
-                                            placeholder="Select Role"
-                                        />
-                                    </div>
-                                    {/* 11. Reporting To (Select Manager) */}
-                                    <div>
-                                        <SearchableDropdown
-                                            label="Reporting To"
-                                            options={users.map(u => ({ value: u.id, label: `${u.first_name || ''} ${u.last_name || ''} (${u.username})`.trim() }))}
-                                            value={formData.reporting_to}
-                                            onChange={(val) => setFormData({ ...formData, reporting_to: val as string })}
-                                            placeholder="Select Manager"
-                                        />
-                                    </div>
+                                        {/* 2. Email Address* */}
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                Email Address <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            </label>
+                                            <input
+                                                type="email"
+                                                placeholder="Email Address"
+                                                value={formData.email}
+                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                required
+                                            />
+                                        </div>
+                                        {/* 3. Password* */}
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                Password <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            </label>
+                                            <input
+                                                type="password"
+                                                placeholder="Password"
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                required
+                                                autoComplete="new-password"
+                                            />
+                                        </div>
+                                        {/* 4. First Name* */}
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                First Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="First Name"
+                                                value={formData.first_name}
+                                                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                                                style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                required
+                                            />
+                                        </div>
+                                        {/* 5. Last Name* */}
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                Last Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="Last Name"
+                                                value={formData.last_name}
+                                                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                                                style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                required
+                                            />
+                                        </div>
+                                        {/* 6. Employee ID */}
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                Employee ID
+                                            </label>
+                                            <input
+                                                type="text"
+                                                name="employee_id"
+                                                placeholder="Enter Employee ID"
+                                                value={formData.employee_id}
+                                                onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
+                                                style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            />
+                                        </div>
+                                        {/* 7. Mobile Number */}
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                Mobile Number
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="Mobile Number"
+                                                value={formData.mobile}
+                                                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                                                style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            />
+                                        </div>
+                                        {/* 8. Department */}
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                Department
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="Department"
+                                                value={formData.department}
+                                                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                                style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            />
+                                        </div>
+                                        {/* 9. Region */}
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                Region
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="Region"
+                                                value={formData.region}
+                                                onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                                                style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            />
+                                        </div>
+                                        {/* 10. Role */}
+                                        <div>
+                                            <SearchableDropdown
+                                                label="Role"
+                                                options={[
+                                                    { value: 'app_admin', label: 'Admin' },
+                                                    { value: 'sales_head', label: 'Sales Head' },
+                                                    { value: 'inside_sales_head', label: 'Inside Sales Head' },
+                                                    { value: 'pm_head', label: 'PM Head' },
+                                                    { value: 'salesperson', label: 'Salesperson' },
+                                                    { value: 'finance_manager', label: 'Finance Manager' },
+                                                    { value: 'app_user', label: 'User' }
+                                                ]}
+                                                value={formData.role}
+                                                onChange={(val) => setFormData({ ...formData, role: val as string })}
+                                                placeholder="Select Role"
+                                            />
+                                        </div>
+                                        {/* 11. Reporting To (Select Manager) */}
+                                        <div>
+                                            <SearchableDropdown
+                                                label="Reporting To"
+                                                options={users.map(u => ({ value: u.id, label: `${u.first_name || ''} ${u.last_name || ''} (${u.username})`.trim() }))}
+                                                value={formData.reporting_to}
+                                                onChange={(val) => setFormData({ ...formData, reporting_to: val as string })}
+                                                placeholder="Select Manager"
+                                            />
+                                        </div>
 
+                                    </div>
                                 </div>
                             ) : viewMode === 'partner' ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     {error && (
                                         <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem' }}>
                                             {error}
@@ -1985,11 +2000,8 @@ const UserManagement: React.FC = () => {
                                         </div>
                                     )}
                                     <div className="section">
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Company Basic Details
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                        <SectionHeader title="Company Basic Details" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Company Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
@@ -1999,7 +2011,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Company Name"
                                                     value={partnerFormData.name}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2027,7 +2039,7 @@ const UserManagement: React.FC = () => {
                                                                 alignItems: 'center',
                                                                 gap: '8px',
                                                                 padding: '6px 12px',
-                                                                background: '#FFFFF0',
+                                                                background: 'white',
                                                                 border: '1px solid var(--border-primary)',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.8rem',
@@ -2110,7 +2122,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Contact Person"
                                                     value={partnerFormData.contact_person}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, contact_person: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
 
@@ -2123,7 +2135,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Email Address"
                                                     value={partnerFormData.email}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, email: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
 
@@ -2136,7 +2148,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Mobile Number"
                                                     value={partnerFormData.mobile}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, mobile: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -2148,29 +2160,28 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Website URL"
                                                     value={partnerFormData.website_url}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, website_url: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Address Details
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="Address Details" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
+
                                             <div style={{ gridColumn: 'span 3' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Address Line
                                                 </label>
-                                                <input
-                                                    type="text"
+                                                <AutoExpandingTextarea
                                                     placeholder="Address Line"
                                                     value={partnerFormData.address_line_1}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, address_line_1: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    maxRows={5}
+                                                    style={{ width: '100%', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
+
                                             </div>
                                             <div>
                                                 <SearchableDropdown
@@ -2210,17 +2221,14 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Pincode"
                                                     value={partnerFormData.pincode}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, pincode: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Business & Financial Settings
-                                        </h4>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="Business & Financial Settings" />
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <SearchableDropdown
@@ -2245,7 +2253,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="INR"
                                                     readOnly
                                                     value={partnerFormData.currency_symbol}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#f7fafc', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', outline: 'none', cursor: 'not-allowed' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', outline: 'none', cursor: 'not-allowed' }}
                                                 />
                                             </div>
                                             <div>
@@ -2260,7 +2268,7 @@ const UserManagement: React.FC = () => {
                                                     required
                                                     value={partnerFormData.decimal_places}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, decimal_places: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -2281,11 +2289,8 @@ const UserManagement: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Tax Registration Details
-                                        </h4>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="Tax Registration Details" />
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 5', marginBottom: '8px' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Tax Configuration</label>
@@ -2296,7 +2301,7 @@ const UserManagement: React.FC = () => {
                                                         alignItems: 'center',
                                                         gap: '12px',
                                                         cursor: 'pointer',
-                                                        background: partnerFormData.is_gst_applicable ? '#EBF8FF' : '#F8FAFC',
+                                                        background: partnerFormData.is_gst_applicable ? '#EBF8FF' : 'white',
                                                         padding: '0 16px',
                                                         height: '38px',
                                                         borderRadius: '8px',
@@ -2338,7 +2343,7 @@ const UserManagement: React.FC = () => {
                                                             placeholder="GSTIN"
                                                             value={partnerFormData.gstin}
                                                             onChange={(e) => handleGSTINChange(e.target.value)}
-                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                         />
                                                     </div>
                                                     <div>
@@ -2350,7 +2355,7 @@ const UserManagement: React.FC = () => {
                                                             placeholder="State Code"
                                                             value={partnerFormData.state_code}
                                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, state_code: e.target.value })}
-                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                         />
                                                     </div>
                                                 </>
@@ -2364,7 +2369,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="PAN"
                                                     value={partnerFormData.pan}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, pan: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -2376,7 +2381,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="TAN"
                                                     value={partnerFormData.tan}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, tan: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -2388,17 +2393,14 @@ const UserManagement: React.FC = () => {
                                                     placeholder="CIN"
                                                     value={partnerFormData.cin}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, cin: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            MSME Details
-                                        </h4>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="MSME Details" />
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                                             <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 5', marginBottom: '8px' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Registration Status</label>
@@ -2409,7 +2411,7 @@ const UserManagement: React.FC = () => {
                                                         alignItems: 'center',
                                                         gap: '12px',
                                                         cursor: 'pointer',
-                                                        background: partnerFormData.msme_registered ? '#EBF8FF' : '#F8FAFC',
+                                                        background: partnerFormData.msme_registered ? '#EBF8FF' : 'white',
                                                         padding: '0 16px',
                                                         height: '38px',
                                                         borderRadius: '8px',
@@ -2450,7 +2452,7 @@ const UserManagement: React.FC = () => {
                                                         placeholder="MSME Number"
                                                         value={partnerFormData.msme_number}
                                                         onChange={(e) => setPartnerFormData({ ...partnerFormData, msme_number: e.target.value })}
-                                                        style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                        style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     />
                                                 </div>
                                             )}
@@ -2458,18 +2460,15 @@ const UserManagement: React.FC = () => {
                                     </div>
                                 </div>
                             ) : viewMode === 'end_customer' ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     {error && (
                                         <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem' }}>
                                             {error}
                                         </div>
                                     )}
                                     <div className="section">
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Identification Details
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                        <SectionHeader title="Identification Details" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     End Customer Code <span style={{ fontSize: '0.7rem', color: '#A0AEC0', fontWeight: 500 }}>(Auto-generated)</span>
@@ -2479,7 +2478,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Auto-generated"
                                                     value={endCustomerFormData.end_customer_code}
                                                     readOnly
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#F7F8FA', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#718096', outline: 'none', cursor: 'not-allowed' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#718096', outline: 'none', cursor: 'not-allowed' }}
                                                 />
                                             </div>
                                             <div>
@@ -2491,7 +2490,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="End User Name"
                                                     value={endCustomerFormData.name}
                                                     onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2504,7 +2503,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Alias Name"
                                                     value={endCustomerFormData.alias_name}
                                                     onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, alias_name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2524,12 +2523,9 @@ const UserManagement: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Business Classification
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="Business Classification" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
                                             <div>
                                                 <SearchableDropdown
                                                     label="Industry"
@@ -2577,30 +2573,28 @@ const UserManagement: React.FC = () => {
                                                     className="ae-input"
                                                     disabled
                                                     placeholder="AE IND / AE USA"
-                                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
+                                                    style={{ background: 'white', color: '#718096', cursor: 'not-allowed' }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Contact & Location Details
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="Contact & Location Details" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Location <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
-                                                <input
-                                                    type="text"
+                                                <AutoExpandingTextarea
                                                     placeholder="Location"
                                                     value={endCustomerFormData.location}
                                                     onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, location: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    maxRows={5}
+                                                    style={{ width: '100%', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
+
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -2611,7 +2605,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Contact Person"
                                                     value={endCustomerFormData.contact_person}
                                                     onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, contact_person: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2624,71 +2618,76 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Email"
                                                     value={endCustomerFormData.email}
                                                     onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, email: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
                                         </div>
                                     </div>
+
                                 </div>
                             ) : viewMode === 'financial_year' ? (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
-                                    {error && (
-                                        <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem', gridColumn: 'span 5' }}>
-                                            {error}
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <SectionHeader title="Financial Year Details" />
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
+                                        {error && (
+                                            <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem', gridColumn: 'span 5' }}>
+                                                {error}
+                                            </div>
+                                        )}
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                                                Year <span style={{ color: 'var(--theme-primary)' }}>*</span>
+                                            </label>
+                                            <input
+                                                type="number"
+                                                placeholder="e.g. 2025"
+                                                value={fyFormData.fy_year}
+                                                onChange={(e) => handleFYYearChange(Number(e.target.value))}
+                                                style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                required
+                                                min={2000}
+                                                max={2099}
+                                            />
+                                            <div style={{ fontSize: '0.7rem', color: '#718096', marginTop: '4px' }}>
+                                                Auto: {fyFormData.label} ({fyFormData.start_date} to {fyFormData.end_date})
+                                            </div>
                                         </div>
-                                    )}
-                                    <div>
-                                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                                            Year <span style={{ color: 'var(--theme-primary)' }}>*</span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            placeholder="e.g. 2025"
-                                            value={fyFormData.fy_year}
-                                            onChange={(e) => handleFYYearChange(Number(e.target.value))}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
-                                            required
-                                            min={2000}
-                                            max={2099}
-                                        />
-                                        <div style={{ fontSize: '0.7rem', color: '#718096', marginTop: '4px' }}>
-                                            Auto: {fyFormData.label} ({fyFormData.start_date} to {fyFormData.end_date})
+                                        <div>
+                                            <SearchableDropdown
+                                                label="First month of fiscal year"
+                                                options={monthNames.map(month => ({ value: month, label: month }))}
+                                                value={fyFormData.first_month_of_fiscal_year}
+                                                onChange={(val) => handleFiscalMonthChange(val as string)}
+                                                placeholder="Select Month"
+                                            />
+                                        </div>
+                                        <div>
+                                            <SearchableDropdown
+                                                label="First month of tax year"
+                                                options={[
+                                                    { value: 'Same as fiscal year', label: 'Same as fiscal year' },
+                                                    ...monthNames.map(month => ({ value: month, label: month }))
+                                                ]}
+                                                value={fyFormData.first_month_of_tax_year}
+                                                onChange={(val) => setFyFormData({ ...fyFormData, first_month_of_tax_year: val as string })}
+                                                placeholder="Select Month"
+                                            />
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '24px' }}>
+                                            <input
+                                                type="checkbox"
+                                                id="is_current_fy"
+                                                checked={fyFormData.is_current_fy}
+                                                onChange={(e) => setFyFormData({ ...fyFormData, is_current_fy: e.target.checked })}
+                                            />
+                                            <label htmlFor="is_current_fy" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black' }}>Current Financial Year</label>
                                         </div>
                                     </div>
-                                    <div>
-                                        <SearchableDropdown
-                                            label="First month of fiscal year"
-                                            options={monthNames.map(month => ({ value: month, label: month }))}
-                                            value={fyFormData.first_month_of_fiscal_year}
-                                            onChange={(val) => handleFiscalMonthChange(val as string)}
-                                            placeholder="Select Month"
-                                        />
-                                    </div>
-                                    <div>
-                                        <SearchableDropdown
-                                            label="First month of tax year"
-                                            options={[
-                                                { value: 'Same as fiscal year', label: 'Same as fiscal year' },
-                                                ...monthNames.map(month => ({ value: month, label: month }))
-                                            ]}
-                                            value={fyFormData.first_month_of_tax_year}
-                                            onChange={(val) => setFyFormData({ ...fyFormData, first_month_of_tax_year: val as string })}
-                                            placeholder="Select Month"
-                                        />
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '24px' }}>
-                                        <input
-                                            type="checkbox"
-                                            id="is_current_fy"
-                                            checked={fyFormData.is_current_fy}
-                                            onChange={(e) => setFyFormData({ ...fyFormData, is_current_fy: e.target.checked })}
-                                        />
-                                        <label htmlFor="is_current_fy" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black' }}>Current Financial Year</label>
-                                    </div>
+
                                 </div>
                             ) : viewMode === 'product' ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     {error && (
                                         <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem' }}>
                                             {error}
@@ -2696,10 +2695,7 @@ const UserManagement: React.FC = () => {
                                     )}
 
                                     <div className="section">
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Identification Details
-                                        </h4>
+                                        <SectionHeader title="Identification Details" />
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
@@ -2710,7 +2706,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Auto-generated"
                                                     value={productFormData.product_code}
                                                     readOnly
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#F7F8FA', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#718096', outline: 'none', cursor: 'not-allowed' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#718096', outline: 'none', cursor: 'not-allowed' }}
                                                 />
                                             </div>
                                             <div>
@@ -2722,7 +2718,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Product / Service Name"
                                                     value={productFormData.name}
                                                     onChange={(e) => setProductFormData({ ...productFormData, name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2742,11 +2738,8 @@ const UserManagement: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Classification Details
-                                        </h4>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="Classification Details" />
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                                             <div>
                                                 <SearchableDropdown
@@ -2792,7 +2785,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="HSN / SAC Code"
                                                     value={productFormData.hsn_sac_code}
                                                     onChange={(e) => setProductFormData({ ...productFormData, hsn_sac_code: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2820,24 +2813,23 @@ const UserManagement: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Description & Measurement
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="Description & Measurement" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
+
                                             <div style={{ gridColumn: 'span 4' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Description <span style={{ color: 'var(--theme-primary)' }}>*</span>
                                                 </label>
-                                                <textarea
+                                                <AutoExpandingTextarea
                                                     placeholder="Description"
-                                                    className="ae-input"
                                                     value={productFormData.description}
                                                     onChange={(e) => setProductFormData({ ...productFormData, description: e.target.value })}
-                                                    style={{ width: '100%', height: '48px', padding: '8px 12px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', resize: 'none' }}
+                                                    maxRows={10}
+                                                    style={{ width: '100%', padding: '8px 12px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
+
                                             </div>
                                             <div>
                                                 <SearchableDropdown
@@ -2862,12 +2854,10 @@ const UserManagement: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Pricing & Taxation
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="Pricing & Taxation" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
+
                                             <div>
                                                 <SearchableDropdown
                                                     label="Currency"
@@ -2891,7 +2881,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Standard Price"
                                                     value={productFormData.standard_price}
                                                     onChange={(e) => setProductFormData({ ...productFormData, standard_price: e.target.value === '' ? '' : Number(e.target.value) })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2904,7 +2894,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Tax Percentage"
                                                     value={productFormData.tax_percentage}
                                                     onChange={(e) => setProductFormData({ ...productFormData, tax_percentage: e.target.value === '' ? '' : Number(e.target.value) })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2912,7 +2902,7 @@ const UserManagement: React.FC = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     {/* Company Form Content */}
                                     {companyError && (
                                         <div style={{ padding: '10px', background: '#FFF5F5', border: '1px solid #FC8181', borderRadius: '6px', color: '#C53030', fontSize: '0.85rem' }}>
@@ -2921,11 +2911,8 @@ const UserManagement: React.FC = () => {
                                     )}
 
                                     <div className="section">
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Customer Basic Details
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                        <SectionHeader title="Customer Basic Details" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
                                             <div>
                                                 <SearchableDropdown
                                                     label="Company Name (Select Company)"
@@ -2935,6 +2922,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Select Company"
                                                 />
                                             </div>
+
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Customer Name <span style={{ color: 'var(--theme-primary)' }}>*</span>
@@ -2944,7 +2932,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Customer Name"
                                                     value={companyFormData.name}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2957,7 +2945,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Alias Name"
                                                     value={companyFormData.alias_name}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, alias_name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'black', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2970,7 +2958,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Customer ID"
                                                     value={companyFormData.customer_id}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, customer_id: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -3004,7 +2992,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Region"
                                                     value={companyFormData.region}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, region: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -3016,7 +3004,7 @@ const UserManagement: React.FC = () => {
                                                     alignItems: 'center',
                                                     gap: '10px',
                                                     padding: '6px 10px',
-                                                    background: '#FFFFF0',
+                                                    background: 'white',
                                                     borderRadius: '6px',
                                                     border: '1px solid var(--border-primary)',
                                                     height: '34px',
@@ -3036,7 +3024,7 @@ const UserManagement: React.FC = () => {
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             gap: '8px',
-                                                            background: '#FFFFF0',
+                                                            background: 'white',
                                                             color: '#1a1f36',
                                                             border: '1px solid #E0E6ED',
                                                             height: '24px',
@@ -3070,12 +3058,9 @@ const UserManagement: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Contact Details
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="Contact Details" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Contact Person
@@ -3085,9 +3070,10 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Contact Person"
                                                     value={companyFormData.contact_person}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, contact_person: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
+
                                             <div>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Email Address
@@ -3097,7 +3083,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Email Address"
                                                     value={companyFormData.email}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -3109,7 +3095,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Mobile Number"
                                                     value={companyFormData.mobile_number}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, mobile_number: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -3121,29 +3107,28 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Website URL"
                                                     value={companyFormData.website_url}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, website_url: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Address Details
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="Address Details" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
+
                                             <div style={{ gridColumn: 'span 3' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                     Address Line
                                                 </label>
-                                                <input
-                                                    type="text"
+                                                <AutoExpandingTextarea
                                                     placeholder="Address Line"
                                                     value={companyFormData.address_line_1}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, address_line_1: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    maxRows={5}
+                                                    style={{ width: '100%', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
+
                                             </div>
                                             <div>
                                                 <SearchableDropdown
@@ -3183,18 +3168,16 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Pincode"
                                                     value={companyFormData.pincode}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, pincode: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Business & Financial Settings
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="Business & Financial Settings" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
+
                                             <div>
                                                 <SearchableDropdown
                                                     label="Base Currency (INR – Indian Rupee)"
@@ -3217,7 +3200,7 @@ const UserManagement: React.FC = () => {
                                                     type="text"
                                                     value={companyFormData.currency_symbol}
                                                     readOnly
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#f7fafc', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -3252,12 +3235,10 @@ const UserManagement: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            Tax Registration Details
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="Tax Registration Details" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
+
                                             <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 5', marginBottom: '8px' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Tax Configuration</label>
                                                 <div
@@ -3267,7 +3248,7 @@ const UserManagement: React.FC = () => {
                                                         alignItems: 'center',
                                                         gap: '12px',
                                                         cursor: 'pointer',
-                                                        background: companyFormData.is_gst_applicable ? '#EBF8FF' : '#F8FAFC',
+                                                        background: companyFormData.is_gst_applicable ? '#EBF8FF' : 'white',
                                                         padding: '0 16px',
                                                         height: '38px',
                                                         borderRadius: '8px',
@@ -3365,12 +3346,9 @@ const UserManagement: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '32px' }}>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '3px', height: '14px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                                            MSME Details
-                                        </h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                                    <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
+                                        <SectionHeader title="MSME Details" />
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
                                             <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 5', marginBottom: '8px' }}>
                                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Registration Status</label>
                                                 <div
@@ -3380,7 +3358,7 @@ const UserManagement: React.FC = () => {
                                                         alignItems: 'center',
                                                         gap: '12px',
                                                         cursor: 'pointer',
-                                                        background: companyFormData.msme_registered ? '#EBF8FF' : '#F8FAFC',
+                                                        background: companyFormData.msme_registered ? '#EBF8FF' : 'white',
                                                         padding: '0 16px',
                                                         height: '38px',
                                                         borderRadius: '8px',
@@ -3427,6 +3405,7 @@ const UserManagement: React.FC = () => {
                                             )}
                                         </div>
                                     </div>
+
                                 </div>
                             )
                             }

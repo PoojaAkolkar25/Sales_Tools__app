@@ -140,13 +140,13 @@ const ModuleWrapper: React.FC<ModuleWrapperProps> = ({
     <div className={`app-container ${theme && theme !== 'default' ? `theme-${theme}` : ''}`}>
       {/* Left Sidebar */}
       <aside className={`sidebar flex flex-col ${isSidebarExpanded ? 'expanded' : '!w-16'} overflow-hidden transition-all duration-300`}>
-        <div className={`sidebar-logo !px-0 flex items-center ${isSidebarExpanded ? 'justify-start px-4' : 'justify-center'}`}>
+        <div className="sidebar-logo">
           <img
             src="/AutomationEdge_Logo.png"
             alt="SalesEdge Logo"
             className="sidebar-logo-img"
           />
-          {isSidebarExpanded && <h1 className="ml-3 text-white font-extrabold text-xl tracking-tight">SalesEdge</h1>}
+          {isSidebarExpanded && <h1 className="text-white font-extrabold tracking-tight">SalesEdge</h1>}
         </div>
 
         <nav className="sidebar-nav flex-1">
