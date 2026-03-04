@@ -68,7 +68,7 @@ const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: stri
         { key: 'alias_name', label: 'Alias Name', shortLabel: 'Alias' },
         { key: 'status', label: 'Status', shortLabel: 'St' },
         { key: 'industry', label: 'Industry', shortLabel: 'Ind' },
-        { key: 'linked_partner_name', label: 'Linked Customer', shortLabel: 'LC' },
+        { key: 'linked_partner_name', label: 'Linked Partner', shortLabel: 'LP' },
         { key: 'location', label: 'Location', shortLabel: 'Loc' },
         { key: 'contact_person', label: 'Contact Person', shortLabel: 'CP' },
         { key: 'email', label: 'Email', shortLabel: 'Mail' },
@@ -2553,7 +2553,7 @@ const UserManagement: React.FC = () => {
                                                     options={partners.map(p => ({ value: String(p.id), label: p.name }))}
                                                     value={endCustomerFormData.linked_partner}
                                                     onChange={(val) => setEndCustomerFormData({ ...endCustomerFormData, linked_partner: val as string })}
-                                                    placeholder="Select Customer"
+                                                    placeholder="Select Partner"
                                                     required
                                                 />
                                             </div>

@@ -10,7 +10,8 @@ import {
     FileText,
     Loader2,
     Check,
-    Eye
+    Eye,
+    Plus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -1051,6 +1052,44 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                                     >
                                                         <Download size={15} />
                                                     </button>
+                                                    {/* Create Invoice button */}
+                                                    {so.status === 'APPROVED' && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                navigate(`/invoice?action=create&so_id=${so.id}`);
+                                                            }}
+                                                            title="Create Invoice"
+                                                            style={{
+                                                                height: '30px',
+                                                                width: '30px',
+                                                                padding: '0',
+                                                                borderRadius: '8px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                border: '1px solid #10b981',
+                                                                background: 'rgba(16, 185, 129, 0.08)',
+                                                                color: '#10b981',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.background = '#10b981';
+                                                                e.currentTarget.style.color = 'white';
+                                                                e.currentTarget.style.borderColor = '#10b981';
+                                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.35)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+                                                                e.currentTarget.style.color = '#10b981';
+                                                                e.currentTarget.style.borderColor = '#10b981';
+                                                                e.currentTarget.style.boxShadow = 'none';
+                                                            }}
+                                                        >
+                                                            <Plus size={15} />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         )}

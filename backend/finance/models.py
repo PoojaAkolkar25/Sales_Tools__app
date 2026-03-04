@@ -449,7 +449,7 @@ class DealType(models.TextChoices):
 class EndCustomer(models.Model):
     code = models.CharField(max_length=50, unique=True, blank=True)
     name = models.CharField(max_length=255)
-    linked_partner = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, related_name='end_customers')
+    linked_partner = models.ForeignKey(CustomerPartner, on_delete=models.CASCADE, related_name='end_customers')
     industry = models.CharField(max_length=100, blank=True, null=True)
     location = models.CharField(max_length=255, blank=True, null=True)
     contact_person = models.CharField(max_length=255, blank=True, null=True)
