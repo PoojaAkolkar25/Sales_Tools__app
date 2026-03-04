@@ -1031,6 +1031,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                             type="file"
                             id="proposal-upload"
                             style={{ display: 'none' }}
+                            tabIndex={-1}
                             onChange={handleFileChange}
                             disabled={estimate?.status === 'SUBMITTED'}
                         />
@@ -1508,6 +1509,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                         type="date"
                                                         id={`sub-from-${item.id}`}
                                                         style={{ position: 'absolute', opacity: 0, inset: 0, width: '100%', pointerEvents: 'none' }}
+                                                        tabIndex={-1}
                                                         value={item.subscription_from || ''}
                                                         onChange={(e) => handleItemChange(item.id, 'subscription_from', e.target.value)}
                                                         disabled={isReadOnly}
@@ -1535,6 +1537,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                         type="date"
                                                         id={`sub-to-${item.id}`}
                                                         style={{ position: 'absolute', opacity: 0, inset: 0, width: '100%', pointerEvents: 'none' }}
+                                                        tabIndex={-1}
                                                         value={item.subscription_to || ''}
                                                         onChange={(e) => handleItemChange(item.id, 'subscription_to', e.target.value)}
                                                         disabled={isReadOnly}

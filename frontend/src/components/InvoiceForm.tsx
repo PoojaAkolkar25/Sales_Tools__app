@@ -4,6 +4,7 @@ import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
 import SearchableDropdown from './SearchableDropdown';
+import AutoExpandingTextarea from './AutoExpandingTextarea';
 
 interface LineItem {
     type: string;
@@ -908,20 +909,22 @@ const InvoiceForm: React.FC<{
                                             />
                                         </td>
                                         <td style={{ padding: '8px' }}>
-                                            <textarea
-                                                className="ae-input"
+                                            <AutoExpandingTextarea
                                                 disabled={isReadOnly}
                                                 placeholder="Item Name & Description"
                                                 style={{
                                                     padding: '8px 12px',
                                                     fontSize: '0.85rem',
                                                     width: '100%',
-                                                    resize: 'none',
                                                     borderRadius: '8px',
-                                                    height: '48px'
+                                                    minHeight: '48px',
+                                                    border: '1px solid #E2E8F0',
+                                                    outline: 'none',
+                                                    background: isReadOnly ? '#f8fafc' : 'white'
                                                 }}
                                                 value={item.description}
                                                 onChange={e => updateLineItem(index, 'description', e.target.value)}
+                                                maxRows={5}
                                             />
                                         </td>
                                         <td style={{ padding: '4px' }}>
@@ -1066,10 +1069,9 @@ const InvoiceForm: React.FC<{
                     {formData.invoice_type === 'EXPORT' ? (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>LUT Declaration (Export)</label>
-                            <textarea
-                                className="ae-input"
+                            <AutoExpandingTextarea
                                 disabled={isReadOnly}
-                                style={{ width: '100%', height: '48px', padding: '8px 12px', resize: 'none', lineHeight: '1.5', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem' }}
+                                style={{ width: '100%', minHeight: '48px', padding: '8px 12px', borderRadius: '6px', border: isReadOnly ? 'none' : '1px solid #E2E8F0', lineHeight: '1.5', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem', outline: 'none' }}
                                 value={formData.lut_declaration}
                                 onChange={e => setFormData({ ...formData, lut_declaration: e.target.value })}
                             />
@@ -1077,10 +1079,9 @@ const InvoiceForm: React.FC<{
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>GST Declaration (India)</label>
-                            <textarea
-                                className="ae-input"
+                            <AutoExpandingTextarea
                                 disabled={isReadOnly}
-                                style={{ width: '100%', height: '48px', padding: '8px 12px', resize: 'none', lineHeight: '1.5', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem' }}
+                                style={{ width: '100%', minHeight: '48px', padding: '8px 12px', borderRadius: '6px', border: isReadOnly ? 'none' : '1px solid #E2E8F0', lineHeight: '1.5', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem', outline: 'none' }}
                                 value={formData.gst_declaration}
                                 onChange={e => setFormData({ ...formData, gst_declaration: e.target.value })}
                             />
@@ -1116,9 +1117,8 @@ const InvoiceForm: React.FC<{
 
                 <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                     <SectionHeader title="Description / Memo" />
-                    <textarea
-                        className="ae-input"
-                        style={{ width: '100%', height: '48px', padding: '8px 12px', resize: 'none', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem' }}
+                    <AutoExpandingTextarea
+                        style={{ width: '100%', minHeight: '48px', padding: '8px 12px', borderRadius: '8px', border: isReadOnly ? 'none' : '1px solid #E2E8F0', background: isReadOnly ? 'var(--bg-secondary)' : 'white', fontSize: '0.85rem', outline: 'none' }}
                         placeholder="Add internal notes or additional descriptions here..."
                         value={formData.memo}
                         onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
