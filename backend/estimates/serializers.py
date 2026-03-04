@@ -48,6 +48,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     customer_alias = serializers.ReadOnlyField(source='deal.customer.alias_name')
     project_name = serializers.ReadOnlyField(source='deal.deal_name')
     deal_id = serializers.ReadOnlyField(source='deal.deal_id')
+    company = serializers.ReadOnlyField(source='deal.company')
     deal_amount = serializers.DecimalField(source='deal.deal_amount', max_digits=15, decimal_places=2, read_only=True)
     cost_sheet_no = serializers.ReadOnlyField(source='cost_sheet.cost_sheet_no')
     cost_sheet_price = serializers.DecimalField(source='cost_sheet.total_estimated_price', max_digits=15, decimal_places=2, read_only=True)

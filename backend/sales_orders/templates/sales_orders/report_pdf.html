@@ -111,7 +111,7 @@
                     —
                     {% endif %}
                 </td>
-                <td>{{ so.customer_code|default:"—" }}</td>
+                <td>{{ so.cust_id|default:"—" }}</td>
                 <td>{{ so.po_number|default:"—" }}</td>
                 <td>
                     {% with item=so.items.first %}

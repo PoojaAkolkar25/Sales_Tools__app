@@ -29,7 +29,7 @@ const ALL_COL_CONFIG = [
     { key: 'so_number', label: 'SO Number', shortLabel: 'SO#' },
     { key: 'order_date', label: 'Order Date', shortLabel: 'DATE' },
     { key: 'customer', label: 'Customer', shortLabel: 'CUST.' },
-    { key: 'cust_code', label: 'Cust Code', shortLabel: 'CODE' },
+    { key: 'cust_id', label: 'Customer ID', shortLabel: 'ID' },
     { key: 'po_number', label: 'PO Number', shortLabel: 'PO#' },
     { key: 'items', label: 'Items (Summary)', shortLabel: 'ITEMS' },
     { key: 'status', label: 'Status', shortLabel: 'ST.' },
@@ -43,7 +43,7 @@ const SHORT_COL_WIDTHS: Record<string, number> = {
     so_number: 55,
     order_date: 55,
     customer: 75,
-    cust_code: 55,
+    cust_id: 55,
     po_number: 60,
     items: 75,
     status: 45,
@@ -57,7 +57,7 @@ const FULL_LABEL_WIDTHS: Record<string, number> = {
     so_number: 85,
     order_date: 90,
     customer: 120,
-    cust_code: 80,
+    cust_id: 80,
     po_number: 95,
     items: 110,
     status: 75,
@@ -71,7 +71,7 @@ const MAX_COL_WIDTHS: Record<string, number> = {
     so_number: 150,
     order_date: 150,
     customer: 250,
-    cust_code: 120,
+    cust_id: 120,
     po_number: 180,
     items: 300,
     status: 120,
@@ -105,7 +105,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
             so_number: true,
             order_date: true,
             customer: true,
-            cust_code: true,
+            cust_id: true,
             po_number: true,
             items: true,
             status: true,
@@ -220,7 +220,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
         const matchesSONumber = (so.so_number || '').toLowerCase().includes(filters.so_number.toLowerCase());
         const matchesOrderDate = (so.order_date ? formatToAppDate(so.order_date) : '').toLowerCase().includes(filters.order_date.toLowerCase());
         const matchesCustomer = (so.customer_name || '').toLowerCase().includes(filters.customer_name.toLowerCase());
-        const matchesCustCode = (so.customer_code || '').toLowerCase().includes(filters.customer_code.toLowerCase());
+        const matchesCustCode = (so.cust_id || '').toLowerCase().includes(filters.customer_code.toLowerCase());
         const matchesPONumber = (so.po_number || '').toLowerCase().includes(filters.po_number.toLowerCase());
         const matchesItems = (so.items && so.items.length > 0 ? so.items[0].description || so.items[0].product_name || '' : '').toLowerCase().includes(filters.items_summary.toLowerCase());
         const matchesAmount = `${so.currency || ''} ${parseFloat(so.total_amount || 0).toLocaleString()}`.toLowerCase().includes(filters.amount.toLowerCase());
@@ -499,7 +499,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                                 so_number: true,
                                                 order_date: true,
                                                 customer: true,
-                                                cust_code: true,
+                                                cust_id: true,
                                                 po_number: true,
                                                 items: true,
                                                 status: true,
@@ -529,7 +529,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                                 so_number: false,
                                                 order_date: false,
                                                 customer: false,
-                                                cust_code: false,
+                                                cust_id: false,
                                                 po_number: false,
                                                 items: false,
                                                 status: false,
@@ -560,7 +560,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                             so_number: 'SO Number',
                                             order_date: 'Order Date',
                                             customer: 'Customer',
-                                            cust_code: 'Cust Code',
+                                            cust_id: 'Customer ID',
                                             po_number: 'PO Number',
                                             items: 'Items',
                                             status: 'Status',

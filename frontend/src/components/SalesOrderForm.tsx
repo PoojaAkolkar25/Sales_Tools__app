@@ -33,12 +33,16 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
     const [saving, setSaving] = useState(false);
     const [customers, setCustomers] = useState<any[]>([]);
     const [partners, setPartners] = useState<any[]>([]);
+    const [estimates, setEstimates] = useState<any[]>([]);
 
     const [salesOrder, setSalesOrder] = useState<any>(id ? null : {
         so_number: '',
         customer_name: '',
         customer: '',
-        customer_code: '',
+        cust_id: '',
+        estimate: '',
+        estimate_no: '',
+        estimate_date: '',
         po_number: '',
         po_date: '',
         po_from_date: '',
@@ -91,6 +95,15 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
         }
     }, [id]);
 
+    const fetchEstimatesByCustomer = async (customerId: number) => {
+        try {
+            const response = await api.get(`/estimates/?customer=${customerId}`);
+            setEstimates(response.data);
+        } catch (error) {
+            console.error('Error fetching estimates for customer', error);
+        }
+    };
+
     const fetchCustomers = async () => {
         try {
             const [custRes, partRes] = await Promise.all([
@@ -116,9 +129,11 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
         }
     }, [salesOrder?.customer_detail]);
 
-
-
-
+    useEffect(() => {
+        if (salesOrder?.customer) {
+            fetchEstimatesByCustomer(salesOrder.customer);
+        }
+    }, [salesOrder?.customer]);
 
     const fetchSalesOrderDetails = async () => {
         setLoading(true);
@@ -131,6 +146,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
             setLoading(false);
         }
     };
+
 
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -147,10 +163,25 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                 ...prev,
                 customer: selectedCustomer.id,
                 customer_name: selectedCustomer.name,
-                customer_code: selectedCustomer.customer_id || prev.customer_code,
+                cust_id: selectedCustomer.customer_id || selectedCustomer.cust_id || selectedCustomer.id || prev.cust_id,
                 billing_address: matchedPartner?.address || selectedCustomer.address || prev.billing_address,
                 shipping_address: matchedPartner?.address || selectedCustomer.address || prev.shipping_address,
                 currency: selectedCustomer.currency || prev.currency
+            }));
+        }
+    };
+
+
+
+    const handleEstimateSelect = (value: string | number) => {
+        const selectedEstimate = estimates.find(e => String(e.id) === String(value));
+        if (selectedEstimate) {
+            setSalesOrder((prev: any) => ({
+                ...prev,
+                estimate: selectedEstimate.id,
+                estimate_no: selectedEstimate.estimate_id,
+                estimate_date: selectedEstimate.estimate_date || selectedEstimate.date || (selectedEstimate.created_at ? selectedEstimate.created_at.split('T')[0] : '') || '',
+                estimate_amount: selectedEstimate.total_price || 0
             }));
         }
     };
@@ -245,6 +276,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                 po_from_date: salesOrder.po_from_date || null,
                 po_to_date: salesOrder.po_to_date || null,
                 delivery_date: salesOrder.delivery_date || null,
+                estimate: salesOrder.estimate || null,
+                estimate_date: salesOrder.estimate_date || null,
                 order_date: salesOrder.order_date || new Date().toISOString().split('T')[0],
                 // Remove detail objects that serializer doesn't expect or are read-only
                 customer_detail: undefined,
@@ -598,15 +631,16 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                 )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Code</label>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer ID</label>
                                 <input
-                                    name="customer_code"
+                                    name="cust_id"
                                     type="text"
-                                    value={salesOrder.customer_code || ''}
+                                    value={salesOrder.cust_id || ''}
                                     onChange={handleInputChange}
                                     className="ae-input"
-                                    disabled={isSubmitted}
-                                    placeholder="Enter Customer Code"
+                                    disabled={isSubmitted || !!salesOrder.customer || (!!id && !!salesOrder.cust_id)}
+                                    placeholder="Enter Customer ID"
+                                    style={salesOrder.customer ? { background: 'var(--bg-secondary)', color: 'var(--text-secondary)' } : {}}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -619,6 +653,69 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                     className="ae-input"
                                     disabled={isSubmitted} placeholder="Purchase Order Number "
                                 />
+                            </div>
+
+
+
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Estimate No.</label>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <SearchableDropdown
+                                        options={estimates.map(e => ({ value: e.id, label: e.estimate_id }))}
+                                        value={salesOrder.estimate || ''}
+                                        onChange={handleEstimateSelect}
+                                        placeholder="Select Estimate"
+                                        disabled={isSubmitted || !salesOrder.customer}
+                                    />
+                                    {salesOrder.estimate && (
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--ae-blue)', fontWeight: 700, marginTop: '2px' }}>
+                                            Est Amt: {getCurrencySymbol(salesOrder.currency)} {parseFloat(salesOrder.estimate_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Estimate Date</label>
+                                {isSubmitted || salesOrder.estimate ? (
+                                    <div className="ae-input" style={{
+                                        minHeight: '34px',
+                                        background: 'var(--bg-secondary)',
+                                        color: 'var(--text-secondary)',
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}>
+                                        {salesOrder.estimate_date ? formatToAppDate(salesOrder.estimate_date) : ''}
+                                    </div>
+                                ) : (
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            value={salesOrder.estimate_date ? formatToAppDate(salesOrder.estimate_date) : ''}
+                                            readOnly
+                                            className="ae-input"
+                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px' }}
+                                            onClick={(e) => {
+                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                                if (dateInput) dateInput.showPicker();
+                                            }}
+                                            placeholder="Enter date"
+                                        />
+                                        <input
+                                            name="estimate_date"
+                                            type="date"
+                                            value={salesOrder.estimate_date || ''}
+                                            onChange={handleInputChange}
+                                            style={{
+                                                position: 'absolute',
+                                                visibility: 'hidden',
+                                                width: 0,
+                                                height: 0
+                                            }}
+                                        />
+                                        <Calendar size={14} style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
+                                    </div>
+                                )}
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column' }}>

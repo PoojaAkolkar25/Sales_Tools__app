@@ -17,16 +17,28 @@ class SalesOrderSerializer(serializers.ModelSerializer):
     deal = serializers.SerializerMethodField()
     deal_id = serializers.SerializerMethodField()
     cost_sheet = serializers.SerializerMethodField()
+    estimate_amount = serializers.SerializerMethodField()
+
+    def get_estimate_amount(self, obj):
+        if obj.estimate:
+            return obj.estimate.total_price
+        return 0
 
     def get_deal(self, obj):
+        if obj.estimate and obj.estimate.deal:
+            return obj.estimate.deal.id
         first_est = obj.estimates.first()
         return first_est.deal.id if first_est and first_est.deal else None
 
     def get_deal_id(self, obj):
+        if obj.estimate and obj.estimate.deal:
+            return obj.estimate.deal.deal_id
         first_est = obj.estimates.first()
         return first_est.deal.deal_id if first_est and first_est.deal else "N/A"
 
     def get_cost_sheet(self, obj):
+        if obj.estimate and obj.estimate.cost_sheet:
+            return obj.estimate.cost_sheet.id
         first_est = obj.estimates.first()
         return first_est.cost_sheet.id if first_est and first_est.cost_sheet else None
 
@@ -52,7 +64,7 @@ class SalesOrderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SalesOrder
-        fields = ['id', 'so_number', 'order_date', 'status', 'customer', 'customer_detail', 'customer_name', 'customer_code', 'po_number', 'po_date', 'po_from_date', 'po_to_date', 'delivery_date', 'billing_address', 'shipping_address', 'currency', 'total_amount', 'po_file', 'po_file_name', 'po_file_url', 'assigned_to', 'items', 'estimates', 'deal', 'deal_id', 'cost_sheet']
+        fields = ['id', 'so_number', 'order_date', 'status', 'customer', 'customer_detail', 'customer_name', 'cust_id', 'estimate', 'estimate_no', 'estimate_date', 'estimate_amount', 'po_number', 'po_date', 'po_from_date', 'po_to_date', 'delivery_date', 'billing_address', 'shipping_address', 'currency', 'total_amount', 'po_file', 'po_file_name', 'po_file_url', 'assigned_to', 'items', 'estimates', 'deal', 'deal_id', 'cost_sheet']
         extra_kwargs = {
             'estimates': {'required': False},
             'so_number': {'read_only': True},

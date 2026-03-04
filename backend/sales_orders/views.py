@@ -61,7 +61,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         original_data = {
             'po_number': instance.po_number or '',
             'customer_name': instance.customer_name or '',
-            'customer_code': instance.customer_code or '',
+            'cust_id': instance.cust_id or '',
             'total_amount': str(instance.total_amount),
             'currency': instance.currency,
             'status': instance.status,
@@ -76,7 +76,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         new_data = {
             'po_number': instance.po_number or '',
             'customer_name': instance.customer_name or '',
-            'customer_code': instance.customer_code or '',
+            'cust_id': instance.cust_id or '',
             'total_amount': str(instance.total_amount),
             'currency': instance.currency,
             'status': instance.status,
@@ -222,7 +222,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         })
         
         headers = [
-            'Deal ID', 'SO Number', 'Order Date', 'Customer', 'Cust Code', 
+            'Deal ID', 'SO Number', 'Order Date', 'Customer', 'Customer ID', 
             'PO Number', 'Items (Summary)', 'Status', 'Total Amount', 'Currency', 'PO Date'
         ]
         
@@ -234,7 +234,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
             worksheet.write(row, 1, so.so_number or '—')
             worksheet.write(row, 2, so.order_date.strftime("%Y-%m-%d") if so.order_date else '—')
             worksheet.write(row, 3, so.customer_name or (so.customer.name if so.customer else '—'))
-            worksheet.write(row, 4, so.customer_code or '—')
+            worksheet.write(row, 4, so.cust_id or '—')
             worksheet.write(row, 5, so.po_number or '—')
             
             # Items Summary

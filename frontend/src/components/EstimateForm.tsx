@@ -838,7 +838,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
             {/* Unified Form Card */}
             <div style={{ padding: '24px', background: 'white', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '16px' }}>
-                <div className="ae-grid-responsive-5" style={{ gap: '16px', alignItems: 'flex-start' }}>
+                <div className="ae-grid-responsive-6" style={{ gap: '16px', alignItems: 'flex-start' }}>
                     {/* Cost Sheet Amount */}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>
@@ -909,6 +909,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
                                         setEstimate({
                                             customer_name: csData.customer_name,
+                                            company: csData.company,
                                             cost_sheet_no: csData.cost_sheet_no,
                                             cost_sheet_price: csData.total_estimated_price, // Total Est. Price from cost sheet
                                             deal_id: csData.deal_no,
@@ -948,7 +949,19 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     label: `${deal.deal_id} - ${deal.deal_name}`
                                 }))}
                                 value={formData.deal || ''}
-                                onChange={(val) => setFormData({ ...formData, deal: val })}
+                                onChange={(val) => {
+                                    setFormData({ ...formData, deal: val });
+                                    const matchedDeal = deals.find(d => String(d.id) === String(val));
+                                    if (matchedDeal) {
+                                        setEstimate((prev: any) => ({
+                                            ...prev,
+                                            customer_name: matchedDeal.customer_name,
+                                            company: matchedDeal.company,
+                                            deal_id: matchedDeal.deal_id,
+                                            deal_amount: matchedDeal.deal_amount
+                                        }));
+                                    }
+                                }}
                                 placeholder="Select Deal"
                                 className="w-full"
                             />
@@ -969,6 +982,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Customer Name</label>
                         <div className="ae-input" style={{ background: '#F7FAFC', fontWeight: 600, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {estimate?.customer_name || 'Select Cost Sheet'}
+                        </div>
+                    </div>
+
+                    {/* Company Name */}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>Company Name</label>
+                        <div className="ae-input" style={{ background: '#F7FAFC', fontWeight: 600, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {estimate?.company || 'None'}
                         </div>
                     </div>
 

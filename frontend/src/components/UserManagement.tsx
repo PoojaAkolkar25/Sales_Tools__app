@@ -68,7 +68,8 @@ const ALL_COLUMNS: Record<string, { key: string; label: string; shortLabel: stri
         { key: 'alias_name', label: 'Alias Name', shortLabel: 'Alias' },
         { key: 'status', label: 'Status', shortLabel: 'St' },
         { key: 'industry', label: 'Industry', shortLabel: 'Ind' },
-        { key: 'linked_partner_name', label: 'Linked Partner', shortLabel: 'LP' },
+        { key: 'linked_partner_name', label: 'Linked Customer', shortLabel: 'LC' },
+        { key: 'company', label: 'Company Name', shortLabel: 'Co' },
         { key: 'location', label: 'Location', shortLabel: 'Loc' },
         { key: 'contact_person', label: 'Contact Person', shortLabel: 'CP' },
         { key: 'email', label: 'Email', shortLabel: 'Mail' },
@@ -285,6 +286,7 @@ const UserManagement: React.FC = () => {
         location: '',
         contact_person: '',
         email: '',
+        company: '',
         status: 'ACTIVE'
     });
 
@@ -442,6 +444,7 @@ const UserManagement: React.FC = () => {
                 contact_person: item.contact_person || '',
                 email: item.email || '',
                 alias_name: item.alias_name || '',
+                company: item.company || '',
                 status: item.status || 'ACTIVE'
             });
         } else if (mode === 'company') {
@@ -999,6 +1002,7 @@ const UserManagement: React.FC = () => {
                 end_customer_code: '',
                 name: '', linked_partner: '', industry: '', location: '',
                 contact_person: '', email: '', alias_name: '',
+                company: '',
                 status: 'ACTIVE'
             });
             setEditingId(null);
@@ -1506,6 +1510,7 @@ const UserManagement: React.FC = () => {
                                     end_customer_code: '',
                                     name: '', linked_partner: '', industry: '', location: '',
                                     contact_person: '', email: '', alias_name: '',
+                                    company: '',
                                     status: 'ACTIVE'
                                 });
                                 setCompanyFormData({
@@ -2549,12 +2554,30 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Linked Partner * (Select Partner)"
-                                                    options={partners.map(p => ({ value: String(p.id), label: p.name }))}
+                                                    label="Linked Customer (Select Customer)"
+                                                    options={companies.map(c => ({ value: String(c.id), label: c.name }))}
                                                     value={endCustomerFormData.linked_partner}
-                                                    onChange={(val) => setEndCustomerFormData({ ...endCustomerFormData, linked_partner: val as string })}
-                                                    placeholder="Select Partner"
+                                                    onChange={(val) => {
+                                                        const selectedCo = companies.find(c => String(c.id) === String(val));
+                                                        setEndCustomerFormData({
+                                                            ...endCustomerFormData,
+                                                            linked_partner: val as string,
+                                                            company: selectedCo?.linked_company_profile_name || ''
+                                                        });
+                                                    }}
+                                                    placeholder="Select Customer"
                                                     required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Company Name</label>
+                                                <input
+                                                    type="text"
+                                                    value={endCustomerFormData.company || ''}
+                                                    className="ae-input"
+                                                    disabled
+                                                    placeholder="AE IND / AE USA"
+                                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
                                                 />
                                             </div>
                                         </div>

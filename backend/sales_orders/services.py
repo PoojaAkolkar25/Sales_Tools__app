@@ -20,7 +20,7 @@ class PDFExtractor:
         """
         data = {
             'customer_name': 'Pending Mapping',
-            'customer_code': '',
+            'cust_id': '',
             'po_number': 'N/A',
             'po_date': None,
             'delivery_date': None,
@@ -83,7 +83,7 @@ class PDFExtractor:
                     "{\n"
                     "  \"header\": {\n"
                     "    \"customer_name\": {\"value\": string, \"confidence\": number},\n"
-                    "    \"customer_code\": {\"value\": string, \"confidence\": number},\n"
+                    "    \"cust_id\": {\"value\": string, \"confidence\": number},\n"
                     "    \"po_number\": {\"value\": string, \"confidence\": number},\n"
                     "    \"po_date\": {\"value\": \"YYYY-MM-DD\", \"confidence\": number},\n"
                     "    \"delivery_date\": {\"value\": \"YYYY-MM-DD\", \"confidence\": number},\n"
@@ -169,8 +169,8 @@ class PDFExtractor:
                         if isinstance(header, dict):
                             if header.get('customer_name'):
                                 data['customer_name'] = _get_val(header, 'customer_name', data['customer_name'])
-                            if header.get('customer_code'):
-                                data['customer_code'] = _get_val(header, 'customer_code', data['customer_code'])
+                            if header.get('cust_id'):
+                                data['cust_id'] = _get_val(header, 'cust_id', data['cust_id'])
                             if header.get('po_number'):
                                 data['po_number'] = _get_val(header, 'po_number', data['po_number'])
                             if header.get('po_date'):
@@ -360,7 +360,7 @@ class PDFExtractor:
                 # 3b. Customer Code
                 code_match = re.search(r'(?:Customer|Client|Vendor|Party)\s*(?:Code|ID|Ref)[:\s]*([A-Z0-9\-]{3,})', full_text, re.I)
                 if code_match:
-                    data['customer_code'] = code_match.group(1).strip()
+                    data['cust_id'] = code_match.group(1).strip()
 
                 # 3c. Billing & Shipping Address (Improved)
                 # For BILLING ADDRESS: Look for markers followed by multi-line address
@@ -608,7 +608,7 @@ class SalesOrderCreator:
             po_number=extracted_data['po_number'],
             po_date=extracted_data['po_date'],
             delivery_date=extracted_data['delivery_date'],
-            customer_code=extracted_data['customer_code'],
+            cust_id=extracted_data['cust_id'],
             order_date=datetime.now().date(),
             currency=extracted_data['currency'],
             status=SalesOrderStatus.DRAFT,

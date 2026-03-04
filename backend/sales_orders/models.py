@@ -40,7 +40,13 @@ class SalesOrder(models.Model):
     
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
     customer_name = models.CharField(max_length=255, blank=True)
-    customer_code = models.CharField(max_length=50, blank=True)
+    cust_id = models.CharField(max_length=50, blank=True)
+    
+    # Estimate fields
+    estimate = models.ForeignKey('estimates.Estimate', on_delete=models.SET_NULL, null=True, blank=True, related_name='sales_order_reverse')
+    estimate_no = models.CharField(max_length=50, blank=True)
+    estimate_date = models.DateField(null=True, blank=True)
+
     po_number = models.CharField(max_length=100, blank=True)
     po_date = models.DateField(null=True, blank=True)
     po_from_date = models.DateField(null=True, blank=True)

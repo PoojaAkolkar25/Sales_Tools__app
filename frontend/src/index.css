@@ -1509,6 +1509,30 @@ option {
   }
 }
 
+.ae-grid-responsive-6 {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1400px) {
+  .ae-grid-responsive-6 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .ae-grid-responsive-6 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .ae-grid-responsive-6 {
+    grid-template-columns: 1fr;
+  }
+}
+
 .ae-flex-wrap {
   flex-wrap: wrap !important;
 }
@@ -3102,5 +3126,10 @@ option {
 
 .ae-searchable-dropdown-add-btn:hover {
   background: rgba(255, 107, 0, 0.05);
-}  
-.ae-textarea-auto { line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; } 
+}
+
+.ae-textarea-auto {
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
