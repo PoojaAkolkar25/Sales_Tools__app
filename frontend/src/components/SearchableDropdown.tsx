@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Plus } from 'lucide-react';
 
 interface Option {
@@ -37,6 +38,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     const [inputText, setInputText] = useState('');
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const [menuStyles, setMenuStyles] = useState<React.CSSProperties>({});
 
     // Resolve the display label for the current value
     const selectedLabel = useMemo(() => {
@@ -63,9 +66,42 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         && inputText !== selectedLabel
         && !options.some(opt => opt.label.toLowerCase() === inputText.trim().toLowerCase());
 
+    const updateMenuPosition = () => {
+        if (containerRef.current && isOpen) {
+            const rect = containerRef.current.getBoundingClientRect();
+
+            setMenuStyles({
+                position: 'fixed',
+                top: `${rect.bottom + 4}px`,
+                bottom: 'auto',
+                left: `${rect.left}px`,
+                width: `${rect.width}px`,
+                zIndex: 9999
+            });
+        }
+    };
+
+    useLayoutEffect(() => {
+        if (isOpen) {
+            updateMenuPosition();
+            window.addEventListener('scroll', updateMenuPosition, true);
+            window.addEventListener('resize', updateMenuPosition);
+        }
+        return () => {
+            window.removeEventListener('scroll', updateMenuPosition, true);
+            window.removeEventListener('resize', updateMenuPosition);
+        };
+    }, [isOpen]);
+
     useEffect(() => {
+        if (!isOpen) return;
+
         const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+            const target = event.target as Node;
+            const isInsideContainer = containerRef.current?.contains(target);
+            const isInsidePortal = menuRef.current?.contains(target);
+
+            if (!isInsideContainer && !isInsidePortal) {
                 // On blur: if custom allowed, commit whatever is typed; else revert
                 if (allowCustom && inputText.trim() !== '') {
                     onChange(inputText.trim());
@@ -75,9 +111,11 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                 setIsOpen(false);
             }
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [allowCustom, inputText, selectedLabel, onChange]);
+
+        // Use capture: true to ensure we catch the click even if others stop propagation
+        document.addEventListener('mousedown', handleClickOutside, { capture: true });
+        return () => document.removeEventListener('mousedown', handleClickOutside, { capture: true });
+    }, [isOpen, allowCustom, inputText, selectedLabel, onChange]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const text = e.target.value;
@@ -102,10 +140,6 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' && allowCustom && inputText.trim() !== '') {
-            onChange(inputText.trim());
-            setIsOpen(false);
-        }
         if (e.key === 'Escape') {
             setInputText(selectedLabel);
             setIsOpen(false);
@@ -138,6 +172,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                 <ChevronDown
                     size={16}
                     onClick={() => !disabled && (isOpen ? setIsOpen(false) : inputRef.current?.focus())}
+                    tabIndex={-1}
+                    focusable="false"
                     style={{
                         position: 'absolute',
                         right: '10px',
@@ -151,8 +187,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                 />
             </div>
 
-            {isOpen && (
-                <div className="ae-searchable-dropdown-menu">
+            {isOpen && createPortal(
+                <div className="ae-searchable-dropdown-menu" style={menuStyles} ref={menuRef}>
                     <div className="ae-searchable-dropdown-options">
                         {showCustomOption && (
                             <div
@@ -181,7 +217,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                                     }}
                                 >
                                     <span style={{ flex: 1 }}>{option.label}</span>
-                                    {value === option.value && <Check size={14} />}
+                                    {value === option.value && <Check size={14} focusable="false" />}
                                 </div>
                             ))
                         ) : !showCustomOption && (
@@ -203,12 +239,13 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                                     onAddNew();
                                 }}
                             >
-                                <Plus size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                                <Plus size={14} focusable="false" style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
                                 {addNewLabel}
                             </button>
                         </div>
                     )}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

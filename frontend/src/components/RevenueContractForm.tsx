@@ -3,6 +3,7 @@ import { Save, Loader2, Calendar } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
+import AutoExpandingTextarea from './AutoExpandingTextarea';
 
 interface RevenueContractFormProps {
     id: number | null;
@@ -333,13 +334,21 @@ const RevenueContractForm: React.FC<RevenueContractFormProps> = ({ id, onBack, o
                     <section>
                         <SectionHeader title="Internal Notes" />
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <textarea
+                            <AutoExpandingTextarea
                                 name="notes"
                                 value={formData.notes}
                                 onChange={handleInputChange}
-                                className="ae-input"
                                 placeholder="Additional details about the contract or recognition terms..."
-                                style={{ height: '48px', padding: '8px 12px', resize: 'none' }}
+                                style={{
+                                    minHeight: '48px',
+                                    padding: '8px 12px',
+                                    width: '100%',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '8px',
+                                    outline: 'none',
+                                    background: 'white',
+                                    fontSize: '0.85rem'
+                                }}
                             />
                         </div>
                     </section>
