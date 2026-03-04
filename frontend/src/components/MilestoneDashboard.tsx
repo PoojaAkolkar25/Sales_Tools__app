@@ -345,7 +345,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    flexWrap: 'nowrap',
+                    flexWrap: 'wrap',
                     gap: '12px',
                     padding: '12px 16px',
                     borderBottom: '1px solid var(--border-primary)',
@@ -675,7 +675,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                     </button>
 
                     <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)', minHeight: '400px' }}>
-                        <table className="ae-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+                        <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                             <colgroup>
                                 {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
                                     <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />

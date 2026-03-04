@@ -18,6 +18,7 @@ import {
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
+import AutoExpandingTextarea from './AutoExpandingTextarea';
 import { formatToAppDate } from '../utils/dateUtils';
 
 interface SalesOrderFormProps {
@@ -53,11 +54,11 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
             description: '',
             start_date: '',
             end_date: '',
-            qty: 1,
-            rate: 0,
-            tax: 0,
-            discount: 0,
-            amount: 0
+            qty: '',
+            rate: '',
+            tax: '',
+            discount: '',
+            amount: ''
         }],
         total_amount: 0,
         status: 'DRAFT',
@@ -164,23 +165,24 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
 
         if (field === 'discount_percent' || field === 'qty' || field === 'rate') {
             const disc_percent = parseFloat(newItems[index].discount_percent) || 0;
-            newItems[index].discount = (initial * (disc_percent / 100)).toFixed(2);
+            newItems[index].discount = initial > 0 ? (initial * (disc_percent / 100)).toFixed(2) : '';
         } else if (field === 'discount') {
             const disc_amt = parseFloat(newItems[index].discount) || 0;
-            newItems[index].discount_percent = initial > 0 ? ((disc_amt / initial) * 100).toFixed(2) : 0;
+            newItems[index].discount_percent = initial > 0 ? ((disc_amt / initial) * 100).toFixed(2) : '';
         }
 
         const taxable_amount = initial - (parseFloat(newItems[index].discount) || 0);
 
         if (field === 'tax_percent' || field === 'discount_percent' || field === 'qty' || field === 'rate') {
             const tax_percent = parseFloat(newItems[index].tax_percent) || 0;
-            newItems[index].tax = (taxable_amount * (tax_percent / 100)).toFixed(2);
+            newItems[index].tax = taxable_amount > 0 ? (taxable_amount * (tax_percent / 100)).toFixed(2) : '';
         } else if (field === 'tax') {
             const tax_amt = parseFloat(newItems[index].tax) || 0;
-            newItems[index].tax_percent = taxable_amount > 0 ? ((tax_amt / taxable_amount) * 100).toFixed(2) : 0;
+            newItems[index].tax_percent = taxable_amount > 0 ? ((tax_amt / taxable_amount) * 100).toFixed(2) : '';
         }
 
-        newItems[index].amount = (taxable_amount + (parseFloat(newItems[index].tax) || 0)).toFixed(2);
+        const amt = taxable_amount + (parseFloat(newItems[index].tax) || 0);
+        newItems[index].amount = amt > 0 ? amt.toFixed(2) : '';
 
         const total = newItems.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0);
         setSalesOrder((prev: any) => ({ ...prev, items: newItems, total_amount: total }));
@@ -196,11 +198,11 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                 description: '',
                 start_date: '',
                 end_date: '',
-                qty: 1,
-                rate: 0,
-                tax: 0,
-                discount: 0,
-                amount: 0
+                qty: '',
+                rate: '',
+                tax: '',
+                discount: '',
+                amount: ''
             }]
         }));
     };
@@ -551,7 +553,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                     {/* 1. Basic Info Section */}
                     <section>
                         <SectionHeader title="Basic Order Information" />
-                        <div className="ae-grid-5">
+                        <div className="ae-grid-responsive-5">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Sales Order Number</label>
                                 <input
@@ -944,37 +946,37 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                 </div>
                                             </td>
                                             <td style={{ padding: '6px 4px', minWidth: '180px', verticalAlign: 'middle' }}>
-                                                <input
-                                                    type="text"
+                                                <AutoExpandingTextarea
                                                     value={item.product_name || item.product || ''}
                                                     onChange={(e) => handleItemChange(index, 'product_name', e.target.value)}
                                                     className="ae-input"
                                                     style={{
                                                         width: '100%',
-                                                        height: '30px',
+                                                        minHeight: '30px',
                                                         padding: '4px 8px',
                                                         fontSize: '0.85rem',
                                                         borderRadius: '6px'
                                                     }}
                                                     placeholder="Product Name"
                                                     disabled={isSubmitted}
+                                                    maxRows={5}
                                                 />
                                             </td>
                                             <td style={{ padding: '6px 4px', minWidth: '180px', verticalAlign: 'middle' }}>
-                                                <textarea
+                                                <AutoExpandingTextarea
                                                     value={item.description || ''}
                                                     onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                                                     className="ae-input custom-scrollbar"
                                                     style={{
                                                         width: '100%',
-                                                        height: '30px',
+                                                        minHeight: '30px',
                                                         padding: '4px 8px',
                                                         fontSize: '0.85rem',
                                                         borderRadius: '6px',
-                                                        resize: 'none'
                                                     }}
                                                     placeholder="Item Description"
                                                     disabled={isSubmitted}
+                                                    maxRows={5}
                                                 />
                                             </td>
                                             <td style={{ padding: '6px 4px', position: 'relative', verticalAlign: 'middle' }}>
@@ -1045,11 +1047,12 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                 <div style={{ width: '70px', margin: '0 auto' }}>
                                                     <input
                                                         type="number"
-                                                        value={item.qty || ''}
+                                                        value={item.qty ?? ''}
                                                         onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
                                                         className="ae-input"
                                                         style={{ width: '100%', padding: '4px 8px', fontSize: '0.85rem', textAlign: 'center', fontWeight: 600, height: '30px' }}
                                                         min="1"
+                                                        placeholder="0"
                                                         disabled={isSubmitted}
                                                     />
                                                 </div>
@@ -1059,12 +1062,13 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                     <span style={{ position: 'absolute', left: '8px', color: '#718096', fontSize: '0.85rem', fontWeight: 600 }}>{getCurrencySymbol(salesOrder.currency)}</span>
                                                     <input
                                                         type="number"
-                                                        value={item.rate || ''}
+                                                        value={item.rate ?? ''}
                                                         onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
                                                         className="ae-input"
                                                         style={{ width: '100%', padding: '4px 8px 4px 20px', fontSize: '0.85rem', fontWeight: 600, height: '30px' }}
                                                         min="0"
                                                         step="0.01"
+                                                        placeholder="0"
                                                         disabled={isSubmitted}
                                                     />
                                                 </div>
@@ -1073,12 +1077,13 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                 <div style={{ display: 'flex', alignItems: 'center', width: '80px', margin: '0 auto', border: '1px solid #E0E6ED', borderRadius: '8px', overflow: 'hidden', background: 'white' }}>
                                                     <input
                                                         type="number"
-                                                        value={item.discount_percent || 0}
+                                                        value={item.discount_percent ?? ''}
                                                         onChange={(e) => handleItemChange(index, 'discount_percent', e.target.value)}
                                                         style={{ width: '100%', padding: '4px 6px', fontSize: '0.85rem', color: '#C53030', textAlign: 'center', fontWeight: 600, height: '30px', border: 'none', outline: 'none', background: 'transparent' }}
                                                         min="0"
                                                         max="100"
                                                         step="0.01"
+                                                        placeholder="0"
                                                         disabled={isSubmitted}
                                                     />
                                                     <span style={{ padding: '0 6px 0 2px', color: '#C53030', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0, lineHeight: '30px', borderLeft: '1px solid #E0E6ED', background: '#FFF5F5' }}>%</span>
@@ -1186,15 +1191,14 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Billing Address</label>
-                                <textarea
+                                <AutoExpandingTextarea
                                     name="billing_address"
                                     value={salesOrder.billing_address || ''}
                                     onChange={handleInputChange}
                                     className="ae-input"
                                     style={{
-                                        height: '48px',
+                                        minHeight: '48px',
                                         padding: '8px 12px',
-                                        resize: 'none',
                                         ...getHighlightStyle(salesOrder.billing_address),
                                     }}
                                     disabled={isSubmitted}
@@ -1203,15 +1207,14 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Shipping Address</label>
-                                <textarea
+                                <AutoExpandingTextarea
                                     name="shipping_address"
                                     value={salesOrder.shipping_address || ''}
                                     onChange={handleInputChange}
                                     className="ae-input"
                                     style={{
-                                        height: '48px',
+                                        minHeight: '48px',
                                         padding: '8px 12px',
-                                        resize: 'none',
                                         ...getHighlightStyle(salesOrder.shipping_address),
                                     }}
                                     disabled={isSubmitted}
@@ -1570,7 +1573,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                         </div>
 
                         <div style={{ padding: '24px' }}>
-                            <div style={{ marginBottom: '20px' }}>
+                            <div className="ae-grid-responsive-5" style={{ marginBottom: '24px' }}>
                                 <label style={{
                                     display: 'block',
                                     fontSize: '0.85rem',
@@ -1578,16 +1581,15 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                     color: '#1e293b',
                                     marginBottom: '8px'
                                 }}>{showRejectModal ? 'Rejection Reason' : 'Revert Reason'}</label>
-                                <textarea
+                                <AutoExpandingTextarea
                                     className="ae-input"
                                     value={showRejectModal ? rejectComment : revertComment}
                                     onChange={e => showRejectModal ? setRejectComment(e.target.value) : setRevertComment(e.target.value)}
                                     placeholder="Type your reason here..."
                                     autoFocus
                                     style={{
-                                        height: '90px',
+                                        minHeight: '90px',
                                         padding: '12px 16px',
-                                        resize: 'none',
                                         background: '#f8fafc',
                                     }}
                                 />

@@ -368,7 +368,7 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    flexWrap: 'nowrap',
+                    flexWrap: 'wrap',
                     gap: '12px',
                     padding: '12px 16px',
                     borderBottom: '1px solid var(--border-primary)',
@@ -382,7 +382,8 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                         padding: '6px',
                         borderRadius: '12px',
                         border: '1px solid var(--border-primary)',
-                        boxShadow: 'var(--shadow-sm)'
+                        boxShadow: 'var(--shadow-sm)',
+                        flexWrap: 'wrap'
                     }}>
                         {statusFlow.map((flow) => {
                             const isActive = filters.status === flow.value;
@@ -414,8 +415,8 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                     </div>
 
                     {/* Right Side Actions */}
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Period:</span>
                             <select
                                 className="ae-input"
@@ -670,8 +671,8 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                         <ChevronRight size={18} />
                     </button>
 
-                    <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
-                        <table className="ae-table" style={{ tableLayout: 'fixed', width: 'max-content' }}>
+                    <div ref={tableScrollRef} className="ae-table-wrapper" style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
+                        <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: 'max-content' }}>
                             <colgroup>
                                 {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
                                     <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />

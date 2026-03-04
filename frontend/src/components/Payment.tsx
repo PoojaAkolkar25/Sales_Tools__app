@@ -48,7 +48,9 @@ const Payment: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '0 8px',
-                marginBottom: '24px'
+                marginBottom: '24px',
+                flexWrap: 'wrap',
+                gap: '12px'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '4px', height: '24px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
@@ -62,7 +64,8 @@ const Payment: React.FC = () => {
                         padding: '6px',
                         borderRadius: '12px',
                         border: '1px solid #E0E6ED',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                        flexWrap: 'wrap'
                     }}>
                         <button
                             onClick={() => { setActiveTab('RECEIPT'); setReceiptView('DASHBOARD'); }}

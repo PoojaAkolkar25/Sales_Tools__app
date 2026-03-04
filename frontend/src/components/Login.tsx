@@ -63,83 +63,516 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans">
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-                <div className="max-w-md w-full z-10">
-                    {/* Decorative Animated Circles */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply blur-xl opacity-30 animate-pulse"></div>
-                        <div className="absolute top-40 right-10 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply blur-xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }}></div>
-                        <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply blur-xl opacity-30 animate-pulse" style={{ animationDelay: '2s' }}></div>
-                    </div>
+        <div style={{ minHeight: '100vh', fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif" }}>
+            {/* Inline style tag for animations & login-specific styles */}
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-                    <div className="bg-white/80 backdrop-blur-xl shadow-2xl rounded-2xl p-8 border border-white/20">
-                        {/* Logo Section */}
-                        <div className="flex justify-center mb-6">
-                            <div className="relative flex items-center">
-                                <div className="flex flex-col items-start leading-none">
-                                    <svg width="50" height="42" viewBox="0 0 45 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-sm">
-                                        <path d="M10 38L24 4L38 38H31L24 18L17 38H10Z" fill="#F98A05" />
-                                        <path d="M26 33L30 27L34 33H26Z" fill="#F98A05" />
-                                        <path d="M22 25L27 18L32 25H22Z" fill="#F98A05" />
-                                    </svg>
-                                </div>
-                                <h1 className="text-[2.2rem] font-bold text-[#555] tracking-tight ml-2">
-                                    Automation<span className="text-[#555] font-normal">Edge</span>
-                                </h1>
+                @keyframes fade-in-up {
+                    from { opacity: 0; transform: translateY(24px); }
+                    to   { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    20% { transform: translateX(-6px); }
+                    40% { transform: translateX(6px); }
+                    60% { transform: translateX(-4px); }
+                    80% { transform: translateX(4px); }
+                }
+                @keyframes modal-enter {
+                    from { opacity: 0; transform: scale(0.95) translateY(16px); }
+                    to   { opacity: 1; transform: scale(1) translateY(0); }
+                }
+
+                .login-page {
+                    min-height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    background: #f8f9fb;
+                    position: relative;
+                    overflow: hidden;
+                    padding: 24px;
+                }
+
+                .login-orb {
+                    display: none;
+                }
+
+                .login-card-wrapper {
+                    max-width: 460px;
+                    width: 100%;
+                    z-index: 10;
+                    animation: fade-in-up 0.6s ease-out;
+                }
+
+                .login-card {
+                    background: #ffffff;
+                    border-radius: 16px;
+                    padding: 44px 40px 36px;
+                    border: 1px solid #e8eaed;
+                    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+                    position: relative;
+                }
+                .login-card::before {
+                    display: none;
+                }
+
+                .login-logo-row {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    margin-bottom: 32px;
+                }
+                .login-logo-text {
+                    font-size: 1.85rem;
+                    font-weight: 700;
+                    color: #1a1f36;
+                    letter-spacing: -0.5px;
+                }
+                .login-logo-text span {
+                    font-weight: 400;
+                    color: #6b7280;
+                }
+
+                .login-heading {
+                    text-align: center;
+                    font-size: 1.6rem;
+                    font-weight: 800;
+                    margin: 0 0 6px;
+                    color: #1a1f36;
+                    letter-spacing: -0.3px;
+                }
+                .login-subheading {
+                    text-align: center;
+                    color: #6b7280;
+                    font-size: 0.9rem;
+                    margin: 0 0 32px;
+                    font-weight: 400;
+                }
+
+                .login-error {
+                    padding: 12px 16px;
+                    background: #fef2f2;
+                    border: 1px solid #fecaca;
+                    color: #dc2626;
+                    border-radius: 10px;
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                    text-align: center;
+                    margin-bottom: 16px;
+                    animation: shake 0.5s ease;
+                }
+
+                .login-input-group {
+                    position: relative;
+                    margin-bottom: 20px;
+                }
+                .login-input-icon {
+                    position: absolute;
+                    left: 0;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: #9ca3af;
+                    pointer-events: none;
+                    transition: color 0.3s ease;
+                    z-index: 2;
+                }
+                .login-input {
+                    width: 100%;
+                    box-sizing: border-box;
+                    padding: 14px 16px 14px 36px;
+                    border-radius: 0;
+                    border: none;
+                    border-bottom: 2px solid #e5e7eb;
+                    background: transparent;
+                    color: #1a1f36;
+                    font-size: 0.925rem;
+                    font-family: inherit;
+                    outline: none;
+                    transition: all 0.3s ease;
+                }
+                .login-input::placeholder {
+                    color: #9ca3af;
+                }
+                .login-input:focus {
+                    border-bottom-color: #F98A05;
+                    box-shadow: none;
+                }
+                .login-input:focus ~ .login-input-icon,
+                .login-input-group:focus-within .login-input-icon {
+                    color: #F98A05;
+                }
+
+                .login-eye-btn {
+                    position: absolute;
+                    right: 4px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    color: #9ca3af;
+                    padding: 6px;
+                    border-radius: 8px;
+                    transition: all 0.2s ease;
+                    z-index: 2;
+                    display: flex;
+                    align-items: center;
+                }
+                .login-eye-btn:hover {
+                    color: #F98A05;
+                    background: rgba(249, 138, 5, 0.08);
+                }
+
+                .login-forgot-row {
+                    text-align: right;
+                    margin-bottom: 24px;
+                    margin-top: -8px;
+                }
+                .login-forgot-link {
+                    background: none;
+                    border: none;
+                    color: #F98A05;
+                    font-size: 0.85rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    padding: 0;
+                    transition: color 0.2s ease;
+                    font-family: inherit;
+                }
+                .login-forgot-link:hover {
+                    color: #e67e00;
+                    text-decoration: underline;
+                }
+
+                .login-submit-btn {
+                    width: 100%;
+                    padding: 14px 24px;
+                    border: none;
+                    border-radius: 10px;
+                    background: linear-gradient(135deg, #F98A05, #ff6b00);
+                    background-size: 200% auto;
+                    color: #fff;
+                    font-size: 1rem;
+                    font-weight: 700;
+                    font-family: inherit;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    letter-spacing: 0.3px;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 14px rgba(249, 138, 5, 0.3);
+                    position: relative;
+                    overflow: hidden;
+                }
+                .login-submit-btn::before {
+                    display: none;
+                }
+                .login-submit-btn:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 20px rgba(249, 138, 5, 0.4);
+                    background-position: right center;
+                }
+                .login-submit-btn:active {
+                    transform: translateY(0);
+                }
+                .login-submit-btn:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                    transform: none !important;
+                    box-shadow: 0 2px 8px rgba(249, 138, 5, 0.15) !important;
+                }
+
+                .login-footer {
+                    text-align: center;
+                    color: #9ca3af;
+                    margin-top: 28px;
+                    font-size: 0.8rem;
+                    letter-spacing: 0.2px;
+                }
+
+                /* ─── Secure Enterprise Access badge ─── */
+                .login-badge {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    margin-top: 20px;
+                    font-size: 0.72rem;
+                    font-weight: 600;
+                    letter-spacing: 1.5px;
+                    text-transform: uppercase;
+                    color: #F98A05;
+                }
+                .login-badge-dot {
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 50%;
+                    background: #F98A05;
+                }
+
+                /* ─── Forgot Password Modal ─── */
+                .forgot-overlay {
+                    position: fixed;
+                    inset: 0;
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: rgba(0, 0, 0, 0.35);
+                    backdrop-filter: blur(4px);
+                    padding: 16px;
+                }
+                .forgot-modal {
+                    background: #ffffff;
+                    border-radius: 16px;
+                    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.08);
+                    width: 100%;
+                    max-width: 440px;
+                    padding: 36px;
+                    position: relative;
+                    border: 1px solid #e8eaed;
+                    animation: modal-enter 0.3s ease-out;
+                }
+                .forgot-close-btn {
+                    position: absolute;
+                    top: 16px;
+                    right: 16px;
+                    background: #f3f4f6;
+                    border: 1px solid #e5e7eb;
+                    cursor: pointer;
+                    color: #6b7280;
+                    border-radius: 10px;
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.2s ease;
+                }
+                .forgot-close-btn:hover {
+                    background: #e5e7eb;
+                    color: #1f2937;
+                }
+                .forgot-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                    margin-bottom: 10px;
+                }
+                .forgot-icon-circle {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 12px;
+                    background: #fff7ed;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: 1px solid #fed7aa;
+                }
+                .forgot-title {
+                    margin: 0;
+                    font-size: 1.25rem;
+                    font-weight: 700;
+                    color: #1a1f36;
+                }
+                .forgot-desc {
+                    color: #6b7280;
+                    font-size: 0.85rem;
+                    margin: 6px 0 24px;
+                    line-height: 1.5;
+                }
+                .forgot-error-box {
+                    margin-bottom: 16px;
+                    padding: 12px 14px;
+                    background: #fef2f2;
+                    border: 1px solid #fecaca;
+                    color: #dc2626;
+                    border-radius: 10px;
+                    font-size: 0.85rem;
+                    text-align: center;
+                }
+                .forgot-input {
+                    width: 100%;
+                    box-sizing: border-box;
+                    padding: 14px 16px 14px 44px;
+                    border-radius: 10px;
+                    border: 2px solid #e5e7eb;
+                    background: #ffffff;
+                    color: #1a1f36;
+                    font-size: 0.875rem;
+                    font-family: inherit;
+                    outline: none;
+                    transition: all 0.3s ease;
+                }
+                .forgot-input::placeholder {
+                    color: #9ca3af;
+                }
+                .forgot-input:focus {
+                    border-color: #F98A05;
+                    box-shadow: 0 0 0 3px rgba(249, 138, 5, 0.1);
+                }
+                .forgot-submit-btn {
+                    width: 100%;
+                    padding: 14px;
+                    background: linear-gradient(135deg, #F98A05, #ff6b00);
+                    color: #fff;
+                    border: none;
+                    border-radius: 10px;
+                    font-weight: 700;
+                    font-size: 0.925rem;
+                    font-family: inherit;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 14px rgba(249, 138, 5, 0.25);
+                    margin-top: 12px;
+                }
+                .forgot-submit-btn:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 20px rgba(249, 138, 5, 0.35);
+                }
+                .forgot-submit-btn:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                    transform: none !important;
+                }
+                .forgot-cancel-btn {
+                    width: 100%;
+                    padding: 10px;
+                    background: none;
+                    border: none;
+                    color: #6b7280;
+                    font-size: 0.85rem;
+                    font-family: inherit;
+                    cursor: pointer;
+                    transition: color 0.2s ease;
+                    margin-top: 4px;
+                }
+                .forgot-cancel-btn:hover {
+                    color: #1f2937;
+                }
+                .forgot-success-wrap {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                    padding: 16px 0;
+                }
+                .forgot-success-circle {
+                    width: 68px;
+                    height: 68px;
+                    border-radius: 50%;
+                    background: #dcfce7;
+                    border: 1px solid #bbf7d0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-bottom: 18px;
+                }
+                .forgot-success-title {
+                    margin: 0 0 8px;
+                    font-size: 1.25rem;
+                    font-weight: 700;
+                    color: #1a1f36;
+                }
+                .forgot-success-text {
+                    color: #6b7280;
+                    font-size: 0.85rem;
+                    margin-bottom: 24px;
+                    line-height: 1.6;
+                }
+                .forgot-done-btn {
+                    padding: 12px 36px;
+                    background: linear-gradient(135deg, #F98A05, #ff6b00);
+                    color: #fff;
+                    border: none;
+                    border-radius: 10px;
+                    font-weight: 700;
+                    font-size: 0.875rem;
+                    font-family: inherit;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 14px rgba(249, 138, 5, 0.25);
+                }
+                .forgot-done-btn:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 20px rgba(249, 138, 5, 0.35);
+                }
+            `}</style>
+
+            <div className="login-page">
+                {/* Floating gradient orbs */}
+                <div className="login-orb login-orb-1" />
+                <div className="login-orb login-orb-2" />
+                <div className="login-orb login-orb-3" />
+                <div className="login-orb login-orb-4" />
+
+                <div className="login-card-wrapper">
+                    <div className="login-card">
+                        {/* Logo */}
+                        <div className="login-logo-row">
+                            <img src="/logo.png" alt="AutomationEdge Logo" style={{ height: '44px', width: 'auto' }} />
+                            <div className="login-logo-text">
+                                Automation<span>Edge</span>
                             </div>
                         </div>
 
-                        <h2 className="text-center text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                            Welcome Back
-                        </h2>
-                        <p className="text-center text-gray-600">Sign in to continue</p>
+                        {/* Heading */}
+                        <h2 className="login-heading">Welcome Back</h2>
+                        <p className="login-subheading">Sign in to continue</p>
 
-                        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+                        {/* Form */}
+                        <form onSubmit={handleSubmit}>
                             {error && (
-                                <div className="p-3 bg-red-50 border border-red-100 text-red-500 rounded-xl text-sm font-medium animate-shake text-center">
-                                    {error}
-                                </div>
+                                <div className="login-error">{error}</div>
                             )}
 
-                            <div className="space-y-4">
-                                <div className="relative">
-                                    <User className="absolute left-3 top-3 text-gray-400" size={24} strokeWidth={2} />
-                                    <input
-                                        type="text"
-                                        placeholder="Username"
-                                        value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-3 text-gray-400" size={24} strokeWidth={2} />
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        placeholder="Password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full pl-10 pr-12 py-3 rounded-xl border-2 border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-3 text-gray-500 hover:text-indigo-600 transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
-                                    </button>
-                                </div>
+                            <div className="login-input-group">
+                                <User className="login-input-icon" size={20} strokeWidth={2} />
+                                <input
+                                    type="text"
+                                    placeholder="Username"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    className="login-input"
+                                    required
+                                />
                             </div>
 
-                            <div className="text-right text-sm">
+                            <div className="login-input-group">
+                                <Lock className="login-input-icon" size={20} strokeWidth={2} />
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder="Password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="login-input"
+                                    style={{ paddingRight: '52px' }}
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="login-eye-btn"
+                                >
+                                    {showPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
+                                </button>
+                            </div>
+
+                            <div className="login-forgot-row">
                                 <button
                                     type="button"
                                     onClick={handleForgotOpen}
-                                    className="text-indigo-600 hover:underline font-medium"
+                                    className="login-forgot-link"
                                 >
                                     Forgot password?
                                 </button>
@@ -148,13 +581,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold shadow-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                                className="login-submit-btn"
                             >
                                 {loading ? (
-                                    <Loader2 className="animate-spin" size={24} />
+                                    <Loader2 className="animate-spin" size={22} />
                                 ) : (
                                     <>
-                                        <LogIn size={24} strokeWidth={2} />
+                                        <LogIn size={20} strokeWidth={2.5} />
                                         <span>Sign In</span>
                                     </>
                                 )}
@@ -162,94 +595,49 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                         </form>
                     </div>
 
-                    <p className="text-center text-gray-600 mt-6 text-sm">
+                    <p className="login-footer">
                         &copy; 2025 AutomationEdge. All rights reserved.
                     </p>
                 </div>
             </div>
 
-
             {/* ────── Forgot Password Modal (Portal) ────── */}
             {showForgotModal && ReactDOM.createPortal(
                 <div
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        zIndex: 9999,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'rgba(0,0,0,0.45)',
-                        backdropFilter: 'blur(4px)',
-                        padding: '16px',
-                    }}
+                    className="forgot-overlay"
                     onClick={(e) => { if (e.target === e.currentTarget) handleForgotClose(); }}
                 >
-                    <div style={{
-                        background: '#fff',
-                        borderRadius: '16px',
-                        boxShadow: '0 25px 60px rgba(0,0,0,0.25)',
-                        width: '100%',
-                        maxWidth: '440px',
-                        padding: '32px',
-                        position: 'relative',
-                    }}>
+                    <div className="forgot-modal">
                         {/* Close button */}
-                        <button
-                            onClick={handleForgotClose}
-                            style={{
-                                position: 'absolute', top: '16px', right: '16px',
-                                background: 'none', border: 'none', cursor: 'pointer',
-                                color: '#9ca3af', lineHeight: 1,
-                            }}
-                        >
-                            <X size={20} />
+                        <button onClick={handleForgotClose} className="forgot-close-btn">
+                            <X size={18} />
                         </button>
 
                         {!forgotSuccess ? (
                             <>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                                    <div style={{
-                                        width: '40px', height: '40px', borderRadius: '50%',
-                                        background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    }}>
-                                        <Mail size={20} color="#4f46e5" />
+                                <div className="forgot-header">
+                                    <div className="forgot-icon-circle">
+                                        <Mail size={20} color="#F98A05" />
                                     </div>
-                                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>Forgot Password</h3>
+                                    <h3 className="forgot-title">Forgot Password</h3>
                                 </div>
-                                <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '24px', marginTop: '4px' }}>
+                                <p className="forgot-desc">
                                     Enter your registered email address or username and we'll send you a link to reset your password.
                                 </p>
 
                                 {forgotError && (
-                                    <div style={{
-                                        marginBottom: '16px', padding: '10px 14px',
-                                        background: '#fef2f2', border: '1px solid #fecaca',
-                                        color: '#ef4444', borderRadius: '10px',
-                                        fontSize: '0.875rem', textAlign: 'center',
-                                    }}>
-                                        {forgotError}
-                                    </div>
+                                    <div className="forgot-error-box">{forgotError}</div>
                                 )}
 
-                                <form onSubmit={handleForgotSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <form onSubmit={handleForgotSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
                                     <div style={{ position: 'relative' }}>
-                                        <Mail style={{ position: 'absolute', left: '12px', top: '12px', color: '#9ca3af' }} size={18} />
+                                        <Mail style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }} size={18} />
                                         <input
                                             type="email"
                                             placeholder="Enter your email address"
                                             value={forgotEmail}
                                             onChange={(e) => setForgotEmail(e.target.value)}
-                                            style={{
-                                                width: '100%', boxSizing: 'border-box',
-                                                paddingLeft: '40px', paddingRight: '16px',
-                                                paddingTop: '12px', paddingBottom: '12px',
-                                                borderRadius: '10px', border: '2px solid #e5e7eb',
-                                                fontSize: '0.875rem', outline: 'none',
-                                                transition: 'border-color 0.2s',
-                                            }}
-                                            onFocus={(e) => e.currentTarget.style.borderColor = '#6366f1'}
-                                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                                            className="forgot-input"
                                             required
                                         />
                                     </div>
@@ -257,15 +645,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     <button
                                         type="submit"
                                         disabled={forgotLoading}
-                                        style={{
-                                            width: '100%', padding: '12px',
-                                            background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-                                            color: '#fff', border: 'none', borderRadius: '10px',
-                                            fontWeight: 600, fontSize: '0.925rem',
-                                            cursor: forgotLoading ? 'not-allowed' : 'pointer',
-                                            opacity: forgotLoading ? 0.7 : 1,
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                        }}
+                                        className="forgot-submit-btn"
                                     >
                                         {forgotLoading ? <Loader2 className="animate-spin" size={20} /> : 'Send Reset Link'}
                                     </button>
@@ -273,14 +653,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     <button
                                         type="button"
                                         onClick={handleForgotClose}
-                                        style={{
-                                            width: '100%', padding: '8px',
-                                            background: 'none', border: 'none',
-                                            color: '#6b7280', fontSize: '0.875rem',
-                                            cursor: 'pointer', transition: 'color 0.2s',
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.color = '#374151'}
-                                        onMouseLeave={(e) => e.currentTarget.style.color = '#6b7280'}
+                                        className="forgot-cancel-btn"
                                     >
                                         Cancel
                                     </button>
@@ -288,28 +661,16 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             </>
                         ) : (
                             /* Success state */
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '16px 0' }}>
-                                <div style={{
-                                    width: '64px', height: '64px', borderRadius: '50%',
-                                    background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    marginBottom: '16px',
-                                }}>
+                            <div className="forgot-success-wrap">
+                                <div className="forgot-success-circle">
                                     <CheckCircle size={36} color="#22c55e" />
                                 </div>
-                                <h3 style={{ margin: '0 0 8px', fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>Check Your Inbox</h3>
-                                <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '24px' }}>
-                                    We've sent a password reset link to <strong>{forgotEmail}</strong>.
+                                <h3 className="forgot-success-title">Check Your Inbox</h3>
+                                <p className="forgot-success-text">
+                                    We've sent a password reset link to <strong style={{ color: '#F98A05' }}>{forgotEmail}</strong>.
                                     Check your inbox (and spam folder) and click the link to set a new password.
                                 </p>
-                                <button
-                                    onClick={handleForgotClose}
-                                    style={{
-                                        padding: '10px 32px',
-                                        background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-                                        color: '#fff', border: 'none', borderRadius: '10px',
-                                        fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
-                                    }}
-                                >
+                                <button onClick={handleForgotClose} className="forgot-done-btn">
                                     Done
                                 </button>
                             </div>

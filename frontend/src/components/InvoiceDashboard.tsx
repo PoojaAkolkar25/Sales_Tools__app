@@ -381,7 +381,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    flexWrap: 'nowrap',
+                    flexWrap: 'wrap',
                     gap: '12px',
                     padding: '12px 16px',
                     borderBottom: '1px solid var(--border-primary)',
@@ -760,7 +760,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
 
                 {/* Table Area */}
                 <div style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
-                    <table className="ae-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+                    <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                         <colgroup>
                             {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
                                 <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />
@@ -1181,7 +1181,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
 
                             {reportModal.type === 'billing' && reportModal.data && (
                                 <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid var(--border-secondary)', borderRadius: '8px' }}>
-                                    <table className="ae-table" style={{ width: '100%', margin: 0 }}>
+                                    <table className="ae-table compact-table" style={{ width: '100%', margin: 0 }}>
                                         <thead>
                                             <tr>
                                                 <th style={{ background: 'var(--ae-table-header-bg)', fontSize: '0.75rem', position: 'sticky', top: 0, zIndex: 10 }}>Customer</th>

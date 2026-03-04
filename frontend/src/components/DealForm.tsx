@@ -15,6 +15,7 @@ import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate, getCurrentDateForInput } from '../utils/dateUtils';
 import SearchableDropdown from './SearchableDropdown';
+import AutoExpandingTextarea from './AutoExpandingTextarea';
 import {
     insideSalespersonNames,
     insideSalesHeads,
@@ -577,7 +578,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     {/* 1. Information */}
                     <div>
                         <SectionHeader title="Information" />
-                        <div className="ae-grid-5">
+                        <div className="ae-grid-responsive-5">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Lead Date</label>
                                 <input
@@ -695,7 +696,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Value" />
 
-                        <div style={{ overflow: 'visible' }}>
+                        <div className="ae-table-wrapper" style={{ overflowX: 'auto', border: '1px solid var(--border-primary)', borderRadius: '8px' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '12px' }}>
                                 <thead>
                                     <tr style={{ background: 'var(--bg-accent)' }}>
@@ -753,13 +754,13 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                     />
                                                 </td>
                                                 <td style={{ padding: '6px 4px' }}>
-                                                    <input
-                                                        type="text"
+                                                    <AutoExpandingTextarea
                                                         value={item.description}
                                                         onChange={(e) => handleDealTypeChange(index, 'description', e.target.value)}
                                                         className="ae-input"
                                                         placeholder="Description"
-                                                        style={{ height: '30px', padding: '4px 8px' }}
+                                                        style={{ minHeight: '30px', padding: '4px 8px' }}
+                                                        maxRows={5}
                                                     />
                                                 </td>
                                                 <td style={{ padding: '6px 4px' }}>
@@ -850,7 +851,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             </table>
                         </div>
 
-                        <div className="ae-grid-5 mt-6">
+                        <div className="ae-grid-responsive-5 mt-6">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Stage</label>
                                 <input
@@ -932,7 +933,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     {/* 4. Team */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Team" />
-                        <div className="ae-grid-5">
+                        <div className="ae-grid-responsive-5">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <SearchableDropdown
                                     label="Inside Salesperson Name"
@@ -1002,13 +1003,12 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         <SectionHeader title="Description/Remark" />
 
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <textarea
+                            <AutoExpandingTextarea
                                 name="remark"
                                 value={formData.remark}
                                 onChange={handleInputChange}
-                                className="ae-input"
                                 placeholder="Description/Remark"
-                                style={{ height: '48px', padding: '8px 12px', resize: 'none' }}
+                                style={{ minHeight: '48px', padding: '8px 12px' }}
                             />
                         </div>
 

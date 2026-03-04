@@ -22,6 +22,7 @@ import {
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import SearchableDropdown from './SearchableDropdown';
+import AutoExpandingTextarea from './AutoExpandingTextarea';
 import { formatToAppDate } from '../utils/dateUtils';
 
 interface EstimateFormProps {
@@ -498,14 +499,27 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         // Prepare data for saving
         const payload = {
             ...formData,
-            subscription_from: earliestFrom,
-            subscription_to: latestTo,
-            // Ensure qty and rate are numeric
-            items: formData.items.map((item: any) => ({
-                ...item,
-                qty: parseFloat(item.qty) || 0,
-                rate: parseFloat(item.rate) || 0
-            })),
+            deal: formData.deal || null,
+            cost_sheet: formData.cost_sheet || null,
+            subscription_from: earliestFrom || null,
+            subscription_to: latestTo || null,
+            // Ensure numeric types and strip frontend pseudo-ids
+            items: formData.items.map((item: any) => {
+                const cleanedItem = {
+                    ...item,
+                    subscription_from: item.subscription_from || null,
+                    subscription_to: item.subscription_to || null,
+                    qty: parseFloat(item.qty) || 0,
+                    rate: parseFloat(item.rate) || 0,
+                    discount: parseFloat(item.discount) || 0,
+                    amount: parseFloat(item.amount) || 0
+                };
+                // Remove frontend timestamp IDs before sending to backend
+                if (cleanedItem.id && String(cleanedItem.id).length > 10) {
+                    delete cleanedItem.id;
+                }
+                return cleanedItem;
+            }),
             column_labels: formData.column_labels
         };
         try {
@@ -824,7 +838,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
             {/* Unified Form Card */}
             <div style={{ padding: '24px', background: 'white', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '16px' }}>
-                <div className="ae-grid-5" style={{ gap: '16px', alignItems: 'flex-start' }}>
+                <div className="ae-grid-responsive-5" style={{ gap: '16px', alignItems: 'flex-start' }}>
                     {/* Cost Sheet Amount */}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: 'black', marginBottom: '4px' }}>
@@ -1100,7 +1114,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                     {/* Line Items Table */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Product Line Items" />
-                        <div style={{ border: '1.5px solid #E2E8F0', borderRadius: '12px' }}>
+                        <div className="ae-table-wrapper" style={{ border: '1.5px solid #E2E8F0', borderRadius: '12px', overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                                 <thead>
                                     <tr style={{ background: 'var(--bg-accent)' }}>
@@ -1432,23 +1446,25 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                 />
                                             </td>
                                             <td style={{ padding: '6px 4px' }}>
-                                                <input
+                                                <AutoExpandingTextarea
                                                     className="ae-input"
-                                                    style={{ height: '30px', padding: '4px 8px', width: '100%', fontSize: '0.85rem', borderRadius: '6px' }}
+                                                    style={{ minHeight: '30px', padding: '4px 8px', width: '100%', fontSize: '0.85rem', borderRadius: '6px' }}
                                                     value={item.particulars || ''}
                                                     onChange={(e) => handleItemChange(item.id, 'particulars', e.target.value)}
                                                     disabled={isReadOnly}
                                                     placeholder="Enter particulars"
+                                                    maxRows={5}
                                                 />
                                             </td>
                                             <td style={{ padding: '6px 4px' }}>
-                                                <textarea
+                                                <AutoExpandingTextarea
                                                     className="ae-input"
-                                                    style={{ height: '30px', padding: '4px 8px', width: '100%', resize: 'none', fontSize: '0.85rem', borderRadius: '6px' }}
+                                                    style={{ minHeight: '30px', padding: '4px 8px', width: '100%', fontSize: '0.85rem', borderRadius: '6px' }}
                                                     value={item.description || ''}
                                                     onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
                                                     disabled={isReadOnly}
                                                     placeholder="Enter description"
+                                                    maxRows={5}
                                                 />
                                             </td>
                                             <td style={{ padding: '6px 4px' }}>
@@ -1610,12 +1626,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                         <div style={{ marginTop: '24px' }}>
                             <div style={{ marginBottom: '16px' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Description / Memo</label>
-                                <textarea
+                                <AutoExpandingTextarea
                                     className="ae-input"
                                     style={{
-                                        height: '48px',
+                                        minHeight: '48px',
                                         padding: '8px 12px',
-                                        resize: 'none',
                                         background: isReadOnly ? 'transparent' : 'white',
                                     }}
                                     placeholder="Description / Memo"
@@ -1626,12 +1641,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                             </div>
                             <div>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '8px' }}>Terms & Conditions</label>
-                                <textarea
+                                <AutoExpandingTextarea
                                     className="ae-input"
                                     style={{
-                                        height: '48px',
+                                        minHeight: '48px',
                                         padding: '8px 12px',
-                                        resize: 'none',
                                         background: isReadOnly ? 'transparent' : 'white',
                                     }}
                                     placeholder="Terms & Conditions"
@@ -1976,11 +1990,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
                                 <div style={{ marginTop: '16px' }}>
                                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Message Body</label>
-                                    <textarea
+                                    <AutoExpandingTextarea
                                         className="ae-input"
                                         value={emailModal.body}
                                         onChange={(e) => setEmailModal({ ...emailModal, body: e.target.value })}
-                                        style={{ height: '180px', padding: '12px', resize: 'none' }}
+                                        style={{ minHeight: '180px', padding: '12px' }}
                                         placeholder="Write your message here..."
                                     />
                                 </div>
@@ -2116,16 +2130,15 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         color: '#1e293b',
                                         marginBottom: '8px'
                                     }}>Rejection Reason</label>
-                                    <textarea
+                                    <AutoExpandingTextarea
                                         className="ae-input"
                                         value={rejectComment}
                                         onChange={e => setRejectComment(e.target.value)}
                                         placeholder="Type your reason here..."
                                         autoFocus
                                         style={{
-                                            height: '90px',
+                                            minHeight: '90px',
                                             padding: '12px 16px',
-                                            resize: 'none',
                                             background: '#f8fafc',
                                         }}
                                     />

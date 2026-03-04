@@ -51,22 +51,17 @@ class ForgotPasswordView(APIView):
         user = None
         if '@' in identifier:
             # Looks like an email
-            try:
-                user = User.objects.get(email__iexact=identifier)
-            except User.DoesNotExist:
-                pass
+            users = User.objects.filter(email__iexact=identifier)
+            if users.count() > 1:
+                logger.warning(f"Forgot-password: found {users.count()} users with email '{identifier}'. Picking first.")
+            user = users.first()
+
             if user is None:
                 # Maybe they typed their email as username
-                try:
-                    user = User.objects.get(username__iexact=identifier)
-                except User.DoesNotExist:
-                    pass
+                user = User.objects.filter(username__iexact=identifier).first()
         else:
             # Treat as username
-            try:
-                user = User.objects.get(username__iexact=identifier)
-            except User.DoesNotExist:
-                pass
+            user = User.objects.filter(username__iexact=identifier).first()
 
         if user is None:
             logger.info(f"Forgot-password: no user found for identifier '{identifier}'")

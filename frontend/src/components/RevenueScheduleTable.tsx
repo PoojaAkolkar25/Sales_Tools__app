@@ -6,7 +6,10 @@ import {
     CheckCircle,
     Plus,
     BarChart3,
-    AlertCircle
+    AlertCircle,
+    Search,
+    TrendingUp,
+    Calculator
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -18,12 +21,10 @@ interface RevenueScheduleTableProps {
 
 interface ScheduleEntry {
     id: number;
-    period_date: string;
-    recognized_amount: string;
+    period_month: string;
+    amount: string;
     is_posted: boolean;
-    gl_posting_ref: string;
-    is_locked: boolean;
-    comments: string;
+    gl_entry_reference: string;
 }
 
 interface ContractDetails {
@@ -48,6 +49,14 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
     // Input fields for modals
     const [inputValue, setInputValue] = useState('');
     const [inputDate, setInputDate] = useState(new Date().toISOString().split('T')[0]);
+
+    const [showFilters] = useState(true);
+    const [filters, setFilters] = useState({
+        period_month: '',
+        amount: '',
+        status: '',
+        gl_reference: ''
+    });
 
     useEffect(() => {
         fetchSchedules();
@@ -117,26 +126,26 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
     };
 
     const totalRecognized = useMemo(() => {
-        return schedules.reduce((sum: number, s: ScheduleEntry) => sum + Number(s.recognized_amount), 0);
+        return schedules.reduce((sum: number, s: ScheduleEntry) => sum + Number(s.amount || 0), 0);
     }, [schedules]);
 
     return (
-        <div className="space-y-6">
+        <div style={{ background: 'var(--bg-primary)', padding: '0', margin: '0', display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <div style={{ display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'space-between', padding: '24px 32px', borderBottom: '1px solid var(--border-primary)', position: 'sticky', top: 0, zIndex: 40, background: 'var(--bg-primary)', flexWrap: 'wrap', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <button onClick={onBack} style={{ padding: '8px', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <ChevronLeft size={24} />
                     </button>
                     <div>
-                        <h2 className="text-2xl font-black text-gray-800 tracking-tight">Revenue Schedule</h2>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>Revenue Schedule</h2>
                         {contract && (
-                            <p className="text-gray-500 font-medium">{contract.contract_id} • {contract.customer_name}</p>
+                            <p style={{ color: 'var(--text-secondary)', fontWeight: 500, margin: 0, fontSize: '0.875rem' }}>{contract.contract_id} • {contract.customer_name}</p>
                         )}
                     </div>
                 </div>
 
-                <div className="flex gap-3">
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     {contract?.revenue_type === 'LICENSE_CONSUMPTION' && (
                         <button
                             onClick={() => { setInputType('consumption'); setShowInputModal(true); }}
@@ -157,119 +166,188 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
             </div>
 
             {/* Summary Card */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                    <p className="text-gray-500 text-sm font-bold uppercase tracking-wider mb-1">Total Contract Value</p>
-                    <p className="text-2xl font-black text-gray-900">
-                        {contract ? `${Number(contract.total_amount).toLocaleString()} ${contract.currency}` : '---'}
-                    </p>
+            {/* Summary Card */}
+            <div className="ae-grid-4" style={{ padding: '0 32px' }}>
+                <div className="ae-card ae-card-sm">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div className="ae-card-label">Total Contract Value</div>
+                            <div className="ae-card-value">{contract ? `${Number(contract.total_amount).toLocaleString()} ${contract.currency}` : '---'}</div>
+                        </div>
+                        <div className="ae-icon-box" style={{ background: 'rgba(0, 102, 204, 0.05)', color: 'var(--ae-blue)' }}><BarChart3 size={16} /></div>
+                    </div>
                 </div>
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                    <p className="text-blue-500 text-sm font-bold uppercase tracking-wider mb-1">Total Recognized to Date</p>
-                    <p className="text-2xl font-black text-blue-600">
-                        {contract ? `${totalRecognized.toLocaleString()} ${contract.currency}` : '---'}
-                    </p>
+                <div className="ae-card ae-card-sm">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div className="ae-card-label">Total Recognized to Date</div>
+                            <div className="ae-card-value" style={{ color: 'var(--theme-accent)' }}>{contract ? `${totalRecognized.toLocaleString()} ${contract.currency}` : '---'}</div>
+                        </div>
+                        <div className="ae-icon-box" style={{ background: 'rgba(0, 200, 83, 0.05)', color: 'var(--ae-green)' }}><TrendingUp size={16} /></div>
+                    </div>
                 </div>
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                    <p className="text-orange-500 text-sm font-bold uppercase tracking-wider mb-1">Pending Recognition</p>
-                    <p className="text-2xl font-black text-orange-600">
-                        {contract ? `${(Number(contract.total_amount) - totalRecognized).toLocaleString()} ${contract.currency}` : '---'}
-                    </p>
+                <div className="ae-card ae-card-sm">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div className="ae-card-label">Pending Recognition</div>
+                            <div className="ae-card-value" style={{ color: 'var(--theme-primary)' }}>{contract ? `${(Number(contract.total_amount) - totalRecognized).toLocaleString()} ${contract.currency}` : '---'}</div>
+                        </div>
+                        <div className="ae-icon-box" style={{ background: 'rgba(187, 77, 0, 0.05)', color: 'var(--ae-orange)' }}><Calculator size={16} /></div>
+                    </div>
                 </div>
             </div>
 
             {/* Schedule Table */}
-            <div className="ae-table-container bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <table className="ae-table w-full text-left">
-                    <thead className="bg-[#FAFBFC] border-b border-gray-100">
-                        <tr>
-                            <th className="px-6 py-4 font-black text-gray-400 uppercase text-xs tracking-widest">Period (Month)</th>
-                            <th className="px-6 py-4 font-black text-gray-400 uppercase text-xs tracking-widest text-right">Recognized Amount</th>
-                            <th className="px-6 py-4 font-black text-gray-400 uppercase text-xs tracking-widest text-center">GL Status</th>
-                            <th className="px-6 py-4 font-black text-gray-400 uppercase text-xs tracking-widest">GL Reference</th>
-                            <th className="px-6 py-4 font-black text-gray-400 uppercase text-xs tracking-widest text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan={5} className="text-center py-10"><RefreshCcw className="animate-spin mx-auto text-orange-500" /></td></tr>
-                        ) : schedules.length === 0 ? (
-                            <tr><td colSpan={5} className="text-center py-20 text-gray-400 font-medium">No recognized revenue entries yet.</td></tr>
-                        ) : (
-                            schedules.map((entry: ScheduleEntry) => (
-                                <tr key={entry.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4 font-bold text-gray-700">
-                                        {new Date(entry.period_date).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                                    </td>
-                                    <td className="px-6 py-4 text-right font-black text-gray-900">
-                                        {Number(entry.recognized_amount).toLocaleString()} {contract?.currency}
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        {entry.is_posted ? (
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-600 text-xs font-bold">
-                                                <CheckCircle size={14} /> Posted
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-xs font-bold">
-                                                <AlertCircle size={14} /> Pending
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 font-mono text-xs text-gray-500">
-                                        {entry.gl_posting_ref || 'NR-PENDING'}
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        {!entry.is_posted ? (
-                                            <button
-                                                onClick={() => postToGL(entry.id)}
-                                                className="px-4 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-bold hover:bg-black transition-all"
-                                            >
-                                                Post to GL
-                                            </button>
-                                        ) : (
-                                            <div className="flex items-center justify-center text-gray-400" title="Period Locked">
-                                                <Lock size={16} />
-                                            </div>
-                                        )}
-                                    </td>
+            <div style={{ padding: '0 32px 32px 32px' }}>
+                <div className="ae-table-wrapper" style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-primary)' }}>
+                    <table className="ae-table compact-table" style={{ tableLayout: 'auto', width: '100%' }}>
+                        <thead>
+                            <tr>
+                                <th style={{ backgroundColor: 'var(--ae-table-header-bg)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '12px 16px' }}>Period (Month)</th>
+                                <th style={{ backgroundColor: 'var(--ae-table-header-bg)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', textAlign: 'right', padding: '12px 16px' }}>Recognized Amount</th>
+                                <th style={{ backgroundColor: 'var(--ae-table-header-bg)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', textAlign: 'center', padding: '12px 16px' }}>GL Status</th>
+                                <th style={{ backgroundColor: 'var(--ae-table-header-bg)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '12px 16px' }}>GL Reference</th>
+                                <th style={{ backgroundColor: 'var(--ae-table-header-bg)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border-secondary)', textAlign: 'center', padding: '12px 16px' }}>Actions</th>
+                            </tr>
+                            {showFilters && (
+                                <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
+                                    <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px' }}>
+                                        <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input className="ae-input" placeholder="Filter..." value={filters.period_month} onChange={e => setFilters({ ...filters, period_month: e.target.value })} style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }} />
+                                        </div>
+                                    </th>
+                                    <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px' }}>
+                                        <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input className="ae-input" placeholder="Filter..." value={filters.amount} onChange={e => setFilters({ ...filters, amount: e.target.value })} style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }} />
+                                        </div>
+                                    </th>
+                                    <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px' }}>
+                                        <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input className="ae-input" placeholder="Filter..." value={filters.status} onChange={e => setFilters({ ...filters, status: e.target.value })} style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }} />
+                                        </div>
+                                    </th>
+                                    <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px' }}>
+                                        <div className="ae-input-group" style={{ margin: 0 }}>
+                                            <Search className="ae-search-icon" size={12} />
+                                            <input className="ae-input" placeholder="Filter..." value={filters.gl_reference} onChange={e => setFilters({ ...filters, gl_reference: e.target.value })} style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }} />
+                                        </div>
+                                    </th>
+                                    <th style={{ textAlign: 'center', backgroundColor: 'var(--ae-filter-row-bg)', borderBottom: '1px solid var(--border-secondary)', padding: '4px' }}>
+                                        <button
+                                            onClick={() => setFilters({ period_month: '', amount: '', status: '', gl_reference: '' })}
+                                            style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                        >
+                                            Clear
+                                        </button>
+                                    </th>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            )}
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '100px' }}><RefreshCcw className="animate-spin text-orange-500" style={{ margin: '0 auto' }} /></td></tr>
+                            ) : schedules.filter((entry: ScheduleEntry) => {
+                                const periodMonthStr = entry.period_month ? new Date(entry.period_month).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : '';
+                                const amountStr = Number(entry.amount || 0).toLocaleString();
+                                const statusStr = entry.is_posted ? 'Posted' : 'Pending';
+                                const refStr = entry.gl_entry_reference || 'NR-PENDING';
+
+                                return periodMonthStr.toLowerCase().includes(filters.period_month.toLowerCase()) &&
+                                    amountStr.toLowerCase().includes(filters.amount.toLowerCase()) &&
+                                    statusStr.toLowerCase().includes(filters.status.toLowerCase()) &&
+                                    refStr.toLowerCase().includes(filters.gl_reference.toLowerCase());
+                            }).length === 0 ? (
+                                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>No recognized revenue entries match the filters.</td></tr>
+                            ) : (
+                                schedules.filter((entry: ScheduleEntry) => {
+                                    const periodMonthStr = entry.period_month ? new Date(entry.period_month).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : '';
+                                    const amountStr = Number(entry.amount || 0).toLocaleString();
+                                    const statusStr = entry.is_posted ? 'Posted' : 'Pending';
+                                    const refStr = entry.gl_entry_reference || 'NR-PENDING';
+
+                                    return periodMonthStr.toLowerCase().includes(filters.period_month.toLowerCase()) &&
+                                        amountStr.toLowerCase().includes(filters.amount.toLowerCase()) &&
+                                        statusStr.toLowerCase().includes(filters.status.toLowerCase()) &&
+                                        refStr.toLowerCase().includes(filters.gl_reference.toLowerCase());
+                                }).map((entry: ScheduleEntry) => (
+                                    <tr key={entry.id}>
+                                        <td style={{ fontWeight: 600 }}>
+                                            {new Date(entry.period_month || '').toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                                            {Number(entry.amount || 0).toLocaleString()} {contract?.currency}
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            {entry.is_posted ? (
+                                                <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: '#E6F7ED', color: '#38A169', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                    <CheckCircle size={14} /> Posted
+                                                </span>
+                                            ) : (
+                                                <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: '#FFF4E5', color: '#DD6B20', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                    <AlertCircle size={14} /> Pending
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                            {entry.gl_entry_reference || 'NR-PENDING'}
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            {!entry.is_posted ? (
+                                                <button
+                                                    onClick={() => postToGL(entry.id)}
+                                                    className="ae-btn-primary"
+                                                    style={{ padding: '4px 12px', fontSize: '0.75rem' }}
+                                                >
+                                                    Post to GL
+                                                </button>
+                                            ) : (
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }} title="Period Locked">
+                                                    <Lock size={16} />
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* Input Modal */}
             {showInputModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-8">
-                            <h3 className="text-2xl font-black text-gray-900 mb-2">
+                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', backdropFilter: 'blur(4px)' }}>
+                    <div style={{ backgroundColor: 'var(--bg-primary)', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', width: '100%', maxWidth: '450px', overflow: 'hidden', animation: 'fadeIn 0.2s ease-out' }}>
+                        <div style={{ padding: '32px' }}>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '8px', margin: 0 }}>
                                 {inputType === 'consumption' ? 'Record Usage' : 'Update Project Progress'}
                             </h3>
-                            <p className="text-gray-500 font-medium mb-6">
+                            <p style={{ color: 'var(--text-secondary)', fontWeight: 500, marginBottom: '24px', fontSize: '0.875rem' }}>
                                 {inputType === 'consumption'
                                     ? 'Enter the billed amount for the specific consumption period.'
                                     : 'Enter the cumulative completion percentage for this project.'}
                             </p>
 
-                            <div className="space-y-4">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-600 mb-1">Reference Date</label>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>Reference Date</label>
                                     <input
                                         type="date"
                                         value={inputDate}
                                         onChange={(e) => setInputDate(e.target.value)}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+                                        style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-secondary)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: 'inherit' }}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-600 mb-1">
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>
                                         {inputType === 'consumption' ? 'Billed Amount' : 'Cumulative Progress (%)'}
                                     </label>
-                                    <div className="relative">
+                                    <div style={{ position: 'relative' }}>
                                         {inputType === 'consumption' && (
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
+                                            <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', fontWeight: 700 }}>
                                                 {contract?.currency}
                                             </div>
                                         )}
@@ -277,26 +355,26 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
                                             type="number"
                                             value={inputValue}
                                             onChange={(e) => setInputValue(e.target.value)}
-                                            className={`w-full ${inputType === 'consumption' ? 'pl-14' : 'px-4'} py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none font-bold`}
+                                            style={{ width: '100%', padding: '12px 16px', paddingLeft: inputType === 'consumption' ? '56px' : '16px', borderRadius: '12px', border: '1px solid var(--border-secondary)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'inherit' }}
                                             placeholder={inputType === 'consumption' ? '0.00' : '0-100'}
                                         />
                                         {inputType === 'progress' && (
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</div>
+                                            <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', fontWeight: 700 }}>%</div>
                                         )}
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex gap-3 mt-8">
+                            <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
                                 <button
                                     onClick={() => setShowInputModal(false)}
-                                    className="flex-1 px-6 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-all"
+                                    style={{ flex: 1, padding: '12px 24px', borderRadius: '12px', fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--bg-accent)', border: 'none', cursor: 'pointer' }}
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleInputSubmit}
-                                    className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-gray-900 hover:bg-black transition-all shadow-lg shadow-gray-200"
+                                    style={{ flex: 1, padding: '12px 24px', borderRadius: '12px', fontWeight: 700, color: 'white', background: 'var(--theme-primary)', border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,0,0,0.1)' }}
                                 >
                                     Save Entry
                                 </button>

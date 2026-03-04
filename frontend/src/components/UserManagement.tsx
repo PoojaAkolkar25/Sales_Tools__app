@@ -1572,7 +1572,7 @@ const UserManagement: React.FC = () => {
                             display: 'flex',
                             gap: '4px',
                             alignItems: 'center',
-                            background: 'white',
+                            background: '#FFFFF0',
                             padding: '6px',
                             borderRadius: '12px',
                             border: '1px solid var(--border-primary)',
@@ -1720,7 +1720,7 @@ const UserManagement: React.FC = () => {
                                         top: '100%',
                                         right: 0,
                                         marginTop: '8px',
-                                        background: 'white',
+                                        background: '#FFFFF0',
                                         borderRadius: '8px',
                                         boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
                                         border: '1px solid var(--border-primary)',
@@ -1800,7 +1800,7 @@ const UserManagement: React.FC = () => {
                                             handleCreateCompany
                     } style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         <div style={{
-                            background: 'white',
+                            background: '#FFFFF0',
                             borderRadius: '12px',
                             padding: '24px',
                             border: '1px solid var(--border-primary)'
@@ -1822,7 +1822,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Username"
                                             value={formData.username}
                                             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                             autoComplete="off"
                                         />
@@ -1837,7 +1837,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Email Address"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -1851,7 +1851,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Password"
                                             value={formData.password}
                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                             autoComplete="new-password"
                                         />
@@ -1866,7 +1866,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="First Name"
                                             value={formData.first_name}
                                             onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -1880,7 +1880,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Last Name"
                                             value={formData.last_name}
                                             onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                         />
                                     </div>
@@ -1895,7 +1895,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Enter Employee ID"
                                             value={formData.employee_id}
                                             onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     {/* 7. Mobile Number */}
@@ -1908,7 +1908,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Mobile Number"
                                             value={formData.mobile}
                                             onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     {/* 8. Department */}
@@ -1921,7 +1921,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Department"
                                             value={formData.department}
                                             onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     {/* 9. Region */}
@@ -1934,7 +1934,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="Region"
                                             value={formData.region}
                                             onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                         />
                                     </div>
                                     {/* 10. Role */}
@@ -1994,7 +1994,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Company Name"
                                                     value={partnerFormData.name}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2022,7 +2022,7 @@ const UserManagement: React.FC = () => {
                                                                 alignItems: 'center',
                                                                 gap: '8px',
                                                                 padding: '6px 12px',
-                                                                background: 'white',
+                                                                background: '#FFFFF0',
                                                                 border: '1px solid var(--border-primary)',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.8rem',
@@ -2105,7 +2105,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Contact Person"
                                                     value={partnerFormData.contact_person}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, contact_person: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
 
@@ -2118,7 +2118,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Email Address"
                                                     value={partnerFormData.email}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, email: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
 
@@ -2131,7 +2131,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Mobile Number"
                                                     value={partnerFormData.mobile}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, mobile: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -2143,7 +2143,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Website URL"
                                                     value={partnerFormData.website_url}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, website_url: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
@@ -2164,7 +2164,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Address Line"
                                                     value={partnerFormData.address_line_1}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, address_line_1: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -2205,7 +2205,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Pincode"
                                                     value={partnerFormData.pincode}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, pincode: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
@@ -2255,7 +2255,7 @@ const UserManagement: React.FC = () => {
                                                     required
                                                     value={partnerFormData.decimal_places}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, decimal_places: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -2333,7 +2333,7 @@ const UserManagement: React.FC = () => {
                                                             placeholder="GSTIN"
                                                             value={partnerFormData.gstin}
                                                             onChange={(e) => handleGSTINChange(e.target.value)}
-                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                         />
                                                     </div>
                                                     <div>
@@ -2345,7 +2345,7 @@ const UserManagement: React.FC = () => {
                                                             placeholder="State Code"
                                                             value={partnerFormData.state_code}
                                                             onChange={(e) => setPartnerFormData({ ...partnerFormData, state_code: e.target.value })}
-                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                         />
                                                     </div>
                                                 </>
@@ -2359,7 +2359,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="PAN"
                                                     value={partnerFormData.pan}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, pan: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -2371,7 +2371,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="TAN"
                                                     value={partnerFormData.tan}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, tan: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -2383,7 +2383,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="CIN"
                                                     value={partnerFormData.cin}
                                                     onChange={(e) => setPartnerFormData({ ...partnerFormData, cin: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
@@ -2445,7 +2445,7 @@ const UserManagement: React.FC = () => {
                                                         placeholder="MSME Number"
                                                         value={partnerFormData.msme_number}
                                                         onChange={(e) => setPartnerFormData({ ...partnerFormData, msme_number: e.target.value })}
-                                                        style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                        style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     />
                                                 </div>
                                             )}
@@ -2486,7 +2486,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="End User Name"
                                                     value={endCustomerFormData.name}
                                                     onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2499,7 +2499,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Alias Name"
                                                     value={endCustomerFormData.alias_name}
                                                     onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, alias_name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2575,7 +2575,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Location"
                                                     value={endCustomerFormData.location}
                                                     onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, location: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2588,7 +2588,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Contact Person"
                                                     value={endCustomerFormData.contact_person}
                                                     onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, contact_person: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2601,7 +2601,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Email"
                                                     value={endCustomerFormData.email}
                                                     onChange={(e) => setEndCustomerFormData({ ...endCustomerFormData, email: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2624,7 +2624,7 @@ const UserManagement: React.FC = () => {
                                             placeholder="e.g. 2025"
                                             value={fyFormData.fy_year}
                                             onChange={(e) => handleFYYearChange(Number(e.target.value))}
-                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                            style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                             required
                                             min={2000}
                                             max={2099}
@@ -2699,7 +2699,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Product / Service Name"
                                                     value={productFormData.name}
                                                     onChange={(e) => setProductFormData({ ...productFormData, name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2769,7 +2769,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="HSN / SAC Code"
                                                     value={productFormData.hsn_sac_code}
                                                     onChange={(e) => setProductFormData({ ...productFormData, hsn_sac_code: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2812,7 +2812,7 @@ const UserManagement: React.FC = () => {
                                                     className="ae-input"
                                                     value={productFormData.description}
                                                     onChange={(e) => setProductFormData({ ...productFormData, description: e.target.value })}
-                                                    style={{ width: '100%', height: '48px', padding: '8px 12px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', resize: 'none' }}
+                                                    style={{ width: '100%', height: '48px', padding: '8px 12px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none', resize: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2868,7 +2868,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Standard Price"
                                                     value={productFormData.standard_price}
                                                     onChange={(e) => setProductFormData({ ...productFormData, standard_price: e.target.value === '' ? '' : Number(e.target.value) })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2881,7 +2881,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Tax Percentage"
                                                     value={productFormData.tax_percentage}
                                                     onChange={(e) => setProductFormData({ ...productFormData, tax_percentage: e.target.value === '' ? '' : Number(e.target.value) })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2921,7 +2921,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Customer Name"
                                                     value={companyFormData.name}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2934,7 +2934,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Alias Name"
                                                     value={companyFormData.alias_name}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, alias_name: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'black', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: 'black', outline: 'none' }}
                                                     required
                                                 />
                                             </div>
@@ -2947,7 +2947,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Customer ID"
                                                     value={companyFormData.customer_id}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, customer_id: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -2981,7 +2981,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Region"
                                                     value={companyFormData.region}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, region: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -2993,7 +2993,7 @@ const UserManagement: React.FC = () => {
                                                     alignItems: 'center',
                                                     gap: '10px',
                                                     padding: '6px 10px',
-                                                    background: 'white',
+                                                    background: '#FFFFF0',
                                                     borderRadius: '6px',
                                                     border: '1px solid var(--border-primary)',
                                                     height: '34px',
@@ -3013,7 +3013,7 @@ const UserManagement: React.FC = () => {
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             gap: '8px',
-                                                            background: 'white',
+                                                            background: '#FFFFF0',
                                                             color: '#1a1f36',
                                                             border: '1px solid #E0E6ED',
                                                             height: '24px',
@@ -3062,7 +3062,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Contact Person"
                                                     value={companyFormData.contact_person}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, contact_person: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -3074,7 +3074,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Email Address"
                                                     value={companyFormData.email}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -3086,7 +3086,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Mobile Number"
                                                     value={companyFormData.mobile_number}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, mobile_number: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -3098,7 +3098,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Website URL"
                                                     value={companyFormData.website_url}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, website_url: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
@@ -3119,7 +3119,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Address Line"
                                                     value={companyFormData.address_line_1}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, address_line_1: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                             <div>
@@ -3160,7 +3160,7 @@ const UserManagement: React.FC = () => {
                                                     placeholder="Pincode"
                                                     value={companyFormData.pincode}
                                                     onChange={(e) => setCompanyFormData({ ...companyFormData, pincode: e.target.value })}
-                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: 'white', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
+                                                    style={{ width: '100%', height: '34px', padding: '6px 10px', background: '#FFFFF0', border: '1px solid var(--border-primary)', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#1a1f36', outline: 'none' }}
                                                 />
                                             </div>
                                         </div>
@@ -3528,7 +3528,7 @@ const UserManagement: React.FC = () => {
                         </button>
 
                         <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
-                            <table className="ae-table" style={{ tableLayout: 'fixed', width: 'max-content', minWidth: '100%' }}>
+                            <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: 'max-content', minWidth: '100%' }}>
                                 <colgroup>
                                     {ALL_COLUMNS[viewMode]?.filter(col => visibleColumns[viewMode].includes(col.key)).map(col => (
                                         <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />
