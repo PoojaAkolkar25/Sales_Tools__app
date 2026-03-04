@@ -284,6 +284,8 @@ const AppContent: React.FC = () => {
   const [editingMilestoneId, setEditingMilestoneId] = useState<number | null>(null);
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
   const [editingInventoryId, setEditingInventoryId] = useState<number | null>(null);
+  const [initialSoId, setInitialSoId] = useState<number | null>(null);
+  const [initialMilestoneId, setInitialMilestoneId] = useState<number | null>(null);
 
   // Other UI States
   const [isExtractingSO, setIsExtractingSO] = useState(false);
@@ -319,6 +321,10 @@ const AppContent: React.FC = () => {
     if (action === 'create') {
       if (location.pathname === '/invoice') {
         setEditingInvoiceId(null);
+        const soParam = params.get('so_id');
+        const milestoneParam = params.get('milestone_id');
+        setInitialSoId(soParam ? parseInt(soParam) : null);
+        setInitialMilestoneId(milestoneParam ? parseInt(milestoneParam) : null);
         setInvoiceView('form');
       } else if (location.pathname === '/deal') {
         handleCreateNewDeal();
@@ -1202,6 +1208,8 @@ const AppContent: React.FC = () => {
                       <button
                         onClick={() => {
                           setEditingInvoiceId(null);
+                          setInitialSoId(null);
+                          setInitialMilestoneId(null);
                           setInvoiceView('form');
                         }}
                         style={{
@@ -1232,7 +1240,13 @@ const AppContent: React.FC = () => {
                 {invoiceView === 'form' ? (
                   <InvoiceForm
                     invoiceId={editingInvoiceId}
-                    onBack={() => setInvoiceView('dashboard')}
+                    initialSoId={initialSoId}
+                    initialMilestoneId={initialMilestoneId}
+                    onBack={() => {
+                      setInvoiceView('dashboard');
+                      setInitialSoId(null);
+                      setInitialMilestoneId(null);
+                    }}
                   />
                 ) : (
                   <InvoiceDashboard

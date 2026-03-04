@@ -10,7 +10,8 @@ import {
     FileText,
     Check,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Plus
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -960,6 +961,40 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                         title="Download Milestone PDF">
                                                         <Download size={18} />
                                                     </button>
+                                                    {m.status !== 'INVOICED' && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                navigate(`/invoice?action=create&so_id=${m.sales_order}&milestone_id=${m.id}`);
+                                                            }}
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                background: 'rgba(16, 185, 129, 0.08)',
+                                                                color: '#10b981',
+                                                                border: '1px solid rgba(16, 185, 129, 0.25)',
+                                                                borderRadius: '6px',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseOver={(e) => {
+                                                                e.currentTarget.style.background = '#10b981';
+                                                                e.currentTarget.style.color = 'white';
+                                                                e.currentTarget.style.borderColor = '#10b981';
+                                                            }}
+                                                            onMouseOut={(e) => {
+                                                                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+                                                                e.currentTarget.style.color = '#10b981';
+                                                                e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.25)';
+                                                            }}
+                                                            title="Create Invoice"
+                                                        >
+                                                            <Plus size={18} />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

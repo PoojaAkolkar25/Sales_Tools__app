@@ -15,7 +15,12 @@ interface LineItem {
     gst_rate: number;
 }
 
-const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> = ({ onBack, invoiceId }) => {
+const InvoiceForm: React.FC<{
+    onBack: () => void,
+    invoiceId?: number | null,
+    initialSoId?: number | null,
+    initialMilestoneId?: number | null
+}> = ({ onBack, invoiceId, initialSoId, initialMilestoneId }) => {
     const { showNotification, showConfirm } = useNotification();
     const [leads, setLeads] = useState<any[]>([]);
     const [milestones, setMilestones] = useState<any[]>([]);
@@ -185,8 +190,53 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
             setLeads(leadsRes.data);
             setStates(statesRes.data);
             setSalesOrders(soRes.data);
+
+            // If we are creating a new invoice and have an initial SO ID
+            if (!invoiceId && initialSoId) {
+                // We need to wait for the sales orders to be set in state, 
+                // but since we just got them, we can use them directly or call the handler
+                // Let's call a modified version of handleSalesOrderChange that accepts the data directly
+                await prePopulateFromSo(initialSoId, soRes.data, leadsRes.data);
+            }
         } catch (error) {
             console.error('Error fetching initial data', error);
+        }
+    };
+
+    const prePopulateFromSo = async (soId: number, currentSalesOrders: any[], currentLeads: any[]) => {
+        const so = currentSalesOrders.find(s => s.id === soId);
+        if (so) {
+            setFormData(prev => ({
+                ...prev,
+                sales_order: soId.toString(),
+                lead: so.customer_name ? (currentLeads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())?.id?.toString() || prev.lead) : prev.lead,
+                currency: so.currency || prev.currency,
+                billing_address: so.billing_address || prev.billing_address,
+                shipping_address: so.shipping_address || prev.shipping_address,
+                po_number: so.po_number || prev.po_number,
+                po_date: so.po_date || prev.po_date,
+                customer_gstin: (currentLeads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())?.gstin || prev.customer_gstin),
+                milestone: initialMilestoneId ? initialMilestoneId.toString() : prev.milestone
+            }));
+
+            try {
+                const response = await api.get(`/milestones/?sales_order=${soId}`);
+                setMilestones(response.data);
+            } catch (error) {
+                console.error('Error fetching milestones', error);
+            }
+
+            if (so.items && so.items.length > 0) {
+                setLineItems(so.items.map((item: any) => ({
+                    type: item.item_type === 'SERVICES' ? 'Service' : 'Product',
+                    description: item.product_name + (item.description ? ` - ${item.description}` : ''),
+                    hsn_sac: '',
+                    quantity: parseFloat(item.qty),
+                    rate: parseFloat(item.rate),
+                    discount: parseFloat(item.discount) || 0,
+                    gst_rate: 18
+                })));
+            }
         }
     };
 
@@ -200,9 +250,9 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
 
             setFormData({
                 invoice_no: inv.invoice_no,
-                lead: inv.lead,
-                milestone: inv.milestone || '',
-                sales_order: inv.sales_order || '',
+                lead: inv.lead?.toString() || '',
+                milestone: inv.milestone?.toString() || '',
+                sales_order: inv.sales_order?.toString() || '',
                 invoice_date: inv.invoice_date,
                 due_date: inv.due_date,
                 customer_gstin: inv.customer_gstin || '',
@@ -259,13 +309,32 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
 
 
 
+    const handleLeadChange = async (leadId: string | number) => {
+        const lead = leads.find(l => l.id.toString() === leadId.toString());
+        if (lead) {
+            setFormData(prev => ({
+                ...prev,
+                lead: leadId.toString(),
+                customer_gstin: lead.gstin || '',
+                billing_address: lead.address || prev.billing_address,
+                shipping_address: lead.address || prev.shipping_address,
+                // Clear SO/Milestone if customer changes
+                sales_order: '',
+                milestone: ''
+            }));
+            setMilestones([]);
+        } else {
+            setFormData(prev => ({ ...prev, lead: leadId.toString() }));
+        }
+    };
+
     const handleSalesOrderChange = async (soId: string) => {
-        const so = salesOrders.find(s => s.id === parseInt(soId));
+        const so = salesOrders.find(s => s.id.toString() === soId.toString());
         if (so) {
             setFormData(prev => ({
                 ...prev,
-                sales_order: soId,
-                lead: so.customer ? (leads.find(l => l.customer_name === so.customer_name)?.id || prev.lead) : prev.lead,
+                sales_order: soId.toString(),
+                lead: so.customer_name ? (leads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())?.id?.toString() || prev.lead) : prev.lead,
                 currency: so.currency || prev.currency,
                 billing_address: so.billing_address || prev.billing_address,
                 shipping_address: so.shipping_address || prev.shipping_address,
@@ -489,7 +558,7 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             <select className="ae-input" disabled={isReadOnly} value={formData.milestone} onChange={e => setFormData({ ...formData, milestone: e.target.value })}>
                                 <option value="">Select Milestone (Optional)</option>
                                 {milestones.map(m => (
-                                    <option key={m.id} value={m.id}>{m.milestone_no} - {m.description}</option>
+                                    <option key={m.id} value={m.id.toString()}>{m.milestone_no} - {m.description}</option>
                                 ))}
                             </select>
                         </div>
@@ -497,16 +566,37 @@ const InvoiceForm: React.FC<{ onBack: () => void, invoiceId?: number | null }> =
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Sales Order Reference</label>
                             <select className="ae-input" disabled={isReadOnly} value={formData.sales_order} onChange={e => handleSalesOrderChange(e.target.value)}>
                                 <option value="">Select Sales Order (Optional)</option>
-                                {salesOrders.map(so => (
-                                    <option key={so.id} value={so.id}>{so.so_number}</option>
-                                ))}
+                                {salesOrders
+                                    .filter(so => {
+                                        if (!formData.lead) return true;
+                                        // If the SO ID matches what's currently in formData, always show it
+                                        if (so.id.toString() === formData.sales_order) return true;
+
+                                        const selectedLead = leads.find(l => l.id.toString() === formData.lead);
+                                        if (!selectedLead) return true;
+
+                                        // Robust matching by customer name
+                                        return so.customer_name?.toLowerCase().trim() === selectedLead.customer_name?.toLowerCase().trim();
+                                    })
+                                    .map(so => (
+                                        <option key={so.id} value={so.id.toString()}>{so.so_number}</option>
+                                    ))}
                             </select>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer</label>
-                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
-                                {leads.find(l => l.id.toString() === formData.lead.toString())?.customer_name || 'No Customer Selected'}
-                            </div>
+                            {isReadOnly ? (
+                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
+                                    {leads.find(l => l.id.toString() === formData.lead.toString())?.customer_name || 'No Customer Selected'}
+                                </div>
+                            ) : (
+                                <SearchableDropdown
+                                    options={leads.map(l => ({ value: l.id.toString(), label: l.customer_name || '' }))}
+                                    value={formData.lead}
+                                    onChange={(val) => handleLeadChange(String(val))}
+                                    placeholder="Select Customer"
+                                />
+                            )}
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
