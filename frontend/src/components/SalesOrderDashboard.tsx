@@ -911,7 +911,6 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                                 >
                                                     {so.so_number || `DRAFT - ${so.id}`}
                                                 </span>
-                                                {so.status === 'DRAFT' && <span style={{ marginLeft: '8px', display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: 900, background: '#FEF3C7', color: '#92400E', textTransform: 'uppercase', letterSpacing: '-0.025em' }}>Draft</span>}
                                             </td>
                                         )}
                                         {visibleColumns.order_date && (
