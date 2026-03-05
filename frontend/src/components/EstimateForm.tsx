@@ -97,22 +97,22 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const EMAIL_TEMPLATES = {
         standard: {
             name: 'Standard Proposal',
-            subject: (customerAlias: string, estimateId: string, projectName: string) =>
-                customerAlias ? `${customerAlias} - ${estimateId} - ${projectName}` : `${estimateId} - ${projectName}`,
+            subject: (companyName: string, customerAlias: string, estimateId: string) =>
+                `${companyName} / ${customerAlias || 'Customer'} / ${estimateId}`,
             body: (clientName: string, projectName: string, companyName: string, expirationDate: string, yourName: string) =>
                 `Dear ${clientName},\n\nGreetings from ${companyName} !!\n\nIt was a pleasure discussing ${projectName} with you. Based on our conversation, I’ve attached a detailed proposal including estimates / quotation for the services and license we discussed.\n\nYou can find the full breakdown of costs and timelines in the attached PDF.\n\nThis proposal is valid until ${expirationDate}. Please let me know if you have any questions or if you’d like to move forward.\n\nBest regards,\n${yourName}`
         },
         followup: {
             name: 'Follow-Up',
-            subject: (customerAlias: string, estimateId: string, projectName: string) =>
-                customerAlias ? `Follow up: ${customerAlias} - ${estimateId} - ${projectName}` : `Follow up: ${estimateId} - ${projectName}`,
+            subject: (companyName: string, customerAlias: string, estimateId: string) =>
+                `Follow up: ${companyName} / ${customerAlias || 'Customer'} / ${estimateId}`,
             body: (clientName: string, _projectName: string, sentDate: string, yourName: string) =>
-                `Hi ${clientName},\n\nI’m checking in to see if you had a chance to review the proposal I sent on ${sentDate}. I’ve re-attached it here for your convenience.\n\nAre there any specific details or technical aspects I can clarify for you? I’m happy to hop on a 5-minute call to walk you through it.\n\nLooking forward to your thoughts.\n\nBest,\n${yourName}`
+                `Dear ${clientName},\n\nI’m checking in to see if you had a chance to review the proposal I sent on ${sentDate}. I’ve re-attached it here for your convenience.\n\nAre there any specific details or technical aspects I can clarify for you? I’m happy to hop on a 5-minute call to walk you through it.\n\nLooking forward to your thoughts.\n\nBest,\n${yourName}`
         },
         revised: {
             name: 'Revised Quotation',
-            subject: (customerAlias: string, estimateId: string, projectName: string) =>
-                customerAlias ? `Revised: ${customerAlias} - ${estimateId} - ${projectName}` : `Revised: ${estimateId} - ${projectName}`,
+            subject: (companyName: string, customerAlias: string, estimateId: string) =>
+                `Revised: ${companyName} / ${customerAlias || 'Customer'} / ${estimateId}`,
             body: (clientName: string, _projectName: string, _companyName: string, revisionDetails: string, yourName: string) =>
                 `Dear ${clientName},\n\nThank you for your feedback on the initial proposal. As discussed, I have revised the scope to include ${revisionDetails} and adjusted the pricing accordingly.\n\nYou will find the updated proposal attached. Let me know if this aligns better with your current budget and requirements.\n\nKind regards,\n${yourName}`
         }
@@ -124,22 +124,25 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         const customerAlias = estimate?.customer_alias || estimate?.customer?.alias_name || '';
         const estimateId = estimate?.estimate_id || '';
         const companyName = companyProfile?.name || "Automation Edge";
-        const yourName = "Your Name"; // Should ideally be from user profile
-        const expirationDate = "[Expiration Date]";
-        const sentDate = "[Date]";
-        const revisionDetails = "[specific change]";
+        const yourName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || "Sales Team" : "Sales Team";
+        const estDate = estimate?.estimate_date ? new Date(estimate.estimate_date) : new Date();
+        const expDate = new Date(estDate);
+        expDate.setDate(expDate.getDate() + 30);
+        const expirationDate = expDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const sentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const revisionDetails = estimate?.description_memo || "[specific change]";
 
         let subject = "";
         let body = "";
 
         if (type === 'standard') {
-            subject = EMAIL_TEMPLATES.standard.subject(customerAlias, estimateId, projectName);
+            subject = EMAIL_TEMPLATES.standard.subject(companyName, customerAlias, estimateId);
             body = EMAIL_TEMPLATES.standard.body(clientName, projectName, companyName, expirationDate, yourName);
         } else if (type === 'followup') {
-            subject = EMAIL_TEMPLATES.followup.subject(customerAlias, estimateId, projectName);
+            subject = EMAIL_TEMPLATES.followup.subject(companyName, customerAlias, estimateId);
             body = EMAIL_TEMPLATES.followup.body(clientName, projectName, sentDate, yourName);
         } else if (type === 'revised') {
-            subject = EMAIL_TEMPLATES.revised.subject(customerAlias, estimateId, projectName);
+            subject = EMAIL_TEMPLATES.revised.subject(companyName, customerAlias, estimateId);
             body = EMAIL_TEMPLATES.revised.body(clientName, projectName, companyName, revisionDetails, yourName);
         }
 
@@ -163,22 +166,25 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         const customerAlias = emailModal.customer_alias || estimate?.customer_alias || '';
         const estimateId = estimate?.estimate_id || '';
         const companyName = companyProfile?.name || "Automation Edge";
-        const yourName = "Your Name";
-        const expirationDate = "[Expiration Date]";
-        const sentDate = "[Date]";
-        const revisionDetails = "[specific change]";
+        const yourName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || "Sales Team" : "Sales Team";
+        const estDate = estimate?.estimate_date ? new Date(estimate.estimate_date) : new Date();
+        const expDate = new Date(estDate);
+        expDate.setDate(expDate.getDate() + 30);
+        const expirationDate = expDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const sentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const revisionDetails = estimate?.description_memo || "[specific change]";
 
         let subject = "";
         let body = "";
 
         if (type === 'standard') {
-            subject = EMAIL_TEMPLATES.standard.subject(customerAlias, estimateId, projectName);
+            subject = EMAIL_TEMPLATES.standard.subject(companyName, customerAlias, estimateId);
             body = EMAIL_TEMPLATES.standard.body(clientName, projectName, companyName, expirationDate, yourName);
         } else if (type === 'followup') {
-            subject = EMAIL_TEMPLATES.followup.subject(customerAlias, estimateId, projectName);
+            subject = EMAIL_TEMPLATES.followup.subject(companyName, customerAlias, estimateId);
             body = EMAIL_TEMPLATES.followup.body(clientName, projectName, sentDate, yourName);
         } else if (type === 'revised') {
-            subject = EMAIL_TEMPLATES.revised.subject(customerAlias, estimateId, projectName);
+            subject = EMAIL_TEMPLATES.revised.subject(companyName, customerAlias, estimateId);
             body = EMAIL_TEMPLATES.revised.body(clientName, projectName, companyName, revisionDetails, yourName);
         }
 
