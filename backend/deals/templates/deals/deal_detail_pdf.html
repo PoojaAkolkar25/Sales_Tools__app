@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        @font-face {
+            font-family: 'Roboto';
+            src: url('{{ roboto_font_path }}');
+        }
+
+        body {
+            font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            color: #333;
+            font-size: 11px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #FF6B00;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .header h1 {
+            color: #FF6B00;
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .section {
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            font-size: 12px;
+            background-color: #F7FAFC;
+            padding: 5px;
+            border-left: 3px solid #FF6B00;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        table.grid th,
+        table.grid td {
+            border: 1px solid #E2E8F0;
+            padding: 6px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        table.grid th {
+            background-color: #F7FAFC;
+            font-weight: bold;
+            width: 25%;
+            color: #4A5568;
+        }
+
+        table.grid td {
+            width: 25%;
+        }
+
+        table.items th,
+        table.items td {
+            border: 1px solid #E2E8F0;
+            padding: 6px;
+        }
+
+        table.items th {
+            background-color: #F7FAFC;
+            font-weight: bold;
+            text-align: left;
+            color: #4A5568;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 9px;
+            color: #718096;
+            border-top: 1px solid #E2E8F0;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>Deal Details Form: {{ deal.deal_id }}</h1>
+    </div>
+
+    <div class="section">
+        <div class="section-title">General Details</div>
+        <table class="grid">
+            <tr>
+                <th>Deal ID</th>
+                <td>{{ deal.deal_id }}</td>
+                <th>Deal Date</th>
+                <td>{{ deal.deal_date|date:"d-M-Y" }}</td>
+            </tr>
+            <tr>
+                <th>Project Name</th>
+                <td>{{ deal.deal_name }}</td>
+                <th>Company Name</th>
+                <td>{{ deal.company }}</td>
+            </tr>
+            <tr>
+                <th>Lead Number</th>
+                <td>{% if deal.lead %}{{ deal.lead.lead_no }}{% else %}—{% endif %}</td>
+                <th>Stage</th>
+                <td>{{ deal.get_stage_display }}</td>
+            </tr>
+            <tr>
+                <th>Expected Close Date</th>
+                <td>{% if deal.expected_close_date %}{{ deal.expected_close_date|date:"d-M-Y" }}{% else %}—{% endif %}
+                </td>
+                <th>Priority</th>
+                <td>{{ deal.priority|default:"—" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Customer Details</div>
+        <table class="grid">
+            <tr>
+                <th>Customer / Partner</th>
+                <td>{% if deal.customer %}{{ deal.customer.name }}{% else %}—{% endif %}</td>
+                <th>Customer Email</th>
+                <td>{{ deal.customer_email|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>End Customer</th>
+                <td>{{ deal.end_customer|default:"—" }}</td>
+                <th>Client Type</th>
+                <td>{{ deal.get_client_type_display|default:"—" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Team Assignments</div>
+        <table class="grid">
+            <tr>
+                <th>Inside Salesperson</th>
+                <td>{{ deal.inside_salesperson|default:"—" }}</td>
+                <th>Inside Sales Head</th>
+                <td>{{ deal.inside_sales_head|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Salesperson</th>
+                <td>{{ deal.salesperson_name|default:"—" }}</td>
+                <th>Sales Head</th>
+                <td>{{ deal.sales_head|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Project Manager</th>
+                <td>{{ deal.project_manager|default:"—" }}</td>
+                <th>PM Head</th>
+                <td>{{ deal.project_manager_head|default:"—" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Deal Value & Items</div>
+        <table class="grid" style="margin-bottom: 5px;">
+            <tr>
+                <th>Currency</th>
+                <td>{{ deal.get_currency_display }}</td>
+                <th>Total Deal Amount</th>
+                <td>{{ pdf_currency_symbol }} {{ deal.deal_amount|floatformat:2 }}</td>
+            </tr>
+        </table>
+
+        <table class="items">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 15%;">Type</th>
+                    <th style="width: 50%;">Description</th>
+                    <th style="width: 10%; text-align: center;">Qty</th>
+                    <th style="width: 20%; text-align: right;">Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in deal.deal_types.all %}
+                <tr>
+                    <td style="text-align: center;">{{ forloop.counter }}</td>
+                    <td>{{ item.get_type_display }}</td>
+                    <td>{{ item.description }}</td>
+                    <td style="text-align: center;">{{ item.quantity }}</td>
+                    <td style="text-align: right;">{{ pdf_currency_symbol }} {{ item.amount|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center;">No items found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Additional Info</div>
+        <table class="grid">
+            <tr>
+                <th>Description</th>
+                <td colspan="3">{{ deal.description|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Remarks</th>
+                <td colspan="3">{{ deal.remark|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Won/Lost Reason</th>
+                <td colspan="3">{{ deal.won_lost_reason|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>HubSpot ID</th>
+                <td>{{ deal.hubspot_id|default:"—" }}</td>
+                <th>Last Synced At</th>
+                <td>{% if deal.last_synced_at %}{{ deal.last_synced_at|date:"d-M-Y H:i" }}{% else %}—{% endif %}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        Generated on {{ now|date:"d-M-Y H:i" }} | © SalesEdge Application
+    </div>
+
+</body>
+
+</html>

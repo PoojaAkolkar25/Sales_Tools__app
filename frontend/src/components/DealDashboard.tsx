@@ -405,6 +405,23 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
         { label: `All (${counts.all})`, value: '' }
     ];
 
+    const downloadDealPdf = async (id: number, dealId: string) => {
+        try {
+            const response = await api.get(`/deals/${id}/download_pdf/`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Deal_${dealId || id}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            showNotification('PDF downloaded successfully', 'success');
+        } catch (error) {
+            console.error('Error downloading deal PDF', error);
+            showNotification('Error downloading PDF', 'error');
+        }
+    };
+
     const getExportQueryParams = () => {
         const params = new URLSearchParams();
         if (filters.deal_id) params.append('deal_id', filters.deal_id);
@@ -939,35 +956,66 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                                 }
                                             })}
                                             <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                                <button
-                                                    onClick={() => onView(deal.id)}
-                                                    style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        width: '32px',
-                                                        height: '32px',
-                                                        background: 'rgba(255, 107, 0, 0.08)',
-                                                        color: 'var(--theme-primary)',
-                                                        border: '1px solid rgba(255, 107, 0, 0.15)',
-                                                        borderRadius: '8px',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s',
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.background = 'var(--theme-primary)';
-                                                        e.currentTarget.style.color = 'white';
-                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
-                                                        e.currentTarget.style.color = 'var(--theme-primary)';
-                                                        e.currentTarget.style.boxShadow = 'none';
-                                                    }}
-                                                    title="View Deal"
-                                                >
-                                                    <Eye size={16} />
-                                                </button>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                                    <button
+                                                        onClick={() => onView(deal.id)}
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            background: 'rgba(255, 107, 0, 0.08)',
+                                                            color: 'var(--theme-primary)',
+                                                            border: '1px solid rgba(255, 107, 0, 0.15)',
+                                                            borderRadius: '8px',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s',
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'var(--theme-primary)';
+                                                            e.currentTarget.style.color = 'white';
+                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
+                                                            e.currentTarget.style.color = 'var(--theme-primary)';
+                                                            e.currentTarget.style.boxShadow = 'none';
+                                                        }}
+                                                        title="View Deal"
+                                                    >
+                                                        <Eye size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => downloadDealPdf(deal.id, deal.deal_id)}
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            background: 'rgba(56, 189, 248, 0.08)',
+                                                            color: '#0284c7', // Tailwind sky-600
+                                                            border: '1px solid rgba(56, 189, 248, 0.15)',
+                                                            borderRadius: '8px',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s',
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = '#0284c7';
+                                                            e.currentTarget.style.color = 'white';
+                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(2, 132, 199, 0.25)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(56, 189, 248, 0.08)';
+                                                            e.currentTarget.style.color = '#0284c7';
+                                                            e.currentTarget.style.boxShadow = 'none';
+                                                        }}
+                                                        title="Download Deal PDF"
+                                                    >
+                                                        <Download size={16} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );

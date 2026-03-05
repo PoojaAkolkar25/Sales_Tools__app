@@ -150,9 +150,17 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                 if (data[key] === null) data[key] = '';
             });
 
-            // Ensure deal_types has at least one row
+            // Ensure deal_types has at least one row and no null values
             if (!data.deal_types || data.deal_types.length === 0) {
                 data.deal_types = [{ type: '', description: '', amount: '0', quantity: 1 }];
+            } else {
+                data.deal_types = data.deal_types.map((dt: any) => ({
+                    ...dt,
+                    type: dt.type || '',
+                    description: dt.description || '',
+                    amount: dt.amount !== null ? dt.amount.toString() : '0',
+                    quantity: dt.quantity !== null ? dt.quantity : 1
+                }));
             }
 
             // Ensure customer is string for dropdown compatibility

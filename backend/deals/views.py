@@ -237,6 +237,67 @@ class DealViewSet(viewsets.ModelViewSet):
                 "message": f"PDF export failed: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=True, methods=['get'])
+    def download_pdf(self, request, pk=None):
+        try:
+            from django.template.loader import render_to_string
+            from django.http import HttpResponse
+            from xhtml2pdf import pisa
+            import os
+            from django.conf import settings
+            import urllib.parse
+            import io
+            
+            font_path = os.path.join(settings.BASE_DIR, 'Roboto-Regular.ttf')
+            font_path = font_path.replace('\\', '/')
+            # Add a leading slash for windows paths if needed by xhtml2pdf
+            if not font_path.startswith('/'):
+                font_path = '/' + font_path
+            
+            deal = self.get_object()
+            
+            # Map currency codes to PDF-safe display symbols to avoid black boxes
+            currency_symbols = {
+                'INR': 'Rs.',
+                'USD': '$',
+                'EUR': 'EUR',
+                'EURO': '€', # Helvetica supports Euro
+                'GBP': '£',  # Helvetica supports Pound
+                'AED': 'AED',
+                'SGD': 'S$',
+            }
+            currency_code = deal.currency or 'INR'
+            pdf_currency_symbol = currency_symbols.get(currency_code, currency_code)
+            
+            # Use the detailed deal template for a single deal
+            html_string = render_to_string('deals/deal_detail_pdf.html', {
+                'deal': deal, 
+                'now': timezone.now(),
+                'roboto_font_path': font_path,
+                'pdf_currency_symbol': pdf_currency_symbol
+            })
+            
+            result = io.BytesIO()
+            pdf = pisa.pisaDocument(io.StringIO(html_string), result)
+            
+            if not pdf.err:
+                response = HttpResponse(result.getvalue(), content_type='application/pdf')
+                filename = f'Deal_{deal.deal_id or deal.id}.pdf'
+                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                return response
+            else:
+                return Response({
+                    "status": "error",
+                    "message": "PDF generation error occurred."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        except Exception as e:
+            logger.error(f"Error in download_pdf (DealViewSet): {str(e)}", exc_info=True)
+            return Response({
+                "status": "error",
+                "message": f"Individual PDF download failed: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=False, methods=['get'])
     def export_csv(self, request):
         """Export deal data as CSV."""

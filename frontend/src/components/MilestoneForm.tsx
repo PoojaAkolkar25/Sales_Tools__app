@@ -335,25 +335,6 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
 
                 {/* Selection & Summary Section - Side-by-Side */}
                 <div style={{ marginBottom: '24px' }}>
-                    <h3 style={{
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        margin: '0 0 16px 0',
-                        color: 'var(--text-secondary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        textTransform: 'uppercase'
-                    }}>
-                        <span style={{
-                            width: '2px',
-                            height: '10px',
-                            background: 'var(--ae-blue)',
-                            borderRadius: '1px'
-                        }}></span>
-                        Selection & Summary
-                    </h3>
-
                     <div className="ae-grid-2" style={{ gap: '16px', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>
@@ -408,7 +389,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#718096' }}>Order Date:</span>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{selectedSO.order_date}</span>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1a1f36' }}>{formatToAppDate(selectedSO.order_date)}</span>
                             </div>
                         </div>
                     )}
