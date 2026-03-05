@@ -117,35 +117,40 @@ interface Estimate {
     subscription_from?: string;
     subscription_to?: string;
     customer_email?: string;
+    description_memo?: string;
     proposals?: any[];
 }
 
 interface EstimateDashboardProps {
     onView: (id: number) => void;
+    user: any;
 }
 
 const EMAIL_TEMPLATES = {
     standard: {
         name: 'Standard Proposal',
-        subject: (projectName: string, companyName: string) => `Proposal for ${projectName} - ${companyName}`,
-        body: (clientName: string, projectName: string, companyName: string, expirationDate: string, yourName: string) =>
-            `Dear ${clientName},\n\nGreetings from ${companyName} !!\n\nIt was a pleasure discussing ${projectName} with you. Based on our conversation, I’ve attached a detailed proposal including estimates / quotation for the services and license we discussed.\n\nYou can find the full breakdown of costs and timelines in the attached PDF.\n\nThis proposal is valid until ${expirationDate}. Please let me know if you have any questions or if you’d like to move forward.\n\nBest regards,\n${yourName}`
+        subject: (companyName: string, customerName: string, estimateId: string) =>
+            `${companyName} / ${customerName || 'Customer'} / ${estimateId}`,
+        body: (clientName: string, projectName: string, companyName: string, expirationDate: string, yourName: string, estimateId: string) =>
+            `Dear ${clientName},\n\nGreetings from ${companyName} !!\n\nIt was a pleasure discussing ${projectName} with you. Based on our conversation, I’ve attached a detailed proposal including estimates ${estimateId} for the services and license we discussed.\n\nYou can find the full breakdown of costs and timelines in the attached PDF.\n\nThis proposal is valid until ${expirationDate}. Please let me know if you have any questions or if you’d like to move forward.\n\nBest regards,\n${yourName}`
     },
     followup: {
         name: 'Follow-Up',
-        subject: (projectName: string) => `Quick question about your ${projectName} proposal`,
+        subject: (companyName: string, customerName: string, estimateId: string) =>
+            `Follow up: ${companyName} / ${customerName || 'Customer'} / ${estimateId}`,
         body: (clientName: string, _projectName: string, sentDate: string, yourName: string) =>
-            `Hi ${clientName},\n\nI’m checking in to see if you had a chance to review the proposal I sent on ${sentDate}. I’ve re-attached it here for your convenience.\n\nAre there any specific details or technical aspects I can clarify for you? I’m happy to hop on a 5-minute call to walk you through it.\n\nLooking forward to your thoughts.\n\nBest,\n${yourName}`
+            `Dear ${clientName},\n\nI’m checking in to see if you had a chance to review the proposal I sent on ${sentDate}. I’ve re-attached it here for your convenience.\n\nAre there any specific details or technical aspects I can clarify for you? I’m happy to hop on a 5-minute call to walk you through it.\n\nLooking forward to your thoughts.\n\nBest,\n${yourName}`
     },
     revised: {
         name: 'Revised Quotation',
-        subject: (projectName: string, companyName: string) => `Updated Quote for ${projectName} - ${companyName}`,
+        subject: (companyName: string, customerName: string, estimateId: string) =>
+            `Revised: ${companyName} / ${customerName || 'Customer'} / ${estimateId}`,
         body: (clientName: string, _projectName: string, _companyName: string, revisionDetails: string, yourName: string) =>
             `Dear ${clientName},\n\nThank you for your feedback on the initial proposal. As discussed, I have revised the scope to include ${revisionDetails} and adjusted the pricing accordingly.\n\nYou will find the updated proposal attached. Let me know if this aligns better with your current budget and requirements.\n\nKind regards,\n${yourName}`
     }
 };
 
-const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
+const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) => {
     const navigate = useNavigate();
     const { showNotification } = useNotification();
     const [estimates, setEstimates] = useState<Estimate[]>([]);
@@ -395,23 +400,28 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
 
         const clientName = est.customer_name || '[Client Name]';
         const projectName = est.project_name || '[Project Name]';
-        const companyName = "SalesEdge Application";
-        const yourName = "Sales Team";
-        const expirationDate = "[Expiration Date]";
-        const sentDate = "[Date]";
-        const revisionDetails = "[specific change]";
+        const customerName = est.customer_name || '';
+        const estimateId = est.estimate_id || '';
+        const companyName = "Automation Edge"; // Use consistent name or fetch from profile
+        const yourName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || "Sales Team" : "Sales Team";
+        const estDate = est.estimate_date ? new Date(est.estimate_date) : new Date();
+        const expDate = new Date(estDate);
+        expDate.setDate(expDate.getDate() + 30);
+        const expirationDate = expDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const sentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const revisionDetails = est.description_memo || "[specific change]";
 
         let subject = "";
         let body = "";
 
         if (type === 'standard') {
-            subject = EMAIL_TEMPLATES.standard.subject(projectName, companyName);
-            body = EMAIL_TEMPLATES.standard.body(clientName, projectName, companyName, expirationDate, yourName);
+            subject = EMAIL_TEMPLATES.standard.subject(companyName, customerName, estimateId);
+            body = EMAIL_TEMPLATES.standard.body(clientName, projectName, companyName, expirationDate, yourName, estimateId);
         } else if (type === 'followup') {
-            subject = EMAIL_TEMPLATES.followup.subject(projectName);
+            subject = EMAIL_TEMPLATES.followup.subject(companyName, customerName, estimateId);
             body = EMAIL_TEMPLATES.followup.body(clientName, projectName, sentDate, yourName);
         } else if (type === 'revised') {
-            subject = EMAIL_TEMPLATES.revised.subject(projectName, companyName);
+            subject = EMAIL_TEMPLATES.revised.subject(companyName, customerName, estimateId);
             body = EMAIL_TEMPLATES.revised.body(clientName, projectName, companyName, revisionDetails, yourName);
         }
 
@@ -1132,7 +1142,27 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView }) => {
                                                             <Download size={16} />
                                                         </button>
                                                         <button
-                                                            onClick={() => setEmailModal({ ...emailModal, open: true, estimateId: est.id, to: est.customer_email || '', subject: `Proposal for ${est.project_name}` })}
+                                                            onClick={() => {
+                                                                const companyName = "Automation Edge";
+                                                                const subject = EMAIL_TEMPLATES.standard.subject(companyName, est.customer_name || '', est.estimate_id);
+                                                                const yourName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || "Sales Team" : "Sales Team";
+
+                                                                const estDate = est.estimate_date ? new Date(est.estimate_date) : new Date();
+                                                                const expDate = new Date(estDate);
+                                                                expDate.setDate(expDate.getDate() + 30);
+                                                                const expirationDate = expDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                                                                const body = EMAIL_TEMPLATES.standard.body(est.customer_name, est.project_name, companyName, expirationDate, yourName, est.estimate_id);
+                                                                setEmailModal({
+                                                                    ...emailModal,
+                                                                    open: true,
+                                                                    estimateId: est.id,
+                                                                    to: est.customer_email || '',
+                                                                    subject,
+                                                                    body,
+                                                                    templateType: 'standard'
+                                                                });
+                                                            }}
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',

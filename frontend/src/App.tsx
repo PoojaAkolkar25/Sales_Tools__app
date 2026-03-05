@@ -1010,6 +1010,7 @@ const AppContent: React.FC = () => {
                 ) : (
                   <EstimateDashboard
                     onView={handleViewEstimateDetails}
+                    user={user}
                   />
                 )}
               </div>

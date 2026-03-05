@@ -72,7 +72,7 @@ const MAX_COL_WIDTHS: Record<string, number> = {
 };
 
 interface MilestoneDashboardProps {
-    onView?: (id: number) => void;
+    onView?: (id: number | string) => void;
     onCreate?: () => void;
 }
 
@@ -277,13 +277,14 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
 
         // Find SOs that have no milestones yet
         const soWithMs = new Set(milestones.map(m => m.sales_order || m.sales_order_details?.id));
+        let vCounter = 1;
         salesOrders.forEach(so => {
             if (!soWithMs.has(so.id) && so.status !== 'CANCELLED' && so.status !== 'REJECTED') {
                 allList.push({
                     id: `virtual-${so.id}`,
                     sales_order: so.id,
                     sales_order_details: so,
-                    milestone_no: '---',
+                    milestone_no: `ML-100${vCounter++}`,
                     description: 'No Milestones Defined',
                     amount: so.total_amount,
                     status: 'DRAFT',
@@ -349,6 +350,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
 
         if (filters.status === 'DRAFT') {
             const grouped: Record<string, any> = {};
+            let groupCounter = 1;
             list.forEach(m => {
                 const soId = m.sales_order || m.sales_order_details?.id || 'no-so';
                 if (!grouped[soId]) {
@@ -365,7 +367,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
 
                     grouped[soId] = {
                         ...m,
-                        milestone_no: '---',
+                        milestone_no: `ML-100${groupCounter++}`,
                         description: allMsForSO.length > 0 ? 'Milestone Set' : 'No Milestones Defined',
                         amount: totalAmount.toFixed(2),
                         isGrouped: true,
@@ -896,8 +898,15 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                         return (
                                                             <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)', fontFamily: 'monospace' }}>
                                                                 <span
-                                                                    onClick={() => !m.isGrouped && onView && onView(m.id)}
-                                                                    style={{ cursor: m.isGrouped ? 'default' : 'pointer', textDecoration: m.isGrouped ? 'none' : 'underline' }}
+                                                                    onClick={() => {
+                                                                        if (!m.isGrouped && !m.isVirtual) {
+                                                                            if (onView) onView(m.id);
+                                                                        } else {
+                                                                            const soIdToPass = m.sales_order || m.sales_order_details?.id;
+                                                                            if (onView && soIdToPass) onView(`virtual-${soIdToPass}`);
+                                                                        }
+                                                                    }}
+                                                                    style={{ cursor: 'pointer', textDecoration: 'underline' }}
                                                                 >
                                                                     {m.milestone_no}
                                                                 </span>

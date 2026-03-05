@@ -46,6 +46,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     # Nested details from related models
     customer_name = serializers.ReadOnlyField(source='deal.customer.name')
     customer_alias = serializers.ReadOnlyField(source='deal.customer.alias_name')
+    customer_email = serializers.SerializerMethodField()
     project_name = serializers.ReadOnlyField(source='deal.deal_name')
     deal_id = serializers.ReadOnlyField(source='deal.deal_id')
     company = serializers.ReadOnlyField(source='deal.company')
@@ -57,6 +58,15 @@ class EstimateSerializer(serializers.ModelSerializer):
         model = Estimate
         fields = '__all__'
         read_only_fields = ('estimate_id', 'version', 'is_latest', 'total_cost', 'total_margin', 'total_price', 'approval_status', 'approved_by', 'approved_at')
+
+    def get_customer_email(self, obj):
+        # Prioritize the direct 'Customer' object configured in User Management
+        if obj.deal and obj.deal.customer and obj.deal.customer.email:
+            return obj.deal.customer.email
+        # Fallback to lead contact email
+        if obj.deal and getattr(obj.deal, 'lead', None) and getattr(obj.deal.lead, 'email', None):
+            return obj.deal.lead.email
+        return ""
 
     def validate(self, data):
         # Prevent editing if Approved
