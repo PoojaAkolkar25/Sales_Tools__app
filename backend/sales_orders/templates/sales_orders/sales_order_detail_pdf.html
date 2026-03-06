@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        @font-face {
+            font-family: 'Roboto';
+            src: url('{{ roboto_font_path }}');
+        }
+
+        body {
+            font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            color: #333;
+            font-size: 11px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #0066CC;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .header h1 {
+            color: #0066CC;
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .section {
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            font-size: 12px;
+            background-color: #F7FAFC;
+            padding: 5px;
+            border-left: 3px solid #0066CC;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        table.grid th,
+        table.grid td {
+            border: 1px solid #E2E8F0;
+            padding: 6px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        table.grid th {
+            background-color: #F7FAFC;
+            font-weight: bold;
+            width: 25%;
+            color: #4A5568;
+        }
+
+        table.grid td {
+            width: 25%;
+        }
+
+        table.items th,
+        table.items td {
+            border: 1px solid #E2E8F0;
+            padding: 6px;
+        }
+
+        table.items th {
+            background-color: #F7FAFC;
+            font-weight: bold;
+            text-align: left;
+            color: #4A5568;
+            font-size: 10px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 9px;
+            color: #718096;
+            border-top: 1px solid #E2E8F0;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>Sales Order Details: {{ sales_order.so_number|default:"Draft" }}</h1>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Order Information</div>
+        <table class="grid">
+            <tr>
+                <th>SO Number</th>
+                <td>{{ sales_order.so_number|default:"—" }}</td>
+                <th>Order Date</th>
+                <td>{% if sales_order.order_date %}{{ sales_order.order_date|date:"d-M-Y" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>{{ sales_order.get_status_display }}</td>
+                <th>Delivery Date</th>
+                <td>{% if sales_order.delivery_date %}{{ sales_order.delivery_date|date:"d-M-Y" }}{% else %}—{% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Estimate Reference</th>
+                <td>
+                    {% if sales_order.estimate %}
+                    {{ sales_order.estimate.estimate_id }}
+                    {% else %}
+                    {{ sales_order.estimate_no|default:"—" }}
+                    {% endif %}
+                </td>
+                <th>Estimate Date</th>
+                <td>
+                    {% if sales_order.estimate_date %}
+                    {{ sales_order.estimate_date|date:"d-M-Y" }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Customer & PO Details</div>
+        <table class="grid">
+            <tr>
+                <th>Customer Name</th>
+                <td>
+                    {% if sales_order.customer %}
+                    {{ sales_order.customer.name }}
+                    {% else %}
+                    {{ sales_order.customer_name|default:"—" }}
+                    {% endif %}
+                </td>
+                <th>Customer ID</th>
+                <td>{{ sales_order.cust_id|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>PO Number</th>
+                <td>{{ sales_order.po_number|default:"—" }}</td>
+                <th>PO Date</th>
+                <td>
+                    {% if sales_order.po_date %}
+                    {{ sales_order.po_date|date:"d-M-Y" }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>PO Valid From</th>
+                <td>
+                    {% if sales_order.po_from_date %}
+                    {{ sales_order.po_from_date|date:"d-M-Y" }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <th>PO Valid To</th>
+                <td>
+                    {% if sales_order.po_to_date %}
+                    {{ sales_order.po_to_date|date:"d-M-Y" }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Billing & Shipping</div>
+        <table class="grid">
+            <tr>
+                <th>Billing Address</th>
+                <td colspan="3">{{ sales_order.billing_address|default:"—"|linebreaksbr }}</td>
+            </tr>
+            <tr>
+                <th>Shipping Address</th>
+                <td colspan="3">{{ sales_order.shipping_address|default:"—"|linebreaksbr }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Order Summary</div>
+        <table class="grid" style="margin-bottom: 5px;">
+            <tr>
+                <th>Currency</th>
+                <td>{{ sales_order.currency }}</td>
+                <th>Total Order Amount</th>
+                <td>{{ pdf_currency_symbol }} {{ sales_order.total_amount|floatformat:2 }}</td>
+            </tr>
+        </table>
+
+        <table class="items">
+            <thead>
+                <tr>
+                    <th style="width: 5%; text-align: center;">#</th>
+                    <th style="width: 15%;">Item Type</th>
+                    <th style="width: 35%;">Description</th>
+                    <th style="width: 15%; text-align: center;">Period</th>
+                    <th style="width: 5%; text-align: center;">Qty</th>
+                    <th style="width: 10%; text-align: right;">Rate</th>
+                    <th style="width: 15%; text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sales_order.items.all %}
+                <tr>
+                    <td style="text-align: center;">{{ forloop.counter }}</td>
+                    <td>{{ item.get_item_type_display }}</td>
+                    <td>
+                        <div style="font-weight: bold;">
+                            {% if item.product %}
+                            {{ item.product.name }}
+                            {% else %}
+                            {{ item.product_name }}
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 9px; color: #555;">{{ item.description|linebreaksbr }}</div>
+                    </td>
+                    <td style="text-align: center; font-size: 9px;">
+                        {% if item.start_date %}
+                        {{ item.start_date|date:"d/m/Y" }}
+                        {% else %}
+                        —
+                        {% endif %}
+                        -
+                        {% if item.end_date %}
+                        {{ item.end_date|date:"d/m/Y" }}
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">{{ item.qty|floatformat:0 }}</td>
+                    <td style="text-align: right;">{{ pdf_currency_symbol }} {{ item.rate|floatformat:2 }}</td>
+                    <td style="text-align: right; font-weight: bold;">
+                        {{ pdf_currency_symbol }} {{ item.amount|floatformat:2 }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center;">No items found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        Generated on {{ now|date:"d-M-Y H:i" }} | © SalesEdge Application
+    </div>
+
+</body>
+
+</html>

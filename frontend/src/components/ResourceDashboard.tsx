@@ -280,6 +280,24 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
         }
     };
 
+    const handleDownloadReport = async (id: number, formNumber: string) => {
+        try {
+            const response = await api.get(`/inventory/requests/${id}/download_pdf/`, {
+                responseType: 'blob',
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${formNumber}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error downloading resource request report', error);
+            showNotification('Failed to download the PDF report.', 'error');
+        }
+    };
+
     const filteredRequests = requests.filter(req => {
         const matchesForm = (req.form_number || '').toLowerCase().includes(filters.form_number.toLowerCase());
         const matchesProject = (req.project_name || '').toLowerCase().includes(filters.project_name.toLowerCase());
@@ -865,6 +883,42 @@ const ResourceDashboard: React.FC<ResourceDashboardProps> = ({ onView }) => {
                                                         title="View Details"
                                                     >
                                                         <Eye size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDownloadReport(req.id, req.form_number)}
+                                                        className="ae-btn-secondary"
+                                                        style={{
+                                                            width: '32px',
+                                                            height: '32px',
+                                                            padding: 0,
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            borderRadius: '8px',
+                                                            background: 'rgba(255,107,0,0.08)',
+                                                            color: 'var(--theme-primary)',
+                                                            border: '1px solid rgba(255,107,0,0.25)',
+                                                            transition: 'all 0.2s',
+                                                            cursor: 'pointer',
+                                                            marginLeft: '4px'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'var(--theme-primary)';
+                                                            e.currentTarget.style.color = 'white';
+                                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.2)';
+                                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                            e.currentTarget.style.color = 'var(--theme-primary)';
+                                                            e.currentTarget.style.transform = 'none';
+                                                            e.currentTarget.style.boxShadow = 'none';
+                                                            e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                        }}
+                                                        title="Download PDF"
+                                                    >
+                                                        <Download size={16} />
                                                     </button>
                                                 </td>
                                             </tr>

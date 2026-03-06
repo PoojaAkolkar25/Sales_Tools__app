@@ -1014,6 +1014,55 @@ class ReceiptVoucherViewSet(viewsets.ModelViewSet):
                 filename=f.name
             )
 
+    @action(detail=True, methods=['get'])
+    def download_pdf(self, request, pk=None):
+        try:
+            from django.template.loader import render_to_string
+            from django.http import HttpResponse
+            from xhtml2pdf import pisa
+            import io
+            import os
+            from django.conf import settings
+            from django.utils import timezone
+            
+            voucher = self.get_object()
+            
+            # Use same encoding fix as Deals and Sales Orders
+            pdf_currency_symbol = '₹'
+            if voucher.lead and hasattr(voucher.lead, 'currency') and voucher.lead.currency:
+                if voucher.lead.currency == 'USD':
+                    pdf_currency_symbol = '$'
+                elif voucher.lead.currency == 'EUR':
+                    pdf_currency_symbol = '€'
+            elif hasattr(voucher, 'currency') and voucher.currency:
+                if voucher.currency == 'USD':
+                    pdf_currency_symbol = '$'
+                elif voucher.currency == 'EUR':
+                    pdf_currency_symbol = '€'
+
+            html_string = render_to_string('finance/receipt_voucher_pdf.html', {
+                'voucher': voucher,
+                'pdf_currency_symbol': pdf_currency_symbol,
+                'now': timezone.now(),
+                'roboto_font_path': os.path.join(settings.BASE_DIR, 'static/fonts/Roboto-Regular.ttf')
+            })
+            
+            result = io.BytesIO()
+            # Encode correctly for UTF-8 Support
+            pdf = pisa.pisaDocument(io.BytesIO(html_string.encode('utf-8')), result)
+            
+            if not pdf.err:
+                response = HttpResponse(result.getvalue(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="{voucher.receipt_no}.pdf"'
+                return response
+            else:
+                logger.error("PDF generation errors in Receipt Vouchers")
+                return Response({'error': 'PDF generation failed'}, status=500)
+                
+        except Exception as e:
+            logger.error(f"Error in download_pdf (ReceiptVoucher): {str(e)}", exc_info=True)
+            return Response({'error': str(e)}, status=500)
+
 class CustomerPartnerViewSet(viewsets.ModelViewSet):
     queryset = CustomerPartner.objects.all().order_by('-created_at')
     serializer_class = CustomerPartnerSerializer

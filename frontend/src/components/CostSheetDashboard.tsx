@@ -358,23 +358,23 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
         }
     };
 
-    const exportSingleExcel = async (id: number, csNo: string) => {
+    const downloadCostSheetPdf = async (id: number, csNo: string) => {
         try {
-            const response = await api.get(`/cost-sheets/${id}/export_single_excel/`, {
+            const response = await api.get(`/cost-sheets/${id}/download_pdf/`, {
                 responseType: 'blob'
             });
 
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `CostSheet_${csNo}.xlsx`);
+            link.setAttribute('download', `CostSheet_${csNo}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('Error downloading single cost sheet:', error);
-            alert('Failed to download cost sheet.');
+            console.error('Error downloading cost sheet PDF:', error);
+            alert('Failed to download cost sheet PDF.');
         }
     };
 
@@ -1090,7 +1090,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                exportSingleExcel(cs.id, cs.cost_sheet_no);
+                                                                downloadCostSheetPdf(cs.id, cs.cost_sheet_no);
                                                             }}
                                                             style={{
                                                                 display: 'inline-flex',

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        @font-face {
+            font-family: 'Roboto';
+            src: url('{{ roboto_font_path }}');
+        }
+
+        body {
+            font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            color: #333;
+            font-size: 11px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #0066CC;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .header h1 {
+            color: #0066CC;
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .section {
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            font-size: 12px;
+            background-color: #F7FAFC;
+            padding: 5px;
+            border-left: 3px solid #0066CC;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        table.grid th,
+        table.grid td {
+            border: 1px solid #E2E8F0;
+            padding: 6px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        table.grid th {
+            background-color: #F7FAFC;
+            font-weight: bold;
+            width: 25%;
+            color: #4A5568;
+        }
+
+        table.grid td {
+            width: 25%;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 9px;
+            color: #718096;
+            border-top: 1px solid #E2E8F0;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>Resource Request Details: {{ req.form_number }}</h1>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Request Information</div>
+        <table class="grid">
+            <tr>
+                <th>Form Number</th>
+                <td>{{ req.form_number }}</td>
+                <th>Request Date</th>
+                <td>
+                    {% if req.request_date %}
+                    {{ req.request_date|date:"d-M-Y" }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>{{ req.get_status_display }}</td>
+                <th>Environment</th>
+                <td>{{ req.get_environment_display }}</td>
+            </tr>
+            <tr>
+                <th>Project Name</th>
+                <td>{{ req.project_name|default:"—" }}</td>
+                <th>Project Code</th>
+                <td>{{ req.project_code|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Client Name</th>
+                <td colspan="3">{{ req.client_name|default:"—" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Requestor Details</div>
+        <table class="grid">
+            <tr>
+                <th>Name</th>
+                <td>
+                    {% if req.requestor %}
+                    {{ req.requestor.get_full_name }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <th>Employee ID</th>
+                <td>{{ req.employee_id|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Department</th>
+                <td>{{ req.department|default:"—" }}</td>
+                <th>Designation</th>
+                <td>{{ req.designation|default:"—" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Resource & Configuration</div>
+        <table class="grid">
+            <tr>
+                <th>Resource Type</th>
+                <td>{{ req.resource_type_requested|default:"—" }}</td>
+                <th>Quantity</th>
+                <td>{{ req.quantity|default:"1" }}</td>
+            </tr>
+            <tr>
+                <th>Server Type</th>
+                <td>{{ req.server_type|default:"—" }}</td>
+                <th>Server Category</th>
+                <td>{{ req.server_category|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Cloud Provider</th>
+                <td>{{ req.cloud_provider|default:"—" }}</td>
+                <th>Region</th>
+                <td>{{ req.region|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>OS</th>
+                <td>{{ req.os|default:"—" }}</td>
+                <th>Instance Type</th>
+                <td>{{ req.instance_type|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>CPU Cores</th>
+                <td>{{ req.cpu_cores|default:"—" }}</td>
+                <th>RAM (GB)</th>
+                <td>{{ req.ram_gb|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Storage Type</th>
+                <td>{{ req.storage_type|default:"—" }}</td>
+                <th>Storage Size (GB)</th>
+                <td>{{ req.storage_size_gb|default:"—" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Database/RDS Details</div>
+        <table class="grid">
+            <tr>
+                <th>Database Required</th>
+                <td>
+                    {% if req.database_required %}
+                    Yes
+                    {% else %}
+                    No
+                    {% endif %}
+                </td>
+                <th>RDS Type</th>
+                <td>{{ req.rds_type|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Database Engine</th>
+                <td>{{ req.database_engine|default:"—" }}</td>
+                <th>DB Storage (GB)</th>
+                <td>{{ req.db_storage_gb|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Backup Required</th>
+                <td colspan="3">
+                    {% if req.backup_required %}
+                    Yes
+                    {% else %}
+                    No
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Usage & Justification</div>
+        <table class="grid">
+            <tr>
+                <th>Purpose</th>
+                <td colspan="3">{{ req.purpose_of_request|linebreaksbr }}</td>
+            </tr>
+            <tr>
+                <th>Business Justification</th>
+                <td colspan="3">{{ req.business_justification|linebreaksbr }}</td>
+            </tr>
+            <tr>
+                <th>Expected Start Date</th>
+                <td>
+                    {% if req.expected_start_date %}
+                    {{ req.expected_start_date|date:"d-M-Y" }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <th>Expected End Date</th>
+                <td>
+                    {% if req.expected_end_date %}
+                    {{ req.expected_end_date|date:"d-M-Y" }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        Generated on {{ now|date:"d-M-Y H:i" }} | © SalesEdge Application
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Cost Sheet - {{ cost_sheet.cost_sheet_no }}</title>
+    <style>
+        @font-face {
+            font-family: 'Roboto';
+            src: url('{{ roboto_font_path }}');
+        }
+
+        @page {
+            size: a4 portrait;
+
+            @frame header_frame {
+                -pdf-frame-content: header_content;
+                left: 30pt;
+                width: 535pt;
+                top: 30pt;
+                height: 40pt;
+            }
+
+            @frame content_frame {
+                left: 30pt;
+                width: 535pt;
+                top: 80pt;
+                height: 700pt;
+            }
+
+            @frame footer_frame {
+                -pdf-frame-content: footer_content;
+                left: 30pt;
+                width: 535pt;
+                top: 790pt;
+                height: 30pt;
+            }
+        }
+
+        body {
+            font-family: 'Roboto', Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+            color: #333333;
+        }
+
+        h1 {
+            color: #000000;
+            font-size: 20pt;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            font-size: 14pt;
+            color: #444444;
+            border-bottom: 1px solid #cccccc;
+            padding-bottom: 2px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        .header-table {
+            width: 100%;
+            margin-bottom: 15px;
+            font-size: 9pt;
+        }
+
+        .header-table td {
+            padding: 4px;
+        }
+
+        .header-label {
+            font-weight: bold;
+            color: #555555;
+            width: 120px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9pt;
+            margin-bottom: 10px;
+        }
+
+        .data-table th {
+            background-color: #f2f2f2;
+            color: #000000;
+            font-weight: bold;
+            text-align: left;
+            padding: 6px;
+            border: 1px solid #dddddd;
+        }
+
+        .data-table td {
+            padding: 6px;
+            border: 1px solid #dddddd;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .total-row {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+
+        .summary-box {
+            width: 60%;
+            margin-left: auto;
+            margin-top: 20px;
+            border: 1px solid #cccccc;
+        }
+
+        .summary-box th {
+            background-color: #e6e6e6;
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #cccccc;
+        }
+
+        .summary-box td {
+            padding: 8px;
+            border-bottom: 1px solid #eeeeee;
+        }
+
+        .summary-total {
+            background-color: #FFE5D9;
+            font-weight: bold;
+            color: #D35400;
+        }
+
+        .remarks-section {
+            margin-top: 5px;
+            margin-bottom: 15px;
+            font-size: 9pt;
+            background-color: #fdfdfd;
+            padding: 5px;
+            border-left: 3px solid #FF6B00;
+        }
+
+        .status-APPROVED {
+            color: #00C853;
+        }
+
+        .status-REJECTED {
+            color: #E53E3E;
+        }
+
+        .status-default {
+            color: #FF6B00;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="header_content">
+        <table style="width: 100%;">
+            <tr>
+                <td style="text-align: right; color: #777777; font-size: 8pt;">
+                    Generated on: {{ now|date:"d M Y, H:i" }}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="footer_content">
+        <div
+            style="text-align: center; border-top: 1px solid #cccccc; padding-top: 5px; font-size: 8pt; color: #777777;">
+            Page
+            <pdf:pagenumber /> of
+            <pdf:pagecount />
+        </div>
+    </div>
+
+    <table style="width: 100%; border-bottom: 2px solid #FF6B00; margin-bottom: 15px; padding-bottom: 5px;">
+        <tr>
+            <td>
+                <h1>Cost Sheet</h1>
+                <span style="font-size: 12pt; color: #666666; font-weight: bold;">{{ cost_sheet.cost_sheet_no }}</span>
+            </td>
+            <td style="text-align: right; vertical-align: bottom;">
+                <span style="font-size: 14pt; font-weight: bold;"
+                    class="{% if cost_sheet.status == 'APPROVED' %}status-APPROVED{% elif cost_sheet.status == 'REJECTED' %}status-REJECTED{% else %}status-default{% endif %}">
+                    {{ cost_sheet.status }}
+                </span>
+            </td>
+        </tr>
+    </table>
+
+    <table class="header-table">
+        <tr>
+            <td class="header-label">Customer Name:</td>
+            <td>{{ cost_sheet.customer_name|default:"-" }}</td>
+            <td class="header-label">Date:</td>
+            <td>{{ cost_sheet.cost_sheet_date|date:"d M Y"|default:"-" }}</td>
+        </tr>
+        <tr>
+            <td class="header-label">Project Name:</td>
+            <td>{{ cost_sheet.project_name|default:"-" }}</td>
+            <td class="header-label">Lead No:</td>
+            <td>{{ cost_sheet.lead.lead_no|default:"-" }}</td>
+        </tr>
+        <tr>
+            <td class="header-label">Project Manager:</td>
+            <td>{{ cost_sheet.project_manager|default:"-" }}</td>
+            <td class="header-label">Deal No:</td>
+            <td>{{ cost_sheet.deal.deal_id|default:"-" }}</td>
+        </tr>
+        <tr>
+            <td class="header-label">Sales Person:</td>
+            <td>{{ cost_sheet.sales_person|default:"-" }}</td>
+            <td class="header-label">Currency:</td>
+            <td>{{ cost_sheet.currency|default:"INR" }}</td>
+        </tr>
+    </table>
+
+    {% if license_items %}
+    <h2>Software License Subscription</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th width="30%">Name</th>
+                <th width="15%">Type</th>
+                <th width="10%" class="text-right">Qty</th>
+                <th width="15%" class="text-right">Rate</th>
+                <th width="15%" class="text-right">Est. Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in license_items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.type }}</td>
+                <td class="text-right">{{ item.qty }}</td>
+                <td class="text-right">{{ item.rate }}</td>
+                <td class="text-right">{{ item.estimated_price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if cost_sheet.license_remarks %}
+    <div class="remarks-section"><strong>Remarks:</strong> {{ cost_sheet.license_remarks }}</div>
+    {% endif %}
+    {% endif %}
+
+    {% if implementation_items %}
+    <h2>Services - Implementation</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th width="40%">Category</th>
+                <th width="10%" class="text-right">Resources</th>
+                <th width="10%" class="text-right">Days</th>
+                <th width="20%" class="text-right">Rate / Day</th>
+                <th width="20%" class="text-right">Est. Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in implementation_items %}
+            <tr>
+                <td>{{ item.category }}</td>
+                <td class="text-right">{{ item.num_resources }}</td>
+                <td class="text-right">{{ item.num_days }}</td>
+                <td class="text-right">{{ item.rate_per_day }}</td>
+                <td class="text-right">{{ item.estimated_price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if cost_sheet.implementation_remarks %}
+    <div class="remarks-section"><strong>Remarks:</strong> {{ cost_sheet.implementation_remarks }}</div>
+    {% endif %}
+    {% endif %}
+
+    {% if support_items %}
+    <h2>Services - Support</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th width="40%">Category</th>
+                <th width="10%" class="text-right">Resources</th>
+                <th width="10%" class="text-right">Days</th>
+                <th width="20%" class="text-right">Rate / Day</th>
+                <th width="20%" class="text-right">Est. Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in support_items %}
+            <tr>
+                <td>{{ item.category }}</td>
+                <td class="text-right">{{ item.num_resources }}</td>
+                <td class="text-right">{{ item.num_days }}</td>
+                <td class="text-right">{{ item.rate_per_day }}</td>
+                <td class="text-right">{{ item.estimated_price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if cost_sheet.support_remarks %}
+    <div class="remarks-section"><strong>Remarks:</strong> {{ cost_sheet.support_remarks }}</div>
+    {% endif %}
+    {% endif %}
+
+    {% if infra_items %}
+    <h2>Infrastructure</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th width="40%">Item / Component Name</th>
+                <th width="10%" class="text-right">Qty</th>
+                <th width="10%" class="text-right">Months</th>
+                <th width="20%" class="text-right">Rate / Month</th>
+                <th width="20%" class="text-right">Est. Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in infra_items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td class="text-right">{{ item.qty }}</td>
+                <td class="text-right">{{ item.months }}</td>
+                <td class="text-right">{{ item.rate_per_month }}</td>
+                <td class="text-right">{{ item.estimated_price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if cost_sheet.infra_remarks %}
+    <div class="remarks-section"><strong>Remarks:</strong> {{ cost_sheet.infra_remarks }}</div>
+    {% endif %}
+    {% endif %}
+
+    {% if other_items %}
+    <h2>Other Costs</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th width="70%">Description</th>
+                <th width="30%" class="text-right">Est. Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in other_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-right">{{ item.estimated_price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if cost_sheet.other_remarks %}
+    <div class="remarks-section"><strong>Remarks:</strong> {{ cost_sheet.other_remarks }}</div>
+    {% endif %}
+    {% endif %}
+
+    <table class="summary-box">
+        <tr>
+            <th colspan="2">Financial Summary</th>
+        </tr>
+        <tr>
+            <td width="50%">Total Estimated Cost</td>
+            <td width="50%" class="text-right">{{ pdf_currency_symbol }} {{ cost_sheet.total_estimated_cost }}</td>
+        </tr>
+        <tr>
+            <td>Total Margin</td>
+            <td class="text-right">{{ pdf_currency_symbol }} {{ cost_sheet.total_estimated_margin }} ({{ margin_pct }}%)
+            </td>
+        </tr>
+        <tr class="summary-total">
+            <td>Total Estimated Price</td>
+            <td class="text-right">{{ pdf_currency_symbol }} {{ cost_sheet.total_estimated_price }}</td>
+        </tr>
+    </table>
+
+    {% if cost_sheet.overall_remarks %}
+    <div style="margin-top: 20px;">
+        <h2>Overall Remarks</h2>
+        <p style="font-size: 9pt;">{{ cost_sheet.overall_remarks }}</p>
+    </div>
+    {% endif %}
+
+</body>
+
+</html>

@@ -11,6 +11,8 @@ import xlsxwriter
 import logging
 from .models import CostSheet, CostSheetStatus, CostSheetAttachment
 from .serializers import CostSheetSerializer, CostSheetAttachmentSerializer
+import os
+from django.conf import settings
 from deals.models import AuditTrail
 
 logger = logging.getLogger(__name__)
@@ -484,3 +486,73 @@ class CostSheetViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.error(f"Error in export_single_excel (CostSheetViewSet): {str(e)}", exc_info=True)
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'])
+    def download_pdf(self, request, pk=None):
+        try:
+            from django.template.loader import render_to_string
+            from django.http import HttpResponse
+            from xhtml2pdf import pisa
+            import io
+            
+            cost_sheet = self.get_object()
+            
+            # Currency symbol mapping
+            currency_symbols = {
+                'INR': 'Rs.',
+                'USD': '$',
+                'EUR': 'EUR',
+                'EURO': '€',
+                'GBP': '£',
+                'AED': 'AED',
+                'SGD': 'S$',
+            }
+            currency_code = cost_sheet.currency if hasattr(cost_sheet, 'currency') and cost_sheet.currency else 'INR'
+            pdf_currency_symbol = currency_symbols.get(currency_code, currency_code)
+
+            # Prefetch all related items for the template
+            license_items = cost_sheet.license_items.all()
+            implementation_items = cost_sheet.implementation_items.all()
+            support_items = cost_sheet.support_items.all()
+            infra_items = cost_sheet.infra_items.all()
+            other_items = cost_sheet.other_items.all()
+            
+            # Format numbers for template
+            margin_pct = 0
+            if cost_sheet.total_estimated_price and cost_sheet.total_estimated_price > 0:
+                margin_pct = float(round((cost_sheet.total_estimated_margin / cost_sheet.total_estimated_price) * 100, 2))
+                
+            html_string = render_to_string('cost_sheets/cost_sheet_detail_pdf.html', {
+                'cost_sheet': cost_sheet,
+                'license_items': license_items,
+                'implementation_items': implementation_items,
+                'support_items': support_items,
+                'infra_items': infra_items,
+                'other_items': other_items,
+                'margin_pct': margin_pct,
+                'now': timezone.now(),
+                'pdf_currency_symbol': pdf_currency_symbol,
+                'roboto_font_path': os.path.join(settings.BASE_DIR, 'static/fonts/Roboto-Regular.ttf')
+            })
+            
+            result = io.BytesIO()
+            # Use encoded bytes to avoid unicode errors with symbols
+            pdf = pisa.pisaDocument(io.BytesIO(html_string.encode('utf-8')), result)
+            
+            if not pdf.err:
+                response = HttpResponse(result.getvalue(), content_type='application/pdf')
+                filename = f'CostSheet_{cost_sheet.cost_sheet_no}.pdf'
+                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                return response
+            else:
+                return Response({
+                    "status": "error",
+                    "message": "PDF generation error occurred."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        except Exception as e:
+            logger.error(f"Error in download_pdf (CostSheetViewSet): {str(e)}", exc_info=True)
+            return Response({
+                "status": "error",
+                "message": f"Cost Sheet PDF download failed: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

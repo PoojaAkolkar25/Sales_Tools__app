@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, RefreshCw, Eye, Columns, ChevronDown, Check } from 'lucide-react';
+import { Plus, RefreshCw, Eye, Columns, ChevronDown, Check, Download } from 'lucide-react';
 import api from '../api';
 import Pagination from './Pagination';
 import { formatToAppDate } from '../utils/dateUtils';
@@ -140,6 +140,24 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
             console.error('Error fetching vouchers', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDownloadReport = async (id: number) => {
+        try {
+            const response = await api.get(`/finance/receipt-vouchers/${id}/download_pdf/`, {
+                responseType: 'blob',
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `ReceiptVoucher_${id}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error downloading receipt voucher report', error);
+            alert('Failed to download the PDF report.');
         }
     };
 
@@ -606,6 +624,37 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                                                 title="View Receipt"
                                             >
                                                 <Eye size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDownloadReport(v.id)}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    width: '28px',
+                                                    height: '28px',
+                                                    background: 'rgba(255,107,0,0.08)',
+                                                    color: 'var(--theme-primary)',
+                                                    border: '1px solid rgba(255,107,0,0.25)',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    flexShrink: 0,
+                                                    marginLeft: '4px'
+                                                }}
+                                                onMouseOver={(e) => {
+                                                    e.currentTarget.style.background = 'var(--theme-primary)';
+                                                    e.currentTarget.style.color = 'white';
+                                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                }}
+                                                onMouseOut={(e) => {
+                                                    e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                    e.currentTarget.style.color = 'var(--theme-primary)';
+                                                    e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
+                                                }}
+                                                title="Download PDF"
+                                            >
+                                                <Download size={16} />
                                             </button>
                                         </td>
                                     </tr>

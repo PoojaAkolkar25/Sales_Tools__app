@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        @font-face {
+            font-family: 'Roboto';
+            src: url('{{ roboto_font_path }}');
+        }
+
+        body {
+            font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            color: #333;
+            font-size: 11px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #0066CC;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .header h1 {
+            color: #0066CC;
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .section {
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            font-size: 12px;
+            background-color: #F7FAFC;
+            padding: 5px;
+            border-left: 3px solid #0066CC;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        table.grid th,
+        table.grid td {
+            border: 1px solid #E2E8F0;
+            padding: 6px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        table.grid th {
+            background-color: #F7FAFC;
+            font-weight: bold;
+            width: 25%;
+            color: #4A5568;
+        }
+
+        table.grid td {
+            width: 25%;
+        }
+
+        table.items th,
+        table.items td {
+            border: 1px solid #E2E8F0;
+            padding: 6px;
+        }
+
+        table.items th {
+            background-color: #F7FAFC;
+            font-weight: bold;
+            text-align: left;
+            color: #4A5568;
+            font-size: 10px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 9px;
+            color: #718096;
+            border-top: 1px solid #E2E8F0;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>Receipt Voucher: {{ voucher.receipt_no }}</h1>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Payment Information</div>
+        <table class="grid">
+            <tr>
+                <th>Receipt No.</th>
+                <td>{{ voucher.receipt_no }}</td>
+                <th>Payment Date</th>
+                <td>
+                    {% if voucher.payment_date %}
+                    {{ voucher.payment_date|date:"d-M-Y" }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Customer Name</th>
+                <td>
+                    {% if voucher.lead %}
+                    {{ voucher.lead.customer_name }}
+                    {% else %}
+                    {{ voucher.customer_name|default:"—" }}
+                    {% endif %}
+                </td>
+                <th>Status</th>
+                <td>{{ voucher.get_status_display }}</td>
+            </tr>
+            <tr>
+                <th>Payment Method</th>
+                <td>{{ voucher.payment_method|default:"—" }}</td>
+                <th>Reference No.</th>
+                <td>{{ voucher.reference_number|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Amount Received</th>
+                <td style="font-weight: bold; color: #0066CC;">
+                    {{ pdf_currency_symbol }} {{ voucher.amount_received|floatformat:2 }}
+                </td>
+                <th>TDS Receivable</th>
+                <td>
+                    {{ pdf_currency_symbol }} {{ voucher.tds_receivable|floatformat:2 }}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Invoice Adjustments</div>
+        <table class="items">
+            <thead>
+                <tr>
+                    <th style="width: 5%; text-align: center;">#</th>
+                    <th style="width: 35%;">Invoice No.</th>
+                    <th style="width: 20%; text-align: right;">Payment Applied</th>
+                    <th style="width: 20%; text-align: right;">TDS Amount</th>
+                    <th style="width: 20%; text-align: right;">Bank Charges</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for adj in voucher.adjustments.all %}
+                <tr>
+                    <td style="text-align: center;">{{ forloop.counter }}</td>
+                    <td style="font-weight: bold;">
+                        {% if adj.invoice %}
+                        {{ adj.invoice.invoice_no }}
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        {{ pdf_currency_symbol }} {{ adj.payment_amount|floatformat:2 }}
+                    </td>
+                    <td style="text-align: right;">
+                        {{ pdf_currency_symbol }} {{ adj.tds_amount|floatformat:2 }}
+                    </td>
+                    <td style="text-align: right;">
+                        {{ pdf_currency_symbol }} {{ adj.bank_charges|floatformat:2 }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center;">No invoice adjustments found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        Generated on {{ now|date:"d-M-Y H:i" }} | © SalesEdge Application
+    </div>
+
+</body>
+
+</html>

@@ -994,21 +994,23 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                                             justifyContent: 'center',
                                                             width: '32px',
                                                             height: '32px',
-                                                            background: 'rgba(56, 189, 248, 0.08)',
-                                                            color: '#0284c7', // Tailwind sky-600
-                                                            border: '1px solid rgba(56, 189, 248, 0.15)',
+                                                            background: 'rgba(255, 107, 0, 0.08)',
+                                                            color: 'var(--theme-primary)',
+                                                            border: '1px solid rgba(255, 107, 0, 0.2)',
                                                             borderRadius: '8px',
                                                             cursor: 'pointer',
                                                             transition: 'all 0.2s',
                                                         }}
                                                         onMouseEnter={(e) => {
-                                                            e.currentTarget.style.background = '#0284c7';
+                                                            e.currentTarget.style.background = 'var(--theme-primary)';
                                                             e.currentTarget.style.color = 'white';
-                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(2, 132, 199, 0.25)';
+                                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
                                                         }}
                                                         onMouseLeave={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(56, 189, 248, 0.08)';
-                                                            e.currentTarget.style.color = '#0284c7';
+                                                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
+                                                            e.currentTarget.style.color = 'var(--theme-primary)';
+                                                            e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
                                                             e.currentTarget.style.boxShadow = 'none';
                                                         }}
                                                         title="Download Deal PDF"

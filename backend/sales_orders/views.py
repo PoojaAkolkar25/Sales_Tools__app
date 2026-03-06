@@ -295,13 +295,27 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
     def download_pdf(self, request, pk=None):
         try:
             sales_order = self.get_object()
-            html_string = render_to_string('sales_orders/report_pdf.html', {
-                'sales_orders': [sales_order], 
+            
+            # Currency symbol mapping
+            currency_symbols = {
+                'INR': '₹',
+                'USD': '$',
+                'EUR': '€',
+                'GBP': '£',
+                'AED': 'AED',
+                'SGD': 'S$',
+            }
+            currency_code = sales_order.currency if hasattr(sales_order, 'currency') and sales_order.currency else 'INR'
+            pdf_currency_symbol = currency_symbols.get(currency_code, currency_code)
+            
+            html_string = render_to_string('sales_orders/sales_order_detail_pdf.html', {
+                'sales_order': sales_order, 
+                'pdf_currency_symbol': pdf_currency_symbol,
                 'now': timezone.now()
             })
             
             result = io.BytesIO()
-            pisa_status = pisa.CreatePDF(html_string, dest=result)
+            pisa_status = pisa.CreatePDF(io.BytesIO(html_string.encode('utf-8')), dest=result)
             
             if pisa_status.err:
                 logger.error("PDF generation error occurred in download_pdf (SalesOrderViewSet)")

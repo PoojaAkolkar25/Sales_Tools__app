@@ -240,3 +240,38 @@ class ResourceRequestViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.error(f"Error in issue resource request: {str(e)}", exc_info=True)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'])
+    def download_pdf(self, request, pk=None):
+        try:
+            from django.template.loader import render_to_string
+            from django.http import HttpResponse
+            from xhtml2pdf import pisa
+            import io
+            import os
+            from django.conf import settings
+            from django.utils import timezone
+            
+            req_obj = self.get_object()
+
+            html_string = render_to_string('inventory/resource_request_pdf.html', {
+                'req': req_obj,
+                'now': timezone.now(),
+                'roboto_font_path': os.path.join(settings.BASE_DIR, 'static/fonts/Roboto-Regular.ttf')
+            })
+            
+            result = io.BytesIO()
+            # Encode correctly for UTF-8 Support
+            pdf = pisa.pisaDocument(io.BytesIO(html_string.encode('utf-8')), result)
+            
+            if not pdf.err:
+                response = HttpResponse(result.getvalue(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="{req_obj.form_number}.pdf"'
+                return response
+            else:
+                logger.error("PDF generation errors in Resource Request")
+                return Response({'error': 'PDF generation failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        except Exception as e:
+            logger.error(f"Error in download_pdf (ResourceRequest): {str(e)}", exc_info=True)
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
