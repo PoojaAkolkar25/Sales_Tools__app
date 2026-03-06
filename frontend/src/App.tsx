@@ -286,6 +286,7 @@ const AppContent: React.FC = () => {
   const [editingInventoryId, setEditingInventoryId] = useState<number | null>(null);
   const [initialSoId, setInitialSoId] = useState<number | null>(null);
   const [initialMilestoneId, setInitialMilestoneId] = useState<number | null>(null);
+  const [viewSingleMilestoneId, setViewSingleMilestoneId] = useState<number | null>(null);
 
   // Other UI States
   const [isExtractingSO, setIsExtractingSO] = useState(false);
@@ -1355,7 +1356,11 @@ const AppContent: React.FC = () => {
                   <MilestoneForm
                     id={editingMilestoneId}
                     initialSoId={initialSoId}
-                    onBack={() => setMilestoneView('dashboard')}
+                    viewSingleMilestoneId={viewSingleMilestoneId}
+                    onBack={() => {
+                      setMilestoneView('dashboard');
+                      setViewSingleMilestoneId(null);
+                    }}
                   />
                 ) : (
                   <MilestoneDashboard
@@ -1364,8 +1369,10 @@ const AppContent: React.FC = () => {
                         const soId = parseInt(id.replace('virtual-', ''));
                         setInitialSoId(soId);
                         setEditingMilestoneId(null);
+                        setViewSingleMilestoneId(null);
                       } else {
                         setEditingMilestoneId(id);
+                        setViewSingleMilestoneId(id);
                         setInitialSoId(null);
                       }
                       setMilestoneView('form');
@@ -1373,6 +1380,7 @@ const AppContent: React.FC = () => {
                     onCreate={() => {
                       setEditingMilestoneId(null);
                       setInitialSoId(null);
+                      setViewSingleMilestoneId(null);
                       setMilestoneView('form');
                     }}
                   />
