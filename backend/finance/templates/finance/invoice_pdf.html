@@ -219,14 +219,19 @@
 {% load date_filters %}
 
 <body>
+    {% if invoice.invoice_type == 'USA' %}
+    <div class="header-title">INVOICE</div>
+    {% else %}
     <div class="header-title">TAX INVOICE</div>
+    {% endif %}
 
     <!-- Company and Logo Section -->
     <table class="section-table">
         <tr>
             <td class="company-info">
                 <div class="company-name">{{ company.name|upper }}</div>
-                <div>{{ company.address_line_1 }}{% if company.address_line_2 %}, {{ company.address_line_2 }}{% endif %}</div>
+                <div>{{ company.address_line_1 }}{% if company.address_line_2 %}, {{ company.address_line_2 }}{% endif
+                    %}</div>
                 <div>{{ company.city }}{% if company.pincode %} - {{ company.pincode }}{% endif %}</div>
                 {% if company.gstin %}
                 <div><span class="bold blue">GSTIN/UIN:</span> {{ company.gstin }}</div>
@@ -295,7 +300,8 @@
                 <div class="bold">{{ invoice.deal.customer.name|default:invoice.lead.customer_name }}</div>
                 <div>{{ invoice.deal.customer.address|linebreaksbr|default:invoice.billing_address|linebreaksbr }}</div>
                 {% if invoice.deal.customer.gstin or invoice.customer_gstin %}
-                <div><span class="bold">GSTIN/UIN :</span> {{ invoice.deal.customer.gstin|default:invoice.customer_gstin }}</div>
+                <div><span class="bold">GSTIN/UIN :</span> {{ invoice.deal.customer.gstin|default:invoice.customer_gstin
+                    }}</div>
                 {% endif %}
                 {% if invoice.deal.customer.pan %}
                 <div><span class="bold">PAN/IT No :</span> {{ invoice.deal.customer.pan }}</div>
@@ -309,9 +315,12 @@
             <td class="address-col">
                 <div class="address-title blue">Consignee (Ship to)</div>
                 <div class="bold">{{ invoice.deal.customer.name|default:invoice.lead.customer_name }}</div>
-                <div>{{ invoice.deal.customer.address|linebreaksbr|default:invoice.shipping_address|linebreaksbr|default:invoice.billing_address|linebreaksbr }}</div>
+                <div>{{
+                    invoice.deal.customer.address|linebreaksbr|default:invoice.shipping_address|linebreaksbr|default:invoice.billing_address|linebreaksbr
+                    }}</div>
                 {% if invoice.deal.customer.gstin or invoice.customer_gstin %}
-                <div><span class="bold">GSTIN/UIN :</span> {{ invoice.deal.customer.gstin|default:invoice.customer_gstin }}</div>
+                <div><span class="bold">GSTIN/UIN :</span> {{ invoice.deal.customer.gstin|default:invoice.customer_gstin
+                    }}</div>
                 {% endif %}
                 {% if invoice.deal.customer.pan %}
                 <div><span class="bold">PAN/IT No :</span> {{ invoice.deal.customer.pan }}</div>
@@ -367,39 +376,53 @@
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
                         <td style="text-align: right; padding-right: 10px;">SUBTOTAL</td>
-                        <td style="text-align: right; font-weight: bold; width: 100px;">{{ currency_symbol }} {{ invoice.subtotal|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold; width: 100px;">{{ currency_symbol }} {{
+                            invoice.subtotal|floatformat:2 }}</td>
                     </tr>
                     {% if invoice.invoice_type == 'DOMESTIC' %}
-                    {% for item in items %}
-                    {% if item.cgst_amount > 0 %}
+                    {# Aggregate CGST and SGST across all line items #}
+                    {% with total_cgst=invoice.line_items.all|sum_cgst total_sgst=invoice.line_items.all|sum_sgst %}
                     <tr>
-                        <td style="text-align: right; padding-right: 10px; color: #003399;">CGST {{ item.cgst_rate }}%
-                        </td>
-                        <td style="text-align: right;">{{ currency_symbol }} {{ item.cgst_amount|floatformat:2 }}</td>
+                        <td style="text-align: right; padding-right: 10px; color: #003399;">CGST 9%</td>
+                        <td style="text-align: right;">{{ currency_symbol }} {{ total_cgst|floatformat:2 }}</td>
                     </tr>
                     <tr>
-                        <td style="text-align: right; padding-right: 10px; color: #003399;">SGST {{ item.sgst_rate }}%
-                        </td>
-                        <td style="text-align: right;">{{ currency_symbol }} {{ item.sgst_amount|floatformat:2 }}</td>
+                        <td style="text-align: right; padding-right: 10px; color: #003399;">SGST 9%</td>
+                        <td style="text-align: right;">{{ currency_symbol }} {{ total_sgst|floatformat:2 }}</td>
                     </tr>
-                    {% endif %}
-                    {% endfor %}
+                    <tr>
+                        <td style="text-align: right; padding-right: 10px; color: #003399;">TOTAL GST</td>
+                        <td style="text-align: right;">{{ currency_symbol }} {{ invoice.total_tax|floatformat:2 }}</td>
+                    </tr>
+                    {% endwith %}
                     {% elif invoice.invoice_type == 'INTER_STATE' %}
                     {% if invoice.total_tax > 0 %}
                     <tr>
-                        <td style="text-align: right; padding-right: 10px; color: #003399;">IGST</td>
+                        <td style="text-align: right; padding-right: 10px; color: #003399;">IGST 18%</td>
                         <td style="text-align: right;">{{ currency_symbol }} {{ invoice.total_tax|floatformat:2 }}</td>
                     </tr>
                     {% else %}
                     <tr>
                         <td style="text-align: right; padding-right: 10px; color: #003399;">IGST 0%</td>
-                        <td style="text-align: right;">{{ currency_symbol }} 0</td>
+                        <td style="text-align: right;">{{ currency_symbol }} 0.00</td>
                     </tr>
                     {% endif %}
+                    {% elif invoice.invoice_type == 'EXPORT' %}
+                    <tr>
+                        <td style="text-align: right; padding-right: 10px; color: #003399;">IGST 0%</td>
+                        <td style="text-align: right;">{{ currency_symbol }} 0.00</td>
+                    </tr>
+                    {% elif invoice.invoice_type == 'USA' %}
+                    <tr>
+                        <td style="text-align: right; padding-right: 10px; color: #003399;">TAX</td>
+                        <td style="text-align: right;">{{ currency_symbol }} {% if invoice.sales_tax_amount %}{{
+                            invoice.sales_tax_amount|floatformat:2 }}{% else %}0{% endif %}</td>
+                    </tr>
                     {% endif %}
                     <tr style="border-top: 1px dashed #003399;">
                         <td class="bold" style="text-align: right; padding-right: 10px; padding-top: 5px;">TOTAL</td>
-                        <td class="bold" style="text-align: right; padding-top: 5px; font-size: 11pt;">{{ currency_symbol }} {{ invoice.total_amount|floatformat:2 }}</td>
+                        <td class="bold" style="text-align: right; padding-top: 5px; font-size: 11pt;">{{
+                            currency_symbol }} {{ invoice.total_amount|floatformat:2 }}</td>
                     </tr>
                 </table>
             </td>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Trash2, CheckCircle, Eye, Plus, Check, Pencil, RotateCcw, XCircle, X } from 'lucide-react';
+import { Save, Trash2, CheckCircle, Eye, Plus, Pencil, RotateCcw, XCircle, X } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { formatToAppDate } from '../utils/dateUtils';
@@ -15,6 +15,13 @@ interface LineItem {
     discount: number;
     gst_rate: number;
 }
+
+const GST_TYPE_LABELS: Record<string, string> = {
+    'CGST_SGST_9': 'Domestic (CGST/SGST 9%)',
+    'IGST_18': 'Inter-State (IGST 18%)',
+    'IGST_0_SEZ': 'SEZ (IGST 0%)',
+    'IGST_0_EXPORT': 'Export (IGST 0%)'
+};
 
 const InvoiceForm: React.FC<{
     onBack: () => void,
@@ -64,6 +71,8 @@ const InvoiceForm: React.FC<{
         po_number: '',
         po_date: '',
         payment_terms_days: 30,
+        gst_customer_type: 'CGST_SGST_9',
+        currency_symbol: '₹',
         memo: ''
     });
 
@@ -106,7 +115,7 @@ const InvoiceForm: React.FC<{
     }, [lineItems, formData.invoice_type, formData.customer_state, formData.is_gst_applicable]);
 
 
-    const handleSubmitForApproval = async () => {
+    const handleFinalise = async () => {
         if (!invoiceId) {
             showNotification('Please save the invoice as draft first', 'warning');
             return;
@@ -114,27 +123,12 @@ const InvoiceForm: React.FC<{
 
         try {
             setLoading(true);
-            await api.post(`/finance/invoices/${invoiceId}/submit_for_approval/`);
-            showNotification('Invoice submitted for approval', 'success');
+            await api.post(`/finance/invoices/${invoiceId}/finalise/`);
+            showNotification('Invoice finalised successfully', 'success');
             fetchInvoiceDetails();
         } catch (error) {
-            console.error('Error submitting for approval', error);
-            showNotification('Error submitting for approval', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleApprove = async () => {
-        if (!invoiceId) return;
-        try {
-            setLoading(true);
-            await api.post(`/finance/invoices/${invoiceId}/approve/`);
-            showNotification('Invoice approved successfully', 'success');
-            fetchInvoiceDetails();
-        } catch (error) {
-            console.error('Error approving invoice', error);
-            showNotification('Error approving invoice', 'error');
+            console.error('Error finalising invoice', error);
+            showNotification('Error finalising invoice', 'error');
         } finally {
             setLoading(false);
         }
@@ -223,9 +217,11 @@ const InvoiceForm: React.FC<{
                 currency: so.currency || prev.currency,
                 billing_address: so.billing_address || cp?.address_line_1 || (lead ? lead.address : prev.billing_address),
                 shipping_address: so.shipping_address || cp?.address_line_1 || (lead ? lead.address : prev.shipping_address),
-                po_number: so.po_number || prev.po_number,
-                po_date: so.po_date || prev.po_date,
-                milestone: initialMilestoneId ? initialMilestoneId.toString() : prev.milestone
+                po_number: so.po_number || '',
+                po_date: so.po_date || '',
+                milestone: initialMilestoneId ? initialMilestoneId.toString() : prev.milestone,
+                gst_customer_type: cp?.gst_customer_type || lead?.gst_customer_type || prev.gst_customer_type,
+                currency_symbol: cp?.currency_symbol || (so.currency === 'INR' ? '₹' : (cp?.currency_symbol || prev.currency_symbol))
             }));
 
             try {
@@ -283,6 +279,8 @@ const InvoiceForm: React.FC<{
                 payment_terms_days: inv.payment_terms_days || 30,
                 po_number: inv.po_number || '',
                 po_date: inv.po_date || '',
+                gst_customer_type: inv.lead_details?.gst_customer_type || inv.gst_customer_type || 'CGST_SGST_9',
+                currency_symbol: inv.currency_symbol || (inv.currency === 'INR' ? '₹' : '$'),
                 memo: inv.memo || ''
             });
 
@@ -329,6 +327,9 @@ const InvoiceForm: React.FC<{
                 customer_state: cp?.state?.toString() || prev.customer_state,
                 billing_address: cp?.address_line_1 || lead.address || prev.billing_address,
                 shipping_address: cp?.address_line_1 || lead.address || prev.shipping_address,
+                gst_customer_type: cp?.gst_customer_type || lead.gst_customer_type || prev.gst_customer_type,
+                currency: cp?.base_currency || prev.currency,
+                currency_symbol: cp?.currency_symbol || (prev.currency === 'INR' ? '₹' : '$'),
                 // Clear SO/Milestone if customer changes
                 sales_order: '',
                 milestone: ''
@@ -369,9 +370,11 @@ const InvoiceForm: React.FC<{
                             customer_state: cp?.state?.toString() || prev.customer_state,
                             billing_address: so.billing_address || cp?.address_line_1 || lead.address || prev.billing_address,
                             shipping_address: so.shipping_address || cp?.address_line_1 || lead.address || prev.shipping_address,
-                            po_number: so.po_number || prev.po_number,
-                            po_date: so.po_date || prev.po_date,
-                            currency: so.currency || prev.currency
+                            po_number: so.po_number || '',
+                            po_date: so.po_date || '',
+                            currency: so.currency || prev.currency,
+                            currency_symbol: cp?.currency_symbol || (so.currency === 'INR' ? '₹' : (cp?.currency_symbol || prev.currency_symbol)),
+                            gst_customer_type: cp?.gst_customer_type || lead.gst_customer_type || prev.gst_customer_type
                         }));
                     }
                 }
@@ -397,8 +400,10 @@ const InvoiceForm: React.FC<{
                 currency: so.currency || prev.currency,
                 billing_address: so.billing_address || cp?.address_line_1 || (lead ? lead.address : prev.billing_address),
                 shipping_address: so.shipping_address || cp?.address_line_1 || (lead ? lead.address : prev.shipping_address),
-                po_number: so.po_number || prev.po_number,
-                po_date: so.po_date || prev.po_date,
+                po_number: so.po_number || '',
+                po_date: so.po_date || '',
+                gst_customer_type: cp?.gst_customer_type || lead?.gst_customer_type || prev.gst_customer_type,
+                currency_symbol: cp?.currency_symbol || (so.currency === 'INR' ? '₹' : (cp?.currency_symbol || prev.currency_symbol))
             }));
 
             // Fetch milestones for this sales order
@@ -659,56 +664,28 @@ const InvoiceForm: React.FC<{
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Place of Supply (State)</label>
-                            <select className="ae-input" required disabled={isReadOnly} value={formData.customer_state} onChange={e => setFormData({ ...formData, customer_state: e.target.value })}>
-                                <option value="">Select State</option>
-                                {states.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
-                            </select>
+                            <input
+                                type="text"
+                                className="ae-input"
+                                disabled
+                                value={states.find(s => s.id.toString() === formData.customer_state.toString())?.name || 'Not Set'}
+                                style={{ background: '#f8fafc' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>GST Customer Type</label>
+                            <input
+                                type="text"
+                                className="ae-input"
+                                disabled
+                                value={GST_TYPE_LABELS[formData.gst_customer_type] || formData.gst_customer_type || 'Domestic'}
+                                style={{ background: '#f8fafc' }}
+                            />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer GSTIN</label>
                             <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
                                 {formData.customer_gstin || 'Not Provided'}
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Tax Configuration</label>
-                            <div
-                                onClick={() => !isReadOnly && setFormData({ ...formData, is_gst_applicable: !formData.is_gst_applicable })}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    cursor: isReadOnly ? 'not-allowed' : 'pointer',
-                                    background: '#F8FAFC',
-                                    padding: '0 16px',
-                                    height: '38px',
-                                    borderRadius: '8px',
-                                    border: '1px solid #E2E8F0',
-                                    width: '100%',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <div style={{
-                                    width: '18px',
-                                    height: '18px',
-                                    borderRadius: '4px',
-                                    border: `2px solid ${formData.is_gst_applicable ? 'var(--ae-blue)' : '#CBD5E1'}`,
-                                    background: formData.is_gst_applicable ? 'var(--ae-blue)' : 'white',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transition: 'all 0.2s',
-                                    flexShrink: 0
-                                }}>
-                                    {formData.is_gst_applicable && <Check size={12} color="white" strokeWidth={4} />}
-                                </div>
-                                <span style={{
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    color: formData.is_gst_applicable ? 'var(--ae-blue)' : '#64748B'
-                                }}>
-                                    GST Applicable
-                                </span>
                             </div>
                         </div>
                         {formData.invoice_type === 'USA' && (
@@ -732,6 +709,26 @@ const InvoiceForm: React.FC<{
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Date</label>
                             <input type="text" className="ae-input" disabled value={formatToAppDate(formData.po_date)} style={{ background: '#f8fafc' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 2' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Billing Address</label>
+                            <AutoExpandingTextarea
+                                className="ae-input"
+                                disabled={isReadOnly}
+                                value={formData.billing_address}
+                                onChange={e => setFormData({ ...formData, billing_address: e.target.value })}
+                                placeholder="Billing Address"
+                            />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 2' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Shipping Address</label>
+                            <AutoExpandingTextarea
+                                className="ae-input"
+                                disabled={isReadOnly}
+                                value={formData.shipping_address}
+                                onChange={e => setFormData({ ...formData, shipping_address: e.target.value })}
+                                placeholder="Shipping Address"
+                            />
                         </div>
                     </div>
                 </div>
@@ -999,7 +996,7 @@ const InvoiceForm: React.FC<{
                                         </td>
                                         <td style={{ textAlign: 'center', padding: '8px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', position: 'relative' }}>
-                                                <span style={{ position: 'absolute', left: '12px', color: '#718096', fontSize: '0.85rem' }}>{formData.currency === 'INR' ? '₹' : '$'}</span>
+                                                <span style={{ position: 'absolute', left: '12px', color: '#718096', fontSize: '0.85rem' }}>{formData.currency_symbol}</span>
                                                 <input
                                                     type="number"
                                                     disabled={isReadOnly}
@@ -1027,7 +1024,7 @@ const InvoiceForm: React.FC<{
                                             />
                                         </td>
                                         <td style={{ textAlign: 'right', fontWeight: 700, color: '#1a1f36', paddingRight: '12px', fontSize: '0.9rem' }}>
-                                            {formData.currency === 'INR' ? '₹' : '$'}
+                                            {formData.currency_symbol}
                                             {(() => {
                                                 const qty = Number(item.quantity) || 0;
                                                 const rate = Number(item.rate) || 0;
@@ -1051,7 +1048,7 @@ const InvoiceForm: React.FC<{
                                 <tr style={{ background: 'var(--bg-accent)', borderTop: '1px solid #E0E6ED' }}>
                                     <td colSpan={8} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Invoice Value:</td>
                                     <td style={{ padding: '8px 16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-                                        <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{formData.currency === 'INR' ? '₹' : '$'}</span>
+                                        <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{formData.currency_symbol}</span>
                                         {totals.grand_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </td>
                                     <td></td>
@@ -1148,7 +1145,7 @@ const InvoiceForm: React.FC<{
                     <div style={{ background: '#F8FAFC', padding: '24px', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                             <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>Subtotal</span>
-                            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1A202C' }}>{formData.currency} {totals.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1A202C' }}>{formData.currency_symbol} {totals.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
                         {totals.total_tax > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -1164,7 +1161,7 @@ const InvoiceForm: React.FC<{
                         )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', paddingTop: '12px', borderTop: '1px solid #E2E8F0' }}>
                             <span style={{ fontSize: '1rem', fontWeight: 800, color: '#1A202C' }}>Grand Total</span>
-                            <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--theme-primary)' }}>{formData.currency} {totals.grand_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--theme-primary)' }}>{formData.currency_symbol} {totals.grand_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
                     </div>
                 </div>
@@ -1263,10 +1260,10 @@ const InvoiceForm: React.FC<{
                                 <Save size={16} /> <span>{loading ? 'Saving...' : 'Save Draft'}</span>
                             </button>
 
-                            {/* Submit for Approval */}
+                            {/* Finalise Invoice */}
                             <button
                                 type="button"
-                                onClick={handleSubmitForApproval}
+                                onClick={handleFinalise}
                                 disabled={loading}
                                 style={{
                                     display: 'flex',
@@ -1295,39 +1292,13 @@ const InvoiceForm: React.FC<{
                                     }
                                 }}
                             >
-                                <CheckCircle size={16} /> <span>{loading ? 'Submitting...' : 'Submit for Approval'}</span>
+                                <CheckCircle size={16} /> <span>{loading ? 'Finalising...' : 'Finalise Invoice'}</span>
                             </button>
                         </>
                     )}
 
-                    {status === 'PENDING_APPROVAL' && (
+                    {status === 'FINALISED' && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <button
-                                type="button"
-                                onClick={handleApprove}
-                                disabled={loading}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '6px 16px',
-                                    height: '32px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    background: activeAction === 'approve' ? '#00ad48' : '#00C853',
-                                    color: 'white',
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer',
-                                    boxShadow: activeAction === 'approve' ? '0 4px 12px rgba(0, 200, 83, 0.3)' : '0 2px 8px rgba(0, 200, 83, 0.2)'
-                                }}
-                                onMouseEnter={() => setActiveAction('approve')}
-                                onMouseLeave={() => setActiveAction(null)}
-                            >
-                                <CheckCircle size={16} />
-                                <span>Approve</span>
-                            </button>
 
                             <button
                                 type="button"

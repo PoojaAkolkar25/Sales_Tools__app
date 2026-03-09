@@ -78,6 +78,12 @@ class CustomerType(models.TextChoices):
     PARTNER = 'PARTNER', 'Partner'
     CUSTOMER = 'CUSTOMER', 'Customer'
 
+class GSTCustomerType(models.TextChoices):
+    CGST_SGST_9 = 'CGST_SGST_9', 'CGST - Rate 9% & SGST - Rate 9%'
+    IGST_18 = 'IGST_18', 'IGST - Rate 18%'
+    IGST_0_SEZ = 'IGST_0_SEZ', 'IGST - Rate 0% (SEZ)'
+    IGST_0_EXPORT = 'IGST_0_EXPORT', 'IGST - Rate 0% (Export)'
+
 class Customer(models.Model):
     name = models.CharField(max_length=255, unique=True)
     alias_name = models.CharField(max_length=255, blank=True, null=True)
@@ -92,6 +98,15 @@ class Customer(models.Model):
     state = models.CharField(max_length=100, blank=True, default='')
     state_code = models.CharField(max_length=10, blank=True, default='')
     currency = models.CharField(max_length=10, choices=Currency.choices, default=Currency.INR, blank=True)
+    
+    # GST Classification for invoice type auto-detection (India only)
+    gst_customer_type = models.CharField(
+        max_length=20, 
+        choices=GSTCustomerType.choices, 
+        default=GSTCustomerType.CGST_SGST_9,
+        verbose_name="GST Customer Type",
+        help_text="Determines tax type: Domestic (CGST/SGST or IGST), SEZ (IGST 0%), Export (IGST 0%)"
+    )
     
     # Restoring missing fields required by database/migrations
     customer_id = models.CharField(max_length=50, blank=True, null=True)

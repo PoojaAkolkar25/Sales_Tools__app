@@ -9,9 +9,10 @@ interface MilestoneFormProps {
     onBack: () => void;
     id?: number | null;
     initialSoId?: number | null;
+    viewSingleMilestoneId?: number | null; // When set: show only this milestone (view mode)
 }
 
-const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }) => {
+const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, viewSingleMilestoneId }) => {
     const [customers, setCustomers] = useState<any[]>([]);
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -125,21 +126,31 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
                     setSalesOrders(soResponse.data);
 
                     const so = soResponse.data.find((s: any) => s.id === ms.sales_order);
-                    setSelectedSO(so || ms.sales_order_details); // Use details if not in list
+                    setSelectedSO(so || ms.sales_order_details);
 
-                    // Always fetch all milestones for this SO to avoid hidden duplicates
+                    // Decide which milestones to show
                     try {
-                        const allMsRes = await api.get(`/milestones/?sales_order=${ms.sales_order}`);
-                        const totalAmt = so ? parseFloat(so.total_amount) : parseFloat(ms.sales_order_details.total_amount);
-
-                        const allMs = allMsRes.data.map((m: any) => ({
-                            ...m,
-                            percentage: totalAmt > 0 ? (parseFloat(m.amount) / totalAmt * 100).toFixed(2) : "0.00"
-                        }));
-                        setMilestones(allMs);
+                        if (viewSingleMilestoneId) {
+                            // View-only: show only the clicked milestone
+                            const totalAmt = so ? parseFloat(so.total_amount) : parseFloat(ms.sales_order_details.total_amount);
+                            setMilestones([{
+                                ...ms,
+                                percentage: totalAmt > 0
+                                    ? (parseFloat(ms.amount) / totalAmt * 100).toFixed(2)
+                                    : "0.00"
+                            }]);
+                        } else {
+                            // Edit mode: load all milestones for this SO
+                            const allMsRes = await api.get(`/milestones/?sales_order=${ms.sales_order}`);
+                            const totalAmt = so ? parseFloat(so.total_amount) : parseFloat(ms.sales_order_details.total_amount);
+                            const allMs = allMsRes.data.map((m: any) => ({
+                                ...m,
+                                percentage: totalAmt > 0 ? (parseFloat(m.amount) / totalAmt * 100).toFixed(2) : "0.00"
+                            }));
+                            setMilestones(allMs);
+                        }
                     } catch (err) {
-                        console.error('Error fetching all milestones', err);
-                        // Fallback to just the current one if bulk fetch fails
+                        console.error('Error fetching milestones', err);
                         setMilestones([{
                             ...ms,
                             percentage: ms.sales_order_details.total_amount > 0
@@ -327,7 +338,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
                             borderRadius: '2px'
                         }}></span>
                         <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', margin: 0 }}>
-                            {id ? 'View / Edit Milestone Plan' : 'Create New Milestone Plan'}
+                            {viewSingleMilestoneId ? 'View Milestone' : (id ? 'View / Edit Milestone Plan' : 'Create New Milestone Plan')}
                         </h2>
                     </div>
 
@@ -345,6 +356,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
                                 value={selectedCustomer?.id?.toString() || ''}
                                 onChange={handleCustomerChange}
                                 placeholder="Select Customer..."
+                                disabled={!!viewSingleMilestoneId || loading}
                             />
                         </div>
 
@@ -360,7 +372,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
                                 value={selectedSO?.id?.toString() || ''}
                                 onChange={handleSOChange}
                                 placeholder={loading ? 'Loading...' : 'Select Sales Order...'}
-                                disabled={!selectedCustomer || loading}
+                                disabled={!!viewSingleMilestoneId || !selectedCustomer || loading}
                             />
                         </div>
                     </div>
@@ -454,10 +466,11 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
                                 <tbody>
                                     {milestones.map((milestone, index) => {
                                         const isInvoiced = milestone.status === 'INVOICED';
+                                        const isDisabled = isInvoiced || !!viewSingleMilestoneId;
                                         return (
                                             <tr key={milestone.id || index} style={{ borderBottom: '1px solid var(--border-primary)' }}>
                                                 <td style={{ padding: '8px', textAlign: 'center' }}>
-                                                    {index === milestones.length - 1 && (
+                                                    {index === milestones.length - 1 && !viewSingleMilestoneId && (
                                                         <button
                                                             type="button"
                                                             onClick={handleAddMilestone}
@@ -495,12 +508,12 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
                                                     <textarea
                                                         value={milestone.description}
                                                         onChange={(e) => handleMilestoneChange(index, 'description', e.target.value)}
-                                                        disabled={isInvoiced}
+                                                        disabled={isDisabled}
                                                         className="ae-input"
                                                         style={{
                                                             width: '100%', height: '48px', padding: '8px 12px', border: '1px solid #E2E8F0',
                                                             borderRadius: '6px', fontSize: '0.75rem', resize: 'none',
-                                                            opacity: isInvoiced ? 0.7 : 1
+                                                            opacity: isDisabled ? 0.7 : 1
                                                         }}
                                                         rows={1}
                                                     />
@@ -511,18 +524,18 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
                                                             type="text"
                                                             value={formatToAppDate(milestone.due_date || '')}
                                                             readOnly
-                                                            disabled={isInvoiced}
+                                                            disabled={isDisabled}
                                                             style={{
                                                                 width: '100%', padding: '6px 8px', paddingRight: '28px', border: '1px solid #E2E8F0',
                                                                 borderRadius: '6px', fontSize: '0.75rem',
-                                                                opacity: isInvoiced ? 0.7 : 1,
+                                                                opacity: isDisabled ? 0.7 : 1,
                                                                 color: 'var(--text-primary)',
-                                                                background: isInvoiced ? '#F8FAFC' : 'white',
-                                                                cursor: isInvoiced ? 'not-allowed' : 'pointer',
+                                                                background: isDisabled ? '#F8FAFC' : 'white',
+                                                                cursor: isDisabled ? 'not-allowed' : 'pointer',
                                                                 minHeight: '30px'
                                                             }}
                                                             onClick={(e) => {
-                                                                if (!isInvoiced) {
+                                                                if (!isDisabled) {
                                                                     const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
                                                                     if (dateInput) dateInput.showPicker();
                                                                 }
@@ -533,13 +546,13 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
                                                             type="date"
                                                             value={milestone.due_date || ''}
                                                             onChange={(e) => handleMilestoneChange(index, 'due_date', e.target.value)}
-                                                            disabled={isInvoiced}
+                                                            disabled={isDisabled}
                                                             style={{
                                                                 position: 'absolute',
                                                                 width: '100%',
                                                                 height: '100%',
                                                                 opacity: 0,
-                                                                cursor: isInvoiced ? 'not-allowed' : 'pointer',
+                                                                cursor: isDisabled ? 'not-allowed' : 'pointer',
                                                                 zIndex: 1,
                                                                 left: 0,
                                                                 top: 0
@@ -553,12 +566,12 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
                                                         type="number"
                                                         value={milestone.percentage || ''}
                                                         onChange={(e) => handleMilestoneChange(index, 'percentage', e.target.value)}
-                                                        disabled={isInvoiced}
+                                                        disabled={isDisabled}
                                                         style={{
                                                             width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
                                                             borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700,
                                                             textAlign: 'center', color: 'var(--text-secondary)',
-                                                            opacity: isInvoiced ? 0.7 : 1
+                                                            opacity: isDisabled ? 0.7 : 1
                                                         }}
                                                     />
                                                 </td>
@@ -569,18 +582,18 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
                                                             type="number"
                                                             value={milestone.amount || ''}
                                                             onChange={(e) => handleMilestoneChange(index, 'amount', e.target.value)}
-                                                            disabled={isInvoiced}
+                                                            disabled={isDisabled}
                                                             style={{
                                                                 width: '100%', padding: '6px 8px 6px 24px', border: '1px solid #E2E8F0',
                                                                 borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800,
                                                                 textAlign: 'right',
-                                                                opacity: isInvoiced ? 0.7 : 1
+                                                                opacity: isDisabled ? 0.7 : 1
                                                             }}
                                                         />
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '8px', textAlign: 'center' }}>
-                                                    {milestones.length > 1 && !isInvoiced && (
+                                                    {milestones.length > 1 && !isDisabled && (
                                                         <button
                                                             onClick={() => handleRemoveMilestone(index)}
                                                             style={{
@@ -643,77 +656,114 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId }
                 )}
             </div>
 
-            {/* Footer Actions */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'white',
-                padding: '8px',
-                borderRadius: '12px',
-                border: '1px solid #E0E6ED',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
-                width: 'fit-content',
-                marginLeft: 'auto',
-                marginBottom: '20px'
-            }}>
-                <button
-                    onClick={handleSave}
-                    disabled={saving || !selectedSO}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: (saving || !selectedSO) ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s',
-                        background: activeAction === 'save' ? 'var(--theme-primary)' : 'transparent',
-                        color: activeAction === 'save' ? 'white' : 'var(--text-secondary)',
-                        boxShadow: activeAction === 'save' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                    }}
-                    onMouseEnter={() => setActiveAction('save')}
-                    onMouseLeave={() => setActiveAction(null)}
-                >
-                    {saving ? <Clock className="animate-spin" size={16} /> : <Save size={16} />}
-                    <span>Save Milestone</span>
-                </button>
+            {/* Single Milestone View Banner */}
+            {viewSingleMilestoneId && milestones.length > 0 && (
+                <div style={{
+                    marginBottom: '20px',
+                    padding: '12px 16px',
+                    background: '#EBF5FF',
+                    border: '1px solid #BFDBFE',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    color: '#1E40AF'
+                }}>
+                    <Clock size={18} />
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                        Viewing specific Milestone {milestones[0].milestone_no || ''} for Sales Order {selectedSO?.so_number || ''}
+                    </span>
+                    <button
+                        onClick={onBack}
+                        style={{
+                            marginLeft: 'auto',
+                            background: 'white',
+                            border: '1px solid #BFDBFE',
+                            padding: '4px 12px',
+                            borderRadius: '4px',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            color: '#1E40AF'
+                        }}
+                    >
+                        View All
+                    </button>
+                </div>
+            )}
 
-                <button
-                    onClick={() => {
-                        showConfirm({
-                            title: 'Are you sure you want to exit?',
-                            onConfirm: () => onBack(),
-                            onCancel: () => { }
-                        });
-                    }}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 16px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: activeAction === 'cancel' ? 'var(--theme-primary)' : 'transparent',
-                        color: activeAction === 'cancel' ? 'white' : 'var(--text-secondary)',
-                        boxShadow: activeAction === 'cancel' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                    }}
-                    onMouseEnter={() => setActiveAction('cancel')}
-                    onMouseLeave={() => setActiveAction(null)}
-                >
-                    <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
-                    <span>Cancel</span>
-                </button>
-            </div>
+            {/* Footer Actions */}
+            {!viewSingleMilestoneId && (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'white',
+                    padding: '8px',
+                    borderRadius: '12px',
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                    width: 'fit-content',
+                    marginLeft: 'auto',
+                    marginBottom: '20px'
+                }}>
+                    <button
+                        onClick={handleSave}
+                        disabled={saving || !selectedSO}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: (saving || !selectedSO) ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s',
+                            background: activeAction === 'save' ? 'var(--theme-primary)' : 'transparent',
+                            color: activeAction === 'save' ? 'white' : 'var(--text-secondary)',
+                            boxShadow: activeAction === 'save' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={() => setActiveAction('save')}
+                        onMouseLeave={() => setActiveAction(null)}
+                    >
+                        {saving ? <Clock className="animate-spin" size={16} /> : <Save size={16} />}
+                        <span>Save Milestone</span>
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            showConfirm({
+                                title: 'Are you sure you want to exit?',
+                                onConfirm: () => onBack(),
+                                onCancel: () => { }
+                            });
+                        }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: activeAction === 'cancel' ? 'var(--theme-primary)' : 'transparent',
+                            color: activeAction === 'cancel' ? 'white' : 'var(--text-secondary)',
+                            boxShadow: activeAction === 'cancel' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={() => setActiveAction('cancel')}
+                        onMouseLeave={() => setActiveAction(null)}
+                    >
+                        <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
+                        <span>Cancel</span>
+                    </button>
+                </div>
+            )}
 
 
         </div >

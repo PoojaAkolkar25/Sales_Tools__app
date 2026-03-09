@@ -36,6 +36,12 @@ class InvoiceService:
     def calculate_taxes(invoice_data, line_items, company_profile=None):
         """
         Logic to determine invoice type and calculate tax amounts.
+        Invoice types:
+          - DOMESTIC: Same state as AE India -> CGST 9% + SGST 9%
+          - INTER_STATE: Different state -> IGST 18%
+          - EXPORT: Export customer -> IGST 0%
+          - SEZ: SEZ Unit customer -> IGST 0% (mapped as INTER_STATE with 0 rate)
+          - USA: Non-GST invoice
         """
         if not company_profile:
             company_profile = CompanyProfile.objects.first()
@@ -46,37 +52,54 @@ class InvoiceService:
         is_gst_applicable = invoice_data.get('is_gst_applicable', True)
         
         invoice_type = InvoiceType.DOMESTIC
+        gst_override_zero = False  # For SEZ/Export: same structure as IGST but 0%
         
         if not is_gst_applicable:
-             invoice_type = InvoiceType.USA # Or a generic Non-GST type if we had one, but USA fits the BRD for Non-GST
+             invoice_type = InvoiceType.USA
         else:
-            country_name = "India" # Default
+            country_name = "India"  # Default
+            gst_customer_type = 'DOMESTIC'  # Default
+            
             if deal_id:
                 from deals.models import Deal
-                deal = Deal.objects.filter(id=deal_id).first()
+                deal = Deal.objects.filter(id=deal_id).select_related('customer').first()
                 if deal:
-                    # Try getting country from deal attribute if it exists
+                    # Get gst_customer_type from deal's customer
+                    if deal.customer:
+                        gst_customer_type = getattr(deal.customer, 'gst_customer_type', 'DOMESTIC') or 'DOMESTIC'
+                    
                     deal_country = getattr(deal, 'country', None)
                     if deal_country:
                         if hasattr(deal_country, 'name'):
                             country_name = deal_country.name
                         else:
                             country_name = str(deal_country)
-                    # Fallback to company field logic
                     elif getattr(deal, 'company', '') == 'AE USA':
                         country_name = 'USA'
             
             if country_name.lower() == 'usa':
                 invoice_type = InvoiceType.USA
-            elif country_name.lower() != 'india':
+            elif gst_customer_type in ('EXPORT', 'IGST_0_EXPORT') or country_name.lower() not in ('india', ''):
                 invoice_type = InvoiceType.EXPORT
+            elif gst_customer_type in ('SEZ', 'IGST_0_SEZ'):
+                # SEZ uses IGST 0% — map to INTER_STATE but override rate to 0
+                invoice_type = InvoiceType.INTER_STATE
+                gst_override_zero = True
+            elif gst_customer_type == 'IGST_18':
+                invoice_type = InvoiceType.INTER_STATE
+            elif gst_customer_type == 'CGST_SGST_9':
+                invoice_type = InvoiceType.DOMESTIC
             elif customer_state_id:
-                customer_state = StateMaster.objects.get(id=customer_state_id)
-                if company_profile and company_profile.state:
-                    if customer_state.id != company_profile.state.id:
-                        invoice_type = InvoiceType.INTER_STATE
-                    else:
-                        invoice_type = InvoiceType.DOMESTIC
+                try:
+                    customer_state = StateMaster.objects.get(id=customer_state_id)
+                    if company_profile and company_profile.state:
+                        if customer_state.id != company_profile.state.id:
+                            invoice_type = InvoiceType.INTER_STATE
+                        else:
+                            invoice_type = InvoiceType.DOMESTIC
+                except StateMaster.DoesNotExist:
+                    pass
+
         
         # Calculate totals
         subtotal = 0
@@ -104,12 +127,17 @@ class InvoiceService:
                 cgst_amount = round(taxable_value * (cgst_rate / 100), 2)
                 sgst_amount = round(taxable_value * (sgst_rate / 100), 2)
             elif invoice_type == InvoiceType.INTER_STATE:
-                igst_rate = gst_rate
-                igst_amount = round(taxable_value * (igst_rate / 100), 2)
+                if gst_override_zero:
+                    # SEZ: IGST 0%
+                    igst_rate = 0
+                    igst_amount = 0
+                else:
+                    igst_rate = gst_rate
+                    igst_amount = round(taxable_value * (igst_rate / 100), 2)
             elif invoice_type == InvoiceType.EXPORT:
-                pass # Zero Rated
+                pass  # Zero Rated, no tax
             elif invoice_type == InvoiceType.USA:
-                pass # Non-GST, but handle optional sales tax below
+                pass  # Non-GST, handle optional sales tax below
                 
             line_total = taxable_value + cgst_amount + sgst_amount + igst_amount
             
