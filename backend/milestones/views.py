@@ -16,6 +16,8 @@ from django.http import HttpResponse
 from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
+from .services import MilestoneService
+from finance.serializers import InvoiceSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -227,6 +229,68 @@ class MilestoneViewSet(viewsets.ModelViewSet):
         if new_total > Decimal(str(so.total_amount)):
             return f"Total milestones amount ({new_total}) exceeds Sales Order value ({so.total_amount})"
         return None
+
+    @action(detail=False, methods=['get'])
+    def categorized(self, request):
+        """Return milestones bifurcated into categories:
+        - yet_to_due: due date > today + 5 days
+        - due_1_5days: due date > today and <= today+5 days
+        - due: due today or past due
+        - billed: already invoiced milestones
+        - all: all milestones from applied filters
+        """
+        try:
+            queryset = self._apply_filters(request)
+            today = timezone.now().date()
+            soon_cutoff = today + timedelta(days=5)
+
+            yet_to_due = []
+            due_1_5days = []
+            due = []
+            billed = []
+
+            for m in queryset:
+                # billed/invoiced first
+                if m.invoice or m.status == MilestoneStatus.INVOICED:
+                    billed.append(m)
+                    continue
+
+                if m.due_date and m.due_date > soon_cutoff:
+                    yet_to_due.append(m)
+                elif m.due_date and m.due_date > today and m.due_date <= soon_cutoff:
+                    due_1_5days.append(m)
+                else:
+                    # due today or overdue
+                    due.append(m)
+
+            data = {
+                'yet_to_due': MilestoneSerializer(yet_to_due, many=True, context={'request': request}).data,
+                'due_1_5days': MilestoneSerializer(due_1_5days, many=True, context={'request': request}).data,
+                'due': MilestoneSerializer(due, many=True, context={'request': request}).data,
+                'billed': MilestoneSerializer(billed, many=True, context={'request': request}).data,
+                'all': MilestoneSerializer(queryset, many=True, context={'request': request}).data,
+            }
+            return Response(data)
+        except Exception as e:
+            logger.error(f"Error in categorized: {str(e)}", exc_info=True)
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def issue_invoice(self, request, pk=None):
+        """Trigger invoice creation for a single milestone (manual 'Issue invoice')."""
+        try:
+            milestone = self.get_object()
+
+            if milestone.status == MilestoneStatus.INVOICED or milestone.invoice:
+                return Response({'status': 'already_invoiced', 'invoice': InvoiceSerializer(milestone.invoice, context={'request': request}).data if milestone.invoice else None})
+
+            # create invoice via service
+            invoice = MilestoneService.create_invoice_for_milestone(milestone)
+
+            return Response({'status': 'created', 'invoice': InvoiceSerializer(invoice, context={'request': request}).data}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error(f"Error issuing invoice for milestone {pk}: {str(e)}", exc_info=True)
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def create(self, request, *args, **kwargs):
         try:

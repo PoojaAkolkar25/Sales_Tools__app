@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { Plus, Save, AlertCircle, Clock, Trash2, Calendar } from 'lucide-react';
+import { Plus, Save, AlertCircle, Clock, Trash2, Calendar, Eye } from 'lucide-react';
 import SearchableDropdown from './SearchableDropdown';
 import { formatToAppDate } from '../utils/dateUtils';
 
 interface MilestoneFormProps {
     onBack: () => void;
-    id?: number | null;
+    id?: number | string | null;
     initialSoId?: number | null;
     viewSingleMilestoneId?: number | null; // When set: show only this milestone (view mode)
+    filterTab?: string;
 }
 
-const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, viewSingleMilestoneId }) => {
+const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, viewSingleMilestoneId, filterTab = 'all' }) => {
     const [customers, setCustomers] = useState<any[]>([]);
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -23,6 +24,30 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
     const [activeAction, setActiveAction] = useState<'save' | 'cancel' | null>('save');
 
     const { showNotification, showConfirm } = useNotification();
+    const [focusedMilestoneId, setFocusedMilestoneId] = useState<number | null>(null);
+
+    const scrollToMilestone = (milestoneId: number) => {
+        setFocusedMilestoneId(milestoneId);
+        setTimeout(() => {
+            const element = document.getElementById(`milestone-row-${milestoneId}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Briefly highlight the row
+                const originalBg = element.style.background;
+                element.style.background = '#FFFBEB'; // Light yellow highlight
+                setTimeout(() => {
+                    element.style.background = originalBg;
+                    setFocusedMilestoneId(null);
+                }, 2000);
+            }
+        }, 100);
+    };
+
+    useEffect(() => {
+        if (milestones.length > 0 && viewSingleMilestoneId) {
+            scrollToMilestone(Number(viewSingleMilestoneId));
+        }
+    }, [milestones.length, viewSingleMilestoneId]);
 
     const getCurrencySymbol = (currency: string) => {
         if (!currency) return '';
@@ -42,9 +67,10 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
     }, []);
 
     useEffect(() => {
-        if (id && customers.length > 0) {
-            fetchMilestoneForEdit(id);
-        } else if (!id && initialSoId && customers.length > 0) {
+        const isVirtual = typeof id === 'string' && (id as string).startsWith('virtual-');
+        if (id && !isVirtual && customers.length > 0) {
+            fetchMilestoneForEdit(id as number);
+        } else if ((!id || isVirtual) && initialSoId && customers.length > 0) {
             handleInitialSo(initialSoId);
         }
     }, [id, initialSoId, customers]);
@@ -64,7 +90,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                 setSelectedSO(so);
 
                 // Initialize milestones for this SO
-                await handleSOChange(soId);
+                await handleSOChange(soId, so);
             }
         } catch (err) {
             console.error('Error loading initial Sales Order', err);
@@ -117,47 +143,42 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
             const ms = response.data;
 
             if (ms.sales_order_details) {
-                const customer = customers.find(c => c.id === ms.sales_order_details.customer);
+                // Use loose equality (==) for comparison as IDs might be strings or numbers
+                const customer = customers.find(c => c.id == ms.sales_order_details.customer);
                 setSelectedCustomer(customer || null);
 
-                // Fetch SOs for this customer so the dropdown works
-                if (customer) {
-                    const soResponse = await api.get(`/sales-orders/?customer=${customer.id}`);
+                // Even if customer isn't in local list, we should try to load the SO and milestones
+                const soId = ms.sales_order;
+
+                // Load SOs for the customer if found, to populate dropdown
+                if (customer || ms.sales_order_details.customer) {
+                    const custId = customer ? customer.id : ms.sales_order_details.customer;
+                    const soResponse = await api.get(`/sales-orders/?customer=${custId}`);
                     setSalesOrders(soResponse.data);
 
-                    const so = soResponse.data.find((s: any) => s.id === ms.sales_order);
+                    const so = soResponse.data.find((s: any) => s.id == soId);
                     setSelectedSO(so || ms.sales_order_details);
+                } else {
+                    setSelectedSO(ms.sales_order_details);
+                }
 
-                    // Decide which milestones to show
-                    try {
-                        if (viewSingleMilestoneId) {
-                            // View-only: show only the clicked milestone
-                            const totalAmt = so ? parseFloat(so.total_amount) : parseFloat(ms.sales_order_details.total_amount);
-                            setMilestones([{
-                                ...ms,
-                                percentage: totalAmt > 0
-                                    ? (parseFloat(ms.amount) / totalAmt * 100).toFixed(2)
-                                    : "0.00"
-                            }]);
-                        } else {
-                            // Edit mode: load all milestones for this SO
-                            const allMsRes = await api.get(`/milestones/?sales_order=${ms.sales_order}`);
-                            const totalAmt = so ? parseFloat(so.total_amount) : parseFloat(ms.sales_order_details.total_amount);
-                            const allMs = allMsRes.data.map((m: any) => ({
-                                ...m,
-                                percentage: totalAmt > 0 ? (parseFloat(m.amount) / totalAmt * 100).toFixed(2) : "0.00"
-                            }));
-                            setMilestones(allMs);
-                        }
-                    } catch (err) {
-                        console.error('Error fetching milestones', err);
-                        setMilestones([{
-                            ...ms,
-                            percentage: ms.sales_order_details.total_amount > 0
-                                ? (parseFloat(ms.amount) / parseFloat(ms.sales_order_details.total_amount) * 100).toFixed(2)
-                                : "0.00"
-                        }]);
-                    }
+                // Always load all milestones for the Sales Order to show the full breakdown
+                try {
+                    const allMsRes = await api.get(`/milestones/?sales_order=${soId}`);
+                    const totalAmt = parseFloat(ms.sales_order_details.total_amount);
+                    const allMs = allMsRes.data.map((m: any) => ({
+                        ...m,
+                        percentage: totalAmt > 0 ? (parseFloat(m.amount) / totalAmt * 100).toFixed(2) : "0.00"
+                    }));
+                    setMilestones(allMs);
+                } catch (err) {
+                    console.error('Error fetching milestones', err);
+                    setMilestones([{
+                        ...ms,
+                        percentage: ms.sales_order_details.total_amount > 0
+                            ? (parseFloat(ms.amount) / parseFloat(ms.sales_order_details.total_amount) * 100).toFixed(2)
+                            : "0.00"
+                    }]);
                 }
             }
         } catch (error) {
@@ -168,8 +189,8 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
         }
     };
 
-    const handleSOChange = async (soId: string | number) => {
-        const so = salesOrders.find(s => s.id.toString() === soId.toString());
+    const handleSOChange = async (soId: string | number, providedSO?: any) => {
+        const so = providedSO || salesOrders.find(s => s.id.toString() === soId.toString());
         setSelectedSO(so || null);
 
         if (so) {
@@ -338,7 +359,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                             borderRadius: '2px'
                         }}></span>
                         <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--theme-primary)', margin: 0 }}>
-                            {viewSingleMilestoneId ? 'View Milestone' : (id ? 'View / Edit Milestone Plan' : 'Create New Milestone Plan')}
+                            {viewSingleMilestoneId ? 'Viewing Full Milestone Plan' : (id ? 'View / Edit Milestone Plan' : 'Create New Milestone Plan')}
                         </h2>
                     </div>
 
@@ -450,27 +471,62 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                             Please select a Sales Order to define milestones.
                         </div>
                     ) : (
-                        <div className="ae-table-wrapper" style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
-                                <thead style={{ background: 'var(--bg-accent)' }}>
-                                    <tr>
-                                        <th style={{ padding: '12px 8px', width: '40px', borderBottom: '1px solid #E0E6ED' }}></th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '80px' }}>Sr.No.</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED' }}>Description</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '140px' }}>Due Date</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '100px' }}>Amount %</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 800, color: 'black', textTransform: 'uppercase', borderBottom: '1px solid #E0E6ED', width: '160px' }}>Amount</th>
-                                        <th style={{ padding: '12px 8px', borderBottom: '1px solid #E0E6ED', width: '40px' }}></th>
+                        <div style={{ padding: '0 20px 20px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
+                                <thead>
+                                    <tr style={{ background: '#F8FAFC' }}>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SR.NO.</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>DESCRIPTION</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>DUE DATE</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AMOUNT %</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AMOUNT</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>STATUS</th>
+                                        <th style={{ padding: '12px 0', textAlign: 'center', width: '50px' }}></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {milestones.map((milestone, index) => {
+                                    {milestones.map((milestone, originalIndex) => {
                                         const isInvoiced = milestone.status === 'INVOICED';
+
+                                        // Context-aware visibility check
+                                        let isVisible = true;
+                                        if (filterTab && filterTab !== 'all') {
+                                            if (filterTab === 'billed') {
+                                                isVisible = isInvoiced;
+                                            } else if (isInvoiced) {
+                                                isVisible = false; // Exclude billed from all date-based tabs
+                                            } else {
+                                                const d = milestone.due_date ? new Date(milestone.due_date) : null;
+                                                if (!d) {
+                                                    isVisible = false;
+                                                } else {
+                                                    d.setHours(0, 0, 0, 0);
+                                                    const t = new Date(); t.setHours(0, 0, 0, 0);
+                                                    const i5 = new Date(t); i5.setDate(t.getDate() + 5);
+
+                                                    if (filterTab === 'yet_to_due') isVisible = d > i5;
+                                                    else if (filterTab === 'due_1_5') isVisible = d > t && d <= i5;
+                                                    else if (filterTab === 'due') isVisible = d <= t;
+                                                }
+                                            }
+                                        }
+
+                                        if (!isVisible) return null;
+
                                         const isDisabled = isInvoiced || !!viewSingleMilestoneId;
+                                        const isFocused = focusedMilestoneId === milestone.id;
                                         return (
-                                            <tr key={milestone.id || index} style={{ borderBottom: '1px solid var(--border-primary)' }}>
+                                            <tr
+                                                key={milestone.id || originalIndex}
+                                                id={`milestone-row-${milestone.id}`}
+                                                style={{
+                                                    borderBottom: '1px solid var(--border-primary)',
+                                                    transition: 'background-color 0.5s ease',
+                                                    backgroundColor: isFocused ? '#FEFCE8' : 'transparent'
+                                                }}
+                                            >
                                                 <td style={{ padding: '8px', textAlign: 'center' }}>
-                                                    {index === milestones.length - 1 && !viewSingleMilestoneId && (
+                                                    {originalIndex === milestones.length - 1 && !viewSingleMilestoneId && (
                                                         <button
                                                             type="button"
                                                             onClick={handleAddMilestone}
@@ -507,7 +563,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                 <td style={{ padding: '8px' }}>
                                                     <textarea
                                                         value={milestone.description}
-                                                        onChange={(e) => handleMilestoneChange(index, 'description', e.target.value)}
+                                                        onChange={(e) => handleMilestoneChange(originalIndex, 'description', e.target.value)}
                                                         disabled={isDisabled}
                                                         className="ae-input"
                                                         style={{
@@ -545,7 +601,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                         <input
                                                             type="date"
                                                             value={milestone.due_date || ''}
-                                                            onChange={(e) => handleMilestoneChange(index, 'due_date', e.target.value)}
+                                                            onChange={(e) => handleMilestoneChange(originalIndex, 'due_date', e.target.value)}
                                                             disabled={isDisabled}
                                                             style={{
                                                                 position: 'absolute',
@@ -565,7 +621,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                     <input
                                                         type="number"
                                                         value={milestone.percentage || ''}
-                                                        onChange={(e) => handleMilestoneChange(index, 'percentage', e.target.value)}
+                                                        onChange={(e) => handleMilestoneChange(originalIndex, 'percentage', e.target.value)}
                                                         disabled={isDisabled}
                                                         style={{
                                                             width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
@@ -581,7 +637,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                         <input
                                                             type="number"
                                                             value={milestone.amount || ''}
-                                                            onChange={(e) => handleMilestoneChange(index, 'amount', e.target.value)}
+                                                            onChange={(e) => handleMilestoneChange(originalIndex, 'amount', e.target.value)}
                                                             disabled={isDisabled}
                                                             style={{
                                                                 width: '100%', padding: '6px 8px 6px 24px', border: '1px solid #E2E8F0',
@@ -592,10 +648,71 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                         />
                                                     </div>
                                                 </td>
+                                                <td style={{ padding: '8px' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                                                        {(() => {
+                                                            if (milestone.status === 'INVOICED') {
+                                                                return (
+                                                                    <div
+                                                                        onClick={() => scrollToMilestone(milestone.id)}
+                                                                        style={{
+                                                                            display: 'flex', alignItems: 'center', gap: '4px',
+                                                                            padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 800,
+                                                                            background: 'rgba(0, 200, 83, 0.1)', color: '#00C853',
+                                                                            textTransform: 'uppercase', cursor: 'pointer',
+                                                                            border: '1px solid transparent',
+                                                                            transition: 'all 0.2s'
+                                                                        }}
+                                                                        onMouseOver={(e) => { e.currentTarget.style.borderColor = '#00C853'; }}
+                                                                        onMouseOut={(e) => { e.currentTarget.style.borderColor = 'transparent'; }}
+                                                                    >
+                                                                        <Eye size={10} />
+                                                                        <span style={{ textDecoration: 'underline' }}>
+                                                                            Billed
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            const d = milestone.due_date ? new Date(milestone.due_date) : null;
+                                                            if (d) d.setHours(0, 0, 0, 0);
+                                                            const t = new Date(); t.setHours(0, 0, 0, 0);
+                                                            const i5 = new Date(t); i5.setDate(t.getDate() + 5);
+
+                                                            if (!d) return <span style={{ color: '#A0AEC0', fontSize: '10px' }}>No Date</span>;
+
+                                                            let badge: { label: string; bg: string; color: string };
+                                                            if (d < t) badge = { label: 'Overdue', bg: '#FEE2E2', color: '#DC2626' };
+                                                            else if (d.getTime() === t.getTime()) badge = { label: 'Due Today', bg: '#FEF3C7', color: '#D97706' };
+                                                            else if (d <= i5) badge = { label: 'Due 1-5 Days', bg: '#FEF3C7', color: '#D97706' };
+                                                            else badge = { label: 'Yet to Due', bg: '#E0F2FE', color: '#0284C7' };
+
+                                                            return (
+                                                                <div
+                                                                    onClick={() => scrollToMilestone(milestone.id)}
+                                                                    style={{
+                                                                        display: 'flex', alignItems: 'center', gap: '4px',
+                                                                        padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 800,
+                                                                        background: badge.bg, color: badge.color, textTransform: 'uppercase',
+                                                                        whiteSpace: 'nowrap', cursor: 'pointer',
+                                                                        border: '1px solid transparent',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                    onMouseOver={(e) => { e.currentTarget.style.borderColor = badge.color; }}
+                                                                    onMouseOut={(e) => { e.currentTarget.style.borderColor = 'transparent'; }}
+                                                                >
+                                                                    <Eye size={10} />
+                                                                    <span style={{ textDecoration: 'underline' }}>
+                                                                        {badge.label}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                </td>
                                                 <td style={{ padding: '8px', textAlign: 'center' }}>
                                                     {milestones.length > 1 && !isDisabled && (
                                                         <button
-                                                            onClick={() => handleRemoveMilestone(index)}
+                                                            onClick={() => handleRemoveMilestone(originalIndex)}
                                                             style={{
                                                                 background: '#FFF5F5',
                                                                 border: '1px solid #FED7D7',
@@ -627,7 +744,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                             <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{getCurrencySymbol(selectedSO.currency)}</span>
                                             {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
-                                        <td></td>
+                                        <td colSpan={2}></td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -671,7 +788,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                 }}>
                     <Clock size={18} />
                     <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-                        Viewing specific Milestone {milestones[0].milestone_no || ''} for Sales Order {selectedSO?.so_number || ''}
+                        Viewing all milestones for Sales Order {selectedSO?.so_number || ''}
                     </span>
                     <button
                         onClick={onBack}
