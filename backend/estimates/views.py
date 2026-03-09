@@ -414,13 +414,8 @@ class EstimateViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Get Latest Proposal Attachment
+        # Get Latest Proposal Attachment (Optional)
         proposal = estimate.proposals.order_by('-version').first()
-        if not proposal or not proposal.file:
-            return Response(
-                {"error": "No proposal file attached to this estimate or the file is missing."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
         # Send Email
         status_code = 'SENT'
@@ -444,12 +439,15 @@ class EstimateViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 return Response({'error': f"Failed to generate Estimate PDF: {str(e)}"}, status=500)
 
-            # 2. Attach Both Files (Separate) as requested
+            # 2. Attach Proposal File (if exists)
             email.attach(f"Estimate_{estimate.estimate_id}.pdf", estimate_pdf_bytes, 'application/pdf')
             
             if proposal and proposal.file:
-                with proposal.file.open('rb') as f:
-                    email.attach(proposal.filename, f.read(), 'application/octet-stream')
+                try:
+                    with proposal.file.open('rb') as f:
+                        email.attach(proposal.filename, f.read(), 'application/octet-stream')
+                except Exception as e:
+                    logger.warning(f"Failed to attach proposal file to email for estimate {estimate.id}: {e}")
 
             email.send()
             

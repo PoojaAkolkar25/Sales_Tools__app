@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
     Save,
     Plus,
@@ -1927,7 +1928,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
             {/* Email Modal */}
             {
-                emailModal.open && (
+                emailModal.open && createPortal(
                     <div style={{
                         position: 'fixed',
                         top: 0, left: 0, right: 0, bottom: 0,
@@ -2051,11 +2052,13 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         background: '#38A169'
                                     }}
                                 >
+                                    {sendingEmail ? <RefreshCw className="animate-spin" size={18} /> : <Mail size={18} />}
                                     {sendingEmail ? 'Sending...' : 'Send Now'}
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </div>,
+                    document.body
                 )
             }
 
