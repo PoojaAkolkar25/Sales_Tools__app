@@ -72,7 +72,7 @@ const MAX_COL_WIDTHS: Record<string, number> = {
 };
 
 interface MilestoneDashboardProps {
-    onView?: (id: number | string) => void;
+    onView?: (id: number | string, tab?: string) => void;
     onCreate?: () => void;
 }
 
@@ -273,31 +273,32 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
         }
     };
 
-    const filteredMilestones = useMemo(() => {
-        // For 'all' tab: include virtual milestones for SOs with NO milestones
-        const allList = [...milestones];
-        if (dueTab === 'all') {
-            const soWithMs = new Set(milestones.map(m => m.sales_order || m.sales_order_details?.id));
-            let vCounter = 1;
-            salesOrders.forEach(so => {
-                if (!soWithMs.has(so.id) && so.status !== 'CANCELLED' && so.status !== 'REJECTED') {
-                    allList.push({
-                        id: `virtual-${so.id}`,
-                        sales_order: so.id,
-                        sales_order_details: so,
-                        milestone_no: `ML-100${vCounter++}`,
-                        description: 'No Milestones Defined',
-                        amount: so.total_amount,
-                        status: 'DRAFT',
-                        due_date: so.delivery_date,
-                        isVirtual: true
-                    });
-                }
-            });
-        }
+    const consolidatedMilestones = useMemo(() => {
+        const list = [...milestones];
+        const soWithMs = new Set(milestones.map(m => m.sales_order || m.sales_order_details?.id));
+        let vCounter = 1;
 
+        salesOrders.forEach(so => {
+            if (!soWithMs.has(so.id) && so.status !== 'CANCELLED' && so.status !== 'REJECTED') {
+                list.push({
+                    id: `virtual-${so.id}`,
+                    sales_order: so.id,
+                    sales_order_details: so,
+                    milestone_no: `ML-100${vCounter++}`,
+                    description: 'No Milestones Defined',
+                    amount: so.total_amount,
+                    status: 'DRAFT',
+                    due_date: so.delivery_date,
+                    isVirtual: true
+                });
+            }
+        });
+        return list;
+    }, [milestones, salesOrders]);
+
+    const filteredMilestones = useMemo(() => {
         // Apply column-level text filters
-        const list = allList.filter(m => {
+        const filteredList = consolidatedMilestones.filter(m => {
             const matchesMilestone = (m.milestone_no || '').toLowerCase().includes(filters.milestoneNo.toLowerCase());
             const matchesDeal = (m.sales_order_details?.deal_id || '').toLowerCase().includes(filters.dealId.toLowerCase());
             const matchesSO = (m.sales_order_details?.so_number || '').toLowerCase().includes(filters.soNumber.toLowerCase());
@@ -311,37 +312,41 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
             // Period date filtering
             let matchesDate = true;
             if (filters.period) {
-                const milestoneDate = new Date(m.due_date);
+                const milestoneDate = parseDateSafe(m.due_date);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
-                if (filters.period === 'last_month') {
-                    const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                    const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1);
-                    const firstOfLastMonth = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1);
-                    matchesDate = milestoneDate >= firstOfLastMonth && milestoneDate <= lastOfLastMonth;
-                } else if (filters.period === 'last_3_months') {
-                    const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1);
-                    matchesDate = milestoneDate >= threeMonthsAgo;
-                } else if (filters.period === 'last_6_months') {
-                    const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, 1);
-                    matchesDate = milestoneDate >= sixMonthsAgo;
-                } else if (filters.period === 'last_year') {
-                    const startOfYear = new Date(today.getFullYear() - 1, 0, 1);
-                    const endOfYear = new Date(today.getFullYear() - 1, 11, 31, 23, 59, 59);
-                    matchesDate = milestoneDate >= startOfYear && milestoneDate <= endOfYear;
-                } else if (filters.period === 'last_financial_year') {
-                    let startYear = today.getFullYear();
-                    if (today.getMonth() < 3) startYear -= 1;
-                    startYear -= 1;
-                    const startOfFY = new Date(startYear, 3, 1);
-                    const endOfFY = new Date(startYear + 1, 2, 31, 23, 59, 59);
-                    matchesDate = milestoneDate >= startOfFY && milestoneDate <= endOfFY;
-                } else if (filters.period === 'custom' && filters.startDate && filters.endDate) {
-                    const start = new Date(filters.startDate);
-                    const end = new Date(filters.endDate);
-                    end.setHours(23, 59, 59, 999);
-                    matchesDate = milestoneDate >= start && milestoneDate <= end;
+                if (!milestoneDate) {
+                    matchesDate = false;
+                } else {
+                    if (filters.period === 'last_month') {
+                        const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                        const lastOfLastMonth = new Date(firstOfThisMonth.getTime() - 1);
+                        const firstOfLastMonth = new Date(lastOfLastMonth.getFullYear(), lastOfLastMonth.getMonth(), 1);
+                        matchesDate = milestoneDate >= firstOfLastMonth && milestoneDate <= lastOfLastMonth;
+                    } else if (filters.period === 'last_3_months') {
+                        const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+                        matchesDate = milestoneDate >= threeMonthsAgo;
+                    } else if (filters.period === 'last_6_months') {
+                        const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, 1);
+                        matchesDate = milestoneDate >= sixMonthsAgo;
+                    } else if (filters.period === 'last_year') {
+                        const startOfYear = new Date(today.getFullYear() - 1, 0, 1);
+                        const endOfYear = new Date(today.getFullYear() - 1, 11, 31, 23, 59, 59);
+                        matchesDate = milestoneDate >= startOfYear && milestoneDate <= endOfYear;
+                    } else if (filters.period === 'last_financial_year') {
+                        let startYear = today.getFullYear();
+                        if (today.getMonth() < 3) startYear -= 1;
+                        startYear -= 1;
+                        const startOfFY = new Date(startYear, 3, 1);
+                        const endOfFY = new Date(startYear + 1, 2, 31, 23, 59, 59);
+                        matchesDate = milestoneDate >= startOfFY && milestoneDate <= endOfFY;
+                    } else if (filters.period === 'custom' && filters.startDate && filters.endDate) {
+                        const start = new Date(filters.startDate);
+                        const end = new Date(filters.endDate);
+                        end.setHours(23, 59, 59, 999);
+                        matchesDate = milestoneDate >= start && milestoneDate <= end;
+                    }
                 }
             }
 
@@ -356,24 +361,64 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
         const in5Days = new Date(today);
         in5Days.setDate(today.getDate() + 5);
 
-        return list.filter(m => {
+        const tabFilteredRows = filteredList.filter(m => {
             if (dueTab === 'all') return true;
-            if (m.isVirtual) return false;
-            const d = parseDateSafe(m.due_date);
-            if (d) d.setHours(0, 0, 0, 0);
             if (dueTab === 'billed') return m.status === 'INVOICED';
+
+            // For all other tabs, milestone must not be billed
             if (m.status === 'INVOICED') return false;
+
+            const d = parseDateSafe(m.due_date);
             if (!d) return false;
+            d.setHours(0, 0, 0, 0);
+
             if (dueTab === 'yet_to_due') return d > in5Days;
-            if (dueTab === 'due_1_5') return d >= today && d <= in5Days;
-            if (dueTab === 'due') return d < today;
+            if (dueTab === 'due_1_5') return d > today && d <= in5Days;
+            if (dueTab === 'due') return d <= today;
+
             return true;
-        }).sort((a, b) => {
+        });
+
+        if (dueTab === 'all') {
+            const grouped = new Map<number, any>();
+            tabFilteredRows.forEach(m => {
+                const soId = m.sales_order || m.sales_order_details?.id;
+                if (!soId) return;
+
+                if (!grouped.has(soId)) {
+                    grouped.set(soId, {
+                        ...m,
+                        allMilestones: m.isVirtual ? [] : [m]
+                    });
+                } else {
+                    const existing = grouped.get(soId);
+                    if (!m.isVirtual) {
+                        existing.allMilestones.push(m);
+                        if (m.due_date && (!existing.due_date || new Date(m.due_date) < new Date(existing.due_date))) {
+                            existing.due_date = m.due_date;
+                        }
+                    }
+                }
+            });
+            return Array.from(grouped.values()).sort((a, b) => {
+                const da = parseDateSafe(a.due_date);
+                const db = parseDateSafe(b.due_date);
+                if (!da && !db) return 0;
+                if (!da) return 1;
+                if (!db) return -1;
+                return da.getTime() - db.getTime();
+            });
+        }
+
+        return tabFilteredRows.sort((a, b) => {
             const da = parseDateSafe(a.due_date);
             const db = parseDateSafe(b.due_date);
-            return (da?.getTime() || 0) - (db?.getTime() || 0);
+            if (!da && !db) return 0;
+            if (!da) return 1;
+            if (!db) return -1;
+            return da.getTime() - db.getTime();
         });
-    }, [milestones, salesOrders, filters, dueTab]);
+    }, [consolidatedMilestones, filters, dueTab]);
 
     const paginatedMilestones = useMemo(() => {
         return filteredMilestones.slice(
@@ -387,33 +432,31 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
         today.setHours(0, 0, 0, 0);
         const in5Days = new Date(today);
         in5Days.setDate(today.getDate() + 5);
-        const real = milestones;
-        return {
-            yet_to_due: real.filter(m => {
-                if (m.status === 'INVOICED' || !m.due_date) return false;
-                const d = parseDateSafe(m.due_date);
-                if (!d) return false;
-                d.setHours(0, 0, 0, 0);
-                return d > in5Days;
-            }).length,
-            due_1_5: real.filter(m => {
-                if (m.status === 'INVOICED' || !m.due_date) return false;
-                const d = parseDateSafe(m.due_date);
-                if (!d) return false;
-                d.setHours(0, 0, 0, 0);
-                return d >= today && d <= in5Days;
-            }).length,
-            due: real.filter(m => {
-                if (m.status === 'INVOICED' || !m.due_date) return false;
-                const d = parseDateSafe(m.due_date);
-                if (!d) return false;
-                d.setHours(0, 0, 0, 0);
-                return d < today;
-            }).length,
-            billed: real.filter(m => m.status === 'INVOICED').length,
-            all: real.length
+
+        const counts = {
+            yet_to_due: 0,
+            due_1_5: 0,
+            due: 0,
+            billed: 0,
+            all: consolidatedMilestones.length
         };
-    }, [milestones]);
+
+        consolidatedMilestones.forEach(m => {
+            if (m.status === 'INVOICED') {
+                counts.billed++;
+            } else {
+                const d = parseDateSafe(m.due_date);
+                if (d) {
+                    d.setHours(0, 0, 0, 0);
+                    if (d > in5Days) counts.yet_to_due++;
+                    else if (d > today && d <= in5Days) counts.due_1_5++;
+                    else if (d <= today) counts.due++;
+                }
+            }
+        });
+
+        return counts;
+    }, [consolidatedMilestones]);
 
     const dueTabFlow = [
         { label: `Yet to Due (${tabCounts.yet_to_due})`, value: 'yet_to_due', color: '#3B82F6' },
@@ -773,14 +816,20 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                     <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)', minHeight: '400px' }}>
                         <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                             <colgroup>
-                                {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                {ALL_COL_CONFIG.filter(col => {
+                                    if (col.key === 'status' && dueTab !== 'all') return false;
+                                    return visibleColumns.includes(col.key);
+                                }).map(col => (
                                     <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />
                                 ))}
                                 <col style={{ width: `${getColWidth('actions')}px` }} />
                             </colgroup>
                             <thead>
                                 <tr>
-                                    {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                    {ALL_COL_CONFIG.filter(col => {
+                                        if (col.key === 'status' && dueTab !== 'all') return false;
+                                        return visibleColumns.includes(col.key);
+                                    }).map(col => (
                                         <th key={col.key} style={{
                                             position: 'relative',
                                             backgroundColor: 'var(--ae-table-header-bg)',
@@ -830,7 +879,10 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                 </tr>
                                 {showFilters && (
                                     <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
-                                        {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                        {ALL_COL_CONFIG.filter(col => {
+                                            if (col.key === 'status' && dueTab !== 'all') return false;
+                                            return visibleColumns.includes(col.key);
+                                        }).map(col => (
                                             <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                                 <div className="ae-input-group" style={{ margin: 0 }}>
                                                     <Search className="ae-search-icon" size={12} />
@@ -906,7 +958,10 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                         }
                                         return (
                                             <tr key={m.id} style={{ background: rowBg || undefined }}>
-                                                {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => {
+                                                {ALL_COL_CONFIG.filter(col => {
+                                                    if (col.key === 'status' && dueTab !== 'all') return false;
+                                                    return visibleColumns.includes(col.key);
+                                                }).map(col => {
                                                     const key = col.key;
                                                     const cellStyle = {
                                                         overflow: 'hidden',
@@ -920,19 +975,37 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                         case 'milestone_no':
                                                             return (
                                                                 <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)', fontFamily: 'monospace' }}>
-                                                                    <span
-                                                                        onClick={() => {
-                                                                            if (!m.isGrouped && !m.isVirtual) {
-                                                                                if (onView) onView(m.id);
-                                                                            } else {
+                                                                    {dueTab === 'all' && m.allMilestones && m.allMilestones.length > 0 ? (
+                                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                                                            {m.allMilestones.map((ms: any, i: number) => (
+                                                                                <React.Fragment key={ms.id}>
+                                                                                    <span
+                                                                                        onClick={() => {
+                                                                                            if (onView) onView(ms.id, dueTab);
+                                                                                        }}
+                                                                                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                                                                    >
+                                                                                        {ms.milestone_no}
+                                                                                    </span>
+                                                                                    {i < m.allMilestones.length - 1 && <span>,</span>}
+                                                                                </React.Fragment>
+                                                                            ))}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span
+                                                                            onClick={() => {
                                                                                 const soIdToPass = m.sales_order || m.sales_order_details?.id;
-                                                                                if (onView && soIdToPass) onView(`virtual-${soIdToPass}`);
-                                                                            }
-                                                                        }}
-                                                                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                                                                    >
-                                                                        {m.milestone_no}
-                                                                    </span>
+                                                                                if (!m.isVirtual) {
+                                                                                    if (onView) onView(m.id, dueTab);
+                                                                                } else if (soIdToPass) {
+                                                                                    if (onView) onView(`virtual-${soIdToPass}`, dueTab);
+                                                                                }
+                                                                            }}
+                                                                            style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                                                        >
+                                                                            {m.milestone_no}
+                                                                        </span>
+                                                                    )}
                                                                 </td>
                                                             );
                                                         case 'deal':
@@ -978,6 +1051,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                             let badge: { label: string; bg: string; color: string } | null = null;
                                                             if (m.status !== 'INVOICED' && dd) {
                                                                 if (dd < today0) badge = { label: 'Overdue', bg: '#FEE2E2', color: '#DC2626' };
+                                                                else if (dd.getTime() === today0.getTime()) badge = { label: 'Due Today', bg: '#FEF3C7', color: '#D97706' };
                                                                 else if (dd <= in5d) badge = { label: '1-5 Days', bg: '#FEF3C7', color: '#D97706' };
                                                             }
                                                             return (
@@ -1042,11 +1116,13 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                         {/* View button */}
                                                         <button
                                                             onClick={() => {
+                                                                const soIdToPass = m.sales_order || m.sales_order_details?.id;
                                                                 if (m.isVirtual) {
-                                                                    const soIdToPass = m.sales_order || m.sales_order_details?.id;
                                                                     if (onView && soIdToPass) onView(`virtual-${soIdToPass}`);
                                                                 } else {
-                                                                    if (onView) onView(m.id);
+                                                                    // Open full breakdown view (read-only)
+                                                                    const mId = m.allMilestones?.length > 0 ? m.allMilestones[0].id : m.id;
+                                                                    if (onView) onView(mId, dueTab);
                                                                 }
                                                             }}
                                                             style={{
@@ -1143,6 +1219,20 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                                 title="Issue Invoice for this milestone"
                                                             >
                                                                 <Plus size={13} /> Issue Invoice
+                                                            </button>
+                                                        )}
+
+                                                        {!m.isVirtual && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    const soIdToPass = m.sales_order || m.sales_order_details?.id;
+                                                                    const mId = m.allMilestones?.length > 0 ? m.allMilestones[0].id : m.id;
+                                                                    if (onView) onView(mId);
+                                                                }}
+                                                                className="ae-link-btn"
+                                                                style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--ae-blue)', padding: '0 4px', textDecoration: 'underline' }}
+                                                            >
+                                                                View All Breakdown
                                                             </button>
                                                         )}
                                                     </div>

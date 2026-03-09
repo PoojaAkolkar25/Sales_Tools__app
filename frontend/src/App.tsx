@@ -281,12 +281,13 @@ const AppContent: React.FC = () => {
   const [editingId, setEditingId] = useState<number | null>(null); // For Cost Sheet
   const [editingEstimateId, setEditingEstimateId] = useState<number | null>(null);
   const [editingSalesOrderId, setEditingSalesOrderId] = useState<number | null>(null);
-  const [editingMilestoneId, setEditingMilestoneId] = useState<number | null>(null);
+  const [editingMilestoneId, setEditingMilestoneId] = useState<number | string | null>(null);
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
   const [editingInventoryId, setEditingInventoryId] = useState<number | null>(null);
   const [initialSoId, setInitialSoId] = useState<number | null>(null);
   const [initialMilestoneId, setInitialMilestoneId] = useState<number | null>(null);
   const [viewSingleMilestoneId, setViewSingleMilestoneId] = useState<number | null>(null);
+  const [activeMilestoneTab, setActiveMilestoneTab] = useState<string>('all');
 
   // Other UI States
   const [isExtractingSO, setIsExtractingSO] = useState(false);
@@ -1364,6 +1365,7 @@ const AppContent: React.FC = () => {
                     id={editingMilestoneId}
                     initialSoId={initialSoId}
                     viewSingleMilestoneId={viewSingleMilestoneId}
+                    filterTab={activeMilestoneTab}
                     onBack={() => {
                       setEditingMilestoneId(null);
                       setInitialSoId(null);
@@ -1373,9 +1375,18 @@ const AppContent: React.FC = () => {
                   />
                 ) : (
                   <MilestoneDashboard
-                    onView={(id: any) => {
+                    onView={(id: any, tab?: string) => {
+                      if (tab) setActiveMilestoneTab(tab);
+                      else setActiveMilestoneTab('all');
+
                       if (typeof id === 'string' && id.startsWith('virtual-')) {
                         const soId = parseInt(id.replace('virtual-', ''));
+                        setInitialSoId(soId);
+                        setEditingMilestoneId(null);
+                        setViewSingleMilestoneId(null);
+                      } else if (typeof id === 'string' && id.startsWith('so-')) {
+                        // Open full Sales Order milestone breakdown
+                        const soId = parseInt(id.replace('so-', ''));
                         setInitialSoId(soId);
                         setEditingMilestoneId(null);
                         setViewSingleMilestoneId(null);
@@ -1390,6 +1401,7 @@ const AppContent: React.FC = () => {
                       setEditingMilestoneId(null);
                       setInitialSoId(null);
                       setViewSingleMilestoneId(null);
+                      setActiveMilestoneTab('all');
                       setMilestoneView('form');
                     }}
                   />
