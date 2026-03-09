@@ -102,13 +102,38 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
         deal_types: [{ type: '', description: '', amount: '', quantity: '' }]
     });
 
-    // Ensure deal_date is current date for new deals
+    // Reset form to blank state for new deals (e.g. when clicking "Create New" while editing an existing deal)
     useEffect(() => {
         if (!id) {
-            setFormData((prev: any) => ({
-                ...prev,
-                deal_date: getCurrentDateForInput()
-            }));
+            setFormData({
+                company: '',
+                deal_name: '',
+                deal_date: getCurrentDateForInput(),
+                lead: '',
+                stage: 'DEAL_CREATED',
+                currency: '',
+                fx_rate: 1.0,
+                deal_amount: '0',
+                deal_type: '',
+                description: '',
+                customer: '',
+                customer_email: '',
+                end_customer: '',
+                client_type: '',
+                inside_salesperson: '',
+                inside_sales_head: '',
+                salesperson_name: '',
+                sales_head: '',
+                project_manager: '',
+                project_manager_head: '',
+                expected_close_date: '',
+                remark: '',
+                won_lost_reason: '',
+                hubspot_id: '',
+                last_synced_at: '',
+                deal_types: [{ type: '', description: '', amount: '', quantity: '' }]
+            });
+            setAttachments([]);
         }
     }, [id, refreshTrigger]);
 

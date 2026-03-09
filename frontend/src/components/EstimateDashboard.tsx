@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
     CheckCircle2,
     Mail,
@@ -1207,10 +1208,10 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
                         onPageChange={setCurrentPage}
                     />
 
-                    {/* Email Modal */}
-                    {emailModal.open && (
-                        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-                            <div style={{ background: 'white', padding: '32px', borderRadius: '16px', width: '850px', maxWidth: '95%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
+                    {/* Email Modal rendered via Portal */}
+                    {emailModal.open && createPortal(
+                        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '5vh', zIndex: 9999 }}>
+                            <div style={{ background: 'white', padding: '24px 32px 32px 32px', borderRadius: '16px', width: '850px', maxWidth: '95%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                                     <div>
                                         <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1A202C' }}>Compose Proposal Email</h3>
@@ -1277,7 +1278,8 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </div>,
+                        document.body
                     )}
                 </div>
             </div>

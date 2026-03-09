@@ -11,8 +11,6 @@ import xlsxwriter
 import logging
 from .models import CostSheet, CostSheetStatus, CostSheetAttachment
 from .serializers import CostSheetSerializer, CostSheetAttachmentSerializer
-import os
-from django.conf import settings
 from deals.models import AuditTrail
 
 logger = logging.getLogger(__name__)
@@ -531,8 +529,7 @@ class CostSheetViewSet(viewsets.ModelViewSet):
                 'other_items': other_items,
                 'margin_pct': margin_pct,
                 'now': timezone.now(),
-                'pdf_currency_symbol': pdf_currency_symbol,
-                'roboto_font_path': os.path.join(settings.BASE_DIR, 'static/fonts/Roboto-Regular.ttf')
+                'pdf_currency_symbol': pdf_currency_symbol
             })
             
             result = io.BytesIO()
