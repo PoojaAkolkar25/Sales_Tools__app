@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
-import { formatToAppDate } from '../utils/dateUtils';
+import { formatToAppDate, parseDateSafe } from '../utils/dateUtils';
 import Pagination from './Pagination';
 
 const ALL_COL_CONFIG = [
@@ -359,7 +359,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
         return list.filter(m => {
             if (dueTab === 'all') return true;
             if (m.isVirtual) return false;
-            const d = m.due_date ? new Date(m.due_date) : null;
+            const d = parseDateSafe(m.due_date);
             if (d) d.setHours(0, 0, 0, 0);
             if (dueTab === 'billed') return m.status === 'INVOICED';
             if (m.status === 'INVOICED') return false;
@@ -368,7 +368,11 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
             if (dueTab === 'due_1_5') return d >= today && d <= in5Days;
             if (dueTab === 'due') return d < today;
             return true;
-        }).sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+        }).sort((a, b) => {
+            const da = parseDateSafe(a.due_date);
+            const db = parseDateSafe(b.due_date);
+            return (da?.getTime() || 0) - (db?.getTime() || 0);
+        });
     }, [milestones, salesOrders, filters, dueTab]);
 
     const paginatedMilestones = useMemo(() => {
@@ -387,17 +391,23 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
         return {
             yet_to_due: real.filter(m => {
                 if (m.status === 'INVOICED' || !m.due_date) return false;
-                const d = new Date(m.due_date); d.setHours(0, 0, 0, 0);
+                const d = parseDateSafe(m.due_date);
+                if (!d) return false;
+                d.setHours(0, 0, 0, 0);
                 return d > in5Days;
             }).length,
             due_1_5: real.filter(m => {
                 if (m.status === 'INVOICED' || !m.due_date) return false;
-                const d = new Date(m.due_date); d.setHours(0, 0, 0, 0);
+                const d = parseDateSafe(m.due_date);
+                if (!d) return false;
+                d.setHours(0, 0, 0, 0);
                 return d >= today && d <= in5Days;
             }).length,
             due: real.filter(m => {
                 if (m.status === 'INVOICED' || !m.due_date) return false;
-                const d = new Date(m.due_date); d.setHours(0, 0, 0, 0);
+                const d = parseDateSafe(m.due_date);
+                if (!d) return false;
+                d.setHours(0, 0, 0, 0);
                 return d < today;
             }).length,
             billed: real.filter(m => m.status === 'INVOICED').length,
@@ -1102,9 +1112,15 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                         {/* Issue Invoice — only for real milestones that are not yet invoiced */}
                                                         {!m.isVirtual && m.status !== 'INVOICED' && (
                                                             <button
-                                                                onClick={(e) => {
+                                                                onClick={async (e) => {
                                                                     e.stopPropagation();
-                                                                    navigate(`/invoice?action=create&so_id=${m.sales_order}&milestone_id=${m.id}`);
+                                                                    try {
+                                                                        await api.post(`/milestones/${m.id}/create_invoice/`);
+                                                                        showNotification('Draft invoice created successfully!', 'success');
+                                                                        fetchMilestones();
+                                                                    } catch (error: any) {
+                                                                        showNotification(error.response?.data?.error || 'Failed to create invoice', 'error');
+                                                                    }
                                                                 }}
                                                                 style={{
                                                                     display: 'inline-flex',

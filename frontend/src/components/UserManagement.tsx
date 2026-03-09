@@ -175,6 +175,7 @@ const UserManagement: React.FC = () => {
     const [products, setProducts] = useState<any[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [isCancelActive, setIsCancelActive] = useState(false);
+    const [editingId, setEditingId] = useState<number | null>(null);
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -259,7 +260,8 @@ const UserManagement: React.FC = () => {
         msme_number: '',
         pan: '',
         tan: '',
-        cin: ''
+        cin: '',
+        gst_customer_type: 'CGST_SGST_9' as 'CGST_SGST_9' | 'IGST_18' | 'IGST_0_SEZ' | 'IGST_0_EXPORT'
     });
     const [partnerFormData, setPartnerFormData] = useState({
         name: '',
@@ -286,7 +288,8 @@ const UserManagement: React.FC = () => {
         tan: '',
         cin: '',
         status: 'ACTIVE',
-        payment_terms: 'NET_30'
+        payment_terms: 'NET_30',
+        gst_customer_type: 'CGST_SGST_9' as 'CGST_SGST_9' | 'IGST_18' | 'IGST_0_SEZ' | 'IGST_0_EXPORT'
     });
 
     const [endCustomerFormData, setEndCustomerFormData] = useState({
@@ -444,7 +447,8 @@ const UserManagement: React.FC = () => {
                 tan: item.tan || '',
                 cin: item.cin || '',
                 status: item.status || 'ACTIVE',
-                payment_terms: item.payment_terms || 'NET_30'
+                payment_terms: item.payment_terms || 'NET_30',
+                gst_customer_type: item.gst_customer_type || 'CGST_SGST_9'
             });
         } else if (mode === 'end_customer') {
             setEndCustomerFormData({
@@ -490,7 +494,8 @@ const UserManagement: React.FC = () => {
                 msme_number: item.msme_number || '',
                 pan: item.pan || '',
                 tan: item.tan || '',
-                cin: item.cin || ''
+                cin: item.cin || '',
+                gst_customer_type: item.gst_customer_type || 'CGST_SGST_9'
             });
         } else if (mode === 'financial_year') {
             setFyFormData({
@@ -864,9 +869,7 @@ const UserManagement: React.FC = () => {
         }
     };
 
-    const [editingId, setEditingId] = useState<number | null>(null);
 
-    // ... (existing useEffect) ...
 
     const handleCreateCompany = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -919,7 +922,8 @@ const UserManagement: React.FC = () => {
                 payment_terms: 'NET_30',
                 base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
                 is_gst_applicable: true, gstin: '', state_code: '',
-                msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
+                msme_registered: false, msme_number: '', pan: '', tan: '', cin: '',
+                gst_customer_type: 'CGST_SGST_9' as 'CGST_SGST_9' | 'IGST_18' | 'IGST_0_SEZ' | 'IGST_0_EXPORT'
             });
             setEditingId(null);
             fetchCompanies();
@@ -981,7 +985,8 @@ const UserManagement: React.FC = () => {
                 currency_symbol: '₹ / INR', decimal_places: 2,
                 is_gst_applicable: true, gstin: '', state_code: '',
                 msme_registered: false, msme_number: '', pan: '',
-                tan: '', cin: '', status: 'ACTIVE', payment_terms: 'NET_30'
+                tan: '', cin: '', status: 'ACTIVE', payment_terms: 'NET_30',
+                gst_customer_type: 'CGST_SGST_9'
             });
             setEditingId(null);
             fetchPartners();
@@ -1516,7 +1521,8 @@ const UserManagement: React.FC = () => {
                                     currency_symbol: '₹ / INR', decimal_places: 2,
                                     is_gst_applicable: true, gstin: '', state_code: '',
                                     msme_registered: false, msme_number: '', pan: '',
-                                    tan: '', cin: '', status: 'ACTIVE', payment_terms: 'NET_30'
+                                    tan: '', cin: '', status: 'ACTIVE', payment_terms: 'NET_30',
+                                    gst_customer_type: 'CGST_SGST_9'
                                 });
                                 setEndCustomerFormData({
                                     end_customer_code: '',
@@ -1534,7 +1540,8 @@ const UserManagement: React.FC = () => {
                                     payment_terms: 'NET_30',
                                     base_currency: 'INR', currency_symbol: '₹ / INR', decimal_places: 2,
                                     is_gst_applicable: true, gstin: '', state_code: '',
-                                    msme_registered: false, msme_number: '', pan: '', tan: '', cin: ''
+                                    msme_registered: false, msme_number: '', pan: '', tan: '', cin: '',
+                                    gst_customer_type: 'CGST_SGST_9' as 'CGST_SGST_9' | 'IGST_18' | 'IGST_0_SEZ' | 'IGST_0_EXPORT'
                                 });
                                 setProductFormData({
                                     product_code: '', name: '', category: 'SOFTWARE', subcategory: '',
@@ -2334,6 +2341,21 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             {partnerFormData.is_gst_applicable && (
                                                 <>
+                                                    <div>
+                                                        <SearchableDropdown
+                                                            label="GST Customer Type *"
+                                                            options={[
+                                                                { value: 'CGST_SGST_9', label: 'Domestic' },
+                                                                { value: 'IGST_18', label: 'Inter State' },
+                                                                { value: 'IGST_0_SEZ', label: 'SEZ' },
+                                                                { value: 'IGST_0_EXPORT', label: 'Export' }
+                                                            ]}
+                                                            value={partnerFormData.gst_customer_type}
+                                                            onChange={(val) => setPartnerFormData({ ...partnerFormData, gst_customer_type: val as any })}
+                                                            placeholder="Select GST Type"
+                                                            required
+                                                        />
+                                                    </div>
                                                     <div>
                                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                             GSTIN
@@ -3281,6 +3303,21 @@ const UserManagement: React.FC = () => {
                                             </div>
                                             {companyFormData.is_gst_applicable && (
                                                 <>
+                                                    <div>
+                                                        <SearchableDropdown
+                                                            label="GST Customer Type *"
+                                                            options={[
+                                                                { value: 'CGST_SGST_9', label: 'Domestic' },
+                                                                { value: 'IGST_18', label: 'Inter State' },
+                                                                { value: 'IGST_0_SEZ', label: 'SEZ' },
+                                                                { value: 'IGST_0_EXPORT', label: 'Export' }
+                                                            ]}
+                                                            value={companyFormData.gst_customer_type}
+                                                            onChange={(val) => setCompanyFormData({ ...companyFormData, gst_customer_type: val as any })}
+                                                            placeholder="Select GST Type"
+                                                            required
+                                                        />
+                                                    </div>
                                                     <div>
                                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                             GSTIN

@@ -1300,7 +1300,12 @@ const AppContent: React.FC = () => {
                       boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
                     }}>
                       <button
-                        onClick={() => setMilestoneView('dashboard')}
+                        onClick={() => {
+                          setEditingMilestoneId(null);
+                          setInitialSoId(null);
+                          setViewSingleMilestoneId(null);
+                          setMilestoneView('dashboard');
+                        }}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -1325,6 +1330,8 @@ const AppContent: React.FC = () => {
                       <button
                         onClick={() => {
                           setEditingMilestoneId(null);
+                          setInitialSoId(null);
+                          setViewSingleMilestoneId(null);
                           setMilestoneView('form');
                         }}
                         style={{
@@ -1358,8 +1365,10 @@ const AppContent: React.FC = () => {
                     initialSoId={initialSoId}
                     viewSingleMilestoneId={viewSingleMilestoneId}
                     onBack={() => {
-                      setMilestoneView('dashboard');
+                      setEditingMilestoneId(null);
+                      setInitialSoId(null);
                       setViewSingleMilestoneId(null);
+                      setMilestoneView('dashboard');
                     }}
                   />
                 ) : (

@@ -22,6 +22,23 @@ interface Invoice {
     // Add other fields as needed based on API response
 }
 
+const EMAIL_TEMPLATES = {
+    standard: {
+        name: 'Standard Invoice',
+        subject: (companyName: string, _customerName: string, invoiceNo: string) =>
+            `Invoice ${invoiceNo} from ${companyName}`,
+        body: (clientName: string, companyName: string, invoiceNo: string, yourName: string) =>
+            `Dear ${clientName},\n\nGreetings from ${companyName} !!\n\nPlease find attached invoice ${invoiceNo} for your reference. The breakdown of costs is appended below.\n\nThank you for your business!\n\nBest regards,\n${yourName}`
+    },
+    followup: {
+        name: 'Payment Follow-Up',
+        subject: (companyName: string, _customerName: string, invoiceNo: string) =>
+            `Follow-up: Invoice ${invoiceNo} from ${companyName}`,
+        body: (clientName: string, _companyName: string, invoiceNo: string, yourName: string) =>
+            `Dear ${clientName},\n\nI’m checking in regarding invoice ${invoiceNo}. Please let me know if you have any questions or if payment has already been processed.\n\nI’ve re-attached it here for your convenience.\n\nBest regards,\n${yourName}`
+    }
+};
+
 const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }) => {
     const navigate = useNavigate();
     const { showNotification } = useNotification();
@@ -210,13 +227,108 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
     };
 
 
-    const handleSendEmail = async (id: number) => {
+    const [emailModal, setEmailModal] = useState<{
+        show: boolean;
+        invoiceId: number | null;
+        to: string;
+        cc: string;
+        bcc: string;
+        subject: string;
+        body: string;
+        templateType: keyof typeof EMAIL_TEMPLATES;
+        has_po: boolean;
+        include_po: boolean;
+        po_filename: string;
+        loading: boolean;
+    }>({
+        show: false,
+        invoiceId: null,
+        to: '',
+        cc: '',
+        bcc: '',
+        subject: '',
+        body: '',
+        templateType: 'standard',
+        has_po: false,
+        include_po: false,
+        po_filename: '',
+        loading: false
+    });
+
+    const openEmailModal = async (id: number) => {
         try {
-            await api.post(`/finance/invoices/${id}/send_email/`);
+            setLoading(true);
+            const res = await api.get(`/finance/invoices/${id}/email_draft/`);
+            const data = res.data;
+            const inv = invoices.find(i => i.id === id);
+
+            const companyName = "Automation Edge"; // Use global setting later if needed
+            const clientName = inv?.customer_name || 'Customer';
+            const yourName = "Sales Team"; // Or from auth context
+            const invNo = inv?.invoice_no || '';
+
+            const subject = EMAIL_TEMPLATES.standard.subject(companyName, clientName, invNo);
+            const body = EMAIL_TEMPLATES.standard.body(clientName, companyName, invNo, yourName);
+
+            setEmailModal({
+                show: true,
+                invoiceId: id,
+                to: data.to,
+                cc: '',
+                bcc: '',
+                subject: subject,
+                body: body,
+                templateType: 'standard',
+                has_po: data.has_po,
+                include_po: data.has_po, // Default to true if PO exists
+                po_filename: data.po_filename,
+                loading: false
+            });
+        } catch (error: any) {
+            showNotification(error.response?.data?.error || 'Error fetching email draft', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleTemplateChange = (type: keyof typeof EMAIL_TEMPLATES) => {
+        const inv = invoices.find(i => i.id === emailModal.invoiceId);
+        if (!inv) return;
+
+        const companyName = "Automation Edge";
+        const clientName = inv.customer_name || 'Customer';
+        const yourName = "Sales Team";
+        const invNo = inv.invoice_no || '';
+
+        const subject = EMAIL_TEMPLATES[type].subject(companyName, clientName, invNo);
+        const body = EMAIL_TEMPLATES[type].body(clientName, companyName, invNo, yourName);
+
+        setEmailModal(prev => ({
+            ...prev,
+            subject,
+            body,
+            templateType: type
+        }));
+    };
+
+    const handleSendEmail = async () => {
+        if (!emailModal.invoiceId) return;
+        try {
+            setEmailModal(prev => ({ ...prev, loading: true }));
+            await api.post(`/finance/invoices/${emailModal.invoiceId}/send_email/`, {
+                to: emailModal.to,
+                cc: emailModal.cc,
+                bcc: emailModal.bcc,
+                subject: emailModal.subject,
+                body: emailModal.body,
+                include_po: emailModal.include_po
+            });
             showNotification('Invoice emailed successfully', 'success');
+            setEmailModal(prev => ({ ...prev, show: false, loading: false }));
             fetchInvoices();
         } catch (error: any) {
             showNotification(error.response?.data?.error || 'Error sending email', 'error');
+            setEmailModal(prev => ({ ...prev, loading: false }));
         }
     };
 
@@ -288,9 +400,8 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
     const getStatusStyle = (status: string) => {
         switch (status) {
             case 'PAID': return { bg: 'rgba(56, 161, 105, 0.1)', color: '#38A169', label: 'Paid' };
-            case 'APPROVED': return { bg: 'rgba(0, 200, 83, 0.1)', color: '#00C853', label: 'Approved' };
-            case 'PENDING_APPROVAL': return { bg: 'var(--bg-secondary)', color: 'var(--theme-primary)', label: 'Pending' };
-            case 'SENT': return { bg: 'rgba(159, 122, 234, 0.1)', color: '#9F7AEA', label: 'Sent' };
+            case 'FINALISED': return { bg: 'rgba(0, 200, 83, 0.1)', color: '#00C853', label: 'Finalised' };
+            case 'SUBMITTED': return { bg: 'rgba(159, 122, 234, 0.1)', color: '#9F7AEA', label: 'Submitted' };
             case 'CANCELLED': return { bg: 'rgba(160, 174, 192, 0.1)', color: '#A0AEC0', label: 'Cancelled' };
             case 'DRAFT':
             case 'OPEN': return { bg: 'rgba(113, 128, 150, 0.1)', color: '#718096', label: 'Draft' };
@@ -301,7 +412,11 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
     // Client-side filtering
     const filteredInvoices = useMemo(() => {
         return invoices.filter(inv => {
-            const matchesStatus = filters.status === '' || inv.status === filters.status;
+            const matchesStatus = filters.status === ''
+                ? true
+                : filters.status === 'FINALISED'
+                    ? (inv.status === 'FINALISED' || inv.status === 'SUBMITTED')
+                    : inv.status === filters.status;
             const matchesInvoiceNo = (inv.invoice_no || '').toLowerCase().includes(filters.invoice_no.toLowerCase());
             const matchesSO = (inv.so_no || '').toLowerCase().includes(filters.so_no.toLowerCase());
             const matchesDeal = (inv.deal_no || '').toLowerCase().includes(filters.deal_no.toLowerCase());
@@ -348,17 +463,13 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
     const counts = useMemo(() => ({
         all: invoices.length,
         draft: invoices.filter(i => i.status === 'DRAFT').length,
-        pending: invoices.filter(i => i.status === 'PENDING_APPROVAL').length,
-        approved: invoices.filter(i => i.status === 'APPROVED').length,
-        sent: invoices.filter(i => i.status === 'SENT').length,
+        finalised: invoices.filter(i => i.status === 'FINALISED' || i.status === 'SUBMITTED').length,
         paid: invoices.filter(i => i.status === 'PAID').length
     }), [invoices]);
 
     const statusFlow = [
         { label: `Draft (${counts.draft})`, value: 'DRAFT' },
-        { label: `Pending (${counts.pending})`, value: 'PENDING_APPROVAL' },
-        { label: `Approved (${counts.approved})`, value: 'APPROVED' },
-        { label: `Sent (${counts.sent})`, value: 'SENT' },
+        { label: `Finalised (${counts.finalised})`, value: 'FINALISED' },
         { label: `Paid (${counts.paid})`, value: 'PAID' },
         { label: `All (${counts.all})`, value: '' }
     ];
@@ -986,16 +1097,24 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                 case 'status':
                                                     const style = getStatusStyle(inv.status);
                                                     return <td key={key} style={cellStyle}>
-                                                        <span style={{
-                                                            padding: '4px 10px',
-                                                            borderRadius: '99px',
-                                                            fontSize: '0.7rem',
-                                                            fontWeight: 700,
-                                                            background: 'var(--bg-secondary)',
-                                                            color: 'var(--theme-primary)'
-                                                        }}>
-                                                            {style.label}
-                                                        </span>
+                                                        {inv.status === 'SUBMITTED' ? (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#4A5568', fontSize: '0.65rem', fontWeight: 600 }}>
+                                                                    <Check size={12} color="#00C853" /> Email Sent
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <span style={{
+                                                                padding: '4px 10px',
+                                                                borderRadius: '99px',
+                                                                fontSize: '0.7rem',
+                                                                fontWeight: 700,
+                                                                background: style.bg,
+                                                                color: style.color
+                                                            }}>
+                                                                {style.label}
+                                                            </span>
+                                                        )}
                                                     </td>;
                                                 default:
                                                     return null;
@@ -1063,9 +1182,9 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                 >
                                                     <Download size={15} />
                                                 </button>
-                                                {inv.status === 'APPROVED' && (
+                                                {inv.status === 'FINALISED' && (
                                                     <button
-                                                        onClick={() => handleSendEmail(inv.id)}
+                                                        onClick={() => openEmailModal(inv.id)}
                                                         style={{
                                                             display: 'inline-flex',
                                                             alignItems: 'center',
@@ -1205,6 +1324,191 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                     </table>
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Email Draft Modal */}
+            {emailModal.show && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(2px)'
+                }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        width: '700px',
+                        maxWidth: '95%',
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                        animation: 'fadeIn 0.2s ease-out'
+                    }}>
+                        {/* Header */}
+                        <div style={{
+                            padding: '16px 20px',
+                            borderBottom: '1px solid var(--border-primary)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: 'var(--ae-table-header-bg)'
+                        }}>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                Review Email Details
+                            </h3>
+                            <button
+                                onClick={() => setEmailModal(prev => ({ ...prev, show: false }))}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                            >
+                                <XCircle size={20} />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ marginBottom: '8px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Select Template:</label>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    {(Object.keys(EMAIL_TEMPLATES) as Array<keyof typeof EMAIL_TEMPLATES>).map((type) => (
+                                        <button
+                                            key={type}
+                                            onClick={() => handleTemplateChange(type)}
+                                            style={{
+                                                padding: '8px 16px',
+                                                borderRadius: '8px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                border: '1.5px solid',
+                                                background: emailModal.templateType === type ? '#38A169' : 'white',
+                                                color: emailModal.templateType === type ? 'white' : '#4A5568',
+                                                borderColor: emailModal.templateType === type ? '#38A169' : '#E2E8F0'
+                                            }}
+                                        >
+                                            {EMAIL_TEMPLATES[type].name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>To:</label>
+                                <input
+                                    type="email"
+                                    className="ae-input"
+                                    value={emailModal.to}
+                                    onChange={(e) => setEmailModal(prev => ({ ...prev, to: e.target.value }))}
+                                    placeholder="customer@example.com"
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                                    <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>CC:</label>
+                                    <input
+                                        type="text"
+                                        className="ae-input"
+                                        value={emailModal.cc}
+                                        onChange={(e) => setEmailModal(prev => ({ ...prev, cc: e.target.value }))}
+                                        placeholder="cc@example.com"
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                                    <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>BCC:</label>
+                                    <input
+                                        type="text"
+                                        className="ae-input"
+                                        value={emailModal.bcc}
+                                        onChange={(e) => setEmailModal(prev => ({ ...prev, bcc: e.target.value }))}
+                                        placeholder="bcc@example.com"
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Subject:</label>
+                                <input
+                                    type="text"
+                                    className="ae-input"
+                                    value={emailModal.subject}
+                                    onChange={(e) => setEmailModal(prev => ({ ...prev, subject: e.target.value }))}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Message Body:</label>
+                                <textarea
+                                    className="ae-input"
+                                    style={{ height: '220px', resize: 'vertical' }}
+                                    value={emailModal.body}
+                                    onChange={(e) => setEmailModal(prev => ({ ...prev, body: e.target.value }))}
+                                    placeholder="Write your message here..."
+                                />
+                                <span style={{ fontSize: '0.75rem', color: '#A0AEC0', fontStyle: 'italic', marginTop: '4px' }}>
+                                    * The invoice details HTML table will be automatically appended below this message.
+                                </span>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-primary)' }}>
+                                <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Attachments</h4>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                    <Check size={16} color="#00C853" />
+                                    <span>Generated Invoice PDF</span>
+                                </div>
+                                {emailModal.has_po ? (
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={emailModal.include_po}
+                                            onChange={(e) => setEmailModal(prev => ({ ...prev, include_po: e.target.checked }))}
+                                        />
+                                        Include Purchase Order ({emailModal.po_filename})
+                                    </label>
+                                ) : (
+                                    <div style={{ fontSize: '0.8rem', color: '#A0AEC0', fontStyle: 'italic' }}>
+                                        No Purchase Order attached to this Sales Order.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div style={{
+                            padding: '16px 20px',
+                            borderTop: '1px solid var(--border-primary)',
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            gap: '12px',
+                            background: '#F8FAFC'
+                        }}>
+                            <button
+                                onClick={() => setEmailModal(prev => ({ ...prev, show: false }))}
+                                className="ae-button"
+                                style={{ background: 'white', color: 'var(--text-secondary)', border: '1px solid var(--border-primary)' }}
+                                disabled={emailModal.loading}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSendEmail}
+                                className="ae-button"
+                                style={{ background: 'var(--theme-primary)', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                disabled={emailModal.loading || !emailModal.to}
+                            >
+                                <Mail size={16} />
+                                {emailModal.loading ? 'Sending...' : 'Send Email'}
+                            </button>
                         </div>
                     </div>
                 </div>

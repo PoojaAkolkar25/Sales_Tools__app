@@ -1,5 +1,6 @@
 from django.db import models
 from leads.models import Lead
+from deals.models import GSTCustomerType
 import re
 
 class StateMaster(models.Model):
@@ -65,6 +66,14 @@ class CompanyProfile(models.Model):
     gstin = models.CharField(max_length=15, blank=True, null=True)
     state_code = models.CharField(max_length=5, blank=True, null=True) # Auto-derived
     
+    gst_customer_type = models.CharField(
+        max_length=20, 
+        choices=GSTCustomerType.choices, 
+        default=GSTCustomerType.CGST_SGST_9,
+        verbose_name="GST Customer Type",
+        help_text="Determines tax type: Domestic (CGST/SGST or IGST), SEZ (IGST 0%), Export (IGST 0%)"
+    )
+    
     msme_registered = models.BooleanField(default=False)
     msme_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="MSME Number")
     pan = models.CharField(max_length=10, blank=True, null=True)
@@ -117,9 +126,8 @@ class InvoiceType(models.TextChoices):
 
 class InvoiceStatus(models.TextChoices):
     DRAFT = 'DRAFT', 'Draft'
-    PENDING_APPROVAL = 'PENDING_APPROVAL', 'Pending Approval'
-    APPROVED = 'APPROVED', 'Approved'
-    SENT = 'SENT', 'Sent to Customer'
+    FINALISED = 'FINALISED', 'Finalised'
+    SUBMITTED = 'SUBMITTED', 'Submitted'
     PARTIAL = 'PARTIAL', 'Partially Paid'
     PAID = 'PAID', 'Paid'
     CANCELLED = 'CANCELLED', 'Cancelled'
@@ -400,6 +408,15 @@ class CustomerPartner(models.Model):
     is_gst_applicable = models.BooleanField(default=True)
     gstin = models.CharField(max_length=15, blank=True, null=True)
     state_code = models.CharField(max_length=5, blank=True, null=True)
+    
+    gst_customer_type = models.CharField(
+        max_length=20, 
+        choices=GSTCustomerType.choices, 
+        default=GSTCustomerType.CGST_SGST_9,
+        verbose_name="GST Customer Type",
+        help_text="Determines tax type: Domestic (CGST/SGST or IGST), SEZ (IGST 0%), Export (IGST 0%)"
+    )
+    
     msme_registered = models.BooleanField(default=False)
     msme_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="MSME Number")
     pan = models.CharField(max_length=10, blank=True, null=True)

@@ -3,19 +3,27 @@
  * @param dateInput Date object or ISO date string
  * @returns formatted date string
  */
+export const parseDateSafe = (dateInput: string | Date | null | undefined): Date | null => {
+    if (!dateInput) return null;
+    if (dateInput instanceof Date) return dateInput;
+
+    if (typeof dateInput === 'string') {
+        // Handle YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+            const [year, month, day] = dateInput.split('-').map(Number);
+            return new Date(year, month - 1, day);
+        }
+        // Fallback for other strings
+        const d = new Date(dateInput);
+        return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
+};
+
 export const formatToAppDate = (dateInput: string | Date | null | undefined): string => {
     if (!dateInput) return '';
-
-    let date: Date;
-
-    if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
-        const [year, month, day] = dateInput.split('-').map(Number);
-        date = new Date(year, month - 1, day);
-    } else {
-        date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput as Date;
-    }
-
-    if (!date || isNaN(date.getTime())) return String(dateInput);
+    const date = parseDateSafe(dateInput);
+    if (!date) return String(dateInput);
 
     const day = String(date.getDate()).padStart(2, '0');
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

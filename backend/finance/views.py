@@ -3,7 +3,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .filters import InvoiceFilter
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from .models import (
@@ -78,7 +78,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['invoice_no', 'lead__customer_name', 'deal__deal_name']
     filterset_class = InvoiceFilter
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def perform_create(self, serializer):
         import json
@@ -272,12 +272,12 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         return invoice
 
     @action(detail=True, methods=['post'])
-    def submit_for_approval(self, request, pk=None):
+    def finalise(self, request, pk=None):
         invoice = self.get_object()
         if invoice.status != 'DRAFT':
-            return Response({'error': 'Only draft invoices can be submitted for approval'}, status=400)
+            return Response({'error': 'Only draft invoices can be finalised'}, status=400)
         
-        invoice.status = 'PENDING_APPROVAL'
+        invoice.status = 'FINALISED'
         invoice.save()
         
         # Log audit trail for submission
@@ -289,36 +289,12 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             action_type='UPDATE',
             field_name='status',
             old_value='DRAFT',
-            new_value='PENDING_APPROVAL'
+            new_value='FINALISED'
         )
         
-        return Response({'status': 'Invoice submitted for approval'})
+        return Response({'status': 'Invoice finalised successfully'})
 
-    @action(detail=True, methods=['post'])
-    def approve(self, request, pk=None):
-        invoice = self.get_object()
-        old_status = invoice.status
-        comments = request.data.get('comments', '') # Define comments here
-        invoice.status = 'APPROVED'
-        invoice.approved_by = request.user
-        invoice.approved_at = timezone.now()
-        invoice.approval_comments = comments
-        invoice.save()
-        
-        # Log audit trail for approval
-        from deals.models import AuditTrail
-        content_type = ContentType.objects.get_for_model(Invoice)
-        AuditTrail.objects.create(
-            content_type=content_type,
-            object_id=invoice.id,
-            user=request.user,
-            action_type='UPDATE',
-            field_name='status',
-            old_value=old_status,
-            new_value='APPROVED'
-        )
-        
-        return Response({'status': 'Invoice approved'})
+
 
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
@@ -365,44 +341,142 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             logger.error(f"Error in download_pdf (finance): {str(e)}", exc_info=True)
             return Response({'error': str(e)}, status=500)
 
+    @action(detail=True, methods=['get'])
+    def email_draft(self, request, pk=None):
+        invoice = self.get_object()
+        
+        # Determine email
+        to_email = ""
+        if invoice.lead and hasattr(invoice.lead, 'email') and invoice.lead.email:
+            to_email = invoice.lead.email
+        elif invoice.deal and invoice.deal.customer_email:
+            to_email = invoice.deal.customer_email
+        elif invoice.deal and invoice.deal.customer and invoice.deal.customer.email:
+            to_email = invoice.deal.customer.email
+            
+        # Determine PO presence
+        has_po = False
+        po_filename = ""
+        if invoice.sales_order and invoice.sales_order.po_file:
+            has_po = True
+            po_filename = invoice.sales_order.po_file.file.name.split('/')[-1]
+            
+        comp_profile = CompanyProfile.objects.first()
+        company_name = comp_profile.name if comp_profile else "Our Company"
+        subject = f"Invoice {invoice.invoice_no} from {company_name}"
+        return Response({
+            'to': to_email,
+            'subject': subject,
+            'has_po': has_po,
+            'po_filename': po_filename
+        })
+
     @action(detail=True, methods=['post'])
     def send_email(self, request, pk=None):
         from django.core.mail import EmailMessage
         from django.conf import settings
         
         invoice = self.get_object()
-        if invoice.status == 'DRAFT':
-            return Response({'error': 'Invoice must be approved before sending'}, status=400)
+        if invoice.status not in ['FINALISED', 'SUBMITTED', 'PARTIAL', 'PAID']:
+            return Response({'error': 'Invoice must be finalised before sending'}, status=400)
             
         try:
             pdf_content = InvoiceService.generate_pdf(invoice)
             
-            subject = f"Invoice {invoice.invoice_no} from {CompanyProfile.objects.first().name}"
-            body = f"Please find attached invoice {invoice.invoice_no} for your reference."
-            
-            # Robust email detection
-            to_email = None
-            if invoice.lead and hasattr(invoice.lead, 'email') and invoice.lead.email:
-                to_email = invoice.lead.email
-            elif invoice.deal and invoice.deal.customer_email:
-                to_email = invoice.deal.customer_email
-            elif invoice.deal and invoice.deal.customer and invoice.deal.customer.email:
-                to_email = invoice.deal.customer.email
+            # Read custom data if provided, fallback to defaults
+            to_email = request.data.get('to')
+            cc_emails = request.data.get('cc', '')
+            bcc_emails = request.data.get('bcc', '')
+            subject = request.data.get('subject')
+            body = request.data.get('body')
+            include_po = request.data.get('include_po', False)
             
             if not to_email:
-                return Response({'error': 'No email address found for this customer. Please update the Lead or Deal contact info.'}, status=400)
+                if invoice.lead and hasattr(invoice.lead, 'email') and invoice.lead.email:
+                    to_email = invoice.lead.email
+                elif invoice.deal and invoice.deal.customer_email:
+                    to_email = invoice.deal.customer_email
+                elif invoice.deal and invoice.deal.customer and invoice.deal.customer.email:
+                    to_email = invoice.deal.customer.email
             
+            if not to_email:
+                return Response({'error': 'No email address found for this customer. Please update the Lead or Deal contact info, or provide it in the request.'}, status=400)
+            
+            if not subject:
+                comp_profile = CompanyProfile.objects.first()
+                subject = f"Invoice {invoice.invoice_no} from {comp_profile.name if comp_profile else 'Our Company'}"
+                
+            if not body:
+                body_html = f"<p>Please find attached invoice {invoice.invoice_no} for your reference.</p>"
+            else:
+                body_html = body.replace('\\n', '<br>')
+            
+            # Construct HTML Table
+            gst_total = float(invoice.total_tax)
+            basic_amt = float(invoice.taxable_amount)
+            currency_symbol = "₹" if invoice.currency == 'INR' else "$"
+            
+            table_html = f"""
+            <br><br>
+            <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; font-family: sans-serif; width: 100%; font-size: 11px;">
+                <thead>
+                    <tr style="background-color: #f2f2f2; text-align: center;">
+                        <th>Invoice Date</th>
+                        <th>Customer Name</th>
+                        <th>Invoice No.</th>
+                        <th>Basic Amt.</th>
+                        <th>GST</th>
+                        <th>Invoice Amt.</th>
+                        <th>Narration</th>
+                        <th>PO Number</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="text-align: center;">
+                        <td>{invoice.invoice_date.strftime('%B %d, %Y')}</td>
+                        <td>{invoice.lead.customer_name if invoice.lead else ''}</td>
+                        <td>{invoice.invoice_no}</td>
+                        <td>{currency_symbol}{basic_amt:,.2f}</td>
+                        <td>{currency_symbol}{gst_total:,.2f}</td>
+                        <td><strong>{currency_symbol}{float(invoice.total_amount):,.2f}</strong></td>
+                        <td>{invoice.memo or ''}</td>
+                        <td>{invoice.po_number or (invoice.sales_order.po_number if invoice.sales_order else '')}</td>
+                    </tr>
+                </tbody>
+            </table>
+            """
+            
+            final_body = body_html + table_html
+            
+            cc_list = [e.strip() for e in cc_emails.split(',') if e.strip()]
+            bcc_list = [e.strip() for e in bcc_emails.split(',') if e.strip()]
+            
+            if hasattr(settings, 'FINANCE_EMAIL') and settings.FINANCE_EMAIL:
+                if settings.FINANCE_EMAIL not in cc_list:
+                    cc_list.append(settings.FINANCE_EMAIL)
+
             email = EmailMessage(
-                subject,
-                body,
-                settings.DEFAULT_FROM_EMAIL,
-                [to_email],
-                cc=[settings.FINANCE_EMAIL] if hasattr(settings, 'FINANCE_EMAIL') else []
+                subject=subject,
+                body=final_body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[to_email],
+                cc=cc_list,
+                bcc=bcc_list
             )
+            email.content_subtype = "html" # Set main content type to HTML
+            
+            # Attach generated PDF
             email.attach(f"Invoice_{invoice.invoice_no}.pdf", pdf_content, 'application/pdf')
+            
+            # Attach PO if requested
+            if include_po and invoice.sales_order and invoice.sales_order.po_file:
+                po_file = invoice.sales_order.po_file.file
+                email.attach(po_file.name.split('/')[-1], po_file.read(), 'application/pdf')
+                po_file.seek(0)
+                
             email.send()
             
-            invoice.status = 'SENT'
+            invoice.status = 'SUBMITTED'
             invoice.save()
             return Response({'status': 'Email sent successfully'})
         except Exception as e:
@@ -427,7 +501,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def report_tax_summary(self, request):
         from django.db.models import Sum
-        summary = Invoice.objects.filter(status__in=['APPROVED', 'SENT', 'PAID', 'PARTIAL']).aggregate(
+        summary = Invoice.objects.filter(status__in=['FINALISED', 'SUBMITTED', 'PAID', 'PARTIAL']).aggregate(
             total_cgst=Sum('line_items__cgst_amount'),
             total_sgst=Sum('line_items__sgst_amount'),
             total_igst=Sum('line_items__igst_amount'),
