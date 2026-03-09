@@ -92,6 +92,51 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
         fetchCustomers();
         if (id) {
             fetchSalesOrderDetails();
+        } else {
+            // Reset form for fresh creation (e.g. when clicking "Create New" while editing an existing SO)
+            setSalesOrder({
+                so_number: '',
+                customer_name: '',
+                customer: '',
+                cust_id: '',
+                estimate: '',
+                estimate_no: '',
+                estimate_date: '',
+                po_number: '',
+                po_date: '',
+                po_from_date: '',
+                po_to_date: '',
+                currency: 'INR',
+                order_date: new Date().toISOString().split('T')[0],
+                billing_address: '',
+                shipping_address: '',
+                items: [{
+                    item_type: 'LICENSE',
+                    product: '',
+                    product_name: '',
+                    description: '',
+                    start_date: '',
+                    end_date: '',
+                    qty: '',
+                    rate: '',
+                    tax: '',
+                    discount: '',
+                    amount: ''
+                }],
+                total_amount: 0,
+                status: 'DRAFT',
+                column_labels: {
+                    item_type: 'Type',
+                    product_name: 'Product',
+                    description: 'Description',
+                    start_date: 'Start Date',
+                    end_date: 'End Date',
+                    qty: 'Qty',
+                    rate: 'Rate',
+                    discount_percent: 'Disc%'
+                }
+            });
+            setEstimates([]);
         }
     }, [id]);
 

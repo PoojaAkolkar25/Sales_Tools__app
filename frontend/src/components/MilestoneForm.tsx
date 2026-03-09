@@ -46,6 +46,12 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
             fetchMilestoneForEdit(id);
         } else if (!id && initialSoId && customers.length > 0) {
             handleInitialSo(initialSoId);
+        } else if (!id && !initialSoId) {
+            // Reset form for fresh creation (e.g. when clicking "Create New" while editing an existing milestone)
+            setSelectedCustomer(null);
+            setSelectedSO(null);
+            setMilestones([]);
+            setSalesOrders([]);
         }
     }, [id, initialSoId, customers]);
 

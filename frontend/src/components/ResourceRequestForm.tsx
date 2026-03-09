@@ -79,13 +79,42 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
         fetchInitialData();
         if (id) {
             fetchRequestDetails();
-        } else if (user) {
-            // Auto-fetch requestor details for new requests
-            setFormData((prev: any) => ({
-                ...prev,
-                employee_id: user.employee_id || prev.employee_id,
-                department: user.department || prev.department,
-            }));
+        } else {
+            // Reset form for fresh creation (e.g. when clicking "Create New" while editing an existing request)
+            setFormData({
+                request_date: new Date().toISOString().split('T')[0],
+                employee_id: user?.employee_id || '',
+                department: user?.department || '',
+                designation: '',
+                project_name: '',
+                project_code: '',
+                client_name: '',
+                environment: 'DEVELOPMENT',
+                resource_type_requested: 'Server',
+                server_type: 'EC2',
+                server_category: 'Virtual',
+                cloud_provider: 'AWS',
+                region: 'ap-south-1',
+                instance_type: 't3a.2xlarge',
+                os: 'Amazon Linux 2',
+                cpu_cores: 8,
+                ram_gb: 32,
+                storage_type: 'SSD',
+                storage_size_gb: 500,
+                database_required: false,
+                rds_type: '',
+                database_engine: '',
+                db_storage_gb: '',
+                backup_required: false,
+                purpose_of_request: '',
+                business_justification: '',
+                expected_start_date: '',
+                expected_end_date: '',
+                quantity: 1,
+                status: 'DRAFT',
+                it_head_remarks: '',
+                finance_head_remarks: '',
+            });
         }
     }, [id, user]);
 

@@ -31,7 +31,11 @@ const Payment: React.FC = () => {
                         onView={handleViewVoucher}
                     />
                 ) : (
-                    <ReceiptVoucherForm id={voucherId} onBack={handleBackToDashboard} />
+                    <ReceiptVoucherForm 
+                        id={voucherId} 
+                        onBack={handleBackToDashboard} 
+                        onCreateNew={() => { setVoucherId(null); setReceiptView('FORM'); }}
+                    />
                 );
             case 'BANK_SETUP':
                 return <BankConnectionSetup />;

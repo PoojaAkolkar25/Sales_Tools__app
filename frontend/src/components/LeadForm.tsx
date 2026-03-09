@@ -34,6 +34,17 @@ const LeadForm: React.FC<LeadFormProps> = ({ id, onBack, onSave }) => {
     useEffect(() => {
         if (id) {
             fetchLead();
+        } else {
+            // Reset form for fresh creation (e.g. when clicking "Create New" while editing an existing lead)
+            setFormData({
+                company: 'AE IND',
+                lead_date: new Date().toISOString().split('T')[0],
+                customer_name: '',
+                project_name: '',
+                project_manager: '',
+                sales_person: '',
+                email: ''
+            });
         }
     }, [id]);
 

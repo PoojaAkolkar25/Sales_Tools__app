@@ -107,6 +107,44 @@ const InvoiceForm: React.FC<{
         fetchInitialData();
         if (invoiceId) {
             fetchInvoiceDetails();
+        } else {
+            // Reset form for fresh creation (e.g. when clicking "Create New" while editing an existing invoice)
+            setFormData({
+                invoice_no: '',
+                lead: '',
+                milestone: '',
+                sales_order: '',
+                invoice_date: new Date().toISOString().split('T')[0],
+                due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                customer_gstin: '',
+                customer_state: '',
+                billing_address: '',
+                shipping_address: '',
+                currency: 'INR',
+                is_gst_applicable: true,
+                invoice_type: 'DOMESTIC',
+                sales_tax_rate: 0,
+                sales_tax_amount: 0,
+                place_of_supply: '',
+                authorized_signatory: '',
+                gst_declaration: 'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. This invoice is issued under Rule 46 of the CGST Rules, 2017.',
+                lut_declaration: 'Supply meant for export under Letter of Undertaking (LUT) without payment of Integrated Tax as per Section 16(3) of the IGST Act, 2017 and Rule 96A of the CGST Rules, 2017.',
+                irn: '',
+                ack_no: '',
+                ack_date: '',
+                po_number: '',
+                po_date: '',
+                payment_terms_days: 30,
+                gst_customer_type: 'CGST_SGST_9',
+                currency_symbol: '₹',
+                memo: ''
+            });
+            setLineItems([
+                { type: 'Service', description: '', hsn_sac: '', quantity: 0, rate: 0, discount: 0, gst_rate: 18 }
+            ]);
+            setMilestones([]);
+            setStatus('DRAFT');
+            setIsReadOnly(false);
         }
     }, [invoiceId]);
 
