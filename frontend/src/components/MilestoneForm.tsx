@@ -6,7 +6,7 @@ import SearchableDropdown from './SearchableDropdown';
 import { formatToAppDate } from '../utils/dateUtils';
 
 interface MilestoneFormProps {
-    onBack: () => void;
+    onBack: (tab?: string) => void;
     id?: number | string | null;
     initialSoId?: number | null;
     viewSingleMilestoneId?: number | null; // When set: show only this milestone (view mode)
@@ -477,17 +477,18 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                             Please select a Sales Order to define milestones.
                         </div>
                     ) : (
-                        <div style={{ padding: '0 20px 20px' }}>
+                        <div style={{ padding: '0 5px 20px' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                                 <thead>
-                                    <tr style={{ background: '#F8FAFC' }}>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SR.NO.</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>DESCRIPTION</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>DUE DATE</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AMOUNT %</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AMOUNT</th>
-                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 900, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>STATUS</th>
-                                        <th style={{ padding: '12px 0', textAlign: 'center', width: '50px' }}></th>
+                                    <tr style={{ background: '#E2E8F0' }}>
+                                        <th style={{ padding: '12px 0', textAlign: 'center', width: '35px' }}></th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em', width: '60px' }}>SR.NO.</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em' }}>DESCRIPTION</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em', width: '120px' }}>DUE DATE</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em', width: '100px' }}>AMOUNT %</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em', width: '130px' }}>AMOUNT</th>
+                                        <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em', width: '110px' }}>STATUS</th>
+                                        <th style={{ padding: '12px 0', textAlign: 'center', width: '40px' }}></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -508,11 +509,11 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                 } else {
                                                     d.setHours(0, 0, 0, 0);
                                                     const t = new Date(); t.setHours(0, 0, 0, 0);
-                                                    const i5 = new Date(t); i5.setDate(t.getDate() + 5);
+                                                    const fiveDAgo = new Date(t); fiveDAgo.setDate(t.getDate() - 5);
 
-                                                    if (filterTab === 'yet_to_due') isVisible = d > i5;
-                                                    else if (filterTab === 'due_1_5') isVisible = d > t && d <= i5;
-                                                    else if (filterTab === 'due') isVisible = d <= t;
+                                                    if (filterTab === 'yet_to_due') isVisible = d > t;
+                                                    else if (filterTab === 'due_1_5') isVisible = d > fiveDAgo && d <= t;
+                                                    else if (filterTab === 'due') isVisible = d <= fiveDAgo;
                                                 }
                                             }
                                         }
@@ -531,7 +532,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                     backgroundColor: isFocused ? '#FEFCE8' : 'transparent'
                                                 }}
                                             >
-                                                <td style={{ padding: '8px', textAlign: 'center' }}>
+                                                <td style={{ padding: '4px 0', textAlign: 'center', width: '35px' }}>
                                                     {originalIndex === milestones.length - 1 && !viewSingleMilestoneId && (
                                                         <button
                                                             type="button"
@@ -554,33 +555,35 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                         </button>
                                                     )}
                                                 </td>
-                                                <td style={{ padding: '8px' }}>
+                                                <td style={{ padding: '4px 8px', width: '60px' }}>
                                                     <input
                                                         type="text"
                                                         value={milestone.milestone_no}
                                                         readOnly
                                                         style={{
-                                                            width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
-                                                            borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700,
-                                                            textAlign: 'center', background: '#F8FAFC', color: '#4A5568'
+                                                            width: '100%', padding: '4px 8px', border: '1px solid #E2E8F0',
+                                                            borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800,
+                                                            textAlign: 'left', background: '#F8FAFC', color: '#111827',
+                                                            height: '30px'
                                                         }}
                                                     />
                                                 </td>
-                                                <td style={{ padding: '8px' }}>
+                                                <td style={{ padding: '4px 8px' }}>
                                                     <textarea
                                                         value={milestone.description}
                                                         onChange={(e) => handleMilestoneChange(originalIndex, 'description', e.target.value)}
                                                         disabled={isDisabled}
                                                         className="ae-input"
                                                         style={{
-                                                            width: '100%', height: '48px', padding: '8px 12px', border: '1px solid #E2E8F0',
+                                                            width: '100%', height: '30px', padding: '6px 12px', border: '1px solid #E2E8F0',
                                                             borderRadius: '6px', fontSize: '0.75rem', resize: 'none',
-                                                            opacity: isDisabled ? 0.7 : 1
+                                                            opacity: isDisabled ? 0.7 : 1, color: '#111827',
+                                                            lineHeight: '16px', display: 'flex', alignItems: 'center'
                                                         }}
                                                         rows={1}
                                                     />
                                                 </td>
-                                                <td style={{ padding: '8px' }}>
+                                                <td style={{ padding: '4px 8px', width: '120px' }}>
                                                     <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
                                                         <input
                                                             type="text"
@@ -588,13 +591,13 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                             readOnly
                                                             disabled={isDisabled}
                                                             style={{
-                                                                width: '100%', padding: '6px 8px', paddingRight: '28px', border: '1px solid #E2E8F0',
-                                                                borderRadius: '6px', fontSize: '0.75rem',
+                                                                width: '100%', padding: '4px 8px', paddingRight: '22px', border: '1px solid #E2E8F0',
+                                                                borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600,
                                                                 opacity: isDisabled ? 0.7 : 1,
-                                                                color: 'var(--text-primary)',
+                                                                color: '#111827',
                                                                 background: isDisabled ? '#F8FAFC' : 'white',
                                                                 cursor: isDisabled ? 'not-allowed' : 'pointer',
-                                                                minHeight: '30px'
+                                                                height: '30px'
                                                             }}
                                                             onClick={(e) => {
                                                                 if (!isDisabled) {
@@ -620,36 +623,36 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                                 top: 0
                                                             }}
                                                         />
-                                                        <Calendar size={14} style={{ position: 'absolute', right: '8px', color: '#A0AEC0', pointerEvents: 'none', zIndex: 2 }} />
+                                                        <Calendar size={12} style={{ position: 'absolute', right: '6px', color: '#444', pointerEvents: 'none', zIndex: 2 }} />
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '8px' }}>
+                                                <td style={{ padding: '4px 8px', width: '80px' }}>
                                                     <input
                                                         type="number"
                                                         value={milestone.percentage || ''}
                                                         onChange={(e) => handleMilestoneChange(originalIndex, 'percentage', e.target.value)}
                                                         disabled={isDisabled}
                                                         style={{
-                                                            width: '100%', padding: '6px 8px', border: '1px solid #E2E8F0',
-                                                            borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700,
-                                                            textAlign: 'center', color: 'var(--text-secondary)',
-                                                            opacity: isDisabled ? 0.7 : 1
+                                                            width: '100%', padding: '4px 8px', border: '1px solid #E2E8F0',
+                                                            borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800,
+                                                            textAlign: 'center', color: '#111827',
+                                                            opacity: isDisabled ? 0.7 : 1,
+                                                            height: '30px'
                                                         }}
                                                     />
                                                 </td>
-                                                <td style={{ padding: '8px' }}>
-                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                                        <span style={{ position: 'absolute', left: '10px', fontSize: '0.8rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(selectedSO.currency)}</span>
+                                                <td style={{ padding: '4px 8px', width: '130px' }}>
+                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', height: '30px', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '0 8px', background: isDisabled ? '#F8FAFC' : 'white' }}>
+                                                        <span style={{ fontSize: '0.75rem', color: '#111827', fontWeight: 700, marginRight: '4px' }}>{getCurrencySymbol(selectedSO.currency)}</span>
                                                         <input
                                                             type="number"
                                                             value={milestone.amount || ''}
                                                             onChange={(e) => handleMilestoneChange(originalIndex, 'amount', e.target.value)}
                                                             disabled={isDisabled}
                                                             style={{
-                                                                width: '100%', padding: '6px 8px 6px 24px', border: '1px solid #E2E8F0',
-                                                                borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800,
-                                                                textAlign: 'right',
-                                                                opacity: isDisabled ? 0.7 : 1
+                                                                width: '100%', border: 'none', background: 'transparent',
+                                                                fontSize: '0.75rem', fontWeight: 800, textAlign: 'right', outline: 'none',
+                                                                color: '#111827'
                                                             }}
                                                         />
                                                     </div>
@@ -660,7 +663,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                             if (milestone.status === 'INVOICED') {
                                                                 return (
                                                                     <div
-                                                                        onClick={() => scrollToMilestone(milestone.id)}
+                                                                        onClick={() => onBack('billed')}
                                                                         style={{
                                                                             display: 'flex', alignItems: 'center', gap: '4px',
                                                                             padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 800,
@@ -682,19 +685,22 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                             const d = milestone.due_date ? new Date(milestone.due_date) : null;
                                                             if (d) d.setHours(0, 0, 0, 0);
                                                             const t = new Date(); t.setHours(0, 0, 0, 0);
-                                                            const i5 = new Date(t); i5.setDate(t.getDate() + 5);
+                                                            const fiveDAgo = new Date(t); fiveDAgo.setDate(t.getDate() - 5);
 
                                                             if (!d) return <span style={{ color: '#A0AEC0', fontSize: '10px' }}>No Date</span>;
 
                                                             let badge: { label: string; bg: string; color: string };
-                                                            if (d < t) badge = { label: 'Overdue', bg: '#FEE2E2', color: '#DC2626' };
-                                                            else if (d.getTime() === t.getTime()) badge = { label: 'Due Today', bg: '#FEF3C7', color: '#D97706' };
-                                                            else if (d <= i5) badge = { label: 'Due 1-5 Days', bg: '#FEF3C7', color: '#D97706' };
-                                                            else badge = { label: 'Yet to Due', bg: '#E0F2FE', color: '#0284C7' };
+                                                            if (d > t) badge = { label: 'Yet to Due', bg: '#E0F2FE', color: '#0284C7' };
+                                                            else if (d > fiveDAgo) badge = { label: 'Due 1-5 Days', bg: '#FEF3C7', color: '#D97706' };
+                                                            else badge = { label: 'Due', bg: '#FEE2E2', color: '#DC2626' };
 
                                                             return (
                                                                 <div
-                                                                    onClick={() => scrollToMilestone(milestone.id)}
+                                                                    onClick={() => {
+                                                                        if (d > t) onBack('yet_to_due');
+                                                                        else if (d > fiveDAgo) onBack('due_1_5');
+                                                                        else onBack('due');
+                                                                    }}
                                                                     style={{
                                                                         display: 'flex', alignItems: 'center', gap: '4px',
                                                                         padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 800,
@@ -744,10 +750,10 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                     })}
                                 </tbody>
                                 <tfoot>
-                                    <tr style={{ background: 'var(--bg-accent)' }}>
-                                        <td colSpan={5} style={{ padding: '16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Planned</td>
-                                        <td style={{ padding: '16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: calculateTotal() > parseFloat(selectedSO.total_amount) ? '#C53030' : 'var(--text-primary)' }}>
-                                            <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{getCurrencySymbol(selectedSO.currency)}</span>
+                                    <tr style={{ background: '#F8FAFC' }}>
+                                        <td colSpan={5} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase' }}>Total Planned</td>
+                                        <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: calculateTotal() > parseFloat(selectedSO.total_amount) ? '#DC2626' : '#111827' }}>
+                                            <span style={{ color: '#0369A1', marginRight: '4px' }}>{getCurrencySymbol(selectedSO.currency)}</span>
                                             {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                         <td colSpan={2}></td>
@@ -797,7 +803,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                         Viewing all milestones for Sales Order {selectedSO?.so_number || ''}
                     </span>
                     <button
-                        onClick={onBack}
+                        onClick={() => onBack()}
                         style={{
                             marginLeft: 'auto',
                             background: 'white',

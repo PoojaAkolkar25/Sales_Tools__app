@@ -74,9 +74,10 @@ const MAX_COL_WIDTHS: Record<string, number> = {
 interface MilestoneDashboardProps {
     onView?: (id: number | string, tab?: string) => void;
     onCreate?: () => void;
+    initialTab?: string;
 }
 
-const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
+const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreate, initialTab }) => {
     const navigate = useNavigate();
     const [milestones, setMilestones] = useState<any[]>([]);
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
@@ -102,10 +103,13 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
     });
 
     // Due-date tab: 'yet_to_due' | 'due_1_5' | 'due' | 'billed' | 'all'
-    const [dueTab, setDueTab] = useState<string>('all');
+    const [dueTab, setDueTab] = useState<string>(initialTab || 'all');
     const [showFilters] = useState(true);
 
     const [isDownloading, setIsDownloading] = useState(false);
+    const [hoveredTab, setHoveredTab] = useState<string | null>(null);
+    const [hoveredExport, setHoveredExport] = useState(false);
+    const [hoveredColumn, setHoveredColumn] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
     const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
@@ -135,6 +139,12 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
 
     const resizingRef = useRef<{ colKey: string; startWidth: number; startX: number } | null>(null);
     const tableScrollRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (initialTab) {
+            setDueTab(initialTab);
+        }
+    }, [initialTab]);
 
     useEffect(() => {
         localStorage.setItem('milestoneDashboard_colWidths', JSON.stringify(colWidths));
@@ -358,8 +368,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
         // Apply dueTab filter
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const in5Days = new Date(today);
-        in5Days.setDate(today.getDate() + 5);
+        const fiveDaysAgo = new Date(today);
+        fiveDaysAgo.setDate(today.getDate() - 5);
 
         const tabFilteredRows = filteredList.filter(m => {
             if (dueTab === 'all') return true;
@@ -372,9 +382,9 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
             if (!d) return false;
             d.setHours(0, 0, 0, 0);
 
-            if (dueTab === 'yet_to_due') return d > in5Days;
-            if (dueTab === 'due_1_5') return d > today && d <= in5Days;
-            if (dueTab === 'due') return d <= today;
+            if (dueTab === 'yet_to_due') return d > today;
+            if (dueTab === 'due_1_5') return d > fiveDaysAgo && d <= today;
+            if (dueTab === 'due') return d <= fiveDaysAgo;
 
             return true;
         });
@@ -430,8 +440,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
     const tabCounts = useMemo(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const in5Days = new Date(today);
-        in5Days.setDate(today.getDate() + 5);
+        const fiveDaysAgo = new Date(today);
+        fiveDaysAgo.setDate(today.getDate() - 5);
 
         const counts = {
             yet_to_due: 0,
@@ -448,9 +458,9 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                 const d = parseDateSafe(m.due_date);
                 if (d) {
                     d.setHours(0, 0, 0, 0);
-                    if (d > in5Days) counts.yet_to_due++;
-                    else if (d > today && d <= in5Days) counts.due_1_5++;
-                    else if (d <= today) counts.due++;
+                    if (d > today) counts.yet_to_due++;
+                    else if (d > fiveDaysAgo && d <= today) counts.due_1_5++;
+                    else if (d <= fiveDaysAgo) counts.due++;
                 }
             }
         });
@@ -459,11 +469,11 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
     }, [consolidatedMilestones]);
 
     const dueTabFlow = [
-        { label: `Yet to Due (${tabCounts.yet_to_due})`, value: 'yet_to_due', color: '#3B82F6' },
-        { label: `Due 1-5 Days (${tabCounts.due_1_5})`, value: 'due_1_5', color: '#F59E0B' },
-        { label: `Due (${tabCounts.due})`, value: 'due', color: '#EF4444' },
-        { label: `Billed (${tabCounts.billed})`, value: 'billed', color: '#00C853' },
-        { label: `All (${tabCounts.all})`, value: 'all', color: 'var(--text-secondary)' }
+        { label: `Yet to Due (${tabCounts.yet_to_due})`, value: 'yet_to_due' },
+        { label: `Due 1-5 Days (${tabCounts.due_1_5})`, value: 'due_1_5' },
+        { label: `Due (${tabCounts.due})`, value: 'due' },
+        { label: `Billed (${tabCounts.billed})`, value: 'billed' },
+        { label: `All (${tabCounts.all})`, value: 'all' }
     ];
 
     return (
@@ -471,12 +481,15 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
             <div className="ae-table-container" style={{
                 marginTop: '12px',
                 marginBottom: '60px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'visible',
                 maxHeight: 'none',
-                overflowY: 'visible'
+                overflowY: 'visible',
+                borderRadius: '16px',
+                border: '1px solid var(--border-primary)',
+                background: 'var(--bg-primary)'
             }}>
                 {/* Controls Status Tabs and Actions - Padded Header Area */}
                 <div style={{
@@ -502,34 +515,25 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                     }}>
                         {dueTabFlow.map((flow) => {
                             const isActive = dueTab === flow.value;
+                            const isHovered = hoveredTab === flow.value;
                             return (
                                 <button
                                     key={flow.value}
                                     onClick={() => { setDueTab(flow.value); setCurrentPage(1); }}
+                                    onMouseEnter={() => setHoveredTab(flow.value)}
+                                    onMouseLeave={() => setHoveredTab(null)}
                                     style={{
                                         padding: '5px 12px',
                                         borderRadius: '8px',
                                         fontSize: '0.75rem',
                                         fontWeight: 700,
-                                        border: isActive ? `1px solid ${flow.color}` : '1px solid transparent',
+                                        border: isActive ? '1px solid var(--theme-primary)' : (isHovered ? '1px solid var(--theme-primary)' : '1px solid transparent'),
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
                                         whiteSpace: 'nowrap',
-                                        background: isActive ? flow.color : 'transparent',
-                                        color: isActive ? 'white' : flow.color,
-                                        boxShadow: isActive ? 'var(--shadow-md)' : 'none'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        if (!isActive) {
-                                            e.currentTarget.style.border = `1px solid ${flow.color}`;
-                                            e.currentTarget.style.background = `${flow.color}18`;
-                                        }
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (!isActive) {
-                                            e.currentTarget.style.border = '1px solid transparent';
-                                            e.currentTarget.style.background = 'transparent';
-                                        }
+                                        background: isActive ? 'var(--theme-primary)' : 'transparent',
+                                        color: isActive ? 'white' : 'var(--text-secondary)',
+                                        boxShadow: isActive ? 'var(--shadow-md)' : (isHovered ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none')
                                     }}
                                 >
                                     {flow.label}
@@ -568,6 +572,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                 className="ae-btn-secondary"
                                 disabled={isDownloading}
                                 onClick={() => setShowExportMenu(!showExportMenu)}
+                                onMouseEnter={() => setHoveredExport(true)}
+                                onMouseLeave={() => setHoveredExport(false)}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -576,18 +582,13 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                     fontSize: '0.8rem',
                                     height: '32px',
                                     borderRadius: '8px',
-                                    background: 'white',
+                                    background: 'var(--bg-primary)',
                                     color: 'var(--text-secondary)',
-                                    fontWeight: 400,
+                                    fontWeight: 600,
                                     cursor: 'pointer',
-                                    border: `1px solid ${showExportMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)'}`,
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.5)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = showExportMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)';
+                                    border: `1px solid ${showExportMenu || hoveredExport ? 'var(--theme-primary)' : 'var(--border-primary)'}`,
+                                    transition: 'all 0.2s',
+                                    boxShadow: hoveredExport ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none'
                                 }}
                             >
                                 <Download size={16} /> Export <ChevronDown size={14} />
@@ -621,6 +622,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                             <button
                                 className="ae-btn-secondary"
                                 onClick={() => setShowColumnMenu(!showColumnMenu)}
+                                onMouseEnter={() => setHoveredColumn(true)}
+                                onMouseLeave={() => setHoveredColumn(false)}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -629,18 +632,13 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                     fontSize: '0.8rem',
                                     height: '32px',
                                     borderRadius: '8px',
-                                    background: 'white',
+                                    background: 'var(--bg-primary)',
                                     color: 'var(--text-secondary)',
-                                    fontWeight: 400,
+                                    fontWeight: 600,
                                     cursor: 'pointer',
-                                    border: `1px solid ${showColumnMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)'}`,
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.5)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = showColumnMenu ? 'rgba(255, 107, 0, 0.5)' : 'var(--border-primary)';
+                                    border: `1px solid ${showColumnMenu || hoveredColumn ? 'var(--theme-primary)' : 'var(--border-primary)'}`,
+                                    transition: 'all 0.2s',
+                                    boxShadow: hoveredColumn ? '0 0 0 3px rgba(255, 107, 0, 0.1)' : 'none'
                                 }}
                             >
                                 <Columns size={16} /> Columns <ChevronDown size={14} />
@@ -817,7 +815,6 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                         <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                             <colgroup>
                                 {ALL_COL_CONFIG.filter(col => {
-                                    if (col.key === 'status' && dueTab !== 'all') return false;
                                     return visibleColumns.includes(col.key);
                                 }).map(col => (
                                     <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />
@@ -827,12 +824,11 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                             <thead>
                                 <tr>
                                     {ALL_COL_CONFIG.filter(col => {
-                                        if (col.key === 'status' && dueTab !== 'all') return false;
                                         return visibleColumns.includes(col.key);
                                     }).map(col => (
                                         <th key={col.key} style={{
                                             position: 'relative',
-                                            backgroundColor: 'var(--ae-table-header-bg)',
+                                            backgroundColor: '#f8fafc',
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
                                             userSelect: 'none',
@@ -867,7 +863,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                         </th>
                                     ))}
                                     <th style={{
-                                        backgroundColor: 'var(--ae-table-header-bg)',
+                                        backgroundColor: '#f8fafc',
                                         zIndex: 12,
                                         padding: '4px 6px 4px 6px',
                                         whiteSpace: 'nowrap',
@@ -880,7 +876,6 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                 {showFilters && (
                                     <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
                                         {ALL_COL_CONFIG.filter(col => {
-                                            if (col.key === 'status' && dueTab !== 'all') return false;
                                             return visibleColumns.includes(col.key);
                                         }).map(col => (
                                             <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
@@ -948,18 +943,17 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                 ) : (
                                     paginatedMilestones.map((m) => {
                                         const rowToday = new Date(); rowToday.setHours(0, 0, 0, 0);
-                                        const rowIn5d = new Date(rowToday); rowIn5d.setDate(rowToday.getDate() + 5);
+                                        const rowFiveDAgo = new Date(rowToday); rowFiveDAgo.setDate(rowToday.getDate() - 5);
                                         const rowDd = m.due_date ? new Date(m.due_date) : null;
                                         if (rowDd) rowDd.setHours(0, 0, 0, 0);
                                         let rowBg = '';
                                         if (m.status !== 'INVOICED' && rowDd) {
-                                            if (rowDd < rowToday) rowBg = 'rgba(220,38,38,0.04)';
-                                            else if (rowDd <= rowIn5d) rowBg = 'rgba(217,119,6,0.04)';
+                                            if (rowDd <= rowFiveDAgo) rowBg = 'rgba(239, 68, 68, 0.05)';
+                                            else if (rowDd <= rowToday) rowBg = 'rgba(245, 158, 11, 0.05)';
                                         }
                                         return (
-                                            <tr key={m.id} style={{ background: rowBg || undefined }}>
+                                            <tr key={m.id} style={{ background: rowBg || undefined, transition: 'background 0.2s' }} onMouseEnter={(e) => { if (!rowBg) e.currentTarget.style.background = 'rgba(255,107,0,0.02)'; }} onMouseLeave={(e) => { if (!rowBg) e.currentTarget.style.background = 'transparent'; }}>
                                                 {ALL_COL_CONFIG.filter(col => {
-                                                    if (col.key === 'status' && dueTab !== 'all') return false;
                                                     return visibleColumns.includes(col.key);
                                                 }).map(col => {
                                                     const key = col.key;
@@ -1040,26 +1034,41 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                                 </td>
                                                             );
                                                         case 'customer':
-                                                            return <td key={key} style={{ ...cellStyle, fontWeight: 500 }}>{m.sales_order_details?.customer_name}</td>;
+                                                            return <td key={key} style={cellStyle}>{m.sales_order_details?.customer_name}</td>;
                                                         case 'description':
                                                             return <td key={key} style={cellStyle} title={m.description || '—'}>{m.description}</td>;
                                                         case 'due_date': {
                                                             const today0 = new Date(); today0.setHours(0, 0, 0, 0);
-                                                            const in5d = new Date(today0); in5d.setDate(today0.getDate() + 5);
+                                                            const fiveDAgo = new Date(today0); fiveDAgo.setDate(today0.getDate() - 5);
                                                             const dd = m.due_date ? new Date(m.due_date) : null;
                                                             if (dd) dd.setHours(0, 0, 0, 0);
                                                             let badge: { label: string; bg: string; color: string } | null = null;
                                                             if (m.status !== 'INVOICED' && dd) {
-                                                                if (dd < today0) badge = { label: 'Overdue', bg: '#FEE2E2', color: '#DC2626' };
-                                                                else if (dd.getTime() === today0.getTime()) badge = { label: 'Due Today', bg: '#FEF3C7', color: '#D97706' };
-                                                                else if (dd <= in5d) badge = { label: '1-5 Days', bg: '#FEF3C7', color: '#D97706' };
+                                                                if (dd <= fiveDAgo) badge = { label: 'Due', bg: '#FEE2E2', color: '#DC2626' };
+                                                                else if (dd <= today0) badge = { label: 'Due 1-5 Days', bg: '#FEF3C7', color: '#D97706' };
+                                                                else badge = { label: 'Yet to Due', bg: '#E0F2FE', color: '#0284C7' };
                                                             }
                                                             return (
-                                                                <td key={key} style={{ ...cellStyle, fontWeight: 600 }}>
+                                                                <td key={key} style={cellStyle}>
                                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'nowrap' }}>
                                                                         {m.due_date ? formatToAppDate(m.due_date) : '---'}
                                                                         {badge && (
-                                                                            <span style={{ padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 800, background: badge.bg, color: badge.color, whiteSpace: 'nowrap' }}>
+                                                                            <span
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    if (badge.label === 'Due') setDueTab('due');
+                                                                                    else if (badge.label === 'Due 1-5 Days') setDueTab('due_1_5');
+                                                                                    else if (badge.label === 'Yet to Due') setDueTab('yet_to_due');
+                                                                                }}
+                                                                                style={{
+                                                                                    padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 800,
+                                                                                    background: badge.bg, color: badge.color, whiteSpace: 'nowrap',
+                                                                                    cursor: 'pointer', border: '1px solid transparent',
+                                                                                    transition: 'all 0.2s'
+                                                                                }}
+                                                                                onMouseOver={(e) => { e.currentTarget.style.borderColor = badge.color; }}
+                                                                                onMouseOut={(e) => { e.currentTarget.style.borderColor = 'transparent'; }}
+                                                                            >
                                                                                 {badge.label}
                                                                             </span>
                                                                         )}
@@ -1068,27 +1077,50 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                             );
                                                         }
                                                         case 'amount':
-                                                            return <td key={key} style={{ ...cellStyle, textAlign: 'right', fontWeight: 700, color: '#1a1f36' }}>
-                                                                {m.sales_order_details?.currency === 'INR' ? '₹' : '$'}
-                                                                {parseFloat(m.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                            return <td key={key} style={{ ...cellStyle, textAlign: 'right' }}>
+                                                                <span style={{ color: 'var(--text-primary)' }}>
+                                                                    {m.sales_order_details?.currency === 'INR' ? '₹' : '$'}
+                                                                    {parseFloat(m.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                </span>
                                                             </td>;
                                                         case 'status':
                                                             return <td key={key} style={{ ...cellStyle, textAlign: 'center' }}>
-                                                                <span style={{
-                                                                    padding: '4px 10px',
-                                                                    borderRadius: '6px',
-                                                                    fontSize: '10px',
-                                                                    fontWeight: 700,
-                                                                    textTransform: 'uppercase',
-                                                                    background: m.status === 'INVOICED' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(187, 77, 0, 0.1)',
-                                                                    color: m.status === 'INVOICED' ? '#00C853' : 'var(--theme-primary)'
-                                                                }}>
+                                                                <span
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (m.status === 'INVOICED') setDueTab('billed');
+                                                                        else {
+                                                                            const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+                                                                            const fv = new Date(t0); fv.setDate(t0.getDate() - 5);
+                                                                            const du = m.due_date ? new Date(m.due_date) : null;
+                                                                            if (du) {
+                                                                                du.setHours(0, 0, 0, 0);
+                                                                                if (du <= fv) setDueTab('due');
+                                                                                else if (du <= t0) setDueTab('due_1_5');
+                                                                                else setDueTab('yet_to_due');
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                    style={{
+                                                                        padding: '4px 10px',
+                                                                        borderRadius: '99px',
+                                                                        fontSize: '0.7rem',
+                                                                        fontWeight: 700,
+                                                                        textTransform: 'uppercase',
+                                                                        background: m.status === 'INVOICED' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 107, 0, 0.1)',
+                                                                        color: m.status === 'INVOICED' ? '#00C853' : 'var(--theme-primary)',
+                                                                        cursor: 'pointer', border: '1px solid transparent',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                    onMouseOver={(e) => { e.currentTarget.style.borderColor = m.status === 'INVOICED' ? '#00C853' : 'var(--theme-primary)'; }}
+                                                                    onMouseOut={(e) => { e.currentTarget.style.borderColor = 'transparent'; }}
+                                                                >
                                                                     {m.status}
                                                                 </span>
                                                             </td>;
                                                         case 'invoice_no':
                                                             return (
-                                                                <td key={key} style={{ ...cellStyle, fontWeight: 700, color: '#00C853' }}>
+                                                                <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)' }}>
                                                                     {m.invoice ? (
                                                                         <span
                                                                             onClick={() => navigate(`/invoice?id=${m.invoice}`)}
@@ -1101,7 +1133,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                             );
                                                         case 'invoice_total':
                                                             return (
-                                                                <td key={key} style={{ ...cellStyle, textAlign: 'right', fontWeight: 700, color: '#00C853' }}>
+                                                                <td key={key} style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-primary)' }}>
                                                                     {m.invoice_details?.total_amount ? (
                                                                         `${m.sales_order_details?.currency === 'INR' ? '₹' : '$'}${parseFloat(m.invoice_details.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                                                                     ) : '—'}
@@ -1111,80 +1143,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                             return null;
                                                     }
                                                 })}
-                                                <td style={{ padding: '4px 6px' }}>
-                                                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-start', alignItems: 'center', minWidth: '180px', flexWrap: 'wrap' }}>
-                                                        {/* View button */}
-                                                        <button
-                                                            onClick={() => {
-                                                                const soIdToPass = m.sales_order || m.sales_order_details?.id;
-                                                                if (m.isVirtual) {
-                                                                    if (onView && soIdToPass) onView(`virtual-${soIdToPass}`);
-                                                                } else {
-                                                                    // Open full breakdown view (read-only)
-                                                                    const mId = m.allMilestones?.length > 0 ? m.allMilestones[0].id : m.id;
-                                                                    if (onView) onView(mId, dueTab);
-                                                                }
-                                                            }}
-                                                            style={{
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                width: '30px',
-                                                                height: '30px',
-                                                                background: 'rgba(255,107,0,0.08)',
-                                                                color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(255,107,0,0.25)',
-                                                                borderRadius: '6px',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                            onMouseOver={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
-                                                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,107,0,0.08)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)'; }}
-                                                            title="View Milestone"
-                                                        >
-                                                            <Eye size={16} />
-                                                        </button>
-
-                                                        {/* Download PDF button — only for real milestones */}
-                                                        {!m.isVirtual && (
-                                                            <button
-                                                                onClick={async () => {
-                                                                    try {
-                                                                        const response = await api.get(`/milestones/${m.id}/download_pdf/`, { responseType: 'blob' });
-                                                                        const url = window.URL.createObjectURL(new Blob([response.data]));
-                                                                        const link = document.createElement('a');
-                                                                        link.href = url;
-                                                                        link.setAttribute('download', `milestone_${m.milestone_no}.pdf`);
-                                                                        document.body.appendChild(link);
-                                                                        link.click();
-                                                                        link.parentNode?.removeChild(link);
-                                                                        window.URL.revokeObjectURL(url);
-                                                                    } catch (error) {
-                                                                        console.error('Error downloading PDF', error);
-                                                                        showNotification('Error downloading PDF', 'error');
-                                                                    }
-                                                                }}
-                                                                style={{
-                                                                    display: 'inline-flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    width: '30px',
-                                                                    height: '30px',
-                                                                    background: 'rgba(255,107,0,0.08)',
-                                                                    color: 'var(--theme-primary)',
-                                                                    border: '1px solid rgba(255,107,0,0.25)',
-                                                                    borderRadius: '6px',
-                                                                    cursor: 'pointer',
-                                                                    transition: 'all 0.2s'
-                                                                }}
-                                                                onMouseOver={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--theme-primary)'; }}
-                                                                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,107,0,0.08)'; e.currentTarget.style.color = 'var(--theme-primary)'; e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)'; }}
-                                                                title="Download Milestone PDF"
-                                                            >
-                                                                <Download size={16} />
-                                                            </button>
-                                                        )}
-
+                                                <td style={{ padding: '4px 12px' }}>
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
                                                         {/* Issue Invoice — only for real milestones that are not yet invoiced */}
                                                         {!m.isVirtual && m.status !== 'INVOICED' && (
                                                             <button
@@ -1203,38 +1163,136 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView }) => {
                                                                     alignItems: 'center',
                                                                     gap: '4px',
                                                                     padding: '0 10px',
-                                                                    height: '30px',
+                                                                    height: '32px',
                                                                     background: 'rgba(16, 185, 129, 0.08)',
                                                                     color: '#059669',
-                                                                    border: '1px solid rgba(16, 185, 129, 0.35)',
-                                                                    borderRadius: '6px',
+                                                                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                                                                    borderRadius: '8px',
                                                                     cursor: 'pointer',
                                                                     transition: 'all 0.2s',
                                                                     fontSize: '0.72rem',
                                                                     fontWeight: 700,
                                                                     whiteSpace: 'nowrap'
                                                                 }}
-                                                                onMouseOver={(e) => { e.currentTarget.style.background = '#059669'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#059669'; }}
-                                                                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)'; e.currentTarget.style.color = '#059669'; e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.35)'; }}
+                                                                onMouseOver={(e) => {
+                                                                    e.currentTarget.style.background = '#059669';
+                                                                    e.currentTarget.style.color = 'white';
+                                                                    e.currentTarget.style.borderColor = '#059669';
+                                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.25)';
+                                                                }}
+                                                                onMouseOut={(e) => {
+                                                                    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+                                                                    e.currentTarget.style.color = '#059669';
+                                                                    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+                                                                    e.currentTarget.style.boxShadow = 'none';
+                                                                }}
                                                                 title="Issue Invoice for this milestone"
                                                             >
                                                                 <Plus size={13} /> Issue Invoice
                                                             </button>
                                                         )}
-
-                                                        {!m.isVirtual && (
-                                                            <button
-                                                                onClick={() => {
-                                                                    const soIdToPass = m.sales_order || m.sales_order_details?.id;
+                                                        {/* View button */}
+                                                        <button
+                                                            onClick={() => {
+                                                                const soIdToPass = m.sales_order || m.sales_order_details?.id;
+                                                                if (m.isVirtual) {
+                                                                    if (onView && soIdToPass) onView(`virtual-${soIdToPass}`);
+                                                                } else {
+                                                                    // Open full breakdown view (read-only)
                                                                     const mId = m.allMilestones?.length > 0 ? m.allMilestones[0].id : m.id;
-                                                                    if (onView) onView(mId);
-                                                                }}
-                                                                className="ae-link-btn"
-                                                                style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--ae-blue)', padding: '0 4px', textDecoration: 'underline' }}
-                                                            >
-                                                                View All Breakdown
-                                                            </button>
-                                                        )}
+                                                                    if (onView) onView(mId, dueTab);
+                                                                }
+                                                            }}
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                background: 'rgba(255, 107, 0, 0.08)',
+                                                                color: 'var(--theme-primary)',
+                                                                border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                                borderRadius: '8px',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseOver={(e) => {
+                                                                e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                e.currentTarget.style.color = 'white';
+                                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
+                                                            }}
+                                                            onMouseOut={(e) => {
+                                                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
+                                                                e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
+                                                                e.currentTarget.style.boxShadow = 'none';
+                                                            }}
+                                                            title="View Milestone"
+                                                        >
+                                                            <Eye size={16} />
+                                                        </button>
+
+                                                        {/* Download PDF button — for real milestones, fallback to SO for virtual */}
+                                                        <button
+                                                            onClick={async () => {
+                                                                try {
+                                                                    let response;
+                                                                    let filename;
+                                                                    if (m.isVirtual) {
+                                                                        const soId = m.sales_order || m.sales_order_details?.id;
+                                                                        response = await api.get(`/sales-orders/${soId}/download_pdf/`, { responseType: 'blob' });
+                                                                        filename = `sales_order_${m.sales_order_details?.so_no || soId}.pdf`;
+                                                                    } else {
+                                                                        response = await api.get(`/milestones/${m.id}/download_pdf/`, { responseType: 'blob' });
+                                                                        filename = `milestone_${m.milestone_no}.pdf`;
+                                                                    }
+
+                                                                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                                                                    const link = document.createElement('a');
+                                                                    link.href = url;
+                                                                    link.setAttribute('download', filename);
+                                                                    document.body.appendChild(link);
+                                                                    link.click();
+                                                                    link.parentNode?.removeChild(link);
+                                                                    window.URL.revokeObjectURL(url);
+                                                                } catch (error) {
+                                                                    console.error('Error downloading PDF', error);
+                                                                    showNotification('Error downloading PDF', 'error');
+                                                                }
+                                                            }}
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                background: 'rgba(255, 107, 0, 0.08)',
+                                                                color: 'var(--theme-primary)',
+                                                                border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                                borderRadius: '8px',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseOver={(e) => {
+                                                                e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                e.currentTarget.style.color = 'white';
+                                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
+                                                            }}
+                                                            onMouseOut={(e) => {
+                                                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
+                                                                e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
+                                                                e.currentTarget.style.boxShadow = 'none';
+                                                            }}
+                                                            title={m.isVirtual ? "Download Sales Order PDF" : "Download Milestone PDF"}
+                                                        >
+                                                            <Download size={16} />
+                                                        </button>
+
+
+
                                                     </div>
                                                 </td>
                                             </tr>

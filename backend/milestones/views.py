@@ -255,12 +255,15 @@ class MilestoneViewSet(viewsets.ModelViewSet):
                     billed.append(m)
                     continue
 
-                if m.due_date and m.due_date > soon_cutoff:
-                    yet_to_due.append(m)
-                elif m.due_date and m.due_date > today and m.due_date <= soon_cutoff:
-                    due_1_5days.append(m)
+                if m.due_date:
+                    if m.due_date > today:
+                        yet_to_due.append(m)
+                    elif m.due_date > today - timedelta(days=5):
+                        due_1_5days.append(m)
+                    else:
+                        due.append(m)
                 else:
-                    # due today or overdue
+                    # Treat milestons without due date as "Due" or "All"
                     due.append(m)
 
             data = {
@@ -350,10 +353,7 @@ class MilestoneViewSet(viewsets.ModelViewSet):
         Milestone.objects.filter(id__in=to_delete).delete()
 
         saved_milestones = []
-        invoices_created = 0
         already_invoiced = False
-        today = timezone.now().date()
-        seven_days_from_now = today + timedelta(days=7)
 
         from .services import MilestoneService
         
@@ -405,24 +405,15 @@ class MilestoneViewSet(viewsets.ModelViewSet):
             else:
                 milestone = Milestone.objects.create(**payload)
 
-            # Auto-create draft invoice if due date is within 7 days and not already invoiced
-            if not milestone.invoice and milestone.status != MilestoneStatus.INVOICED and milestone.status != 'INVOICED':
-                if due_date_val and due_date_val <= seven_days_from_now:
-                    MilestoneService.create_invoice_for_milestone(milestone)
-                    invoices_created += 1
-            elif getattr(milestone, 'invoice', None) or milestone.status == MilestoneStatus.INVOICED or milestone.status == 'INVOICED':
+            if getattr(milestone, 'invoice', None) or milestone.status == MilestoneStatus.INVOICED or milestone.status == 'INVOICED':
                 already_invoiced = True
 
             saved_milestones.append(milestone)
 
-        if invoices_created > 0:
-            msg = f"Milestones saved as draft. {invoices_created} draft invoice(s) generated (due within 7 days)."
-            if already_invoiced:
-                msg += " Some milestones were already invoiced."
-        elif already_invoiced:
-            msg = "Milestones saved. Note: Invoices were already created for these milestones."
+        if already_invoiced:
+            msg = "Milestones saved. Note: Some milestones were already invoiced."
         else:
-            msg = "Milestones saved as draft. Invoices will be automatically generated 1 week before the due date."
+            msg = "Milestones saved as draft."
 
         return Response({
             "message": msg,

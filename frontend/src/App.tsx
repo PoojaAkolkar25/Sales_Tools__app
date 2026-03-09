@@ -1366,7 +1366,8 @@ const AppContent: React.FC = () => {
                     initialSoId={initialSoId}
                     viewSingleMilestoneId={viewSingleMilestoneId}
                     filterTab={activeMilestoneTab}
-                    onBack={() => {
+                    onBack={(tab?: string) => {
+                      if (tab) setActiveMilestoneTab(tab);
                       setEditingMilestoneId(null);
                       setInitialSoId(null);
                       setViewSingleMilestoneId(null);
@@ -1375,6 +1376,7 @@ const AppContent: React.FC = () => {
                   />
                 ) : (
                   <MilestoneDashboard
+                    initialTab={activeMilestoneTab}
                     onView={(id: any, tab?: string) => {
                       if (tab) setActiveMilestoneTab(tab);
                       else setActiveMilestoneTab('all');
