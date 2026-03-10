@@ -17,10 +17,10 @@ interface LineItem {
 }
 
 const GST_TYPE_LABELS: Record<string, string> = {
-    'CGST_SGST_9': 'Domestic (CGST/SGST 9%)',
-    'IGST_18': 'Inter-State (IGST 18%)',
-    'IGST_0_SEZ': 'SEZ (IGST 0%)',
-    'IGST_0_EXPORT': 'Export (IGST 0%)'
+    'CGST_SGST_9': 'CGST – Rate 9% & SGST – Rate 9%',
+    'IGST_18': 'IGST – Rate 18%',
+    'IGST_0_SEZ': 'IGST – Rate 0% (SEZ)',
+    'IGST_0_EXPORT': 'IGST – Rate 0% (Export)'
 };
 
 const InvoiceForm: React.FC<{
@@ -98,6 +98,9 @@ const InvoiceForm: React.FC<{
         total_discount: 0,
         taxable_amount: 0,
         total_tax: 0,
+        cgst_total: 0,
+        sgst_total: 0,
+        igst_total: 0,
         grand_total: 0
     });
 
@@ -412,7 +415,8 @@ const InvoiceForm: React.FC<{
                             po_date: so.po_date || '',
                             currency: so.currency || prev.currency,
                             currency_symbol: cp?.currency_symbol || (so.currency === 'INR' ? '₹' : (cp?.currency_symbol || prev.currency_symbol)),
-                            gst_customer_type: cp?.gst_customer_type || lead.gst_customer_type || prev.gst_customer_type
+                            gst_customer_type: cp?.gst_customer_type || lead.gst_customer_type || prev.gst_customer_type,
+                            payment_terms_days: cp?.payment_terms === 'IMMEDIATE' ? 0 : cp?.payment_terms === 'NET_30' ? 30 : cp?.payment_terms === 'NET_60' ? 60 : cp?.payment_terms === 'NET_90' ? 90 : 30
                         }));
                     }
                 }
@@ -441,7 +445,8 @@ const InvoiceForm: React.FC<{
                 po_number: so.po_number || '',
                 po_date: so.po_date || '',
                 gst_customer_type: cp?.gst_customer_type || lead?.gst_customer_type || prev.gst_customer_type,
-                currency_symbol: cp?.currency_symbol || (so.currency === 'INR' ? '₹' : (cp?.currency_symbol || prev.currency_symbol))
+                currency_symbol: cp?.currency_symbol || (so.currency === 'INR' ? '₹' : (cp?.currency_symbol || prev.currency_symbol)),
+                payment_terms_days: cp?.payment_terms === 'IMMEDIATE' ? 0 : cp?.payment_terms === 'NET_30' ? 30 : cp?.payment_terms === 'NET_60' ? 60 : cp?.payment_terms === 'NET_90' ? 90 : 30
             }));
 
             // Fetch milestones for this sales order
@@ -473,6 +478,9 @@ const InvoiceForm: React.FC<{
         let subtotal = 0;
         let totalDiscount = 0;
         let totalTax = 0;
+        let cgst_total = 0;
+        let sgst_total = 0;
+        let igst_total = 0;
 
         lineItems.forEach(item => {
             const qty = parseFloat(item.quantity.toString()) || 0;
@@ -485,7 +493,23 @@ const InvoiceForm: React.FC<{
             let tax = 0;
 
             if (formData.is_gst_applicable) {
-                tax = taxable * (gst_rate / 100);
+                if (formData.gst_customer_type === 'CGST_SGST_9') {
+                    const cgst = taxable * (gst_rate / 2 / 100);
+                    const sgst = taxable * (gst_rate / 2 / 100);
+                    cgst_total += cgst;
+                    sgst_total += sgst;
+                    tax = cgst + sgst;
+                } else if (formData.gst_customer_type === 'IGST_18') {
+                    const igst = taxable * (gst_rate / 100);
+                    igst_total += igst;
+                    tax = igst;
+                } else if (formData.gst_customer_type === 'IGST_0_SEZ' || formData.gst_customer_type === 'IGST_0_EXPORT') {
+                    // IGST 0%
+                    igst_total += 0;
+                    tax = 0;
+                } else {
+                    tax = taxable * (gst_rate / 100);
+                }
             }
 
             subtotal += lineSubtotal;
@@ -504,6 +528,9 @@ const InvoiceForm: React.FC<{
             total_discount: totalDiscount,
             taxable_amount: taxableAmount,
             total_tax: totalTax,
+            cgst_total,
+            sgst_total,
+            igst_total,
             grand_total: Math.round(taxableAmount + totalTax + sales_tax_amount)
         });
         setFormData(prev => ({ ...prev, sales_tax_amount }));
@@ -1185,13 +1212,52 @@ const InvoiceForm: React.FC<{
                             <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>Subtotal</span>
                             <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1A202C' }}>{formData.currency_symbol} {totals.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
-                        {totals.total_tax > 0 && (
+                        {totals.total_discount > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>Total Discount</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#E53E3E' }}>- {totals.total_discount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                        )}
+                        {totals.total_discount > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px dashed #E2E8F0' }}>
+                                <span style={{ color: '#4A5568', fontSize: '0.9rem', fontWeight: 600 }}>Taxable Amount</span>
+                                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{totals.taxable_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                        )}
+
+                        {formData.is_gst_applicable && totals.cgst_total > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>CGST</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{totals.cgst_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                        )}
+                        {formData.is_gst_applicable && totals.sgst_total > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>SGST</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{totals.sgst_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                        )}
+                        {formData.is_gst_applicable && totals.igst_total > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>IGST</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{totals.igst_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                        )}
+                        {formData.is_gst_applicable && formData.gst_customer_type.includes('IGST_0') && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>IGST (Payable)</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>0.00</span>
+                            </div>
+                        )}
+
+                        {!formData.is_gst_applicable && totals.total_tax > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                 <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>Total Tax</span>
                                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{totals.total_tax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                         )}
-                        {formData.invoice_type === 'USA' && (
+                        
+                        {formData.invoice_type === 'USA' && formData.sales_tax_rate > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #E2E8F0' }}>
                                 <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>Sales Tax ({formData.sales_tax_rate}%)</span>
                                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{formData.sales_tax_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>

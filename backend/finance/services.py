@@ -58,7 +58,7 @@ class InvoiceService:
              invoice_type = InvoiceType.USA
         else:
             country_name = "India"  # Default
-            gst_customer_type = 'DOMESTIC'  # Default
+            gst_customer_type = invoice_data.get('gst_customer_type', 'DOMESTIC') or 'DOMESTIC'
             
             if deal_id:
                 from deals.models import Deal
@@ -104,6 +104,9 @@ class InvoiceService:
         # Calculate totals
         subtotal = 0
         total_tax = 0
+        total_cgst = 0
+        total_sgst = 0
+        total_igst = 0
         
         processed_items = []
         for item in line_items:
@@ -155,6 +158,9 @@ class InvoiceService:
             
             subtotal += (qty * rate)
             total_tax += (cgst_amount + sgst_amount + igst_amount)
+            total_cgst += cgst_amount
+            total_sgst += sgst_amount
+            total_igst += igst_amount
 
         total_discount = sum(float(i.get('discount', 0)) for i in line_items)
         taxable_amount = subtotal - total_discount
@@ -175,6 +181,9 @@ class InvoiceService:
             'total_discount': total_discount,
             'taxable_amount': taxable_amount,
             'total_tax': total_tax,
+            'cgst_total': total_cgst,
+            'sgst_total': total_sgst,
+            'igst_total': total_igst,
             'sales_tax_rate': sales_tax_rate,
             'sales_tax_amount': sales_tax_amount,
             'round_off': round_off,

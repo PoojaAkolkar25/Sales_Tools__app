@@ -685,20 +685,20 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                             const d = milestone.due_date ? new Date(milestone.due_date) : null;
                                                             if (d) d.setHours(0, 0, 0, 0);
                                                             const t = new Date(); t.setHours(0, 0, 0, 0);
-                                                            const fiveDAgo = new Date(t); fiveDAgo.setDate(t.getDate() - 5);
+                                                            const fiveDaysFromNow = new Date(t); fiveDaysFromNow.setDate(t.getDate() + 5);
 
                                                             if (!d) return <span style={{ color: '#A0AEC0', fontSize: '10px' }}>No Date</span>;
 
                                                             let badge: { label: string; bg: string; color: string };
-                                                            if (d > t) badge = { label: 'Yet to Due', bg: '#E0F2FE', color: '#0284C7' };
-                                                            else if (d > fiveDAgo) badge = { label: 'Due 1-5 Days', bg: '#FEF3C7', color: '#D97706' };
+                                                            if (d > fiveDaysFromNow) badge = { label: 'Yet to Due', bg: '#E0F2FE', color: '#0284C7' };
+                                                            else if (d > t && d <= fiveDaysFromNow) badge = { label: 'Due 1-5 Days', bg: '#FEF3C7', color: '#D97706' };
                                                             else badge = { label: 'Due', bg: '#FEE2E2', color: '#DC2626' };
 
                                                             return (
                                                                 <div
                                                                     onClick={() => {
-                                                                        if (d > t) onBack('yet_to_due');
-                                                                        else if (d > fiveDAgo) onBack('due_1_5');
+                                                                        if (d > fiveDaysFromNow) onBack('yet_to_due');
+                                                                        else if (d > t && d <= fiveDaysFromNow) onBack('due_1_5');
                                                                         else onBack('due');
                                                                     }}
                                                                     style={{
@@ -944,52 +944,52 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                     </button>
 
                     {/* Footer Issue Invoice Button */}
-                                                    {(() => {
-                                                        const targetMs = milestones.find(ms => ms.status !== 'INVOICED');
-                                                        if (!targetMs) return null;
-                                                        const hasId = !!targetMs.id;
-                                                        return (
-                                                            <button
-                                                                onClick={async () => {
-                                                                    if (!hasId) {
-                                                                        showNotification('Please save the milestone before issuing an invoice.', 'info');
-                                                                        return;
-                                                                    }
-                                                                    try {
-                                                                        await api.post(`/milestones/${targetMs.id}/create_invoice/`);
-                                                                        showNotification('Draft invoice created successfully!', 'success');
-                                                                        onBack('billed'); // Switch back to Billed tab immediately
-                                                                    } catch (error: any) {
-                                                                        showNotification(error.response?.data?.error || 'Failed to create invoice', 'error');
-                                                                    }
-                                                                }}
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: '8px',
-                                                                    padding: '6px 16px',
-                                                                    height: '32px',
-                                                                    borderRadius: '8px',
-                                                                    fontSize: '0.85rem',
-                                                                    fontWeight: 700,
-                                                                    border: 'none',
-                                                                    cursor: hasId ? 'pointer' : 'help',
-                                                                    transition: 'all 0.2s',
-                                                                    background: hasId 
-                                                                        ? (activeAction === 'issue_invoice' ? '#047857' : '#059669') 
-                                                                        : '#E2E8F0',
-                                                                    color: hasId ? 'white' : '#94A3B8',
-                                                                    boxShadow: hasId ? '0 2px 8px rgba(5, 150, 105, 0.3)' : 'none'
-                                                                }}
-                                                                onMouseEnter={() => { if (hasId) setActiveAction('issue_invoice'); }}
-                                                                onMouseLeave={() => setActiveAction(null)}
-                                                                title={hasId ? `Issue Invoice for ${targetMs.milestone_no || 'this milestone'}` : "Save milestone first to enable invoicing"}
-                                                            >
-                                                                <Plus size={16} />
-                                                                <span>Issue Invoice</span>
-                                                            </button>
-                                                        );
-                                                    })()}
+                    {(() => {
+                        const targetMs = milestones.find(ms => ms.status !== 'INVOICED');
+                        if (!targetMs) return null;
+                        const hasId = !!targetMs.id;
+                        return (
+                            <button
+                                onClick={async () => {
+                                    if (!hasId) {
+                                        showNotification('Please save the milestone before issuing an invoice.', 'info');
+                                        return;
+                                    }
+                                    try {
+                                        await api.post(`/milestones/${targetMs.id}/create_invoice/`);
+                                        showNotification('Draft invoice created successfully!', 'success');
+                                        onBack('billed'); // Switch back to Billed tab immediately
+                                    } catch (error: any) {
+                                        showNotification(error.response?.data?.error || 'Failed to create invoice', 'error');
+                                    }
+                                }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 16px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    border: 'none',
+                                    cursor: hasId ? 'pointer' : 'help',
+                                    transition: 'all 0.2s',
+                                    background: hasId
+                                        ? (activeAction === 'issue_invoice' ? '#047857' : '#059669')
+                                        : '#E2E8F0',
+                                    color: hasId ? 'white' : '#94A3B8',
+                                    boxShadow: hasId ? '0 2px 8px rgba(5, 150, 105, 0.3)' : 'none'
+                                }}
+                                onMouseEnter={() => { if (hasId) setActiveAction('issue_invoice'); }}
+                                onMouseLeave={() => setActiveAction(null)}
+                                title={hasId ? `Issue Invoice for ${targetMs.milestone_no || 'this milestone'}` : "Save milestone first to enable invoicing"}
+                            >
+                                <Plus size={16} />
+                                <span>Issue Invoice</span>
+                            </button>
+                        );
+                    })()}
                 </div>
             )}
 

@@ -162,6 +162,9 @@ class Invoice(models.Model):
     total_discount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     taxable_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     total_tax = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    cgst_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    sgst_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    igst_total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     round_off = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount = models.DecimalField(max_digits=15, decimal_places=2) # Grand Total
     open_balance = models.DecimalField(max_digits=15, decimal_places=2)

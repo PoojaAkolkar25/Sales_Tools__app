@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -2299,56 +2299,58 @@ const UserManagement: React.FC = () => {
                                     <div className="section" style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                                         <SectionHeader title="Tax Registration Details" />
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 5', marginBottom: '8px' }}>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Tax Configuration</label>
-                                                <div
-                                                    onClick={() => setPartnerFormData({ ...partnerFormData, is_gst_applicable: !partnerFormData.is_gst_applicable })}
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '12px',
-                                                        cursor: 'pointer',
-                                                        background: partnerFormData.is_gst_applicable ? '#EBF8FF' : 'white',
-                                                        padding: '0 16px',
-                                                        height: '38px',
-                                                        borderRadius: '8px',
-                                                        border: `1px solid ${partnerFormData.is_gst_applicable ? 'var(--ae-blue)' : '#E2E8F0'}`,
-                                                        width: 'fit-content',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                >
-                                                    <div style={{
-                                                        width: '18px',
-                                                        height: '18px',
-                                                        borderRadius: '4px',
-                                                        border: `2px solid ${partnerFormData.is_gst_applicable ? 'var(--ae-blue)' : '#CBD5E1'}`,
-                                                        background: partnerFormData.is_gst_applicable ? 'var(--ae-blue)' : 'white',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        transition: 'all 0.2s'
-                                                    }}>
-                                                        {partnerFormData.is_gst_applicable && <Check size={12} color="white" strokeWidth={4} />}
+                                            {partnerFormData.country === 'India' && (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 5', marginBottom: '8px' }}>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Tax Configuration</label>
+                                                    <div
+                                                        onClick={() => setPartnerFormData({ ...partnerFormData, is_gst_applicable: !partnerFormData.is_gst_applicable })}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '12px',
+                                                            cursor: 'pointer',
+                                                            background: partnerFormData.is_gst_applicable ? '#EBF8FF' : 'white',
+                                                            padding: '0 16px',
+                                                            height: '38px',
+                                                            borderRadius: '8px',
+                                                            border: `1px solid ${partnerFormData.is_gst_applicable ? 'var(--ae-blue)' : '#E2E8F0'}`,
+                                                            width: 'fit-content',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        <div style={{
+                                                            width: '18px',
+                                                            height: '18px',
+                                                            borderRadius: '4px',
+                                                            border: `2px solid ${partnerFormData.is_gst_applicable ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                            background: partnerFormData.is_gst_applicable ? 'var(--ae-blue)' : 'white',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            transition: 'all 0.2s'
+                                                        }}>
+                                                            {partnerFormData.is_gst_applicable && <Check size={12} color="white" strokeWidth={4} />}
+                                                        </div>
+                                                        <span style={{
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: 700,
+                                                            color: partnerFormData.is_gst_applicable ? 'var(--ae-blue)' : '#64748B'
+                                                        }}>
+                                                            GST Applicable
+                                                        </span>
                                                     </div>
-                                                    <span style={{
-                                                        fontSize: '0.85rem',
-                                                        fontWeight: 700,
-                                                        color: partnerFormData.is_gst_applicable ? 'var(--ae-blue)' : '#64748B'
-                                                    }}>
-                                                        GST Applicable
-                                                    </span>
                                                 </div>
-                                            </div>
-                                            {partnerFormData.is_gst_applicable && (
+                                            )}
+                                            {partnerFormData.country === 'India' && partnerFormData.is_gst_applicable && (
                                                 <>
                                                     <div>
                                                         <SearchableDropdown
                                                             label="GST Customer Type *"
                                                             options={[
-                                                                { value: 'CGST_SGST_9', label: 'Domestic' },
-                                                                { value: 'IGST_18', label: 'Inter State' },
-                                                                { value: 'IGST_0_SEZ', label: 'SEZ' },
-                                                                { value: 'IGST_0_EXPORT', label: 'Export' }
+                                                                { value: 'CGST_SGST_9', label: 'CGST – Rate 9% & SGST – Rate 9%' },
+                                                                { value: 'IGST_18', label: 'IGST – Rate 18%' },
+                                                                { value: 'IGST_0_SEZ', label: 'IGST – Rate 0% (SEZ)' },
+                                                                { value: 'IGST_0_EXPORT', label: 'IGST – Rate 0% (Export)' }
                                                             ]}
                                                             value={partnerFormData.gst_customer_type}
                                                             onChange={(val) => setPartnerFormData({ ...partnerFormData, gst_customer_type: val as any })}
@@ -3261,56 +3263,58 @@ const UserManagement: React.FC = () => {
                                         <SectionHeader title="Tax Registration Details" />
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '24px' }}>
 
-                                            <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 5', marginBottom: '8px' }}>
-                                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Tax Configuration</label>
-                                                <div
-                                                    onClick={() => setCompanyFormData({ ...companyFormData, is_gst_applicable: !companyFormData.is_gst_applicable })}
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '12px',
-                                                        cursor: 'pointer',
-                                                        background: companyFormData.is_gst_applicable ? '#EBF8FF' : 'white',
-                                                        padding: '0 16px',
-                                                        height: '38px',
-                                                        borderRadius: '8px',
-                                                        border: `1px solid ${companyFormData.is_gst_applicable ? 'var(--ae-blue)' : '#E2E8F0'}`,
-                                                        width: 'fit-content',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                >
-                                                    <div style={{
-                                                        width: '18px',
-                                                        height: '18px',
-                                                        borderRadius: '4px',
-                                                        border: `2px solid ${companyFormData.is_gst_applicable ? 'var(--ae-blue)' : '#CBD5E1'}`,
-                                                        background: companyFormData.is_gst_applicable ? 'var(--ae-blue)' : 'white',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        transition: 'all 0.2s'
-                                                    }}>
-                                                        {companyFormData.is_gst_applicable && <Check size={12} color="white" strokeWidth={4} />}
+                                            {companyFormData.country === 'India' && (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 5', marginBottom: '8px' }}>
+                                                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Tax Configuration</label>
+                                                    <div
+                                                        onClick={() => setCompanyFormData({ ...companyFormData, is_gst_applicable: !companyFormData.is_gst_applicable })}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '12px',
+                                                            cursor: 'pointer',
+                                                            background: companyFormData.is_gst_applicable ? '#EBF8FF' : 'white',
+                                                            padding: '0 16px',
+                                                            height: '38px',
+                                                            borderRadius: '8px',
+                                                            border: `1px solid ${companyFormData.is_gst_applicable ? 'var(--ae-blue)' : '#E2E8F0'}`,
+                                                            width: 'fit-content',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        <div style={{
+                                                            width: '18px',
+                                                            height: '18px',
+                                                            borderRadius: '4px',
+                                                            border: `2px solid ${companyFormData.is_gst_applicable ? 'var(--ae-blue)' : '#CBD5E1'}`,
+                                                            background: companyFormData.is_gst_applicable ? 'var(--ae-blue)' : 'white',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            transition: 'all 0.2s'
+                                                        }}>
+                                                            {companyFormData.is_gst_applicable && <Check size={12} color="white" strokeWidth={4} />}
+                                                        </div>
+                                                        <span style={{
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: 700,
+                                                            color: companyFormData.is_gst_applicable ? 'var(--ae-blue)' : '#64748B'
+                                                        }}>
+                                                            GST Applicable
+                                                        </span>
                                                     </div>
-                                                    <span style={{
-                                                        fontSize: '0.85rem',
-                                                        fontWeight: 700,
-                                                        color: companyFormData.is_gst_applicable ? 'var(--ae-blue)' : '#64748B'
-                                                    }}>
-                                                        GST Applicable
-                                                    </span>
                                                 </div>
-                                            </div>
-                                            {companyFormData.is_gst_applicable && (
+                                            )}
+                                            {companyFormData.country === 'India' && companyFormData.is_gst_applicable && (
                                                 <>
                                                     <div>
                                                         <SearchableDropdown
                                                             label="GST Customer Type *"
                                                             options={[
-                                                                { value: 'CGST_SGST_9', label: 'Domestic' },
-                                                                { value: 'IGST_18', label: 'Inter State' },
-                                                                { value: 'IGST_0_SEZ', label: 'SEZ' },
-                                                                { value: 'IGST_0_EXPORT', label: 'Export' }
+                                                                { value: 'CGST_SGST_9', label: 'CGST – Rate 9% & SGST – Rate 9%' },
+                                                                { value: 'IGST_18', label: 'IGST – Rate 18%' },
+                                                                { value: 'IGST_0_SEZ', label: 'IGST – Rate 0% (SEZ)' },
+                                                                { value: 'IGST_0_EXPORT', label: 'IGST – Rate 0% (Export)' }
                                                             ]}
                                                             value={companyFormData.gst_customer_type}
                                                             onChange={(val) => setCompanyFormData({ ...companyFormData, gst_customer_type: val as any })}

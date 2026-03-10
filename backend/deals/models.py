@@ -79,10 +79,10 @@ class CustomerType(models.TextChoices):
     CUSTOMER = 'CUSTOMER', 'Customer'
 
 class GSTCustomerType(models.TextChoices):
-    CGST_SGST_9 = 'CGST_SGST_9', 'CGST - Rate 9% & SGST - Rate 9%'
-    IGST_18 = 'IGST_18', 'IGST - Rate 18%'
-    IGST_0_SEZ = 'IGST_0_SEZ', 'IGST - Rate 0% (SEZ)'
-    IGST_0_EXPORT = 'IGST_0_EXPORT', 'IGST - Rate 0% (Export)'
+    CGST_SGST_9 = 'CGST_SGST_9', 'CGST – Rate 9% & SGST – Rate 9%'
+    IGST_18 = 'IGST_18', 'IGST – Rate 18%'
+    IGST_0_SEZ = 'IGST_0_SEZ', 'IGST – Rate 0% (SEZ)'
+    IGST_0_EXPORT = 'IGST_0_EXPORT', 'IGST – Rate 0% (Export)'
 
 class Customer(models.Model):
     name = models.CharField(max_length=255, unique=True)

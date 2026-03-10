@@ -1,17 +1,8 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Search,
-    Download,
-    Eye,
-    Columns,
-    ChevronDown,
-    FileSpreadsheet,
-    FileText,
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    Plus
+    Search, Eye, Download, FileText, FileSpreadsheet, Check, ChevronDown, ChevronLeft, ChevronRight, Columns,
+    FilePlus
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -46,16 +37,16 @@ const SHORT_COL_WIDTHS: Record<string, number> = {
 };
 
 const FULL_LABEL_WIDTHS: Record<string, number> = {
-    milestone_no: 95,
-    deal: 75,
-    sales_order: 90,
-    customer: 110,
-    description: 130,
-    due_date: 75,
-    amount: 85,
-    status: 75,
-    invoice_no: 95,
-    invoice_total: 105
+    milestone_no: 100,
+    deal: 85,
+    sales_order: 100,
+    customer: 180,
+    description: 220,
+    due_date: 85,
+    amount: 100,
+    status: 90,
+    invoice_no: 110,
+    invoice_total: 110
 };
 
 const MAX_COL_WIDTHS: Record<string, number> = {
@@ -368,8 +359,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
         // Apply dueTab filter
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const fiveDaysAgo = new Date(today);
-        fiveDaysAgo.setDate(today.getDate() - 5);
+        const fiveDaysFromNow = new Date(today);
+        fiveDaysFromNow.setDate(today.getDate() + 5);
 
         const tabFilteredRows = filteredList.filter(m => {
             if (dueTab === 'all') return true;
@@ -382,9 +373,9 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
             if (!d) return false;
             d.setHours(0, 0, 0, 0);
 
-            if (dueTab === 'yet_to_due') return d > today;
-            if (dueTab === 'due_1_5') return d > fiveDaysAgo && d <= today;
-            if (dueTab === 'due') return d <= fiveDaysAgo;
+            if (dueTab === 'yet_to_due') return d > fiveDaysFromNow;
+            if (dueTab === 'due_1_5') return d > today && d <= fiveDaysFromNow;
+            if (dueTab === 'due') return d <= today;
 
             return true;
         });
@@ -430,8 +421,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
     const tabCounts = useMemo(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const fiveDaysAgo = new Date(today);
-        fiveDaysAgo.setDate(today.getDate() - 5);
+        const fiveDaysFromNow = new Date(today);
+        fiveDaysFromNow.setDate(today.getDate() + 5);
 
         const counts = {
             yet_to_due: 0,
@@ -448,9 +439,9 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                 const d = parseDateSafe(m.due_date);
                 if (d) {
                     d.setHours(0, 0, 0, 0);
-                    if (d > today) counts.yet_to_due++;
-                    else if (d > fiveDaysAgo && d <= today) counts.due_1_5++;
-                    else if (d <= fiveDaysAgo) counts.due++;
+                    if (d > fiveDaysFromNow) counts.yet_to_due++;
+                    else if (d > today && d <= fiveDaysFromNow) counts.due_1_5++;
+                    else if (d <= today) counts.due++;
                 }
             }
         });
@@ -802,7 +793,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                     </button>
 
                     <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)', minHeight: '400px' }}>
-                        <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: '100%' }}>
+                        <table className="ae-table compact-table" style={{ width: '100%' }}>
                             <colgroup>
                                 {ALL_COL_CONFIG.filter(col => {
                                     return visibleColumns.includes(col.key);
@@ -819,8 +810,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                         <th key={col.key} style={{
                                             position: 'relative',
                                             backgroundColor: '#f8fafc',
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
+                                            whiteSpace: 'normal',
+                                            wordBreak: 'break-word',
                                             userSelect: 'none',
                                             padding: '4px 6px 4px 6px',
                                             paddingRight: '20px',
@@ -856,7 +847,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                         backgroundColor: '#f8fafc',
                                         zIndex: 12,
                                         padding: '4px 6px 4px 6px',
-                                        whiteSpace: 'nowrap',
+                                        whiteSpace: 'normal',
                                         top: 0,
                                         color: 'var(--text-secondary)',
                                         borderBottom: '1px solid var(--border-secondary)',
@@ -948,11 +939,12 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                                 }).map(col => {
                                                     const key = col.key;
                                                     const cellStyle = {
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap',
-                                                        padding: '4px 6px',
-                                                        fontSize: '0.75rem'
+                                                        whiteSpace: 'normal',
+                                                        wordBreak: 'break-word',
+                                                        padding: '8px 10px',
+                                                        fontSize: '0.75rem',
+                                                        lineHeight: '1.4',
+                                                        verticalAlign: 'top'
                                                     } as React.CSSProperties;
 
                                                     switch (key) {
@@ -1041,29 +1033,27 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                                                 </span>
                                                             </td>;
                                                         case 'status': {
-                                                            // Helper to compute label/colors from a milestone
                                                             const getStatusInfo = (ms: any) => {
-                                                                if (ms.status === 'INVOICED') return { label: 'Billed', bg: 'rgba(0, 200, 83, 0.1)', color: '#00C853', tab: 'billed' };
+                                                                if (ms.status === 'INVOICED') return { label: 'Billed', color: '#059669', bg: '#F0FDF4', tab: 'billed' };
                                                                 const t0 = new Date(); t0.setHours(0, 0, 0, 0);
                                                                 const fv = new Date(t0); fv.setDate(t0.getDate() - 5);
                                                                 const du = ms.due_date ? new Date(ms.due_date) : null;
                                                                 if (du) {
                                                                     du.setHours(0, 0, 0, 0);
-                                                                    if (du > t0) return { label: 'Yet to Due', bg: '#E0F2FE', color: '#0284C7', tab: 'yet_to_due' };
-                                                                    if (du > fv) return { label: 'Due 1-5 Days', bg: '#FEF3C7', color: '#D97706', tab: 'due_1_5' };
-                                                                    return { label: 'Due', bg: '#FEE2E2', color: '#DC2626', tab: 'due' };
+                                                                    if (du > t0) return { label: 'Yet to Due', color: '#2563EB', bg: '#EFF6FF', tab: 'yet_to_due' };
+                                                                    if (du > fv) return { label: 'Due 1-5 Days', color: '#D97706', bg: '#FFFBEB', tab: 'due_1_5' };
+                                                                    return { label: 'Due', color: '#DC2626', bg: '#FEF2F2', tab: 'due' };
                                                                 }
-                                                                return { label: 'Yet to Due', bg: '#E0F2FE', color: '#0284C7', tab: 'yet_to_due' };
+                                                                return { label: 'Yet to Due', color: '#2563EB', bg: '#EFF6FF', tab: 'yet_to_due' };
                                                             };
 
-                                                            // For grouped rows, show all milestone badges; for individual rows, show one
                                                             const milestonesToShow = m.allMilestones && m.allMilestones.length > 0
                                                                 ? m.allMilestones
                                                                 : [m];
 
                                                             return (
-                                                                <td key={key} style={{ ...cellStyle, textAlign: 'center' }}>
-                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', justifyContent: 'center' }}>
+                                                                <td key={key} style={{ ...cellStyle, textAlign: 'left', padding: '4px 8px' }}>
+                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-start' }}>
                                                                         {milestonesToShow.map((ms: any, idx: number) => {
                                                                             const info = getStatusInfo(ms);
                                                                             return (
@@ -1075,23 +1065,25 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                                                                         if (onView && soId) onView(`so-${soId}`, info.tab);
                                                                                     }}
                                                                                     style={{
-                                                                                        padding: '2px 8px',
-                                                                                        borderRadius: '99px',
-                                                                                        fontSize: '0.65rem',
-                                                                                        fontWeight: 700,
-                                                                                        textTransform: 'uppercase',
-                                                                                        background: info.bg,
+                                                                                        display: 'inline-flex',
+                                                                                        alignItems: 'center',
+                                                                                        padding: '1px 6px',
+                                                                                        borderRadius: '4px',
+                                                                                        fontSize: '10px',
+                                                                                        fontWeight: 600,
                                                                                         color: info.color,
+                                                                                        background: info.bg,
+                                                                                        border: `1px solid ${info.color}20`,
                                                                                         cursor: 'pointer',
-                                                                                        border: '1px solid transparent',
-                                                                                        transition: 'all 0.2s',
+                                                                                        transition: 'all 0.1s',
                                                                                         whiteSpace: 'nowrap'
                                                                                     }}
-                                                                                    onMouseOver={(e) => { e.currentTarget.style.borderColor = info.color; }}
-                                                                                    onMouseOut={(e) => { e.currentTarget.style.borderColor = 'transparent'; }}
+                                                                                    onMouseOver={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = info.color; }}
+                                                                                    onMouseOut={(e) => { e.currentTarget.style.background = info.bg; e.currentTarget.style.borderColor = `${info.color}20`; }}
                                                                                     title={`${ms.milestone_no || ''} — ${info.label}`}
                                                                                 >
-                                                                                    {info.label}
+                                                                                    <span style={{ fontWeight: 800, marginRight: '4px', opacity: 0.7 }}>{ms.milestone_no}</span>
+                                                                                    {info.label.toUpperCase()}
                                                                                 </span>
                                                                             );
                                                                         })}
@@ -1131,10 +1123,10 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                                             const nonInvoicedMs = m.allMilestones
                                                                 ? m.allMilestones.filter((ms: any) => ms.status !== 'INVOICED')
                                                                 : (!m.isVirtual && m.status !== 'INVOICED' ? [m] : []);
-                                                            
+
                                                             if (nonInvoicedMs.length === 0) return null;
                                                             const target = nonInvoicedMs[0];
-                                                            
+
                                                             return (
                                                                 <button
                                                                     onClick={async (e) => {
@@ -1151,33 +1143,31 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                                                     style={{
                                                                         display: 'inline-flex',
                                                                         alignItems: 'center',
-                                                                        gap: '4px',
-                                                                        padding: '0 12px',
+                                                                        justifyContent: 'center',
+                                                                        width: '32px',
                                                                         height: '32px',
-                                                                        background: '#059669',
-                                                                        color: 'white',
-                                                                        border: 'none',
+                                                                        background: 'rgba(255, 107, 0, 0.08)',
+                                                                        color: 'var(--theme-primary)',
+                                                                        border: '1px solid rgba(255, 107, 0, 0.2)',
                                                                         borderRadius: '8px',
                                                                         cursor: 'pointer',
-                                                                        transition: 'all 0.2s',
-                                                                        fontSize: '0.72rem',
-                                                                        fontWeight: 700,
-                                                                        whiteSpace: 'nowrap',
-                                                                        boxShadow: '0 2px 4px rgba(5, 150, 105, 0.2)'
+                                                                        transition: 'all 0.2s'
                                                                     }}
                                                                     onMouseOver={(e) => {
-                                                                        e.currentTarget.style.background = '#047857';
-                                                                        e.currentTarget.style.transform = 'translateY(-1px)';
-                                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.3)';
+                                                                        e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                        e.currentTarget.style.color = 'white';
+                                                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
                                                                     }}
                                                                     onMouseOut={(e) => {
-                                                                        e.currentTarget.style.background = '#059669';
-                                                                        e.currentTarget.style.transform = 'translateY(0)';
-                                                                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(5, 150, 105, 0.2)';
+                                                                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
+                                                                        e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                        e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
+                                                                        e.currentTarget.style.boxShadow = 'none';
                                                                     }}
                                                                     title={`Issue Invoice for ${target.milestone_no || 'this milestone'}`}
                                                                 >
-                                                                    <Plus size={13} /> Issue Invoice
+                                                                    <FilePlus size={16} />
                                                                 </button>
                                                             );
                                                         })()}
