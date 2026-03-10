@@ -389,38 +389,28 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
             return true;
         });
 
-        if (dueTab === 'all') {
-            const grouped = new Map<number, any>();
-            tabFilteredRows.forEach(m => {
-                const soId = m.sales_order || m.sales_order_details?.id;
-                if (!soId) return;
+        const grouped = new Map<number, any>();
+        tabFilteredRows.forEach(m => {
+            const soId = m.sales_order || m.sales_order_details?.id;
+            if (!soId) return;
 
-                if (!grouped.has(soId)) {
-                    grouped.set(soId, {
-                        ...m,
-                        allMilestones: m.isVirtual ? [] : [m]
-                    });
-                } else {
-                    const existing = grouped.get(soId);
-                    if (!m.isVirtual) {
-                        existing.allMilestones.push(m);
-                        if (m.due_date && (!existing.due_date || new Date(m.due_date) < new Date(existing.due_date))) {
-                            existing.due_date = m.due_date;
-                        }
+            if (!grouped.has(soId)) {
+                grouped.set(soId, {
+                    ...m,
+                    allMilestones: m.isVirtual ? [] : [m]
+                });
+            } else {
+                const existing = grouped.get(soId);
+                if (!m.isVirtual) {
+                    existing.allMilestones.push(m);
+                    if (m.due_date && (!existing.due_date || new Date(m.due_date) < new Date(existing.due_date))) {
+                        existing.due_date = m.due_date;
                     }
                 }
-            });
-            return Array.from(grouped.values()).sort((a, b) => {
-                const da = parseDateSafe(a.due_date);
-                const db = parseDateSafe(b.due_date);
-                if (!da && !db) return 0;
-                if (!da) return 1;
-                if (!db) return -1;
-                return da.getTime() - db.getTime();
-            });
-        }
+            }
+        });
 
-        return tabFilteredRows.sort((a, b) => {
+        return Array.from(grouped.values()).sort((a, b) => {
             const da = parseDateSafe(a.due_date);
             const db = parseDateSafe(b.due_date);
             if (!da && !db) return 0;
@@ -1037,45 +1027,12 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                                             return <td key={key} style={cellStyle}>{m.sales_order_details?.customer_name}</td>;
                                                         case 'description':
                                                             return <td key={key} style={cellStyle} title={m.description || '—'}>{m.description}</td>;
-                                                        case 'due_date': {
-                                                            const today0 = new Date(); today0.setHours(0, 0, 0, 0);
-                                                            const fiveDAgo = new Date(today0); fiveDAgo.setDate(today0.getDate() - 5);
-                                                            const dd = m.due_date ? new Date(m.due_date) : null;
-                                                            if (dd) dd.setHours(0, 0, 0, 0);
-                                                            let badge: { label: string; bg: string; color: string } | null = null;
-                                                            if (m.status !== 'INVOICED' && dd) {
-                                                                if (dd <= fiveDAgo) badge = { label: 'Due', bg: '#FEE2E2', color: '#DC2626' };
-                                                                else if (dd <= today0) badge = { label: 'Due 1-5 Days', bg: '#FEF3C7', color: '#D97706' };
-                                                                else badge = { label: 'Yet to Due', bg: '#E0F2FE', color: '#0284C7' };
-                                                            }
+                                                        case 'due_date':
                                                             return (
                                                                 <td key={key} style={cellStyle}>
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'nowrap' }}>
-                                                                        {m.due_date ? formatToAppDate(m.due_date) : '---'}
-                                                                        {badge && (
-                                                                            <span
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    if (badge.label === 'Due') setDueTab('due');
-                                                                                    else if (badge.label === 'Due 1-5 Days') setDueTab('due_1_5');
-                                                                                    else if (badge.label === 'Yet to Due') setDueTab('yet_to_due');
-                                                                                }}
-                                                                                style={{
-                                                                                    padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 800,
-                                                                                    background: badge.bg, color: badge.color, whiteSpace: 'nowrap',
-                                                                                    cursor: 'pointer', border: '1px solid transparent',
-                                                                                    transition: 'all 0.2s'
-                                                                                }}
-                                                                                onMouseOver={(e) => { e.currentTarget.style.borderColor = badge.color; }}
-                                                                                onMouseOut={(e) => { e.currentTarget.style.borderColor = 'transparent'; }}
-                                                                            >
-                                                                                {badge.label}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
+                                                                    {m.due_date ? formatToAppDate(m.due_date) : '---'}
                                                                 </td>
                                                             );
-                                                        }
                                                         case 'amount':
                                                             return <td key={key} style={{ ...cellStyle, textAlign: 'right' }}>
                                                                 <span style={{ color: 'var(--text-primary)' }}>
@@ -1083,41 +1040,65 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                                                     {parseFloat(m.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                 </span>
                                                             </td>;
-                                                        case 'status':
-                                                            return <td key={key} style={{ ...cellStyle, textAlign: 'center' }}>
-                                                                <span
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        if (m.status === 'INVOICED') setDueTab('billed');
-                                                                        else {
-                                                                            const t0 = new Date(); t0.setHours(0, 0, 0, 0);
-                                                                            const fv = new Date(t0); fv.setDate(t0.getDate() - 5);
-                                                                            const du = m.due_date ? new Date(m.due_date) : null;
-                                                                            if (du) {
-                                                                                du.setHours(0, 0, 0, 0);
-                                                                                if (du <= fv) setDueTab('due');
-                                                                                else if (du <= t0) setDueTab('due_1_5');
-                                                                                else setDueTab('yet_to_due');
-                                                                            }
-                                                                        }
-                                                                    }}
-                                                                    style={{
-                                                                        padding: '4px 10px',
-                                                                        borderRadius: '99px',
-                                                                        fontSize: '0.7rem',
-                                                                        fontWeight: 700,
-                                                                        textTransform: 'uppercase',
-                                                                        background: m.status === 'INVOICED' ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 107, 0, 0.1)',
-                                                                        color: m.status === 'INVOICED' ? '#00C853' : 'var(--theme-primary)',
-                                                                        cursor: 'pointer', border: '1px solid transparent',
-                                                                        transition: 'all 0.2s'
-                                                                    }}
-                                                                    onMouseOver={(e) => { e.currentTarget.style.borderColor = m.status === 'INVOICED' ? '#00C853' : 'var(--theme-primary)'; }}
-                                                                    onMouseOut={(e) => { e.currentTarget.style.borderColor = 'transparent'; }}
-                                                                >
-                                                                    {m.status}
-                                                                </span>
-                                                            </td>;
+                                                        case 'status': {
+                                                            // Helper to compute label/colors from a milestone
+                                                            const getStatusInfo = (ms: any) => {
+                                                                if (ms.status === 'INVOICED') return { label: 'Billed', bg: 'rgba(0, 200, 83, 0.1)', color: '#00C853', tab: 'billed' };
+                                                                const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+                                                                const fv = new Date(t0); fv.setDate(t0.getDate() - 5);
+                                                                const du = ms.due_date ? new Date(ms.due_date) : null;
+                                                                if (du) {
+                                                                    du.setHours(0, 0, 0, 0);
+                                                                    if (du > t0) return { label: 'Yet to Due', bg: '#E0F2FE', color: '#0284C7', tab: 'yet_to_due' };
+                                                                    if (du > fv) return { label: 'Due 1-5 Days', bg: '#FEF3C7', color: '#D97706', tab: 'due_1_5' };
+                                                                    return { label: 'Due', bg: '#FEE2E2', color: '#DC2626', tab: 'due' };
+                                                                }
+                                                                return { label: 'Yet to Due', bg: '#E0F2FE', color: '#0284C7', tab: 'yet_to_due' };
+                                                            };
+
+                                                            // For grouped rows, show all milestone badges; for individual rows, show one
+                                                            const milestonesToShow = m.allMilestones && m.allMilestones.length > 0
+                                                                ? m.allMilestones
+                                                                : [m];
+
+                                                            return (
+                                                                <td key={key} style={{ ...cellStyle, textAlign: 'center' }}>
+                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', justifyContent: 'center' }}>
+                                                                        {milestonesToShow.map((ms: any, idx: number) => {
+                                                                            const info = getStatusInfo(ms);
+                                                                            return (
+                                                                                <span
+                                                                                    key={idx}
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        const soId = m.sales_order || m.sales_order_details?.id;
+                                                                                        if (onView && soId) onView(`so-${soId}`, info.tab);
+                                                                                    }}
+                                                                                    style={{
+                                                                                        padding: '2px 8px',
+                                                                                        borderRadius: '99px',
+                                                                                        fontSize: '0.65rem',
+                                                                                        fontWeight: 700,
+                                                                                        textTransform: 'uppercase',
+                                                                                        background: info.bg,
+                                                                                        color: info.color,
+                                                                                        cursor: 'pointer',
+                                                                                        border: '1px solid transparent',
+                                                                                        transition: 'all 0.2s',
+                                                                                        whiteSpace: 'nowrap'
+                                                                                    }}
+                                                                                    onMouseOver={(e) => { e.currentTarget.style.borderColor = info.color; }}
+                                                                                    onMouseOut={(e) => { e.currentTarget.style.borderColor = 'transparent'; }}
+                                                                                    title={`${ms.milestone_no || ''} — ${info.label}`}
+                                                                                >
+                                                                                    {info.label}
+                                                                                </span>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </td>
+                                                            );
+                                                        }
                                                         case 'invoice_no':
                                                             return (
                                                                 <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)' }}>
@@ -1145,52 +1126,61 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                                 })}
                                                 <td style={{ padding: '4px 12px' }}>
                                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                                        {/* Issue Invoice — only for real milestones that are not yet invoiced */}
-                                                        {!m.isVirtual && m.status !== 'INVOICED' && (
-                                                            <button
-                                                                onClick={async (e) => {
-                                                                    e.stopPropagation();
-                                                                    try {
-                                                                        await api.post(`/milestones/${m.id}/create_invoice/`);
-                                                                        showNotification('Draft invoice created successfully!', 'success');
-                                                                        fetchMilestones();
-                                                                    } catch (error: any) {
-                                                                        showNotification(error.response?.data?.error || 'Failed to create invoice', 'error');
-                                                                    }
-                                                                }}
-                                                                style={{
-                                                                    display: 'inline-flex',
-                                                                    alignItems: 'center',
-                                                                    gap: '4px',
-                                                                    padding: '0 10px',
-                                                                    height: '32px',
-                                                                    background: 'rgba(16, 185, 129, 0.08)',
-                                                                    color: '#059669',
-                                                                    border: '1px solid rgba(16, 185, 129, 0.2)',
-                                                                    borderRadius: '8px',
-                                                                    cursor: 'pointer',
-                                                                    transition: 'all 0.2s',
-                                                                    fontSize: '0.72rem',
-                                                                    fontWeight: 700,
-                                                                    whiteSpace: 'nowrap'
-                                                                }}
-                                                                onMouseOver={(e) => {
-                                                                    e.currentTarget.style.background = '#059669';
-                                                                    e.currentTarget.style.color = 'white';
-                                                                    e.currentTarget.style.borderColor = '#059669';
-                                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.25)';
-                                                                }}
-                                                                onMouseOut={(e) => {
-                                                                    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
-                                                                    e.currentTarget.style.color = '#059669';
-                                                                    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.2)';
-                                                                    e.currentTarget.style.boxShadow = 'none';
-                                                                }}
-                                                                title="Issue Invoice for this milestone"
-                                                            >
-                                                                <Plus size={13} /> Issue Invoice
-                                                            </button>
-                                                        )}
+                                                        {/* Issue Invoice — show for any row with at least one non-invoiced real milestone */}
+                                                        {(() => {
+                                                            const nonInvoicedMs = m.allMilestones
+                                                                ? m.allMilestones.filter((ms: any) => ms.status !== 'INVOICED')
+                                                                : (!m.isVirtual && m.status !== 'INVOICED' ? [m] : []);
+                                                            
+                                                            if (nonInvoicedMs.length === 0) return null;
+                                                            const target = nonInvoicedMs[0];
+                                                            
+                                                            return (
+                                                                <button
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        try {
+                                                                            await api.post(`/milestones/${target.id}/create_invoice/`);
+                                                                            showNotification('Draft invoice created successfully!', 'success');
+                                                                            fetchMilestones();
+                                                                            setDueTab('billed'); // Switch to Billed tab after success
+                                                                        } catch (error: any) {
+                                                                            showNotification(error.response?.data?.error || 'Failed to create invoice', 'error');
+                                                                        }
+                                                                    }}
+                                                                    style={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '4px',
+                                                                        padding: '0 12px',
+                                                                        height: '32px',
+                                                                        background: '#059669',
+                                                                        color: 'white',
+                                                                        border: 'none',
+                                                                        borderRadius: '8px',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s',
+                                                                        fontSize: '0.72rem',
+                                                                        fontWeight: 700,
+                                                                        whiteSpace: 'nowrap',
+                                                                        boxShadow: '0 2px 4px rgba(5, 150, 105, 0.2)'
+                                                                    }}
+                                                                    onMouseOver={(e) => {
+                                                                        e.currentTarget.style.background = '#047857';
+                                                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.3)';
+                                                                    }}
+                                                                    onMouseOut={(e) => {
+                                                                        e.currentTarget.style.background = '#059669';
+                                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(5, 150, 105, 0.2)';
+                                                                    }}
+                                                                    title={`Issue Invoice for ${target.milestone_no || 'this milestone'}`}
+                                                                >
+                                                                    <Plus size={13} /> Issue Invoice
+                                                                </button>
+                                                            );
+                                                        })()}
                                                         {/* View button */}
                                                         <button
                                                             onClick={() => {

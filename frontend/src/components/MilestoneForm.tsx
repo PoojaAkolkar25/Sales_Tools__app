@@ -21,7 +21,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
     const [milestones, setMilestones] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [activeAction, setActiveAction] = useState<'save' | 'cancel' | null>('save');
+    const [activeAction, setActiveAction] = useState<'save' | 'cancel' | 'issue_invoice' | null>('save');
 
     const { showNotification, showConfirm } = useNotification();
     const [focusedMilestoneId, setFocusedMilestoneId] = useState<number | null>(null);
@@ -488,7 +488,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                         <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em', width: '100px' }}>AMOUNT %</th>
                                         <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em', width: '130px' }}>AMOUNT</th>
                                         <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.05em', width: '110px' }}>STATUS</th>
-                                        <th style={{ padding: '12px 0', textAlign: 'center', width: '40px' }}></th>
+                                        <th style={{ padding: '12px 0', textAlign: 'center', width: '140px' }}></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -722,28 +722,79 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '8px', textAlign: 'center' }}>
-                                                    {milestones.length > 1 && !isDisabled && (
-                                                        <button
-                                                            onClick={() => handleRemoveMilestone(originalIndex)}
-                                                            style={{
-                                                                background: '#FFF5F5',
-                                                                border: '1px solid #FED7D7',
-                                                                borderRadius: '6px',
-                                                                color: '#E53E3E',
-                                                                cursor: 'pointer',
-                                                                padding: '6px',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                            onMouseOver={(e) => { e.currentTarget.style.background = '#FED7D7'; }}
-                                                            onMouseOut={(e) => { e.currentTarget.style.background = '#FFF5F5'; }}
-                                                            title="Remove Milestone"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    )}
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                                                        {milestone.status !== 'INVOICED' && (
+                                                            <button
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    if (!milestone.id) {
+                                                                        showNotification('Please save the milestone before issuing an invoice.', 'info');
+                                                                        return;
+                                                                    }
+                                                                    try {
+                                                                        await api.post(`/milestones/${milestone.id}/create_invoice/`);
+                                                                        showNotification('Draft invoice created successfully!', 'success');
+                                                                        onBack('billed'); // Switch back to Billed tab immediately
+                                                                    } catch (error: any) {
+                                                                        showNotification(error.response?.data?.error || 'Failed to create invoice', 'error');
+                                                                    }
+                                                                }}
+                                                                style={{
+                                                                    background: milestone.id ? '#059669' : '#E2E8F0',
+                                                                    color: milestone.id ? 'white' : '#94A3B8',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    cursor: milestone.id ? 'pointer' : 'help',
+                                                                    padding: '4px 10px',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px',
+                                                                    fontSize: '11px',
+                                                                    fontWeight: 700,
+                                                                    transition: 'all 0.2s',
+                                                                    whiteSpace: 'nowrap',
+                                                                    boxShadow: milestone.id ? '0 2px 4px rgba(5, 150, 105, 0.2)' : 'none'
+                                                                }}
+                                                                onMouseOver={(e) => {
+                                                                    if (milestone.id) {
+                                                                        e.currentTarget.style.background = '#047857';
+                                                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                                                    }
+                                                                }}
+                                                                onMouseOut={(e) => {
+                                                                    if (milestone.id) {
+                                                                        e.currentTarget.style.background = '#059669';
+                                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                                    }
+                                                                }}
+                                                                title={milestone.id ? "Issue Invoice for this milestone" : "Save milestone first to enable invoicing"}
+                                                            >
+                                                                <Plus size={12} /> Issue Invoice
+                                                            </button>
+                                                        )}
+                                                        {milestones.length > 1 && !isDisabled && (
+                                                            <button
+                                                                onClick={() => handleRemoveMilestone(originalIndex)}
+                                                                style={{
+                                                                    background: '#FFF5F5',
+                                                                    border: '1px solid #FED7D7',
+                                                                    borderRadius: '6px',
+                                                                    color: '#E53E3E',
+                                                                    cursor: 'pointer',
+                                                                    padding: '6px',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseOver={(e) => { e.currentTarget.style.background = '#FED7D7'; }}
+                                                                onMouseOut={(e) => { e.currentTarget.style.background = '#FFF5F5'; }}
+                                                                title="Remove Milestone"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
@@ -891,6 +942,54 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                         <span style={{ fontSize: '18px', lineHeight: '10px' }}>×</span>
                         <span>Cancel</span>
                     </button>
+
+                    {/* Footer Issue Invoice Button */}
+                                                    {(() => {
+                                                        const targetMs = milestones.find(ms => ms.status !== 'INVOICED');
+                                                        if (!targetMs) return null;
+                                                        const hasId = !!targetMs.id;
+                                                        return (
+                                                            <button
+                                                                onClick={async () => {
+                                                                    if (!hasId) {
+                                                                        showNotification('Please save the milestone before issuing an invoice.', 'info');
+                                                                        return;
+                                                                    }
+                                                                    try {
+                                                                        await api.post(`/milestones/${targetMs.id}/create_invoice/`);
+                                                                        showNotification('Draft invoice created successfully!', 'success');
+                                                                        onBack('billed'); // Switch back to Billed tab immediately
+                                                                    } catch (error: any) {
+                                                                        showNotification(error.response?.data?.error || 'Failed to create invoice', 'error');
+                                                                    }
+                                                                }}
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '8px',
+                                                                    padding: '6px 16px',
+                                                                    height: '32px',
+                                                                    borderRadius: '8px',
+                                                                    fontSize: '0.85rem',
+                                                                    fontWeight: 700,
+                                                                    border: 'none',
+                                                                    cursor: hasId ? 'pointer' : 'help',
+                                                                    transition: 'all 0.2s',
+                                                                    background: hasId 
+                                                                        ? (activeAction === 'issue_invoice' ? '#047857' : '#059669') 
+                                                                        : '#E2E8F0',
+                                                                    color: hasId ? 'white' : '#94A3B8',
+                                                                    boxShadow: hasId ? '0 2px 8px rgba(5, 150, 105, 0.3)' : 'none'
+                                                                }}
+                                                                onMouseEnter={() => { if (hasId) setActiveAction('issue_invoice'); }}
+                                                                onMouseLeave={() => setActiveAction(null)}
+                                                                title={hasId ? `Issue Invoice for ${targetMs.milestone_no || 'this milestone'}` : "Save milestone first to enable invoicing"}
+                                                            >
+                                                                <Plus size={16} />
+                                                                <span>Issue Invoice</span>
+                                                            </button>
+                                                        );
+                                                    })()}
                 </div>
             )}
 
