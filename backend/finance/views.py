@@ -157,14 +157,10 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 total_amount=item.get('total_amount')
             )
         
-        # Integration: Auto-update Deal and Cost Sheet with invoice reference
+        # Integration: Auto-update Deal with invoice reference
         if invoice.deal:
             # Note: Django's related_name 'invoices' handles this automatically via FK
             # But we could trigger signals or additional logic here if needed
-            pass
-        
-        if invoice.cost_sheet:
-            # Similarly, automatic via FK relationship 'invoices'
             pass
         
         # Log audit trail for invoice creation

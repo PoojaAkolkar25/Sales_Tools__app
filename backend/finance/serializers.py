@@ -92,6 +92,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         # Handle empty strings for foreign keys from frontend
+        data = data.copy()
         for field in ['deal', 'milestone', 'sales_order', 'lead']:
             if field in data and data[field] == '':
                 data[field] = None
@@ -179,6 +180,7 @@ class EndCustomerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def to_internal_value(self, data):
+        data = data.copy()
         if 'linked_partner' in data and data['linked_partner'] == '':
             data['linked_partner'] = None
         return super().to_internal_value(data)

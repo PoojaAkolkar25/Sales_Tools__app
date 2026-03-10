@@ -202,6 +202,16 @@ class Invoice(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if not self.invoice_no:
+            last_invoice = Invoice.objects.order_by('id').last()
+            if not last_invoice:
+                self.invoice_no = 'INV-0001'
+            else:
+                last_id = last_invoice.id
+                self.invoice_no = f'INV-{last_id + 1:04d}'
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.invoice_no
 
