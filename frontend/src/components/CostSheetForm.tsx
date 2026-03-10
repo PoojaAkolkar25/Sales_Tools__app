@@ -1567,26 +1567,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                             />
                         </div>
 
-                        <div style={{
-                            display: 'flex',
-                            gap: '24px',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginTop: '12px',
-                            width: '100%'
-                        }}>
-                            {/* Compact Attachment Panel */}
+                        <div style={{ marginTop: '12px' }}>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '16px',
-                                padding: '4px 12px',
-                                background: 'var(--bg-secondary)',
-                                borderRadius: '12px',
-                                border: '1px solid var(--border-primary)',
-                                width: 'fit-content',
-                                minWidth: 'fit-content',
-                                boxShadow: 'var(--shadow-sm)'
+                                gap: '8px',
+                                flexWrap: 'wrap'
                             }}>
                                 {!isReadOnly && (
                                     <>
@@ -1599,6 +1585,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             style={{ display: 'none' }}
                                         />
                                         <button
+                                            type="button"
                                             onClick={() => document.getElementById('file-upload-input')?.click()}
                                             style={{
                                                 display: 'flex',
@@ -1623,8 +1610,8 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             }}
                                             onMouseLeave={(e) => {
                                                 e.currentTarget.style.background = 'white';
-                                                e.currentTarget.style.color = 'var(--text-primary)';
-                                                e.currentTarget.style.borderColor = 'var(--border-primary)';
+                                                e.currentTarget.style.color = '#1a1f36';
+                                                e.currentTarget.style.borderColor = '#E0E6ED';
                                             }}
                                         >
                                             <Paperclip size={14} /> Attachments
@@ -1650,10 +1637,12 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     alignItems: 'center',
                                                     gap: '8px',
                                                     padding: '4px 10px',
-                                                    background: 'white',
+                                                    background: 'rgba(255, 107, 0, 0.05)',
                                                     borderRadius: '8px',
-                                                    border: '1px solid #E0E6ED',
-                                                    minWidth: 'fit-content'
+                                                    border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                    color: 'var(--ae-orange)',
+                                                    minWidth: 'fit-content',
+                                                    height: '34px'
                                                 }}
                                             >
                                                 <File size={14} style={{ color: '#FF6B00' }} />
@@ -1661,7 +1650,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     fontSize: '0.8rem',
                                                     fontWeight: 600,
                                                     color: '#1a1f36',
-                                                    maxWidth: '120px',
+                                                    maxWidth: '150px',
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
                                                     whiteSpace: 'nowrap'
@@ -1732,7 +1721,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                             </div>
                                         ))
                                     ) : (
-                                        <span style={{ fontSize: '0.9rem', color: '#A0AEC0', fontStyle: 'italic', marginLeft: '10px' }}>
+                                        <span style={{ fontSize: '0.85rem', color: '#A0AEC0', fontStyle: 'italic' }}>
                                             {uploading ? 'Uploading...' : 'No attachments yet'}
                                         </span>
                                     )}

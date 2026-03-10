@@ -9,9 +9,10 @@ import { formatToAppDate } from '../utils/dateUtils';
 interface ReceiptVoucherFormProps {
     id: number | null;
     onBack: () => void;
+    onCreateNew?: () => void;
 }
 
-const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) => {
+const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack, onCreateNew }) => {
     const { showNotification, showConfirm } = useNotification();
     const [leads, setLeads] = useState<any[]>([]);
     const [bankConnections, setBankConnections] = useState<any[]>([]);
@@ -39,6 +40,23 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
         fetchBankConnections();
         if (id) {
             fetchVoucher(id);
+        } else {
+            // Reset form for fresh creation
+            setFormData({
+                customer_name: '',
+                payment_date: new Date().toISOString().split('T')[0],
+                reference_number: '',
+                payment_method: 'Bank Transfer (NEFT)',
+                deposit_to: '',
+                amount_received: '',
+                tds_receivable: '',
+                tds_percentage: '',
+                bank_charges: '',
+                exchange_rate: '1',
+                adjustments: [],
+                attachments: []
+            });
+            setInvoices([]);
         }
     }, [id]);
 
@@ -265,16 +283,112 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
     return (
         <div style={{ width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
             {/* Dashboard Style Heading */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <span style={{
-                    width: '4px',
-                    height: '24px',
-                    background: 'var(--ae-blue)',
-                    borderRadius: '2px'
-                }}></span>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                    Receipt vouchers
-                </h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                        width: '4px',
+                        height: '24px',
+                        background: 'var(--ae-blue)',
+                        borderRadius: '2px'
+                    }}></span>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                        Receipt vouchers
+                    </h2>
+                </div>
+
+                <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    alignItems: 'center',
+                    background: 'var(--bg-primary)',
+                    padding: '6px',
+                    borderRadius: '12px',
+                    border: '1px solid #E0E6ED',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                }}>
+                    <button
+                        onClick={onBack}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: 'transparent',
+                            color: '#718096',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                            e.currentTarget.style.color = 'var(--ae-orange)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = '#718096';
+                        }}
+                    >
+                        <FileIcon size={18} /> Dashboard
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            if (onCreateNew) {
+                                onCreateNew();
+                            } else {
+                                // Default reset fallback
+                                setFormData({
+                                    customer_name: '',
+                                    payment_date: new Date().toISOString().split('T')[0],
+                                    reference_number: '',
+                                    payment_method: 'Bank Transfer (NEFT)',
+                                    deposit_to: '',
+                                    amount_received: '',
+                                    tds_receivable: '',
+                                    tds_percentage: '',
+                                    bank_charges: '',
+                                    exchange_rate: '1',
+                                    adjustments: [],
+                                    attachments: []
+                                });
+                                setInvoices([]);
+                            }
+                        }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: !id ? 'var(--theme-primary)' : 'transparent',
+                            color: !id ? 'white' : '#718096',
+                            boxShadow: !id ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (id) {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                e.currentTarget.style.color = 'var(--ae-orange)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (id) {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = '#718096';
+                            }
+                        }}
+                    >
+                        {/* We'll use PlusCircle if it's imported, but let's just use a standard plus sign for now to avoid import issues or we can add it to lucide-react */}
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg> Create New
+                    </button>
+                </div>
             </div>
 
             {/* Form Container (Card) */}
@@ -565,162 +679,173 @@ const ReceiptVoucherForm: React.FC<ReceiptVoucherFormProps> = ({ id, onBack }) =
                     <section style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Attachments & Verification" />
 
-                        <div style={{ marginBottom: '24px' }}>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '16px',
-                                padding: '4px 12px',
-                                background: '#F8FAFC',
-                                borderRadius: '12px',
-                                border: '1px solid #E0E6ED',
-                                width: 'fit-content',
-                                minWidth: 'fit-content'
-                            }}>
-                                <input
-                                    type="file"
-                                    id="file-upload"
-                                    multiple
-                                    style={{ display: 'none' }}
-                                    onChange={(e) => {
-                                        if (e.target.files) {
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                attachments: [...prev.attachments, ...Array.from(e.target.files || [])]
-                                            }));
-                                        }
-                                    }}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => document.getElementById('file-upload')?.click()}
-                                    className="ae-btn-secondary"
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        height: '30px',
-                                        padding: '0 16px',
-                                        borderRadius: '20px',
-                                        fontWeight: 700,
-                                        fontSize: '0.72rem'
-                                    }}
-                                >
-                                    <Paperclip size={14} /> Attachments
-                                </button>
-
-                                {/* File List pills */}
-                                <div style={{
-                                    flex: 1,
+                        <div style={{
+                            marginTop: '8px',
+                            marginBottom: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            flexWrap: 'wrap'
+                        }}>
+                            <input
+                                type="file"
+                                id="file-upload"
+                                multiple
+                                style={{ display: 'none' }}
+                                onChange={(e) => {
+                                    if (e.target.files) {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            attachments: [...prev.attachments, ...Array.from(e.target.files || [])]
+                                        }));
+                                    }
+                                }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => document.getElementById('file-upload')?.click()}
+                                style={{
                                     display: 'flex',
+                                    alignItems: 'center',
                                     gap: '8px',
-                                    overflowX: 'auto',
-                                    padding: '4px 0',
-                                    alignItems: 'center'
-                                }}>
-                                    {formData.attachments.length > 0 ? (
-                                        formData.attachments.map((file, index) => (
-                                            <div key={index} style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                padding: '4px 10px',
-                                                background: 'rgba(255, 107, 0, 0.05)',
-                                                borderRadius: '8px',
-                                                border: '1px solid rgba(255, 107, 0, 0.2)',
-                                                minWidth: 'fit-content'
+                                    background: 'white',
+                                    color: '#1a1f36',
+                                    border: '1px solid #E0E6ED',
+                                    height: '34px',
+                                    padding: '0 16px',
+                                    borderRadius: '8px',
+                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'var(--theme-primary)';
+                                    e.currentTarget.style.color = 'white';
+                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'white';
+                                    e.currentTarget.style.color = '#1a1f36';
+                                    e.currentTarget.style.borderColor = '#E0E6ED';
+                                }}
+                            >
+                                <Paperclip size={14} /> Attachments
+                            </button>
+
+                            <div style={{
+                                flex: 1,
+                                display: 'flex',
+                                gap: '8px',
+                                overflowX: 'auto',
+                                padding: '4px 0',
+                                alignItems: 'center'
+                            }}>
+                                {formData.attachments.length > 0 ? (
+                                    formData.attachments.map((file, index) => (
+                                        <div key={index} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '4px 10px',
+                                            background: 'rgba(255, 107, 0, 0.05)',
+                                            borderRadius: '8px',
+                                            border: '1px solid rgba(255, 107, 0, 0.2)',
+                                            color: 'var(--ae-orange)',
+                                            minWidth: 'fit-content',
+                                            height: '34px'
+                                        }}>
+                                            <FileIcon size={14} style={{ color: '#FF6B00' }} />
+                                            <span style={{
+                                                fontSize: '0.8rem',
+                                                fontWeight: 600,
+                                                color: '#1a1f36',
+                                                maxWidth: '150px',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
                                             }}>
-                                                <FileIcon size={12} style={{ color: 'var(--ae-orange)' }} />
-                                                <span style={{
-                                                    fontSize: '0.8rem',
-                                                    fontWeight: 600,
-                                                    color: '#1a1f36',
-                                                    maxWidth: '120px',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap'
-                                                }}>
-                                                    {file.name}
-                                                </span>
-                                                <div style={{ display: 'flex', gap: '4px' }}>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const url = URL.createObjectURL(file);
-                                                            window.open(url, '_blank');
-                                                        }}
-                                                        style={{
-                                                            width: '22px',
-                                                            height: '22px',
-                                                            borderRadius: '50%',
-                                                            border: 'none',
-                                                            background: '#f1f5f9',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            cursor: 'pointer',
-                                                            color: '#475569'
-                                                        }}
-                                                        title="View"
-                                                    >
-                                                        <Eye size={10} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const url = URL.createObjectURL(file);
-                                                            const a = document.createElement('a');
-                                                            a.href = url;
-                                                            a.download = file.name;
-                                                            a.click();
-                                                        }}
-                                                        style={{
-                                                            width: '22px',
-                                                            height: '22px',
-                                                            borderRadius: '50%',
-                                                            border: 'none',
-                                                            background: '#f1f5f9',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            cursor: 'pointer',
-                                                            color: '#475569'
-                                                        }}
-                                                        title="Download"
-                                                    >
-                                                        <Download size={10} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setFormData(prev => ({
-                                                                ...prev,
-                                                                attachments: prev.attachments.filter((_, i) => i !== index)
-                                                            }));
-                                                        }}
-                                                        style={{
-                                                            width: '22px',
-                                                            height: '22px',
-                                                            borderRadius: '50%',
-                                                            border: 'none',
-                                                            background: '#fee2e2',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            cursor: 'pointer',
-                                                            color: '#ef4444'
-                                                        }}
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 size={10} />
-                                                    </button>
-                                                </div>
+                                                {file.name}
+                                            </span>
+                                            <div style={{ display: 'flex', gap: '4px' }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const url = URL.createObjectURL(file);
+                                                        window.open(url, '_blank');
+                                                    }}
+                                                    style={{
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        borderRadius: '50%',
+                                                        border: 'none',
+                                                        background: '#e0f2fe',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        color: '#0369a1'
+                                                    }}
+                                                    title="View"
+                                                >
+                                                    <Eye size={10} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const url = URL.createObjectURL(file);
+                                                        const a = document.createElement('a');
+                                                        a.href = url;
+                                                        a.download = file.name;
+                                                        a.click();
+                                                    }}
+                                                    style={{
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        borderRadius: '50%',
+                                                        border: 'none',
+                                                        background: '#f1f5f9',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        color: '#475569'
+                                                    }}
+                                                    title="Download"
+                                                >
+                                                    <Download size={10} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            attachments: prev.attachments.filter((_, i) => i !== index)
+                                                        }));
+                                                    }}
+                                                    style={{
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        borderRadius: '50%',
+                                                        border: 'none',
+                                                        background: '#fee2e2',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        color: '#ef4444'
+                                                    }}
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 size={10} />
+                                                </button>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <span style={{ fontSize: '0.85rem', color: '#A0AEC0', fontStyle: 'italic', marginLeft: '10px' }}>No attachments yet</span>
-                                    )}
-                                </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <span style={{ fontSize: '0.85rem', color: '#A0AEC0', fontStyle: 'italic' }}>No attachments yet</span>
+                                )}
                             </div>
                         </div>
 

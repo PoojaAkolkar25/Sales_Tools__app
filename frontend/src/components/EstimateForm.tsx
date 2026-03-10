@@ -18,7 +18,7 @@ import {
     Download,
     PlusCircle,
     Calendar,
-    FileText as LucideFile,
+    File,
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -1022,17 +1022,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                         Proposal Attachment <span style={{ color: '#E53E3E' }}>*</span>
                     </label>
                     <div style={{
+                        marginTop: '8px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '12px',
-                        padding: '0 12px',
-                        background: '#F8FAFC',
-                        borderRadius: '8px',
-                        border: '1px solid #E0E6ED',
-                        height: '34px',
-                        width: 'fit-content',
-                        maxWidth: '100%',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                        gap: '8px',
+                        flexWrap: 'wrap'
                     }}>
                         <input
                             type="file"
@@ -1043,17 +1037,18 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                             disabled={estimate?.status === 'SUBMITTED'}
                         />
                         <button
+                            type="button"
                             onClick={() => document.getElementById('proposal-upload')?.click()}
                             disabled={estimate?.status === 'SUBMITTED'}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '6px',
-                                background: 'var(--bg-primary)',
-                                color: estimate?.status === 'SUBMITTED' ? '#CBD5E0' : 'var(--text-primary)',
-                                border: '1px solid var(--border-primary)',
+                                gap: '8px',
+                                background: 'white',
+                                color: '#1a1f36',
+                                border: '1px solid #E0E6ED',
                                 height: '34px',
-                                padding: '0 12px',
+                                padding: '0 16px',
                                 borderRadius: '8px',
                                 fontWeight: 700,
                                 fontSize: '0.85rem',
@@ -1070,20 +1065,22 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                             }}
                             onMouseLeave={(e) => {
                                 if (estimate?.status !== 'SUBMITTED') {
-                                    e.currentTarget.style.background = 'var(--bg-primary)';
-                                    e.currentTarget.style.color = 'var(--text-primary)';
-                                    e.currentTarget.style.borderColor = 'var(--border-primary)';
+                                    e.currentTarget.style.background = 'white';
+                                    e.currentTarget.style.color = '#1a1f36';
+                                    e.currentTarget.style.borderColor = '#E0E6ED';
                                 }
                             }}
                         >
-                            <Paperclip size={12} /> Attach
+                            <Paperclip size={14} /> Attachments
                         </button>
 
                         {/* File List pills */}
                         <div style={{
+                            flex: 1,
                             display: 'flex',
                             gap: '8px',
                             overflowX: 'auto',
+                            padding: '4px 0',
                             alignItems: 'center'
                         }}>
                             {/* Pending File Pill */}
@@ -1091,18 +1088,35 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 <div style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '6px',
+                                    gap: '8px',
                                     padding: '4px 10px',
                                     background: 'rgba(255, 107, 0, 0.05)',
                                     borderRadius: '8px',
                                     border: '1px solid rgba(255, 107, 0, 0.2)',
-                                    whiteSpace: 'nowrap'
+                                    color: 'var(--ae-orange)',
+                                    minWidth: 'fit-content',
+                                    height: '34px'
                                 }}>
-                                    <Clock size={10} style={{ color: 'var(--ae-orange)' }} />
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--ae-orange)' }}>{pendingFile.name} (Pending)</span>
+                                    <Clock size={14} style={{ color: '#FF6B00' }} />
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1a1f36', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {pendingFile.name} (Pending)
+                                    </span>
                                     <button
+                                        type="button"
                                         onClick={() => setPendingFile(null)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', color: '#E53E3E', display: 'flex' }}
+                                        style={{
+                                            width: '22px',
+                                            height: '22px',
+                                            borderRadius: '50%',
+                                            border: 'none',
+                                            background: '#fee2e2',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            color: '#ef4444'
+                                        }}
+                                        title="Remove"
                                     >
                                         <X size={10} />
                                     </button>
@@ -1115,28 +1129,84 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     <div key={prop.id} style={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '6px',
+                                        gap: '8px',
                                         padding: '4px 10px',
                                         background: 'rgba(255, 107, 0, 0.05)',
                                         borderRadius: '8px',
                                         border: '1px solid rgba(255, 107, 0, 0.2)',
-                                        whiteSpace: 'nowrap'
+                                        color: 'var(--ae-orange)',
+                                        minWidth: 'fit-content',
+                                        height: '34px'
                                     }}>
-                                        <LucideFile size={12} style={{ color: 'var(--ae-orange)' }} />
-                                        <span style={{ fontSize: '0.7rem', fontWeight: 600, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--ae-orange)' }}>
+                                        <File size={14} style={{ color: '#FF6B00' }} />
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1a1f36', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                             {prop.filename}
                                         </span>
-                                        <div style={{ display: 'flex', gap: '2px' }}>
-                                            <Eye size={10} style={{ cursor: 'pointer', color: '#0369a1' }} onClick={() => handleView(prop)} />
-                                            <Download size={10} style={{ cursor: 'pointer', color: '#475569' }} onClick={() => handleDownload(prop)} />
+                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleView(prop)}
+                                                style={{
+                                                    width: '22px',
+                                                    height: '22px',
+                                                    borderRadius: '50%',
+                                                    border: 'none',
+                                                    background: '#e0f2fe',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    cursor: 'pointer',
+                                                    color: '#0369a1'
+                                                }}
+                                                title="View"
+                                            >
+                                                <Eye size={10} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDownload(prop)}
+                                                style={{
+                                                    width: '22px',
+                                                    height: '22px',
+                                                    borderRadius: '50%',
+                                                    border: 'none',
+                                                    background: '#f1f5f9',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    cursor: 'pointer',
+                                                    color: '#475569'
+                                                }}
+                                                title="Download"
+                                            >
+                                                <Download size={10} />
+                                            </button>
                                             {estimate?.status !== 'SUBMITTED' && (
-                                                <Trash2 size={10} style={{ cursor: 'pointer', color: '#ef4444' }} onClick={() => handleRemoveProposal(prop.id)} />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveProposal(prop.id)}
+                                                    style={{
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        borderRadius: '50%',
+                                                        border: 'none',
+                                                        background: '#fee2e2',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        cursor: 'pointer',
+                                                        color: '#ef4444'
+                                                    }}
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 size={10} />
+                                                </button>
                                             )}
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                !pendingFile && <span style={{ fontSize: '0.75rem', color: '#A0AEC0', fontStyle: 'italic' }}>No attachments</span>
+                                !pendingFile && <span style={{ fontSize: '0.85rem', color: '#A0AEC0', fontStyle: 'italic' }}>No attachments</span>
                             )}
                         </div>
                     </div>
