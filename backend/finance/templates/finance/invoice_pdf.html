@@ -229,13 +229,15 @@
         <tr>
             <td class="company-info">
                 <div class="company-name">{{ company.name|upper }}</div>
-                <div>{{ company.address_line_1 }}{% if company.address_line_2 %}, {{ company.address_line_2 }}{% endif %}</div>
+                <div>{{ company.address_line_1 }}{% if company.address_line_2 %}, {{ company.address_line_2 }}{% endif
+                    %}</div>
                 <div>{{ company.city }}{% if company.pincode %} - {{ company.pincode }}{% endif %}</div>
                 {% if company.gstin %}
                 <div><span class="bold blue">GSTIN/UIN:</span> {{ company.gstin }}</div>
                 {% endif %}
                 {% if company.state %}
-                <div><span class="bold blue">State Name :</span> {{ company.state.name }}, <span class="bold blue">Code :</span> {{ company.state.code }}</div>
+                <div><span class="bold blue">State Name :</span> {{ company.state.name }}, <span class="bold blue">Code
+                        :</span> {{ company.state.code }}</div>
                 {% endif %}
                 {% if company.msme_number %}
                 <div><span class="bold blue">MSME Number -</span> {{ company.msme_number }}</div>
@@ -254,7 +256,8 @@
                     <img src="{{ company.logo.path }}" class="logo">
                     {% endif %}
                     {% if company.website_url %}
-                    <div style="font-size: 8pt; color: #666; text-decoration: underline;">{{ company.website_url }}</div>
+                    <div style="font-size: 8pt; color: #666; text-decoration: underline;">{{ company.website_url }}
+                    </div>
                     {% endif %}
                     <div style="border-bottom: 1px dashed #003399; margin-top: 2px; margin-bottom: 5px;"></div>
                 </div>
@@ -278,7 +281,8 @@
                     {% if po_number %}
                     <tr>
                         <td class="meta-label">PO & DATE</td>
-                        <td class="meta-value">{{ po_number }}{% if po_date %} - {{ po_date|date_format }}{% endif %}</td>
+                        <td class="meta-value">{{ po_number }}{% if po_date %} - {{ po_date|date_format }}{% endif %}
+                        </td>
                     </tr>
                     {% endif %}
                 </table>
@@ -292,30 +296,34 @@
         <tr>
             <td class="address-col">
                 <div class="address-title blue">Buyer (Bill to)</div>
-                <div class="bold">{{ invoice.deal.customer.name|default:invoice.lead.customer_name }}</div>
-                <div>{{ invoice.deal.customer.address|linebreaksbr|default:invoice.billing_address|linebreaksbr }}</div>
-                {% if invoice.deal.customer.gstin or invoice.customer_gstin %}
-                <div><span class="bold">GSTIN/UIN :</span> {{ invoice.deal.customer.gstin|default:invoice.customer_gstin }}</div>
+                <div class="bold">{{ invoice.get_customer_name }}</div>
+                <div>{{ invoice.get_customer_address|linebreaksbr }}</div>
+                {% if invoice.get_customer_gstin %}
+                <div><span class="bold">GSTIN/UIN :</span> {{ invoice.get_customer_gstin }}</div>
                 {% endif %}
-                {% if invoice.deal.customer.pan %}
-                <div><span class="bold">PAN/IT No :</span> {{ invoice.deal.customer.pan }}</div>
+                {% if invoice.get_customer_pan %}
+                <div><span class="bold">PAN/IT No :</span> {{ invoice.get_customer_pan }}</div>
                 {% endif %}
-                {% if invoice.deal.customer.state %}
-                <div><span class="bold">State Name :</span> {{ invoice.deal.customer.state.name|default:invoice.deal.customer.state }}, <span class="bold">Code :</span> {{ invoice.deal.customer.state.code|default:invoice.deal.customer.state_code }}</div>
+                {% if invoice.get_customer_state_name %}
+                <div><span class="bold">State Name :</span> {{ invoice.get_customer_state_name }}{% if
+                    invoice.get_customer_state_code %}, <span class="bold">Code :</span> {{
+                    invoice.get_customer_state_code }}{% endif %}</div>
                 {% endif %}
             </td>
             <td class="address-col">
                 <div class="address-title blue">Consignee (Ship to)</div>
-                <div class="bold">{{ invoice.deal.customer.name|default:invoice.lead.customer_name }}</div>
-                <div>{{ invoice.deal.customer.address|linebreaksbr|default:invoice.shipping_address|linebreaksbr|default:invoice.billing_address|linebreaksbr }}</div>
-                {% if invoice.deal.customer.gstin or invoice.customer_gstin %}
-                <div><span class="bold">GSTIN/UIN :</span> {{ invoice.deal.customer.gstin|default:invoice.customer_gstin }}</div>
+                <div class="bold">{{ invoice.get_customer_name }}</div>
+                <div>{{ invoice.shipping_address|linebreaksbr|default:invoice.get_customer_address|linebreaksbr }}</div>
+                {% if invoice.get_customer_gstin %}
+                <div><span class="bold">GSTIN/UIN :</span> {{ invoice.get_customer_gstin }}</div>
                 {% endif %}
-                {% if invoice.deal.customer.pan %}
-                <div><span class="bold">PAN/IT No :</span> {{ invoice.deal.customer.pan }}</div>
+                {% if invoice.get_customer_pan %}
+                <div><span class="bold">PAN/IT No :</span> {{ invoice.get_customer_pan }}</div>
                 {% endif %}
-                {% if invoice.deal.customer.state %}
-                <div><span class="bold">State Name :</span> {{ invoice.deal.customer.state.name|default:invoice.deal.customer.state }}, <span class="bold">Code :</span> {{ invoice.deal.customer.state.code|default:invoice.deal.customer.state_code }}</div>
+                {% if invoice.get_customer_state_name %}
+                <div><span class="bold">State Name :</span> {{ invoice.get_customer_state_name }}{% if
+                    invoice.get_customer_state_code %}, <span class="bold">Code :</span> {{
+                    invoice.get_customer_state_code }}{% endif %}</div>
                 {% endif %}
             </td>
         </tr>
@@ -362,36 +370,44 @@
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
                         <td style="text-align: right; padding-right: 10px;">SUBTOTAL</td>
-                        <td style="text-align: right; font-weight: bold; width: 100px;">{{ currency_symbol }} {{ invoice.subtotal|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold; width: 100px;">{{ currency_symbol }} {{
+                            invoice.subtotal|floatformat:2 }}</td>
                     </tr>
                     {% if invoice.invoice_type == 'DOMESTIC' %}
                     <tr>
                         <td style="text-align: right; padding-right: 10px; color: #003399;">CGST – Rate 9%</td>
-                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{ invoice.cgst_total|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{
+                            invoice.cgst_total|floatformat:2 }}</td>
                     </tr>
                     <tr>
                         <td style="text-align: right; padding-right: 10px; color: #003399;">SGST – Rate 9%</td>
-                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{ invoice.sgst_total|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{
+                            invoice.sgst_total|floatformat:2 }}</td>
                     </tr>
                     {% elif invoice.invoice_type == 'INTER_STATE' %}
                     <tr>
                         <td style="text-align: right; padding-right: 10px; color: #003399;">IGST – Rate 18%</td>
-                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{ invoice.igst_total|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{
+                            invoice.igst_total|floatformat:2 }}</td>
                     </tr>
                     {% elif invoice.invoice_type == 'EXPORT' or invoice.invoice_type == 'SEZ' %}
                     <tr>
                         <td style="text-align: right; padding-right: 10px; color: #003399;">IGST – Rate 0%</td>
-                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{ invoice.igst_total|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{
+                            invoice.igst_total|floatformat:2 }}</td>
                     </tr>
                     {% elif invoice.invoice_type == 'USA' %}
                     <tr>
-                        <td style="text-align: right; padding-right: 10px; color: #003399;">SALES TAX ({% if invoice.sales_tax_rate %}{{ invoice.sales_tax_rate }}{% else %}0{% endif %}%)</td>
-                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{ invoice.sales_tax_amount|floatformat:2 }}</td>
+                        <td style="text-align: right; padding-right: 10px; color: #003399;">SALES TAX ({% if
+                            invoice.sales_tax_rate %}{{ invoice.sales_tax_rate }}{% else %}0{% endif %}%)</td>
+                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{
+                            invoice.sales_tax_amount|floatformat:2 }}</td>
                     </tr>
                     {% endif %}
                     <tr style="border-top: 1px dashed #003399;">
                         <td class="bold" style="text-align: right; padding-right: 10px; padding-top: 5px;">TOTAL</td>
-                        <td class="bold" style="text-align: right; padding-top: 5px; font-size: 11pt;">{{ currency_symbol }} {{ invoice.total_amount|floatformat:2 }}</td>
+                        <td class="bold" style="text-align: right; padding-top: 5px; font-size: 11pt;">{{
+                            currency_symbol }} {{ invoice.total_amount|floatformat:2 }}</td>
                     </tr>
                 </table>
             </td>
@@ -458,7 +474,8 @@
         </tr>
     </table>
 
-    <div style="text-align: center; margin-top: 30px; font-size: 7pt; color: #999; border-top: 1px solid #003399; padding-top: 5px;">
+    <div
+        style="text-align: center; margin-top: 30px; font-size: 7pt; color: #999; border-top: 1px solid #003399; padding-top: 5px;">
         This is a Computer Generated Tax Invoice
     </div>
 </body>

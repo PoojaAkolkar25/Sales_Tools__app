@@ -68,7 +68,7 @@ interface MilestoneDashboardProps {
     initialTab?: string;
 }
 
-const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreate, initialTab }) => {
+const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initialTab }) => {
     const navigate = useNavigate();
     const [milestones, setMilestones] = useState<any[]>([]);
     const [salesOrders, setSalesOrders] = useState<any[]>([]);

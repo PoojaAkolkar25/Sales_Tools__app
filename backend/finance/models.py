@@ -121,6 +121,7 @@ class CompanyProfile(models.Model):
 class InvoiceType(models.TextChoices):
     DOMESTIC = 'DOMESTIC', 'Domestic (CGST/SGST)'
     INTER_STATE = 'INTER_STATE', 'Inter-State (IGST)'
+    SEZ = 'SEZ', 'SEZ (IGST 0%)'
     EXPORT = 'EXPORT', 'Export (Zero Rated)'
     USA = 'USA', 'USA Invoice (Non-GST)'
 
@@ -136,7 +137,8 @@ class Invoice(models.Model):
     invoice_no = models.CharField(max_length=100, unique=True)
     invoice_date = models.DateField()
     due_date = models.DateField()
-    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='invoices')
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='invoices', null=True, blank=True)
+    customer = models.ForeignKey(CompanyProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='customer_invoices')
     deal = models.ForeignKey('deals.Deal', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     milestone = models.ForeignKey('milestones.Milestone', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     sales_order = models.ForeignKey('sales_orders.SalesOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
@@ -156,6 +158,7 @@ class Invoice(models.Model):
     billing_address = models.TextField(blank=True, null=True)
     shipping_address = models.TextField(blank=True, null=True)
     customer_gstin = models.CharField(max_length=15, blank=True, null=True)
+    customer_country = models.CharField(max_length=100, default='India')
     
     # Financial Summary
     subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
@@ -204,6 +207,71 @@ class Invoice(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def get_customer_name(self):
+        if self.customer:
+            return self.customer.name
+        if self.deal and self.deal.customer:
+            return self.deal.customer.name
+        if self.lead:
+            return self.lead.customer_name
+        return "---"
+
+    @property
+    def get_customer_address(self):
+        if self.billing_address:
+            return self.billing_address
+        if self.customer:
+            return self.customer.address_line_1
+        if self.deal and self.deal.customer:
+            return self.deal.customer.address
+        if self.lead:
+            return self.lead.address
+        return "---"
+
+    @property
+    def get_customer_gstin(self):
+        if self.customer_gstin:
+            return self.customer_gstin
+        if self.customer:
+            return self.customer.gstin
+        if self.deal and self.deal.customer:
+            return self.deal.customer.gstin
+        if self.lead:
+            return self.lead.gstin
+        return "---"
+
+    @property
+    def get_customer_pan(self):
+        if self.customer:
+            return self.customer.pan
+        if self.deal and self.deal.customer:
+            return self.deal.customer.pan
+        return None
+
+    @property
+    def get_customer_state_name(self):
+        if self.customer and self.customer.state:
+            return self.customer.state.name
+        if self.deal and self.deal.customer:
+            # Check if customer.state is a string or a model
+            state = self.deal.customer.state
+            if hasattr(state, 'name'):
+                return state.name
+            return state
+        return None
+
+    @property
+    def get_customer_state_code(self):
+        if self.customer and self.customer.state:
+            return self.customer.state.code
+        if self.deal and self.deal.customer:
+            state = self.deal.customer.state
+            if hasattr(state, 'code'):
+                return state.code
+            return getattr(self.deal.customer, 'state_code', None)
+        return None
 
     def save(self, *args, **kwargs):
         if not self.invoice_no:

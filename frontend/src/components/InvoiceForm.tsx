@@ -17,10 +17,10 @@ interface LineItem {
 }
 
 const GST_TYPE_LABELS: Record<string, string> = {
-    'CGST_SGST_9': 'CGST – Rate 9% & SGST – Rate 9%',
+    'CGST_SGST_9': 'CGST – Rate 9% + SGST – Rate 9%',
     'IGST_18': 'IGST – Rate 18%',
-    'IGST_0_SEZ': 'IGST – Rate 0% (SEZ)',
-    'IGST_0_EXPORT': 'IGST – Rate 0% (Export)'
+    'IGST_0_SEZ': 'IGST – Rate 0%',
+    'IGST_0_EXPORT': 'IGST – Rate 0%'
 };
 
 const InvoiceForm: React.FC<{
@@ -73,7 +73,10 @@ const InvoiceForm: React.FC<{
         payment_terms_days: 30,
         gst_customer_type: 'CGST_SGST_9',
         currency_symbol: '₹',
-        memo: ''
+        memo: '',
+        selected_company: '',
+        customer: '',
+        customer_country: 'India'
     });
 
     const [signatureFile, setSignatureFile] = useState<File | null>(null);
@@ -140,7 +143,10 @@ const InvoiceForm: React.FC<{
                 payment_terms_days: 30,
                 gst_customer_type: 'CGST_SGST_9',
                 currency_symbol: '₹',
-                memo: ''
+                memo: '',
+                selected_company: '',
+                customer: '',
+                customer_country: 'India'
             });
             setLineItems([
                 { type: 'Service', description: '', hsn_sac: '', quantity: 0, rate: 0, discount: 0, gst_rate: 18 }
@@ -247,13 +253,17 @@ const InvoiceForm: React.FC<{
         if (so) {
             const lead = so.customer_name ? (currentLeads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : null;
             const cp = so.customer_name ? (companyProfiles.find(c => c.name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : (lead ? (companyProfiles.find(c => c.name?.toLowerCase().trim() === lead.customer_name?.toLowerCase().trim())) : null);
-            const gstin = cp?.gstin || lead?.gstin || '';
+
+            if (cp) {
+                // Determine if any matching leads are needed or remove this logic if completely unused
+            }
 
             setFormData(prev => ({
                 ...prev,
                 sales_order: soId.toString(),
                 lead: lead ? lead.id.toString() : prev.lead,
-                customer_gstin: gstin,
+                selected_company: cp ? cp.id.toString() : prev.selected_company,
+                customer_gstin: cp?.gstin || lead?.gstin || prev.customer_gstin,
                 customer_state: cp?.state?.toString() || prev.customer_state,
                 currency: so.currency || prev.currency,
                 billing_address: so.billing_address || cp?.address_line_1 || (lead ? lead.address : prev.billing_address),
@@ -261,7 +271,7 @@ const InvoiceForm: React.FC<{
                 po_number: so.po_number || '',
                 po_date: so.po_date || '',
                 milestone: initialMilestoneId ? initialMilestoneId.toString() : prev.milestone,
-                gst_customer_type: cp?.gst_customer_type || lead?.gst_customer_type || prev.gst_customer_type,
+                gst_customer_type: ((cp?.gst_customer_type === 'DOMESTIC' || lead?.gst_customer_type === 'DOMESTIC') ? 'CGST_SGST_9' : (cp?.gst_customer_type || lead?.gst_customer_type)) || prev.gst_customer_type,
                 currency_symbol: cp?.currency_symbol || (so.currency === 'INR' ? '₹' : (cp?.currency_symbol || prev.currency_symbol))
             }));
 
@@ -320,10 +330,20 @@ const InvoiceForm: React.FC<{
                 payment_terms_days: inv.payment_terms_days || 30,
                 po_number: inv.po_number || '',
                 po_date: inv.po_date || '',
-                gst_customer_type: inv.lead_details?.gst_customer_type || inv.gst_customer_type || 'CGST_SGST_9',
+                gst_customer_type: (inv.lead_details?.gst_customer_type === 'DOMESTIC' || inv.gst_customer_type === 'DOMESTIC') ? 'CGST_SGST_9' : (inv.lead_details?.gst_customer_type || inv.gst_customer_type || 'CGST_SGST_9'),
                 currency_symbol: inv.currency_symbol || (inv.currency === 'INR' ? '₹' : '$'),
-                memo: inv.memo || ''
+                memo: inv.memo || '',
+                selected_company: '',
+                customer: inv.customer?.toString() || '',
+                customer_country: inv.customer_country || 'India'
             });
+
+            if (inv.lead_details) {
+                const cp = companyProfiles.find(c => c.name?.toLowerCase().trim() === inv.lead_details.customer_name?.toLowerCase().trim());
+                if (cp) {
+                    setFormData(prev => ({ ...prev, selected_company: cp.id.toString() }));
+                }
+            }
 
             setStatus(inv.status);
             setIsReadOnly(inv.status !== 'DRAFT');
@@ -354,30 +374,60 @@ const InvoiceForm: React.FC<{
         }
     };
 
-    const handleLeadChange = async (leadId: string | number) => {
-        const lead = leads.find(l => l.id.toString() === leadId.toString());
-        if (lead) {
-            // Find GSTIN from CompanyProfile based on customer name
-            const cp = companyProfiles.find(c => c.name?.toLowerCase().trim() === lead.customer_name?.toLowerCase().trim());
-            const gstin = cp?.gstin || lead.gstin || '';
+
+    const handleCompanyChange = async (companyId: string | number) => {
+        const cp = companyProfiles.find(c => c.id.toString() === companyId.toString());
+        if (cp) {
+            const country = cp.country || 'India';
+            const isIndia = country.toLowerCase() === 'india';
+            let gct = cp.gst_customer_type === 'DOMESTIC' ? 'CGST_SGST_9' : (cp.gst_customer_type || formData.gst_customer_type);
+
+            // Auto-fallback for non-India
+            if (!isIndia && !gct.startsWith('IGST_0')) {
+                gct = 'IGST_0_EXPORT';
+            }
 
             setFormData(prev => ({
                 ...prev,
-                lead: leadId.toString(),
-                customer_gstin: gstin,
-                customer_state: cp?.state?.toString() || prev.customer_state,
-                billing_address: cp?.address_line_1 || lead.address || prev.billing_address,
-                shipping_address: cp?.address_line_1 || lead.address || prev.shipping_address,
-                gst_customer_type: cp?.gst_customer_type || lead.gst_customer_type || prev.gst_customer_type,
-                currency: cp?.base_currency || prev.currency,
-                currency_symbol: cp?.currency_symbol || (prev.currency === 'INR' ? '₹' : '$'),
+                selected_company: companyId.toString(),
+                customer: companyId.toString(),
+                lead: '',
+                customer_gstin: cp.gstin || prev.customer_gstin,
+                customer_state: cp.state?.toString() || prev.customer_state,
+                billing_address: cp.address_line_1 || prev.billing_address,
+                shipping_address: cp.address_line_1 || prev.shipping_address,
+                gst_customer_type: gct,
+                currency: cp.base_currency || prev.currency,
+                currency_symbol: cp.currency_symbol || (prev.currency === 'INR' ? '₹' : '$'),
+                customer_country: country,
+                payment_terms_days: cp.payment_terms === 'IMMEDIATE' ? 0 : cp.payment_terms === 'NET_30' ? 30 : cp.payment_terms === 'NET_60' ? 60 : cp.payment_terms === 'NET_90' ? 90 : 30,
                 // Clear SO/Milestone if customer changes
                 sales_order: '',
                 milestone: ''
             }));
-            setMilestones([]);
+
+            // Fetch milestones for SOs belonging to this customer
+            try {
+                const customerSOs = salesOrders.filter(so =>
+                    so.customer_name?.toLowerCase().trim() === cp.name?.toLowerCase().trim()
+                );
+                if (customerSOs.length > 0) {
+                    const milestonePromises = customerSOs.map((so: any) =>
+                        api.get(`/milestones/?sales_order=${so.id}`).catch(() => ({ data: [] }))
+                    );
+                    const results = await Promise.all(milestonePromises);
+                    const allMilestones = results.flatMap((r: any) => r.data);
+                    setMilestones(allMilestones);
+                } else {
+                    setMilestones([]);
+                }
+            } catch (error) {
+                console.error('Error fetching milestones for customer', error);
+                setMilestones([]);
+            }
         } else {
-            setFormData(prev => ({ ...prev, lead: leadId.toString() }));
+            setFormData(prev => ({ ...prev, selected_company: companyId.toString(), lead: '', customer: '' }));
+            setMilestones([]);
         }
     };
 
@@ -400,22 +450,24 @@ const InvoiceForm: React.FC<{
                 const so = salesOrders.find(s => s.id.toString() === soId);
                 if (so) {
                     const lead = so.customer_name ? (leads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : null;
-                    const cp = so.customer_name ? (companyProfiles.find(c => c.name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : null;
-                    const gstin = cp?.gstin || lead?.gstin || '';
+                    const cp = so.customer_name ? (companyProfiles.find(c => c.name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : (lead ? (companyProfiles.find(c => c.name?.toLowerCase().trim() === lead.customer_name?.toLowerCase().trim())) : null);
 
-                    if (lead) {
+
+                    if (lead || cp) {
                         setFormData(prev => ({
                             ...prev,
-                            lead: lead.id.toString(),
-                            customer_gstin: gstin,
+                            lead: lead ? lead.id.toString() : prev.lead,
+                            selected_company: cp ? cp.id.toString() : prev.selected_company,
+                            customer: cp ? cp.id.toString() : prev.customer,
+                            customer_gstin: cp?.gstin || lead?.gstin || prev.customer_gstin,
                             customer_state: cp?.state?.toString() || prev.customer_state,
-                            billing_address: so.billing_address || cp?.address_line_1 || lead.address || prev.billing_address,
-                            shipping_address: so.shipping_address || cp?.address_line_1 || lead.address || prev.shipping_address,
+                            billing_address: so.billing_address || cp?.address_line_1 || lead?.address || prev.billing_address,
+                            shipping_address: so.shipping_address || cp?.address_line_1 || lead?.address || prev.shipping_address,
                             po_number: so.po_number || '',
                             po_date: so.po_date || '',
                             currency: so.currency || prev.currency,
                             currency_symbol: cp?.currency_symbol || (so.currency === 'INR' ? '₹' : (cp?.currency_symbol || prev.currency_symbol)),
-                            gst_customer_type: cp?.gst_customer_type || lead.gst_customer_type || prev.gst_customer_type,
+                            gst_customer_type: (cp?.gst_customer_type === 'DOMESTIC' || lead?.gst_customer_type === 'DOMESTIC') ? 'CGST_SGST_9' : (cp?.gst_customer_type || lead?.gst_customer_type || prev.gst_customer_type),
                             payment_terms_days: cp?.payment_terms === 'IMMEDIATE' ? 0 : cp?.payment_terms === 'NET_30' ? 30 : cp?.payment_terms === 'NET_60' ? 60 : cp?.payment_terms === 'NET_90' ? 90 : 30
                         }));
                     }
@@ -573,7 +625,7 @@ const InvoiceForm: React.FC<{
         try {
             const data = new FormData();
             Object.keys(formData).forEach(key => {
-                const value = (formData as any)[key];
+                let value = (formData as any)[key];
                 if (value !== null && value !== undefined) {
                     data.append(key, value);
                 }
@@ -620,17 +672,35 @@ const InvoiceForm: React.FC<{
     };
 
     const handlePreview = async () => {
-        if (!invoiceId) {
-            showNotification('Please save the invoice first to preview', 'info');
-            return;
-        }
         try {
             setLoading(true);
-            const response = await api.get(`/finance/invoices/${invoiceId}/download_pdf/`, { responseType: 'blob' });
+            let response;
+            let filename = `Invoice_${formData.invoice_no || 'Draft'}_Preview.pdf`;
+
+            if (!invoiceId) {
+                // Preview for unsaved invoice
+                const currentCustomer = companyProfiles.find(c => c.id.toString() === formData.customer);
+                const currentState = states.find(s => s.id.toString() === formData.customer_state);
+
+                const payload = {
+                    ...formData,
+                    customer_name: currentCustomer?.name || '---',
+                    customer_state_name: currentState?.name || '',
+                    customer_state_code: currentState?.code || '',
+                    customer_pan: currentCustomer?.pan || '',
+                    line_items: lineItems
+                };
+                response = await api.post(`/finance/invoices/preview_pdf/`, payload, { responseType: 'blob' });
+            } else {
+                // Existing logic for saved invoice
+                response = await api.get(`/finance/invoices/${invoiceId}/download_pdf/`, { responseType: 'blob' });
+                filename = `Invoice_${formData.invoice_no}.pdf`;
+            }
+
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `Invoice_${formData.invoice_no}_Preview.pdf`);
+            link.setAttribute('download', filename);
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -683,13 +753,19 @@ const InvoiceForm: React.FC<{
                     <SectionHeader title="Invoice Details" />
                     <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Milestone Reference</label>
-                            <select className="ae-input" disabled={isReadOnly} value={formData.milestone} onChange={e => handleMilestoneChange(e.target.value)}>
-                                <option value="">Select Milestone (Optional)</option>
-                                {milestones.map(m => (
-                                    <option key={m.id} value={m.id.toString()}>{m.milestone_no} - {m.description}</option>
-                                ))}
-                            </select>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer</label>
+                            {isReadOnly ? (
+                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
+                                    {companyProfiles.find(cp => cp.id.toString() === formData.selected_company.toString())?.name || 'No Customer Selected'}
+                                </div>
+                            ) : (
+                                <SearchableDropdown
+                                    options={companyProfiles.map(cp => ({ value: cp.id.toString(), label: cp.name || '' }))}
+                                    value={formData.selected_company}
+                                    onChange={(val) => handleCompanyChange(String(val))}
+                                    placeholder="Select Customer"
+                                />
+                            )}
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Sales Order Reference</label>
@@ -697,11 +773,12 @@ const InvoiceForm: React.FC<{
                                 <option value="">Select Sales Order (Optional)</option>
                                 {salesOrders
                                     .filter(so => {
-                                        if (!formData.lead) return true;
+                                        if (!formData.selected_company) return true;
+                                        const selectedCompany = companyProfiles.find(cp => cp.id.toString() === formData.selected_company.toString());
+                                        if (!selectedCompany) return true;
+                                        // Always show currently selected sales order even if customer changed, to prevent data loss or weird UI state temporarily
                                         if (so.id.toString() === formData.sales_order) return true;
-                                        const selectedLead = leads.find(l => l.id.toString() === formData.lead);
-                                        if (!selectedLead) return true;
-                                        return so.customer_name?.toLowerCase().trim() === selectedLead.customer_name?.toLowerCase().trim();
+                                        return so.customer_name?.toLowerCase().trim() === selectedCompany.name?.toLowerCase().trim();
                                     })
                                     .map(so => (
                                         <option key={so.id} value={so.id.toString()}>{so.so_number}</option>
@@ -709,20 +786,16 @@ const InvoiceForm: React.FC<{
                             </select>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer</label>
-                            {isReadOnly ? (
-                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
-                                    {leads.find(l => l.id.toString() === formData.lead.toString())?.customer_name || 'No Customer Selected'}
-                                </div>
-                            ) : (
-                                <SearchableDropdown
-                                    options={leads.map(l => ({ value: l.id.toString(), label: l.customer_name || '' }))}
-                                    value={formData.lead}
-                                    onChange={(val) => handleLeadChange(String(val))}
-                                    placeholder="Select Customer"
-                                />
-                            )}
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Milestone Reference</label>
+                            <select className="ae-input" disabled={isReadOnly} value={formData.milestone} onChange={e => handleMilestoneChange(e.target.value)}>
+                                <option value="">Select Milestone (Optional)</option>
+                                {/* Milestones are loaded per-customer in handleCompanyChange */}
+                                {milestones.map(m => (
+                                    <option key={m.id} value={m.id.toString()}>{m.milestone_no} - {m.description}</option>
+                                ))}
+                            </select>
                         </div>
+
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
                             <input type="text" className="ae-input" disabled value={formatToAppDate(formData.invoice_date)} style={{ background: '#f8fafc' }} />
@@ -1227,25 +1300,25 @@ const InvoiceForm: React.FC<{
 
                         {formData.is_gst_applicable && totals.cgst_total > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>CGST</span>
+                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>CGST – Rate 9%</span>
                                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{totals.cgst_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                         )}
                         {formData.is_gst_applicable && totals.sgst_total > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>SGST</span>
+                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>SGST – Rate 9%</span>
                                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{totals.sgst_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                         )}
                         {formData.is_gst_applicable && totals.igst_total > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>IGST</span>
+                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>IGST – Rate 18%</span>
                                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{totals.igst_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                         )}
                         {formData.is_gst_applicable && formData.gst_customer_type.includes('IGST_0') && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>IGST (Payable)</span>
+                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>IGST – Rate 0%</span>
                                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>0.00</span>
                             </div>
                         )}
@@ -1256,7 +1329,7 @@ const InvoiceForm: React.FC<{
                                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{totals.total_tax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                         )}
-                        
+
                         {formData.invoice_type === 'USA' && formData.sales_tax_rate > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #E2E8F0' }}>
                                 <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>Sales Tax ({formData.sales_tax_rate}%)</span>
