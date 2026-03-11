@@ -38,7 +38,7 @@ const SHORT_COL_WIDTHS: Record<string, number> = {
 const FULL_LABEL_WIDTHS: Record<string, number> = {
     milestone_no: 100,
     deal: 85,
-    sales_order: 100,
+    sales_order: 120,
     customer: 180,
     description: 220,
     created_at: 85,
@@ -823,14 +823,25 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                             background-color: white !important;
                             background: white !important;
                         }
-                        .ae-table tr.expanded-row > td {
-                            background-color: white !important;
-                        }
                         .sticky-actions-cell {
-                            background-color: white !important;
+                            /* Base class for sticky behavior */
+                        }
+                        .ae-table thead tr:first-child th.sticky-actions-cell {
+                            background-color: var(--ae-table-header-bg) !important;
+                        }
+                        .ae-table thead tr:nth-child(2) th.sticky-actions-cell {
+                            background-color: var(--ae-filter-row-bg) !important;
+                        }
+                        .ae-table tbody td.sticky-actions-cell {
+                            background-color: var(--bg-primary) !important;
+                            border-left: none !important;
+                            border-right: none !important;
+                            box-shadow: none !important;
                         }
                         .ae-table tr:hover td.sticky-actions-cell {
                             background-color: var(--bg-hover) !important;
+                            border-left: none !important;
+                            box-shadow: none !important;
                         }
                         /* Keep header and footer distinct but kill their hover tints */
                         .milestone-breakdown-table thead tr {
@@ -879,8 +890,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                         <th key={col.key} style={{
                                             position: 'relative',
                                             backgroundColor: 'var(--ae-table-header-bg)',
-                                            whiteSpace: 'normal',
-                                            wordBreak: 'break-word',
+                                            whiteSpace: 'nowrap',
+                                            wordBreak: 'normal',
                                             userSelect: 'none',
                                             padding: '4px 6px 4px 6px',
                                             paddingRight: '20px',
@@ -912,7 +923,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                             />
                                         </th>
                                     ))}
-                                    <th style={{
+                                    <th className="sticky-actions-cell" style={{
                                         backgroundColor: 'var(--ae-table-header-bg)',
                                         zIndex: 12,
                                         padding: '4px 6px 4px 6px',
@@ -922,6 +933,9 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                         top: 0,
                                         color: 'var(--text-secondary)',
                                         borderBottom: '1px solid var(--border-secondary)',
+                                        borderLeft: '1px solid var(--border-secondary)',
+                                        borderRight: 'none',
+                                        boxShadow: 'none',
                                         textAlign: 'center'
                                     }}>Actions</th>
                                 </tr>
@@ -970,10 +984,13 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                 </div>
                                             </th>
                                         ))}
-                                        <th style={{
+                                        <th className="sticky-actions-cell" style={{
                                             textAlign: 'center',
                                             backgroundColor: 'var(--ae-filter-row-bg)',
                                             borderBottom: '1px solid var(--border-secondary)',
+                                            borderLeft: '1px solid var(--border-secondary)',
+                                            borderRight: 'none',
+                                            boxShadow: 'none',
                                             position: 'sticky',
                                             right: 0,
                                             zIndex: 12
@@ -1006,7 +1023,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                         return (
                                             <React.Fragment key={m.id}>
                                                 <tr style={{ cursor: 'pointer' }} onClick={() => toggleRow(m.id)}>
-                                                    <td style={{ textAlign: 'center', padding: 0 }}>
+                                                    <td style={{ textAlign: 'center', padding: 0, borderRight: 'none' }}>
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -1037,7 +1054,9 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                             padding: '8px 10px',
                                                             fontSize: '0.75rem',
                                                             lineHeight: '1.4',
-                                                            verticalAlign: 'top'
+                                                            verticalAlign: 'top',
+                                                            borderRight: 'none',
+                                                            boxShadow: 'none'
                                                         } as React.CSSProperties;
 
                                                         switch (key) {
@@ -1090,7 +1109,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                                 </td>;
                                                             case 'sales_order':
                                                                 return (
-                                                                    <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)', fontSize: '0.75rem' }}>
+                                                                    <td key={key} style={{ ...cellStyle, color: 'var(--theme-primary)' }}>
                                                                         {m.sales_order_details?.so_number ? (
                                                                             <span
                                                                                 onClick={() => navigate(`/sales-order?id=${m.sales_order}`)}
@@ -1146,7 +1165,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                                 );
                                                             case 'invoice_total':
                                                                 return (
-                                                                    <td key={key} style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-primary)' }}>
+                                                                    <td key={key} style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-primary)', borderRight: 'none' }}>
                                                                         {m.invoice_details?.total_amount ? (
                                                                             `${m.sales_order_details?.currency === 'INR' ? '₹' : '$'}${parseFloat(m.invoice_details.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                                                                         ) : '—'}
@@ -1156,12 +1175,13 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                                 return null;
                                                         }
                                                     })}
-                                                    <td className="sticky-actions-cell" style={{ 
+                                                    <td className="sticky-actions-cell" style={{
                                                         padding: '4px 12px',
                                                         position: 'sticky',
                                                         right: 0,
                                                         zIndex: 8,
-                                                        boxShadow: '-2px 0 5px rgba(0,0,0,0.05)'
+                                                        borderLeft: 'none',
+                                                        boxShadow: 'none'
                                                     }}>
                                                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
                                                             {/* Issue Invoice — show for any row with at least one non-invoiced real milestone */}
@@ -1217,7 +1237,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                                     </button>
                                                                 );
                                                             })()}
-                                                        {/* View button */}
+                                                            {/* View button */}
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
