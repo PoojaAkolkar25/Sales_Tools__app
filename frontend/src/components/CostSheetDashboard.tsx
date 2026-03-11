@@ -380,7 +380,8 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
 
     const getStatusBadge = (status: string) => {
         const statusMap: { [key: string]: { bg: string; color: string; label: string } } = {
-            'PENDING': { bg: 'rgba(113, 128, 150, 0.1)', color: '#718096', label: 'Draft' },
+            'PENDING': { bg: 'var(--bg-secondary)', color: 'var(--theme-primary)', label: 'Draft' },
+            'DRAFT': { bg: 'var(--bg-secondary)', color: 'var(--theme-primary)', label: 'Draft' }, // Added to ensure explicitly matched
             'SUBMITTED': { bg: 'var(--bg-secondary)', color: 'var(--theme-primary)', label: 'Pending' },
             'REVERTED': { bg: 'rgba(214, 158, 46, 0.1)', color: '#D69E2E', label: 'Reverted' },
             'APPROVED': { bg: 'rgba(0, 200, 83, 0.1)', color: '#00C853', label: 'Approved' },
@@ -821,6 +822,20 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                         <ChevronRight size={18} />
                     </button>
 
+                    <style>{`
+                        /* Prevent default ae-table hover on the expanded breakdown container */
+                        .ae-table tr.expanded-row:hover > td {
+                            background-color: white !important;
+                        }
+                        .ae-table tr.expanded-row > td {
+                            background-color: white !important;
+                        }
+                        /* Remove hover from category breakdown table rows */
+                        .category-breakdown-table tr:hover td {
+                            background-color: transparent !important;
+                        }
+                    `}</style>
+
                     <div ref={tableScrollRef} className="ae-table-wrapper" style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
                         <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: 'max-content' }}>
                             <colgroup>
@@ -963,7 +978,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
 
                                         return (
                                             <React.Fragment key={cs.id}>
-                                                <tr>
+                                                <tr className={isExpanded ? 'expanded-row' : ''}>
                                                     <td style={{ textAlign: 'center', padding: 0 }}>
                                                         <button
                                                             onClick={() => toggleRow(cs.id)}
@@ -1124,175 +1139,178 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                     </td>
                                                 </tr>
                                                 {isExpanded && (
-                                                    <tr>
-                                                        <td colSpan={visibleColumns.length + 2} style={{ padding: '0', background: 'var(--bg-secondary)' }}>
-                                                            <div style={{ padding: '24px', animation: 'slideDown 0.3s ease' }}>
+                                                    <tr className="expanded-row" style={{ background: 'white' }}>
+                                                        <td colSpan={visibleColumns.length + 2} style={{ padding: '20px 40px', borderBottom: '1px solid var(--border-primary)', background: 'white' }}>
+                                                            <div style={{
+                                                                background: 'white',
+                                                                borderRadius: '8px',
+                                                                border: '1px solid var(--border-primary)',
+                                                                padding: '16px',
+                                                                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                                                            }}>
                                                                 <div style={{
-                                                                    background: 'var(--bg-primary)',
-                                                                    borderRadius: '16px',
-                                                                    border: '1px solid var(--border-primary)',
-                                                                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                                                                    overflow: 'hidden'
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '8px',
+                                                                    marginBottom: '16px',
+                                                                    borderLeft: '4px solid var(--theme-primary)',
+                                                                    paddingLeft: '12px'
                                                                 }}>
-                                                                    {/* Category Summary Header */}
-                                                                    <div style={{ padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
-                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                            <div style={{ width: '3px', height: '14px', background: 'var(--theme-primary)', borderRadius: '2px' }}></div>
-                                                                            <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>Category Breakdown Summary</h4>
-                                                                        </div>
-                                                                    </div>
+                                                                    <h4 style={{ fontSize: '0.85rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                                                                        Category Breakdown Summary
+                                                                    </h4>
+                                                                </div>
 
-                                                                    {/* Summary Table */}
-                                                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                                                        <thead>
-                                                                            <tr style={{ background: 'var(--theme-primary)', color: 'white' }}>
-                                                                                <th style={{ padding: '8px 8px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'left' }}>Category</th>
-                                                                                <th style={{ padding: '8px 8px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Total Est. Cost</th>
-                                                                                <th style={{ padding: '8px 8px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Total Est. Margin %</th>
-                                                                                <th style={{ padding: '8px 8px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Total Est. Margin</th>
-                                                                                <th style={{ padding: '8px 8px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Total Est. Price</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody>
-                                                                            {[
-                                                                                { label: 'License', data: totals.license },
-                                                                                { label: 'Services - Implementation', data: totals.implementation },
-                                                                                { label: 'Services - Support', data: totals.support },
-                                                                                { label: 'Infrastructure Cost', data: totals.infra },
-                                                                                { label: 'Other Category', data: totals.other }
-                                                                            ].map((row, idx) => (
-                                                                                <tr key={row.label} style={{ borderBottom: idx === 4 ? 'none' : '1px solid #f1f5f9' }}>
-                                                                                    <td style={{ padding: '8px 8px', fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>{row.label}</td>
-                                                                                    <td style={{ padding: '8px 8px', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textAlign: 'right' }}>
-                                                                                        {currencySymbol}{row.data.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                                                    </td>
-                                                                                    <td style={{ padding: '8px 8px', fontSize: '0.75rem', fontWeight: 700, color: row.data.catMarginPercent >= 0 ? '#10b981' : '#ef4444', textAlign: 'right' }}>
-                                                                                        {row.data.catMarginPercent.toFixed(2)}%
-                                                                                    </td>
-                                                                                    <td style={{ padding: '8px 8px', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textAlign: 'right' }}>
-                                                                                        {currencySymbol}{row.data.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                                                    </td>
-                                                                                    <td style={{ padding: '8px 8px', fontSize: '0.8rem', fontWeight: 800, color: 'var(--theme-accent)', textAlign: 'right' }}>
-                                                                                        {currencySymbol}{row.data.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                                                    </td>
-                                                                                </tr>
-                                                                            ))}
-                                                                            {/* Grand Total Row */}
-                                                                            <tr style={{ background: '#f8fafc', borderTop: '2px solid var(--border-primary)' }}>
-                                                                                <td style={{ padding: '10px 8px', fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>Total</td>
-                                                                                <td style={{ padding: '10px 8px', fontSize: '0.8rem', fontWeight: 800, color: '#1e293b', textAlign: 'right' }}>
-                                                                                    {currencySymbol}{grandTotalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                {/* Summary Table */}
+                                                                <table className="category-breakdown-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                                                    <thead>
+                                                                        <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #e2e8f0' }}>
+                                                                            <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Category</th>
+                                                                            <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Total Est. Cost</th>
+                                                                            <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Total Est. Margin %</th>
+                                                                            <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Total Est. Margin</th>
+                                                                            <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Total Est. Price</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {[
+                                                                            { label: 'License', data: totals.license },
+                                                                            { label: 'Services - Implementation', data: totals.implementation },
+                                                                            { label: 'Services - Support', data: totals.support },
+                                                                            { label: 'Infrastructure Cost', data: totals.infra },
+                                                                            { label: 'Other Category', data: totals.other }
+                                                                        ].map((row) => (
+                                                                            <tr key={row.label} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                                                                <td style={{ padding: '10px 12px', fontSize: '0.75rem', fontWeight: 700, color: '#334155', background: 'white' }}>{row.label}</td>
+                                                                                <td style={{ padding: '10px 12px', fontSize: '0.75rem', fontWeight: 600, color: '#0f172a', textAlign: 'right', background: 'white' }}>
+                                                                                    {currencySymbol}{row.data.catCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                 </td>
-                                                                                <td style={{ padding: '10px 8px', fontSize: '0.8rem', fontWeight: 800, color: grandTotalMarginPercent >= 0 ? '#10b981' : '#ef4444', textAlign: 'right' }}>
-                                                                                    {grandTotalMarginPercent.toFixed(2)}%
+                                                                                <td style={{ padding: '10px 12px', fontSize: '0.75rem', fontWeight: 700, color: row.data.catMarginPercent >= 0 ? '#10b981' : '#ef4444', textAlign: 'right', background: 'white' }}>
+                                                                                    {row.data.catMarginPercent.toFixed(2)}%
                                                                                 </td>
-                                                                                <td style={{ padding: '10px 8px', fontSize: '0.8rem', fontWeight: 800, color: '#1e293b', textAlign: 'right' }}>
-                                                                                    {currencySymbol}{grandTotalMargin.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                                <td style={{ padding: '10px 12px', fontSize: '0.75rem', fontWeight: 600, color: '#0f172a', textAlign: 'right', background: 'white' }}>
+                                                                                    {currencySymbol}{row.data.catMarginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                 </td>
-                                                                                <td style={{ padding: '10px 8px', fontSize: '0.8rem', fontWeight: 900, color: 'var(--theme-primary)', textAlign: 'right' }}>
-                                                                                    {currencySymbol}{grandTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                                <td style={{ padding: '10px 12px', fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', textAlign: 'right', background: 'white' }}>
+                                                                                    {currencySymbol}{row.data.catPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                 </td>
                                                                             </tr>
-                                                                        </tbody>
-                                                                    </table>
+                                                                        ))}
+                                                                    </tbody>
+                                                                    <tfoot style={{ background: 'white', borderTop: '2px solid #cbd5e1' }}>
+                                                                        <tr>
+                                                                            <td style={{ padding: '10px 12px', fontSize: '0.8rem', fontWeight: 800, color: '#334155', background: 'white' }}>Total:</td>
+                                                                            <td style={{ padding: '10px 12px', fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', textAlign: 'right', background: 'white' }}>
+                                                                                {currencySymbol}{grandTotalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                            </td>
+                                                                            <td style={{ padding: '10px 12px', fontSize: '0.8rem', fontWeight: 800, color: grandTotalMarginPercent >= 0 ? '#10b981' : '#ef4444', textAlign: 'right', background: 'white' }}>
+                                                                                {grandTotalMarginPercent.toFixed(2)}%
+                                                                            </td>
+                                                                            <td style={{ padding: '10px 12px', fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', textAlign: 'right', background: 'white' }}>
+                                                                                {currencySymbol}{grandTotalMargin.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                            </td>
+                                                                            <td style={{ padding: '10px 12px', fontSize: '0.8rem', fontWeight: 900, color: '#0f172a', textAlign: 'right', background: 'white' }}>
+                                                                                {currencySymbol}{grandTotalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                            </td>
+                                                                        </tr>
+                                                                    </tfoot>
+                                                                </table>
 
-                                                                    {/* Action Buttons Hub */}
-                                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-                                                                        <div style={{
-                                                                            display: 'inline-flex',
-                                                                            alignItems: 'center',
-                                                                            gap: '4px',
-                                                                            padding: '4px',
-                                                                            background: 'white',
-                                                                            borderRadius: '12px',
-                                                                            border: '1px solid #e2e8f0',
-                                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-                                                                        }}>
-                                                                            {(cs.status === 'PENDING' || cs.status === 'REVERTED') && (
-                                                                                <button
-                                                                                    onClick={() => handleQuickStatusUpdate(cs.id, 'SUBMITTED')}
-                                                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 20px', borderRadius: '10px', border: 'none', background: 'var(--theme-primary)', color: 'white', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-                                                                                    onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 10px rgba(255,107,0,0.3)'; }}
-                                                                                    onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-                                                                                >
-                                                                                    <PlusCircle size={16} /> Submit for Approval
-                                                                                </button>
-                                                                            )}
-                                                                            {cs.status === 'SUBMITTED' && (
-                                                                                <>
-                                                                                    {/* Approve */}
-                                                                                    <button
-                                                                                        onClick={() => handleApprove(cs.id)}
-                                                                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 20px', borderRadius: '10px', border: 'none', background: '#00C853', color: 'white', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-                                                                                        onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 10px rgba(0,200,83,0.35)'; }}
-                                                                                        onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-                                                                                        title="Approve this cost sheet"
-                                                                                    >
-                                                                                        <CheckCircle size={15} /> Approve
-                                                                                    </button>
-                                                                                    {/* Revert */}
-                                                                                    <button
-                                                                                        onClick={() => { setRevertModal({ id: cs.id }); setRevertComment(''); }}
-                                                                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 18px', borderRadius: '10px', border: '1px solid #D69E2E', background: 'rgba(214,158,46,0.08)', color: '#B7791F', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-                                                                                        onMouseOver={(e) => { e.currentTarget.style.background = '#D69E2E'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#D69E2E'; }}
-                                                                                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(214,158,46,0.08)'; e.currentTarget.style.color = '#B7791F'; e.currentTarget.style.borderColor = '#D69E2E'; }}
-                                                                                        title="Revert this cost sheet"
-                                                                                    >
-                                                                                        <RotateCcw size={14} /> Revert
-                                                                                    </button>
-                                                                                    {/* Reject */}
-                                                                                    <button
-                                                                                        onClick={() => { setRejectModal({ id: cs.id }); setRejectComment(''); }}
-                                                                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 18px', borderRadius: '10px', border: '1px solid rgba(229,62,62,0.4)', background: 'rgba(229,62,62,0.06)', color: '#E53E3E', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-                                                                                        onMouseOver={(e) => { e.currentTarget.style.background = '#E53E3E'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#E53E3E'; }}
-                                                                                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(229,62,62,0.06)'; e.currentTarget.style.color = '#E53E3E'; e.currentTarget.style.borderColor = 'rgba(229,62,62,0.4)'; }}
-                                                                                        title="Reject this cost sheet"
-                                                                                    >
-                                                                                        <XCircle size={15} /> Reject
-                                                                                    </button>
-                                                                                </>
-                                                                            )}
+                                                                {/* Action Buttons Hub */}
+                                                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+                                                                    <div style={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '4px',
+                                                                        padding: '4px',
+                                                                        background: 'white',
+                                                                        borderRadius: '12px',
+                                                                        border: '1px solid #e2e8f0',
+                                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                                                                    }}>
+                                                                        {(cs.status === 'PENDING' || cs.status === 'REVERTED') && (
                                                                             <button
-                                                                                onClick={() => {
-                                                                                    setCancellingRowId(cs.id);
-                                                                                    setTimeout(() => {
-                                                                                        toggleRow(cs.id);
-                                                                                        setCancellingRowId(null);
-                                                                                    }, 150);
-                                                                                }}
-                                                                                style={{
-                                                                                    display: 'flex',
-                                                                                    alignItems: 'center',
-                                                                                    gap: '8px',
-                                                                                    padding: '8px 16px',
-                                                                                    borderRadius: '10px',
-                                                                                    border: 'none',
-                                                                                    background: cancellingRowId === cs.id ? 'rgba(255, 107, 0, 0.1)' : 'transparent',
-                                                                                    color: cancellingRowId === cs.id ? 'var(--theme-primary)' : 'var(--text-primary)',
-                                                                                    fontSize: '0.75rem',
-                                                                                    fontWeight: 700,
-                                                                                    cursor: 'pointer',
-                                                                                    transition: 'all 0.2s',
-                                                                                    boxShadow: cancellingRowId === cs.id ? '0 2px 8px rgba(187, 77, 0, 0.2)' : 'none'
-                                                                                }}
-                                                                                onMouseEnter={(e) => {
-                                                                                    if (cancellingRowId !== cs.id) {
-                                                                                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
-                                                                                        e.currentTarget.style.color = 'var(--ae-orange)';
-                                                                                    }
-                                                                                }}
-                                                                                onMouseLeave={(e) => {
-                                                                                    if (cancellingRowId !== cs.id) {
-                                                                                        e.currentTarget.style.background = 'transparent';
-                                                                                        e.currentTarget.style.color = 'var(--text-primary)';
-                                                                                    }
-                                                                                }}
+                                                                                onClick={() => handleQuickStatusUpdate(cs.id, 'SUBMITTED')}
+                                                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 20px', borderRadius: '10px', border: 'none', background: 'var(--theme-primary)', color: 'white', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                                onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 10px rgba(255,107,0,0.3)'; }}
+                                                                                onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                                                                             >
-                                                                                <X size={14} /> Cancel
+                                                                                <PlusCircle size={16} /> Submit for Approval
                                                                             </button>
-                                                                        </div>
+                                                                        )}
+                                                                        {cs.status === 'SUBMITTED' && (
+                                                                            <>
+                                                                                {/* Approve */}
+                                                                                <button
+                                                                                    onClick={() => handleApprove(cs.id)}
+                                                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 20px', borderRadius: '10px', border: 'none', background: '#00C853', color: 'white', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                                    onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 10px rgba(0,200,83,0.35)'; }}
+                                                                                    onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                                                                                    title="Approve this cost sheet"
+                                                                                >
+                                                                                    <CheckCircle size={15} /> Approve
+                                                                                </button>
+                                                                                {/* Revert */}
+                                                                                <button
+                                                                                    onClick={() => { setRevertModal({ id: cs.id }); setRevertComment(''); }}
+                                                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 18px', borderRadius: '10px', border: '1px solid #D69E2E', background: 'rgba(214,158,46,0.08)', color: '#B7791F', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                                    onMouseOver={(e) => { e.currentTarget.style.background = '#D69E2E'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#D69E2E'; }}
+                                                                                    onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(214,158,46,0.08)'; e.currentTarget.style.color = '#B7791F'; e.currentTarget.style.borderColor = '#D69E2E'; }}
+                                                                                    title="Revert this cost sheet"
+                                                                                >
+                                                                                    <RotateCcw size={14} /> Revert
+                                                                                </button>
+                                                                                {/* Reject */}
+                                                                                <button
+                                                                                    onClick={() => { setRejectModal({ id: cs.id }); setRejectComment(''); }}
+                                                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 18px', borderRadius: '10px', border: '1px solid rgba(229,62,62,0.4)', background: 'rgba(229,62,62,0.06)', color: '#E53E3E', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                                    onMouseOver={(e) => { e.currentTarget.style.background = '#E53E3E'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#E53E3E'; }}
+                                                                                    onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(229,62,62,0.06)'; e.currentTarget.style.color = '#E53E3E'; e.currentTarget.style.borderColor = 'rgba(229,62,62,0.4)'; }}
+                                                                                    title="Reject this cost sheet"
+                                                                                >
+                                                                                    <XCircle size={15} /> Reject
+                                                                                </button>
+                                                                            </>
+                                                                        )}
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setCancellingRowId(cs.id);
+                                                                                setTimeout(() => {
+                                                                                    toggleRow(cs.id);
+                                                                                    setCancellingRowId(null);
+                                                                                }, 150);
+                                                                            }}
+                                                                            style={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '8px',
+                                                                                padding: '8px 16px',
+                                                                                borderRadius: '10px',
+                                                                                border: 'none',
+                                                                                background: cancellingRowId === cs.id ? 'rgba(255, 107, 0, 0.1)' : 'transparent',
+                                                                                color: cancellingRowId === cs.id ? 'var(--theme-primary)' : 'var(--text-primary)',
+                                                                                fontSize: '0.75rem',
+                                                                                fontWeight: 700,
+                                                                                cursor: 'pointer',
+                                                                                transition: 'all 0.2s',
+                                                                                boxShadow: cancellingRowId === cs.id ? '0 2px 8px rgba(187, 77, 0, 0.2)' : 'none'
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                if (cancellingRowId !== cs.id) {
+                                                                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                                                                    e.currentTarget.style.color = 'var(--ae-orange)';
+                                                                                }
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                if (cancellingRowId !== cs.id) {
+                                                                                    e.currentTarget.style.background = 'transparent';
+                                                                                    e.currentTarget.style.color = 'var(--text-primary)';
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            <X size={14} /> Cancel
+                                                                        </button>
                                                                     </div>
-
                                                                 </div>
                                                             </div>
                                                         </td>

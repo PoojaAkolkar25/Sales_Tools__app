@@ -1386,12 +1386,6 @@ const AppContent: React.FC = () => {
                         setInitialSoId(soId);
                         setEditingMilestoneId(null);
                         setViewSingleMilestoneId(null);
-                      } else if (typeof id === 'string' && id.startsWith('so-')) {
-                        // Open full Sales Order milestone breakdown
-                        const soId = parseInt(id.replace('so-', ''));
-                        setInitialSoId(soId);
-                        setEditingMilestoneId(null);
-                        setViewSingleMilestoneId(null);
                       } else {
                         setEditingMilestoneId(id);
                         setViewSingleMilestoneId(id);

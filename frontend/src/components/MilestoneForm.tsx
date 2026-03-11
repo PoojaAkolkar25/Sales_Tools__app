@@ -292,6 +292,42 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
         return milestones.reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0);
     };
 
+    const getFilteredMilestones = () => {
+        const milestonesWithIndices = milestones.map((m, i) => ({ milestone: m, originalIndex: i }));
+        if (!filterTab || filterTab === 'all') return milestonesWithIndices;
+
+        return milestonesWithIndices.filter(({ milestone: m }) => {
+            // New unsaved milestones should always be visible in any tab
+            if (!m.id) return true;
+
+            const isInvoiced = m.status === 'INVOICED';
+            if (filterTab === 'billed') return isInvoiced;
+            if (isInvoiced) return false;
+
+            const d = m.due_date ? new Date(m.due_date) : null;
+            if (!d) return false;
+
+            d.setHours(0, 0, 0, 0);
+            const t = new Date(); t.setHours(0, 0, 0, 0);
+            const fiveDaysFromNow = new Date(t); fiveDaysFromNow.setDate(t.getDate() + 5);
+
+            if (filterTab === 'yet_to_due') return d > fiveDaysFromNow;
+            if (filterTab === 'due_1_5') return d > t && d <= fiveDaysFromNow;
+            if (filterTab === 'due') return d <= t;
+            return true;
+        });
+    };
+
+    const getFooterLabel = () => {
+        switch (filterTab) {
+            case 'billed': return 'Total Billed';
+            case 'yet_to_due': return 'Total Yet to Due';
+            case 'due_1_5': return 'Total Due (1-5 Days)';
+            case 'due': return 'Total Due';
+            default: return 'Total Planned';
+        }
+    };
+
     const handleSave = async () => {
         if (!selectedSO) return;
 
@@ -492,51 +528,28 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {milestones.map((milestone, originalIndex) => {
-                                        const isInvoiced = milestone.status === 'INVOICED';
+                                    {(() => {
+                                        const filteredItems = getFilteredMilestones();
+                                        return filteredItems.map(({ milestone, originalIndex }, visibleIndex) => {
+                                            const isInvoiced = milestone.status === 'INVOICED';
 
-                                        // Context-aware visibility check
-                                        let isVisible = true;
-                                        if (filterTab && filterTab !== 'all') {
-                                            if (filterTab === 'billed') {
-                                                isVisible = isInvoiced;
-                                            } else if (isInvoiced) {
-                                                isVisible = false; // Exclude billed from all date-based tabs
-                                            } else {
-                                                const d = milestone.due_date ? new Date(milestone.due_date) : null;
-                                                if (!d) {
-                                                    isVisible = false;
-                                                } else {
-                                                    d.setHours(0, 0, 0, 0);
-                                                    const t = new Date(); t.setHours(0, 0, 0, 0);
-                                                    const fiveDAgo = new Date(t); fiveDAgo.setDate(t.getDate() - 5);
-
-                                                    if (filterTab === 'yet_to_due') isVisible = d > t;
-                                                    else if (filterTab === 'due_1_5') isVisible = d > fiveDAgo && d <= t;
-                                                    else if (filterTab === 'due') isVisible = d <= fiveDAgo;
-                                                }
-                                            }
-                                        }
-
-                                        if (!isVisible) return null;
-
-                                        const isDisabled = isInvoiced || !!viewSingleMilestoneId;
-                                        const isFocused = focusedMilestoneId === milestone.id;
-                                        return (
-                                            <tr
-                                                key={milestone.id || originalIndex}
-                                                id={`milestone-row-${milestone.id}`}
-                                                style={{
-                                                    borderBottom: '1px solid var(--border-primary)',
-                                                    transition: 'background-color 0.5s ease',
-                                                    backgroundColor: isFocused ? '#FEFCE8' : 'transparent'
-                                                }}
-                                            >
-                                                <td style={{ padding: '4px 0', textAlign: 'center', width: '35px' }}>
-                                                    {originalIndex === milestones.length - 1 && !viewSingleMilestoneId && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleAddMilestone}
+                                            const isDisabled = !!milestone.id || isInvoiced || !!viewSingleMilestoneId;
+                                            const isFocused = focusedMilestoneId === milestone.id;
+                                            return (
+                                                <tr
+                                                    key={milestone.id || originalIndex}
+                                                    id={`milestone-row-${milestone.id}`}
+                                                    style={{
+                                                        borderBottom: '1px solid var(--border-primary)',
+                                                        transition: 'background-color 0.5s ease',
+                                                        backgroundColor: isFocused ? '#FEFCE8' : 'transparent'
+                                                    }}
+                                                >
+                                                    <td style={{ padding: '4px 0', textAlign: 'center', width: '35px' }}>
+                                                        {visibleIndex === filteredItems.length - 1 && !viewSingleMilestoneId && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleAddMilestone}
                                                             style={{
                                                                 padding: '4px',
                                                                 background: 'var(--bg-accent)',
@@ -798,14 +811,17 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                 </td>
                                             </tr>
                                         );
-                                    })}
+                                    });
+                                })()}
                                 </tbody>
                                 <tfoot>
                                     <tr style={{ background: '#F8FAFC' }}>
-                                        <td colSpan={5} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase' }}>Total Planned</td>
-                                        <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: calculateTotal() > parseFloat(selectedSO.total_amount) ? '#DC2626' : '#111827' }}>
+                                        <td colSpan={5} style={{ padding: '12px 16px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase' }}>
+                                            {getFooterLabel()}
+                                        </td>
+                                        <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: '#111827' }}>
                                             <span style={{ color: '#0369A1', marginRight: '4px' }}>{getCurrencySymbol(selectedSO.currency)}</span>
-                                            {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            {getFilteredMilestones().reduce((sum, { milestone: m }) => sum + (parseFloat(m.amount) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                         <td colSpan={2}></td>
                                     </tr>

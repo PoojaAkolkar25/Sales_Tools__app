@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Search, Eye, Download, FileText, FileSpreadsheet, Check, ChevronDown, ChevronLeft, ChevronRight, Columns,
-    FilePlus
+    FilePlus, Plus, Minus
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -15,9 +15,8 @@ const ALL_COL_CONFIG = [
     { key: 'sales_order', label: 'Sales Order', shortLabel: 'S.O.' },
     { key: 'customer', label: 'Customer', shortLabel: 'CUST.' },
     { key: 'description', label: 'Description', shortLabel: 'DESC.' },
-    { key: 'due_date', label: 'Due Date', shortLabel: 'DATE' },
+    { key: 'created_at', label: 'Created Date', shortLabel: 'DATE' },
     { key: 'amount', label: 'Amount', shortLabel: 'AMT.' },
-    { key: 'status', label: 'Status', shortLabel: 'ST.' },
     { key: 'invoice_no', label: 'Invoice No', shortLabel: 'INV. NO' },
     { key: 'invoice_total', label: 'Invoice Total', shortLabel: 'INV. TOT' }
 ];
@@ -28,7 +27,7 @@ const SHORT_COL_WIDTHS: Record<string, number> = {
     sales_order: 50,
     customer: 55,
     description: 55,
-    due_date: 50,
+    created_at: 50,
     amount: 45,
     status: 35,
     invoice_no: 55,
@@ -42,7 +41,7 @@ const FULL_LABEL_WIDTHS: Record<string, number> = {
     sales_order: 100,
     customer: 180,
     description: 220,
-    due_date: 85,
+    created_at: 85,
     amount: 100,
     status: 90,
     invoice_no: 110,
@@ -55,16 +54,14 @@ const MAX_COL_WIDTHS: Record<string, number> = {
     milestone_no: 150,
     deal: 120,
     sales_order: 150,
-    due_date: 120,
+    created_at: 120,
     amount: 150,
-    status: 120,
     invoice_no: 150,
     actions: 120
 };
 
 interface MilestoneDashboardProps {
     onView?: (id: number | string, tab?: string) => void;
-    onCreate?: () => void;
     initialTab?: string;
 }
 
@@ -74,8 +71,19 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const { showNotification } = useNotification();
+    const [expandedRows, setExpandedRows] = useState<Set<string | number>>(new Set());
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 20;
+
+    const toggleRow = (id: string | number) => {
+        const newExpanded = new Set(expandedRows);
+        if (newExpanded.has(id)) {
+            newExpanded.delete(id);
+        } else {
+            newExpanded.add(id);
+        }
+        setExpandedRows(newExpanded);
+    };
 
     // Filter States
     const [filters, setFilters] = useState({
@@ -193,9 +201,11 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
 
     useEffect(() => {
         fetchMilestones();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const fetchMilestones = async () => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    async function fetchMilestones() {
         setLoading(true);
         try {
             const [msRes, soRes] = await Promise.all([
@@ -290,6 +300,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                     amount: so.total_amount,
                     status: 'DRAFT',
                     due_date: so.delivery_date,
+                    created_at: so.created_at,
                     isVirtual: true
                 });
             }
@@ -305,7 +316,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
             const matchesSO = (m.sales_order_details?.so_number || '').toLowerCase().includes(filters.soNumber.toLowerCase());
             const matchesCustomer = (m.sales_order_details?.customer_name || '').toLowerCase().includes(filters.customerName.toLowerCase());
             const matchesDescription = (m.description || '').toLowerCase().includes(filters.description.toLowerCase());
-            const matchesDueDate = (m.due_date ? formatToAppDate(m.due_date) : '').toLowerCase().includes(filters.dueDateSearch.toLowerCase());
+            const matchesCreatedDate = (m.created_at ? formatToAppDate(m.created_at) : '').toLowerCase().includes(filters.dueDateSearch.toLowerCase());
             const matchesAmount = (m.amount?.toString() || '').includes(filters.amountSearch);
             const matchesStatusSearch = (m.status || '').toLowerCase().includes(filters.statusSearch.toLowerCase());
             const matchesInvoice = (m.invoice_details?.invoice_no || '').toLowerCase().includes(filters.invoiceNo.toLowerCase());
@@ -313,7 +324,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
             // Period date filtering
             let matchesDate = true;
             if (filters.period) {
-                const milestoneDate = parseDateSafe(m.due_date);
+                const milestoneDate = parseDateSafe(m.created_at);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
@@ -352,7 +363,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
             }
 
             return matchesMilestone && matchesDeal && matchesSO && matchesCustomer &&
-                matchesDescription && matchesDueDate && matchesAmount &&
+                matchesDescription && matchesCreatedDate && matchesAmount &&
                 matchesStatusSearch && matchesInvoice && matchesDate;
         });
 
@@ -792,9 +803,60 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                         <ChevronRight size={18} />
                     </button>
 
-                    <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)', minHeight: '400px' }}>
-                        <table className="ae-table compact-table" style={{ width: '100%' }}>
+                    <style>{`
+                        /* Prevent default ae-table hover on the expanded breakdown container */
+                        .ae-table tr.expanded-row:hover > td {
+                            background-color: white !important;
+                        }
+                        /* Kill ALL hover effects on the milestone breakdown inner table and force white backgrounds */
+                        .milestone-breakdown-table {
+                            background-color: white !important;
+                        }
+                        .milestone-breakdown-table tr {
+                            background-color: white !important;
+                        }
+                        .milestone-breakdown-table tr td {
+                            background-color: white !important;
+                        }
+                        .milestone-breakdown-table tr:hover td,
+                        .milestone-breakdown-table tr:hover th {
+                            background-color: white !important;
+                            background: white !important;
+                        }
+                        .ae-table tr.expanded-row > td {
+                            background-color: white !important;
+                        }
+                        .sticky-actions-cell {
+                            background-color: white !important;
+                        }
+                        .ae-table tr:hover td.sticky-actions-cell {
+                            background-color: var(--bg-hover) !important;
+                        }
+                        /* Keep header and footer distinct but kill their hover tints */
+                        .milestone-breakdown-table thead tr {
+                            background-color: #f1f5f9 !important;
+                        }
+                        .milestone-breakdown-table thead tr th {
+                            background-color: #f1f5f9 !important;
+                        }
+                        .milestone-breakdown-table thead tr:hover th {
+                            background-color: #f1f5f9 !important;
+                        }
+                        .milestone-breakdown-table tfoot tr {
+                            background-color: #f8fafc !important;
+                        }
+                        .milestone-breakdown-table tfoot tr td {
+                            background-color: #f8fafc !important;
+                        }
+                        .milestone-breakdown-table tfoot tr:hover td {
+                            background-color: #f8fafc !important;
+                        }
+                    `}</style>
+
+                    <div ref={tableScrollRef} className="ae-table-wrapper" style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)', minHeight: '400px' }}>
+                        <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: 'max-content', minWidth: '100%' }}>
                             <colgroup>
+                                <col style={{ width: '40px' }} />
                                 {ALL_COL_CONFIG.filter(col => {
                                     return visibleColumns.includes(col.key);
                                 }).map(col => (
@@ -804,12 +866,19 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                             </colgroup>
                             <thead>
                                 <tr>
+                                    <th style={{
+                                        backgroundColor: 'var(--ae-table-header-bg)',
+                                        zIndex: 12,
+                                        width: '40px',
+                                        borderBottom: '1px solid var(--border-secondary)',
+                                        borderRight: '1px solid var(--border-secondary)'
+                                    }}></th>
                                     {ALL_COL_CONFIG.filter(col => {
                                         return visibleColumns.includes(col.key);
                                     }).map(col => (
                                         <th key={col.key} style={{
                                             position: 'relative',
-                                            backgroundColor: '#f8fafc',
+                                            backgroundColor: 'var(--ae-table-header-bg)',
                                             whiteSpace: 'normal',
                                             wordBreak: 'break-word',
                                             userSelect: 'none',
@@ -844,10 +913,12 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                         </th>
                                     ))}
                                     <th style={{
-                                        backgroundColor: '#f8fafc',
+                                        backgroundColor: 'var(--ae-table-header-bg)',
                                         zIndex: 12,
                                         padding: '4px 6px 4px 6px',
-                                        whiteSpace: 'normal',
+                                        whiteSpace: 'nowrap',
+                                        position: 'sticky',
+                                        right: 0,
                                         top: 0,
                                         color: 'var(--text-secondary)',
                                         borderBottom: '1px solid var(--border-secondary)',
@@ -856,6 +927,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                 </tr>
                                 {showFilters && (
                                     <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
+                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}></th>
                                         {ALL_COL_CONFIG.filter(col => {
                                             return visibleColumns.includes(col.key);
                                         }).map(col => (
@@ -872,7 +944,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                                 case 'sales_order': return filters.soNumber;
                                                                 case 'customer': return filters.customerName;
                                                                 case 'description': return filters.description;
-                                                                case 'due_date': return filters.dueDateSearch;
+                                                                case 'created_at': return filters.dueDateSearch;
                                                                 case 'amount': return filters.amountSearch;
                                                                 case 'status': return filters.statusSearch;
                                                                 case 'invoice_no': return filters.invoiceNo;
@@ -887,7 +959,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                                 case 'sales_order': setFilters({ ...filters, soNumber: val }); break;
                                                                 case 'customer': setFilters({ ...filters, customerName: val }); break;
                                                                 case 'description': setFilters({ ...filters, description: val }); break;
-                                                                case 'due_date': setFilters({ ...filters, dueDateSearch: val }); break;
+                                                                case 'created_at': setFilters({ ...filters, dueDateSearch: val }); break;
                                                                 case 'amount': setFilters({ ...filters, amountSearch: val }); break;
                                                                 case 'status': setFilters({ ...filters, statusSearch: val }); break;
                                                                 case 'invoice_no': setFilters({ ...filters, invoiceNo: val }); break;
@@ -901,7 +973,10 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                         <th style={{
                                             textAlign: 'center',
                                             backgroundColor: 'var(--ae-filter-row-bg)',
-                                            borderBottom: '1px solid var(--border-secondary)'
+                                            borderBottom: '1px solid var(--border-secondary)',
+                                            position: 'sticky',
+                                            right: 0,
+                                            zIndex: 12
                                         }}>
                                             <button
                                                 onClick={() => setFilters({
@@ -927,355 +1002,418 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                         const rowFiveDAgo = new Date(rowToday); rowFiveDAgo.setDate(rowToday.getDate() - 5);
                                         const rowDd = m.due_date ? new Date(m.due_date) : null;
                                         if (rowDd) rowDd.setHours(0, 0, 0, 0);
-                                        let rowBg = '';
-                                        if (m.status !== 'INVOICED' && rowDd) {
-                                            if (rowDd <= rowFiveDAgo) rowBg = 'rgba(239, 68, 68, 0.05)';
-                                            else if (rowDd <= rowToday) rowBg = 'rgba(245, 158, 11, 0.05)';
-                                        }
-                                        return (
-                                            <tr key={m.id} style={{ background: rowBg || undefined, transition: 'background 0.2s' }} onMouseEnter={(e) => { if (!rowBg) e.currentTarget.style.background = 'rgba(255,107,0,0.02)'; }} onMouseLeave={(e) => { if (!rowBg) e.currentTarget.style.background = 'transparent'; }}>
-                                                {ALL_COL_CONFIG.filter(col => {
-                                                    return visibleColumns.includes(col.key);
-                                                }).map(col => {
-                                                    const key = col.key;
-                                                    const cellStyle = {
-                                                        whiteSpace: 'normal',
-                                                        wordBreak: 'break-word',
-                                                        padding: '8px 10px',
-                                                        fontSize: '0.75rem',
-                                                        lineHeight: '1.4',
-                                                        verticalAlign: 'top'
-                                                    } as React.CSSProperties;
 
-                                                    switch (key) {
-                                                        case 'milestone_no':
-                                                            return (
-                                                                <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)', fontFamily: 'monospace' }}>
-                                                                    {dueTab === 'all' && m.allMilestones && m.allMilestones.length > 0 ? (
-                                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                                                                            {m.allMilestones.map((ms: any, i: number) => (
-                                                                                <React.Fragment key={ms.id}>
-                                                                                    <span
-                                                                                        onClick={() => {
-                                                                                            if (onView) onView(ms.id, dueTab);
-                                                                                        }}
-                                                                                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                                                                                    >
-                                                                                        {ms.milestone_no}
-                                                                                    </span>
-                                                                                    {i < m.allMilestones.length - 1 && <span>,</span>}
-                                                                                </React.Fragment>
-                                                                            ))}
-                                                                        </div>
-                                                                    ) : (
+                                        return (
+                                            <React.Fragment key={m.id}>
+                                                <tr style={{ cursor: 'pointer' }} onClick={() => toggleRow(m.id)}>
+                                                    <td style={{ textAlign: 'center', padding: 0 }}>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                toggleRow(m.id);
+                                                            }}
+                                                            style={{
+                                                                background: 'transparent',
+                                                                border: 'none',
+                                                                cursor: 'pointer',
+                                                                color: 'var(--theme-primary)',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                padding: '8px 0'
+                                                            }}
+                                                        >
+                                                            {expandedRows.has(m.id) ? <Minus size={16} strokeWidth={3} /> : <Plus size={16} strokeWidth={3} />}
+                                                        </button>
+                                                    </td>
+                                                    {ALL_COL_CONFIG.filter(col => {
+                                                        return visibleColumns.includes(col.key);
+                                                    }).map(col => {
+                                                        const key = col.key;
+                                                        const cellStyle = {
+                                                            whiteSpace: 'nowrap',
+                                                            padding: '8px 10px',
+                                                            fontSize: '0.75rem',
+                                                            lineHeight: '1.4',
+                                                            verticalAlign: 'top'
+                                                        } as React.CSSProperties;
+
+                                                        switch (key) {
+                                                            case 'milestone_no':
+                                                                return (
+                                                                    <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)', fontFamily: 'monospace' }}>
+                                                                        {dueTab === 'all' && m.allMilestones && m.allMilestones.length > 0 ? (
+                                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                                                                {m.allMilestones.map((ms: any, i: number) => (
+                                                                                    <React.Fragment key={ms.id}>
+                                                                                        <span
+                                                                                            onClick={() => {
+                                                                                                if (onView) onView(ms.id, dueTab);
+                                                                                            }}
+                                                                                            style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                                                                        >
+                                                                                            {ms.milestone_no}
+                                                                                        </span>
+                                                                                        {i < m.allMilestones.length - 1 && <span>,</span>}
+                                                                                    </React.Fragment>
+                                                                                ))}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span
+                                                                                onClick={() => {
+                                                                                    const soIdToPass = m.sales_order || m.sales_order_details?.id;
+                                                                                    if (!m.isVirtual) {
+                                                                                        if (onView) onView(m.id, dueTab);
+                                                                                    } else if (soIdToPass) {
+                                                                                        if (onView) onView(`virtual-${soIdToPass}`, dueTab);
+                                                                                    }
+                                                                                }}
+                                                                                style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                                                            >
+                                                                                {m.milestone_no}
+                                                                            </span>
+                                                                        )}
+                                                                    </td>
+                                                                );
+                                                            case 'deal':
+                                                                return <td key={key} style={cellStyle}>
+                                                                    {m.sales_order_details?.deal ? (
                                                                         <span
-                                                                            onClick={() => {
-                                                                                const soIdToPass = m.sales_order || m.sales_order_details?.id;
-                                                                                if (!m.isVirtual) {
-                                                                                    if (onView) onView(m.id, dueTab);
-                                                                                } else if (soIdToPass) {
-                                                                                    if (onView) onView(`virtual-${soIdToPass}`, dueTab);
-                                                                                }
-                                                                            }}
-                                                                            style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                                                            onClick={() => navigate(`/deal?id=${m.sales_order_details.deal}`)}
+                                                                            style={{ fontWeight: 600, color: 'var(--theme-primary)', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
                                                                         >
-                                                                            {m.milestone_no}
-                                                                        </span>
-                                                                    )}
-                                                                </td>
-                                                            );
-                                                        case 'deal':
-                                                            return <td key={key} style={cellStyle}>
-                                                                {m.sales_order_details?.deal ? (
-                                                                    <span
-                                                                        onClick={() => navigate(`/deal?id=${m.sales_order_details.deal}`)}
-                                                                        style={{ fontWeight: 600, color: 'var(--theme-primary)', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
-                                                                    >
-                                                                        {m.sales_order_details.deal_id}
-                                                                    </span>
-                                                                ) : '—'}
-                                                            </td>;
-                                                        case 'sales_order':
-                                                            return (
-                                                                <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)', fontSize: '0.75rem' }}>
-                                                                    {m.sales_order_details?.so_number ? (
-                                                                        <span
-                                                                            onClick={() => navigate(`/sales-order?id=${m.sales_order}`)}
-                                                                            style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                                                                        >
-                                                                            {m.sales_order_details.so_number}
-                                                                        </span>
-                                                                    ) : m.sales_order ? (
-                                                                        <span
-                                                                            onClick={() => navigate(`/sales-order?id=${m.sales_order}`)}
-                                                                            style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                                                                        >
-                                                                            Draft-SO-{m.sales_order}
+                                                                            {m.sales_order_details.deal_id}
                                                                         </span>
                                                                     ) : '—'}
-                                                                </td>
-                                                            );
-                                                        case 'customer':
-                                                            return <td key={key} style={cellStyle}>{m.sales_order_details?.customer_name}</td>;
-                                                        case 'description':
-                                                            return <td key={key} style={cellStyle} title={m.description || '—'}>{m.description}</td>;
-                                                        case 'due_date':
-                                                            return (
-                                                                <td key={key} style={cellStyle}>
-                                                                    {m.due_date ? formatToAppDate(m.due_date) : '---'}
-                                                                </td>
-                                                            );
-                                                        case 'amount':
-                                                            return <td key={key} style={{ ...cellStyle, textAlign: 'right' }}>
-                                                                <span style={{ color: 'var(--text-primary)' }}>
-                                                                    {m.sales_order_details?.currency === 'INR' ? '₹' : '$'}
-                                                                    {parseFloat(m.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                                </span>
-                                                            </td>;
-                                                        case 'status': {
-                                                            const getStatusInfo = (ms: any) => {
-                                                                if (ms.status === 'INVOICED') return { label: 'Billed', color: '#059669', bg: '#F0FDF4', tab: 'billed' };
-                                                                const t0 = new Date(); t0.setHours(0, 0, 0, 0);
-                                                                const fv = new Date(t0); fv.setDate(t0.getDate() - 5);
-                                                                const du = ms.due_date ? new Date(ms.due_date) : null;
-                                                                if (du) {
-                                                                    du.setHours(0, 0, 0, 0);
-                                                                    if (du > t0) return { label: 'Yet to Due', color: '#2563EB', bg: '#EFF6FF', tab: 'yet_to_due' };
-                                                                    if (du > fv) return { label: 'Due 1-5 Days', color: '#D97706', bg: '#FFFBEB', tab: 'due_1_5' };
-                                                                    return { label: 'Due', color: '#DC2626', bg: '#FEF2F2', tab: 'due' };
-                                                                }
-                                                                return { label: 'Yet to Due', color: '#2563EB', bg: '#EFF6FF', tab: 'yet_to_due' };
-                                                            };
+                                                                </td>;
+                                                            case 'sales_order':
+                                                                return (
+                                                                    <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)', fontSize: '0.75rem' }}>
+                                                                        {m.sales_order_details?.so_number ? (
+                                                                            <span
+                                                                                onClick={() => navigate(`/sales-order?id=${m.sales_order}`)}
+                                                                                style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                                                            >
+                                                                                {m.sales_order_details.so_number}
+                                                                            </span>
+                                                                        ) : m.sales_order ? (
+                                                                            <span
+                                                                                onClick={() => navigate(`/sales-order?id=${m.sales_order}`)}
+                                                                                style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                                                            >
+                                                                                Draft-SO-{m.sales_order}
+                                                                            </span>
+                                                                        ) : '—'}
+                                                                    </td>
+                                                                );
+                                                            case 'customer':
+                                                                return <td key={key} style={cellStyle}>{m.sales_order_details?.customer_name}</td>;
+                                                            case 'description':
+                                                                return <td key={key} style={cellStyle} title={m.description || '—'}>{m.description}</td>;
+                                                            case 'created_at':
+                                                                return (
+                                                                    <td key={key} style={cellStyle}>
+                                                                        {m.created_at ? formatToAppDate(m.created_at) : '---'}
+                                                                    </td>
+                                                                );
+                                                            case 'amount': {
+                                                                const totalAmount = (m.allMilestones || [m]).reduce((sum: number, ms: any) => sum + (parseFloat(ms.amount) || 0), 0);
+                                                                return (
+                                                                    <td key={key} style={{ ...cellStyle, textAlign: 'right' }}>
+                                                                        <span style={{ color: 'var(--text-primary)' }}>
+                                                                            {m.sales_order_details?.currency === 'INR' ? '₹' : '$'}
+                                                                            {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                        </span>
+                                                                    </td>
+                                                                );
+                                                            }
+                                                            case 'status':
+                                                                return null;
+                                                            case 'invoice_no':
+                                                                return (
+                                                                    <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)' }}>
+                                                                        {m.invoice ? (
+                                                                            <span
+                                                                                onClick={() => navigate(`/invoice?id=${m.invoice}`)}
+                                                                                style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                                                            >
+                                                                                {m.invoice_details?.invoice_no}
+                                                                            </span>
+                                                                        ) : (m.invoice_details?.invoice_no || '—')}
+                                                                    </td>
+                                                                );
+                                                            case 'invoice_total':
+                                                                return (
+                                                                    <td key={key} style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-primary)' }}>
+                                                                        {m.invoice_details?.total_amount ? (
+                                                                            `${m.sales_order_details?.currency === 'INR' ? '₹' : '$'}${parseFloat(m.invoice_details.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                                                        ) : '—'}
+                                                                    </td>
+                                                                );
+                                                            default:
+                                                                return null;
+                                                        }
+                                                    })}
+                                                    <td className="sticky-actions-cell" style={{ 
+                                                        padding: '4px 12px',
+                                                        position: 'sticky',
+                                                        right: 0,
+                                                        zIndex: 8,
+                                                        boxShadow: '-2px 0 5px rgba(0,0,0,0.05)'
+                                                    }}>
+                                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                                            {/* Issue Invoice — show for any row with at least one non-invoiced real milestone */}
+                                                            {(() => {
+                                                                const nonInvoicedMs = m.allMilestones
+                                                                    ? m.allMilestones.filter((ms: any) => ms.status !== 'INVOICED')
+                                                                    : (!m.isVirtual && m.status !== 'INVOICED' ? [m] : []);
 
-                                                            const milestonesToShow = m.allMilestones && m.allMilestones.length > 0
-                                                                ? m.allMilestones
-                                                                : [m];
+                                                                if (nonInvoicedMs.length === 0) return null;
+                                                                const target = nonInvoicedMs[0];
 
-                                                            return (
-                                                                <td key={key} style={{ ...cellStyle, textAlign: 'left', padding: '4px 8px' }}>
-                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-start' }}>
-                                                                        {milestonesToShow.map((ms: any, idx: number) => {
-                                                                            const info = getStatusInfo(ms);
+                                                                return (
+                                                                    <button
+                                                                        onClick={async (e) => {
+                                                                            e.stopPropagation();
+                                                                            try {
+                                                                                await api.post(`/milestones/${target.id}/create_invoice/`);
+                                                                                showNotification('Draft invoice created successfully!', 'success');
+                                                                                fetchMilestones();
+                                                                                setDueTab('billed'); // Switch to Billed tab after success
+                                                                            } catch (error: any) {
+                                                                                showNotification(error.response?.data?.error || 'Failed to create invoice', 'error');
+                                                                            }
+                                                                        }}
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            width: '32px',
+                                                                            height: '32px',
+                                                                            background: 'rgba(255, 107, 0, 0.08)',
+                                                                            color: 'var(--theme-primary)',
+                                                                            border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                                            borderRadius: '8px',
+                                                                            cursor: 'pointer',
+                                                                            transition: 'all 0.2s'
+                                                                        }}
+                                                                        onMouseOver={(e) => {
+                                                                            e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                            e.currentTarget.style.color = 'white';
+                                                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
+                                                                        }}
+                                                                        onMouseOut={(e) => {
+                                                                            e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
+                                                                            e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                            e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
+                                                                            e.currentTarget.style.boxShadow = 'none';
+                                                                        }}
+                                                                        title={`Issue Invoice for ${target.milestone_no || 'this milestone'}`}
+                                                                    >
+                                                                        <FilePlus size={16} />
+                                                                    </button>
+                                                                );
+                                                            })()}
+                                                        {/* View button */}
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const soIdToPass = m.sales_order || m.sales_order_details?.id;
+                                                                    if (m.isVirtual) {
+                                                                        if (onView && soIdToPass) onView(`virtual-${soIdToPass}`);
+                                                                    } else {
+                                                                        // Open full breakdown view (read-only)
+                                                                        const mId = m.allMilestones?.length > 0 ? m.allMilestones[0].id : m.id;
+                                                                        if (onView) onView(mId, dueTab);
+                                                                    }
+                                                                }}
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    width: '32px',
+                                                                    height: '32px',
+                                                                    background: 'rgba(255, 107, 0, 0.08)',
+                                                                    color: 'var(--theme-primary)',
+                                                                    border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                                    borderRadius: '8px',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseOver={(e) => {
+                                                                    e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                    e.currentTarget.style.color = 'white';
+                                                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
+                                                                }}
+                                                                onMouseOut={(e) => {
+                                                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
+                                                                    e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                    e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
+                                                                    e.currentTarget.style.boxShadow = 'none';
+                                                                }}
+                                                                title="View Milestone"
+                                                            >
+                                                                <Eye size={16} />
+                                                            </button>
+
+                                                            {/* Download PDF button — for real milestones, fallback to SO for virtual */}
+                                                            <button
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        let response;
+                                                                        let filename;
+                                                                        if (m.isVirtual) {
+                                                                            const soId = m.sales_order || m.sales_order_details?.id;
+                                                                            response = await api.get(`/sales-orders/${soId}/download_pdf/`, { responseType: 'blob' });
+                                                                            filename = `sales_order_${m.sales_order_details?.so_no || soId}.pdf`;
+                                                                        } else {
+                                                                            response = await api.get(`/milestones/${m.id}/download_pdf/`, { responseType: 'blob' });
+                                                                            filename = `milestone_${m.milestone_no}.pdf`;
+                                                                        }
+
+                                                                        const url = window.URL.createObjectURL(new Blob([response.data]));
+                                                                        const link = document.createElement('a');
+                                                                        link.href = url;
+                                                                        link.setAttribute('download', filename);
+                                                                        document.body.appendChild(link);
+                                                                        link.click();
+                                                                        link.parentNode?.removeChild(link);
+                                                                        window.URL.revokeObjectURL(url);
+                                                                    } catch (error) {
+                                                                        console.error('Error downloading PDF', error);
+                                                                        showNotification('Error downloading PDF', 'error');
+                                                                    }
+                                                                }}
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    width: '32px',
+                                                                    height: '32px',
+                                                                    background: 'rgba(255, 107, 0, 0.08)',
+                                                                    color: 'var(--theme-primary)',
+                                                                    border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                                    borderRadius: '8px',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseOver={(e) => {
+                                                                    e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                    e.currentTarget.style.color = 'white';
+                                                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
+                                                                }}
+                                                                onMouseOut={(e) => {
+                                                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
+                                                                    e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                    e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
+                                                                    e.currentTarget.style.boxShadow = 'none';
+                                                                }}
+                                                                title={m.isVirtual ? "Download Sales Order PDF" : "Download Milestone PDF"}
+                                                            >
+                                                                <Download size={16} />
+                                                            </button>
+
+
+
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {expandedRows.has(m.id) && (
+                                                    <tr className="expanded-row" style={{ background: 'white' }}>
+                                                        <td colSpan={visibleColumns.length + 2} style={{ padding: '20px 40px', borderBottom: '1px solid var(--border-primary)' }}>
+                                                            <div style={{
+                                                                background: 'white',
+                                                                borderRadius: '8px',
+                                                                border: '1px solid var(--border-primary)',
+                                                                padding: '16px',
+                                                                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                                                            }}>
+                                                                <div style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '8px',
+                                                                    marginBottom: '16px',
+                                                                    borderLeft: '4px solid var(--theme-primary)',
+                                                                    paddingLeft: '12px'
+                                                                }}>
+                                                                    <h4 style={{ fontSize: '0.85rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                                                                        Milestone Breakdown Summary
+                                                                    </h4>
+                                                                </div>
+
+                                                                <table className="milestone-breakdown-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                                                    <thead>
+                                                                        <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #e2e8f0' }}>
+                                                                            <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Milestone No</th>
+                                                                            <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Description</th>
+                                                                            <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Due Date</th>
+                                                                            <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Amount</th>
+                                                                            <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Status</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {(m.allMilestones || [m]).map((ms: any, i: number) => {
+                                                                            const isBilled = ms.status === 'INVOICED';
+                                                                            let badgeBg = '#E0F2FE', badgeColor = '#0284C7', badgeLabel = 'Yet to Due';
+
+                                                                            if (isBilled) {
+                                                                                badgeBg = '#D1FAE5'; badgeColor = '#059669'; badgeLabel = 'Billed';
+                                                                            } else if (ms.due_date) {
+                                                                                const dd = new Date(ms.due_date); dd.setHours(0, 0, 0, 0);
+                                                                                const td = new Date(); td.setHours(0, 0, 0, 0);
+                                                                                const fd = new Date(td); fd.setDate(td.getDate() + 5);
+                                                                                if (dd > fd) { badgeBg = '#E0F2FE'; badgeColor = '#0284C7'; badgeLabel = 'Yet to Due'; }
+                                                                                else if (dd > td && dd <= fd) { badgeBg = '#FEF3C7'; badgeColor = '#D97706'; badgeLabel = 'Due 1-5 Days'; }
+                                                                                else { badgeBg = '#FEE2E2'; badgeColor = '#DC2626'; badgeLabel = 'Due'; }
+                                                                            }
+
                                                                             return (
-                                                                                <span
-                                                                                    key={idx}
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        const soId = m.sales_order || m.sales_order_details?.id;
-                                                                                        if (onView && soId) onView(`so-${soId}`, info.tab);
-                                                                                    }}
-                                                                                    style={{
-                                                                                        display: 'inline-flex',
-                                                                                        alignItems: 'center',
-                                                                                        padding: '1px 6px',
-                                                                                        borderRadius: '4px',
-                                                                                        fontSize: '10px',
-                                                                                        fontWeight: 600,
-                                                                                        color: info.color,
-                                                                                        background: info.bg,
-                                                                                        border: `1px solid ${info.color}20`,
-                                                                                        cursor: 'pointer',
-                                                                                        transition: 'all 0.1s',
-                                                                                        whiteSpace: 'nowrap'
-                                                                                    }}
-                                                                                    onMouseOver={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = info.color; }}
-                                                                                    onMouseOut={(e) => { e.currentTarget.style.background = info.bg; e.currentTarget.style.borderColor = `${info.color}20`; }}
-                                                                                    title={`${ms.milestone_no || ''} — ${info.label}`}
-                                                                                >
-                                                                                    <span style={{ fontWeight: 800, marginRight: '4px', opacity: 0.7 }}>{ms.milestone_no}</span>
-                                                                                    {info.label.toUpperCase()}
-                                                                                </span>
+                                                                                <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                                                                    <td style={{ padding: '10px 12px', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{ms.milestone_no}</td>
+                                                                                    <td style={{ padding: '10px 12px', fontSize: '0.75rem', color: '#334155', whiteSpace: 'nowrap' }}>{ms.description || '—'}</td>
+                                                                                    <td style={{ padding: '10px 12px', fontSize: '0.75rem', textAlign: 'center', color: '#334155', whiteSpace: 'nowrap' }}>{ms.due_date ? formatToAppDate(ms.due_date) : '—'}</td>
+                                                                                    <td style={{ padding: '10px 12px', fontSize: '0.75rem', textAlign: 'right', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                                                                                        {m.sales_order_details?.currency === 'INR' ? '₹' : '$'}
+                                                                                        {parseFloat(ms.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                                    </td>
+                                                                                    <td style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                                                                                        <span style={{
+                                                                                            background: badgeBg,
+                                                                                            color: badgeColor,
+                                                                                            padding: '2px 8px',
+                                                                                            borderRadius: '12px',
+                                                                                            fontSize: '0.65rem',
+                                                                                            fontWeight: 800,
+                                                                                            textTransform: 'uppercase'
+                                                                                        }}>
+                                                                                            {badgeLabel}
+                                                                                        </span>
+                                                                                    </td>
+                                                                                </tr>
                                                                             );
                                                                         })}
-                                                                    </div>
-                                                                </td>
-                                                            );
-                                                        }
-                                                        case 'invoice_no':
-                                                            return (
-                                                                <td key={key} style={{ ...cellStyle, fontWeight: 700, color: 'var(--theme-primary)' }}>
-                                                                    {m.invoice ? (
-                                                                        <span
-                                                                            onClick={() => navigate(`/invoice?id=${m.invoice}`)}
-                                                                            style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                                                                        >
-                                                                            {m.invoice_details?.invoice_no}
-                                                                        </span>
-                                                                    ) : (m.invoice_details?.invoice_no || '—')}
-                                                                </td>
-                                                            );
-                                                        case 'invoice_total':
-                                                            return (
-                                                                <td key={key} style={{ ...cellStyle, textAlign: 'right', color: 'var(--text-primary)' }}>
-                                                                    {m.invoice_details?.total_amount ? (
-                                                                        `${m.sales_order_details?.currency === 'INR' ? '₹' : '$'}${parseFloat(m.invoice_details.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                                                                    ) : '—'}
-                                                                </td>
-                                                            );
-                                                        default:
-                                                            return null;
-                                                    }
-                                                })}
-                                                <td style={{ padding: '4px 12px' }}>
-                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                                        {/* Issue Invoice — show for any row with at least one non-invoiced real milestone */}
-                                                        {(() => {
-                                                            const nonInvoicedMs = m.allMilestones
-                                                                ? m.allMilestones.filter((ms: any) => ms.status !== 'INVOICED')
-                                                                : (!m.isVirtual && m.status !== 'INVOICED' ? [m] : []);
-
-                                                            if (nonInvoicedMs.length === 0) return null;
-                                                            const target = nonInvoicedMs[0];
-
-                                                            return (
-                                                                <button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            await api.post(`/milestones/${target.id}/create_invoice/`);
-                                                                            showNotification('Draft invoice created successfully!', 'success');
-                                                                            fetchMilestones();
-                                                                            setDueTab('billed'); // Switch to Billed tab after success
-                                                                        } catch (error: any) {
-                                                                            showNotification(error.response?.data?.error || 'Failed to create invoice', 'error');
-                                                                        }
-                                                                    }}
-                                                                    style={{
-                                                                        display: 'inline-flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center',
-                                                                        width: '32px',
-                                                                        height: '32px',
-                                                                        background: 'rgba(255, 107, 0, 0.08)',
-                                                                        color: 'var(--theme-primary)',
-                                                                        border: '1px solid rgba(255, 107, 0, 0.2)',
-                                                                        borderRadius: '8px',
-                                                                        cursor: 'pointer',
-                                                                        transition: 'all 0.2s'
-                                                                    }}
-                                                                    onMouseOver={(e) => {
-                                                                        e.currentTarget.style.background = 'var(--theme-primary)';
-                                                                        e.currentTarget.style.color = 'white';
-                                                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
-                                                                    }}
-                                                                    onMouseOut={(e) => {
-                                                                        e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
-                                                                        e.currentTarget.style.color = 'var(--theme-primary)';
-                                                                        e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
-                                                                        e.currentTarget.style.boxShadow = 'none';
-                                                                    }}
-                                                                    title={`Issue Invoice for ${target.milestone_no || 'this milestone'}`}
-                                                                >
-                                                                    <FilePlus size={16} />
-                                                                </button>
-                                                            );
-                                                        })()}
-                                                        {/* View button */}
-                                                        <button
-                                                            onClick={() => {
-                                                                const soIdToPass = m.sales_order || m.sales_order_details?.id;
-                                                                if (m.isVirtual) {
-                                                                    if (onView && soIdToPass) onView(`virtual-${soIdToPass}`);
-                                                                } else {
-                                                                    // Open full breakdown view (read-only)
-                                                                    const mId = m.allMilestones?.length > 0 ? m.allMilestones[0].id : m.id;
-                                                                    if (onView) onView(mId, dueTab);
-                                                                }
-                                                            }}
-                                                            style={{
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                width: '32px',
-                                                                height: '32px',
-                                                                background: 'rgba(255, 107, 0, 0.08)',
-                                                                color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(255, 107, 0, 0.2)',
-                                                                borderRadius: '8px',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                            onMouseOver={(e) => {
-                                                                e.currentTarget.style.background = 'var(--theme-primary)';
-                                                                e.currentTarget.style.color = 'white';
-                                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
-                                                            }}
-                                                            onMouseOut={(e) => {
-                                                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
-                                                                e.currentTarget.style.color = 'var(--theme-primary)';
-                                                                e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
-                                                                e.currentTarget.style.boxShadow = 'none';
-                                                            }}
-                                                            title="View Milestone"
-                                                        >
-                                                            <Eye size={16} />
-                                                        </button>
-
-                                                        {/* Download PDF button — for real milestones, fallback to SO for virtual */}
-                                                        <button
-                                                            onClick={async () => {
-                                                                try {
-                                                                    let response;
-                                                                    let filename;
-                                                                    if (m.isVirtual) {
-                                                                        const soId = m.sales_order || m.sales_order_details?.id;
-                                                                        response = await api.get(`/sales-orders/${soId}/download_pdf/`, { responseType: 'blob' });
-                                                                        filename = `sales_order_${m.sales_order_details?.so_no || soId}.pdf`;
-                                                                    } else {
-                                                                        response = await api.get(`/milestones/${m.id}/download_pdf/`, { responseType: 'blob' });
-                                                                        filename = `milestone_${m.milestone_no}.pdf`;
-                                                                    }
-
-                                                                    const url = window.URL.createObjectURL(new Blob([response.data]));
-                                                                    const link = document.createElement('a');
-                                                                    link.href = url;
-                                                                    link.setAttribute('download', filename);
-                                                                    document.body.appendChild(link);
-                                                                    link.click();
-                                                                    link.parentNode?.removeChild(link);
-                                                                    window.URL.revokeObjectURL(url);
-                                                                } catch (error) {
-                                                                    console.error('Error downloading PDF', error);
-                                                                    showNotification('Error downloading PDF', 'error');
-                                                                }
-                                                            }}
-                                                            style={{
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                width: '32px',
-                                                                height: '32px',
-                                                                background: 'rgba(255, 107, 0, 0.08)',
-                                                                color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(255, 107, 0, 0.2)',
-                                                                borderRadius: '8px',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                            onMouseOver={(e) => {
-                                                                e.currentTarget.style.background = 'var(--theme-primary)';
-                                                                e.currentTarget.style.color = 'white';
-                                                                e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
-                                                            }}
-                                                            onMouseOut={(e) => {
-                                                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
-                                                                e.currentTarget.style.color = 'var(--theme-primary)';
-                                                                e.currentTarget.style.borderColor = 'rgba(255, 107, 0, 0.2)';
-                                                                e.currentTarget.style.boxShadow = 'none';
-                                                            }}
-                                                            title={m.isVirtual ? "Download Sales Order PDF" : "Download Milestone PDF"}
-                                                        >
-                                                            <Download size={16} />
-                                                        </button>
-
-
-
-                                                    </div>
-                                                </td>
-                                            </tr>
+                                                                    </tbody>
+                                                                    <tfoot style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1' }}>
+                                                                        <tr>
+                                                                            <td colSpan={3} style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 800, color: '#334155', whiteSpace: 'nowrap' }}>Total:</td>
+                                                                            <td style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                                                                                {m.sales_order_details?.currency === 'INR' ? '₹' : '$'}
+                                                                                {(m.allMilestones || [m]).reduce((sum: number, ms: any) => sum + (parseFloat(ms.amount) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                            </td>
+                                                                            <td></td>
+                                                                        </tr>
+                                                                    </tfoot>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
                                         );
                                     })
                                 )}
