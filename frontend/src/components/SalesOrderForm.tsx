@@ -33,6 +33,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
     const [saving, setSaving] = useState(false);
     const [customers, setCustomers] = useState<any[]>([]);
     const [partners, setPartners] = useState<any[]>([]);
+    const [companies, setCompanies] = useState<any[]>([]);
     const [estimates, setEstimates] = useState<any[]>([]);
 
     const [salesOrder, setSalesOrder] = useState<any>(id ? null : {
@@ -151,14 +152,16 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
 
     const fetchCustomers = async () => {
         try {
-            const [custRes, partRes] = await Promise.all([
+            const [custRes, partRes, compRes] = await Promise.all([
                 api.get('/customers/'),
-                api.get('/partners/')
+                api.get('/partners/'),
+                api.get('/finance/company-profile/')
             ]);
             setCustomers(custRes.data);
             setPartners(partRes.data);
+            setCompanies(compRes.data);
         } catch (error) {
-            console.error('Error fetching customers/partners', error);
+            console.error('Error fetching customers/partners/companies', error);
         }
     };
 
@@ -203,6 +206,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
         const selectedCustomer = customers.find(c => c.id === parseInt(value.toString()));
         if (selectedCustomer) {
             const matchedPartner = partners.find(p => p.name === selectedCustomer.name);
+            const matchedCompany = companies.find((c: any) => c.name === selectedCustomer.name);
 
             setSalesOrder((prev: any) => ({
                 ...prev,
@@ -211,7 +215,10 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                 cust_id: selectedCustomer.customer_id || selectedCustomer.cust_id || selectedCustomer.id || prev.cust_id,
                 billing_address: matchedPartner?.address || selectedCustomer.address || prev.billing_address,
                 shipping_address: matchedPartner?.address || selectedCustomer.address || prev.shipping_address,
-                currency: selectedCustomer.currency || prev.currency
+                // Prioritize base_currency from Company Profile (User Management)
+                currency: (matchedCompany?.base_currency === 'EUR' ? 'EURO' : matchedCompany?.base_currency) ||
+                    (selectedCustomer.currency === 'EUR' ? 'EURO' : selectedCustomer.currency) ||
+                    prev.currency || 'INR'
             }));
         }
     };
@@ -882,16 +889,25 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
 
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Currency</label>
-                                <SearchableDropdown
-                                    options={[
-                                        { value: 'INR', label: 'INR - Indian Rupee' },
-                                        { value: 'USD', label: 'USD - US Dollar' }
-                                    ]}
-                                    value={salesOrder.currency}
-                                    onChange={(val) => handleInputChange({ target: { name: 'currency', value: val } } as any)}
-                                    placeholder="Select Currency"
-                                    className="w-full"
-                                    disabled={isSubmitted}
+                                <input
+                                    type="text"
+                                    value={salesOrder.currency
+                                        ? salesOrder.currency === 'INR'
+                                            ? 'INR - Indian Rupee'
+                                            : salesOrder.currency === 'USD'
+                                                ? 'USD - US Dollar'
+                                                : salesOrder.currency === 'EURO'
+                                                    ? 'EURO - Euro'
+                                                    : salesOrder.currency
+                                        : ''}
+                                    readOnly
+                                    className="ae-input"
+                                    placeholder="Auto-filled from customer"
+                                    style={{
+                                        background: 'var(--bg-secondary)',
+                                        color: salesOrder.currency ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                        cursor: 'default'
+                                    }}
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>

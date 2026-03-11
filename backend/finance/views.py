@@ -105,6 +105,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         billing_address = self.request.data.get('billing_address')
         shipping_address = self.request.data.get('shipping_address')
         customer_gstin = self.request.data.get('customer_gstin')
+        customer_id = self.request.data.get('customer')
         
         deal_id = self.request.data.get('deal')
         if deal_id:
@@ -137,6 +138,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             round_off=calc_results['round_off'],
             total_amount=calc_results['total_amount'],
             open_balance=calc_results['total_amount'], # Initial open balance is full amount
+            customer=CompanyProfile.objects.filter(id=customer_id).first() if customer_id else None,
             grand_total_words=calc_results['grand_total_words']
         )
         
@@ -204,6 +206,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         billing_address = self.request.data.get('billing_address')
         shipping_address = self.request.data.get('shipping_address')
         customer_gstin = self.request.data.get('customer_gstin')
+        customer_item_id = self.request.data.get('customer')
         
         deal_id = self.request.data.get('deal')
         if deal_id:
@@ -235,6 +238,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             round_off=calc_results['round_off'],
             total_amount=calc_results['total_amount'],
             open_balance=calc_results['total_amount'], # Reset balance on update? Or keep old? Logically if amount changes, balance should adjust.
+            customer=CompanyProfile.objects.filter(id=customer_item_id).first() if customer_item_id else serializer.instance.customer,
             grand_total_words=calc_results['grand_total_words']
         )
         
@@ -341,6 +345,39 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             return response
         except Exception as e:
             logger.error(f"Error in download_pdf (finance): {str(e)}", exc_info=True)
+            return Response({'error': str(e)}, status=500)
+
+    @action(detail=False, methods=['post'])
+    def preview_pdf(self, request):
+        import json
+        from django.http import HttpResponse
+        
+        try:
+            # Get data from request
+            invoice_data = request.data
+            
+            # Line items could be in 'line_items' or 'line_items_data'
+            line_items_raw = invoice_data.get('line_items', [])
+            if not line_items_raw:
+                line_items_raw = invoice_data.get('line_items_data', '[]')
+                
+            if isinstance(line_items_raw, str):
+                try:
+                    line_items_data = json.loads(line_items_raw)
+                except json.JSONDecodeError:
+                    line_items_data = []
+            else:
+                line_items_data = line_items_raw
+
+            pdf_content = InvoiceService.generate_preview_pdf(invoice_data, line_items_data)
+            
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            # Use 'attachment' to trigger download
+            response['Content-Disposition'] = 'attachment; filename="Invoice_Preview.pdf"'
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error in preview_pdf (finance): {str(e)}", exc_info=True)
             return Response({'error': str(e)}, status=500)
 
     @action(detail=True, methods=['get'])

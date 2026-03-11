@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -448,7 +448,7 @@ const UserManagement: React.FC = () => {
                 cin: item.cin || '',
                 status: item.status || 'ACTIVE',
                 payment_terms: item.payment_terms || 'NET_30',
-                gst_customer_type: item.gst_customer_type || 'CGST_SGST_9'
+                gst_customer_type: (item.gst_customer_type === 'DOMESTIC' ? 'CGST_SGST_9' : item.gst_customer_type) || 'CGST_SGST_9'
             });
         } else if (mode === 'end_customer') {
             setEndCustomerFormData({
@@ -495,7 +495,7 @@ const UserManagement: React.FC = () => {
                 pan: item.pan || '',
                 tan: item.tan || '',
                 cin: item.cin || '',
-                gst_customer_type: item.gst_customer_type || 'CGST_SGST_9'
+                gst_customer_type: (item.gst_customer_type === 'DOMESTIC' ? 'CGST_SGST_9' : item.gst_customer_type) || 'CGST_SGST_9'
             });
         } else if (mode === 'financial_year') {
             setFyFormData({
@@ -889,7 +889,11 @@ const UserManagement: React.FC = () => {
                             formData.append(key, value);
                         }
                     } else if (key === 'state') {
-                        const matchedState = states.find((s: any) => s.name?.toLowerCase() === (value as string)?.toLowerCase());
+                        const matchedState = states.find((s: any) => {
+                            const sName = (s.name || "").toLowerCase();
+                            const vStr = String(value || "").toLowerCase();
+                            return sName === vStr || String(s.id) === vStr;
+                        });
                         if (matchedState) {
                             formData.append(key, matchedState.id);
                         } else {
@@ -953,7 +957,11 @@ const UserManagement: React.FC = () => {
                             formData.append(key, value);
                         }
                     } else if (key === 'state') {
-                        const matchedState = states.find((s: any) => s.name?.toLowerCase() === (value as string)?.toLowerCase());
+                        const matchedState = states.find((s: any) => {
+                            const sName = (s.name || "").toLowerCase();
+                            const vStr = String(value || "").toLowerCase();
+                            return sName === vStr || String(s.id) === vStr;
+                        });
                         if (matchedState) {
                             formData.append(key, matchedState.id);
                         } else {
@@ -1204,7 +1212,7 @@ const UserManagement: React.FC = () => {
         switch (val) {
             case 'INR': symbol = '₹ / INR'; break;
             case 'USD': symbol = '$ / USD'; break;
-            case 'EUR': symbol = '€ / EUR'; break;
+            case 'EURO': symbol = '€ / EURO'; break;
         }
 
         if (viewMode === 'partner') {
@@ -1234,7 +1242,7 @@ const UserManagement: React.FC = () => {
             // @ts-ignore
             const matchedState = states.find(s => s.code === stateCode);
             if (matchedState) {
-                stateId = matchedState.id;
+                stateId = matchedState.name; // Use name for UI consistency (dropdown uses names)
             }
         }
 
@@ -2344,21 +2352,6 @@ const UserManagement: React.FC = () => {
                                             {partnerFormData.country === 'India' && partnerFormData.is_gst_applicable && (
                                                 <>
                                                     <div>
-                                                        <SearchableDropdown
-                                                            label="GST Customer Type *"
-                                                            options={[
-                                                                { value: 'CGST_SGST_9', label: 'CGST – Rate 9% & SGST – Rate 9%' },
-                                                                { value: 'IGST_18', label: 'IGST – Rate 18%' },
-                                                                { value: 'IGST_0_SEZ', label: 'IGST – Rate 0% (SEZ)' },
-                                                                { value: 'IGST_0_EXPORT', label: 'IGST – Rate 0% (Export)' }
-                                                            ]}
-                                                            value={partnerFormData.gst_customer_type}
-                                                            onChange={(val) => setPartnerFormData({ ...partnerFormData, gst_customer_type: val as any })}
-                                                            placeholder="Select GST Type"
-                                                            required
-                                                        />
-                                                    </div>
-                                                    <div>
                                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
                                                             GSTIN
                                                         </label>
@@ -3204,11 +3197,11 @@ const UserManagement: React.FC = () => {
 
                                             <div>
                                                 <SearchableDropdown
-                                                    label="Base Currency (INR – Indian Rupee)"
+                                                    label="Base Currency"
                                                     options={[
                                                         { value: "INR", label: "INR - Indian Rupee" },
                                                         { value: "USD", label: "USD - US Dollar" },
-                                                        { value: "EUR", label: "EUR - Euro" }
+                                                        { value: "EURO", label: "EURO - Euro" }
                                                     ]}
                                                     value={companyFormData.base_currency}
                                                     onChange={(val) => handleCurrencyChange(val as string)}
@@ -3311,7 +3304,7 @@ const UserManagement: React.FC = () => {
                                                         <SearchableDropdown
                                                             label="GST Customer Type *"
                                                             options={[
-                                                                { value: 'CGST_SGST_9', label: 'CGST – Rate 9% & SGST – Rate 9%' },
+                                                                { value: 'CGST_SGST_9', label: 'CGST – Rate 9% + SGST – Rate 9%' },
                                                                 { value: 'IGST_18', label: 'IGST – Rate 18%' },
                                                                 { value: 'IGST_0_SEZ', label: 'IGST – Rate 0% (SEZ)' },
                                                                 { value: 'IGST_0_EXPORT', label: 'IGST – Rate 0% (Export)' }
@@ -3722,7 +3715,7 @@ const UserManagement: React.FC = () => {
                     </div >
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

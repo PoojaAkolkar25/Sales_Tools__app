@@ -53,8 +53,8 @@ class InvoiceLineItemSerializer(serializers.ModelSerializer):
 
 class InvoiceSerializer(serializers.ModelSerializer):
     line_items = InvoiceLineItemSerializer(many=True, read_only=True)
-    customer_name = serializers.CharField(source='lead.customer_name', read_only=True)
-    project_name = serializers.CharField(source='lead.project_name', read_only=True)
+    customer_name = serializers.SerializerMethodField()
+    project_name = serializers.SerializerMethodField()
     deal_no = serializers.CharField(source='deal.deal_id', read_only=True, required=False, allow_null=True)
     approved_by_name = serializers.CharField(source='approved_by.username', read_only=True, required=False, allow_null=True)
     so_no = serializers.SerializerMethodField()
@@ -84,11 +84,29 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'project_name', 'deal_no', 'approved_by_name', 'sales_tax_rate', 'sales_tax_amount',
             'gst_declaration', 'lut_declaration', 'authorized_signatory', 
             'signature_image', 'company_seal', 'memo', 'irn', 'ack_no', 'ack_date', 'payment_terms_days',
-            'po_number', 'po_date'
+            'po_number', 'po_date', 'customer_country', 'customer'
         ]
 
     def get_so_no(self, obj):
         return obj.sales_order.so_number if obj.sales_order else "---"
+
+    def get_customer_name(self, obj):
+        if obj.lead and obj.lead.customer_name:
+            return obj.lead.customer_name
+        if obj.customer:
+            return obj.customer.name
+        if obj.sales_order and obj.sales_order.customer_name:
+            return obj.sales_order.customer_name
+        return "---"
+
+    def get_project_name(self, obj):
+        if obj.lead and obj.lead.project_name:
+            return obj.lead.project_name
+        if obj.milestone and obj.milestone.sales_order and obj.milestone.sales_order.project_name:
+            return obj.milestone.sales_order.project_name
+        if obj.sales_order and obj.sales_order.project_name:
+            return obj.sales_order.project_name
+        return "Direct Invoice"
 
     def to_internal_value(self, data):
         # Handle empty strings for foreign keys from frontend
