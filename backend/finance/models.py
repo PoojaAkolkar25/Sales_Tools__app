@@ -227,7 +227,7 @@ class Invoice(models.Model):
         if self.deal and self.deal.customer:
             return self.deal.customer.address
         if self.lead:
-            return self.lead.address
+            return "---" # Lead model does not have address field
         return "---"
 
     @property
@@ -239,7 +239,7 @@ class Invoice(models.Model):
         if self.deal and self.deal.customer:
             return self.deal.customer.gstin
         if self.lead:
-            return self.lead.gstin
+            return "---" # Lead model does not have gstin field
         return "---"
 
     @property

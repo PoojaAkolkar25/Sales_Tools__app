@@ -1909,6 +1909,10 @@ option {
   background-color: var(--bg-hover);
 }
 
+.ae-table.no-row-hover tr:hover td {
+  background-color: transparent;
+}
+
 /* --- Form Elements --- */
 .ae-input-group {
   position: relative;

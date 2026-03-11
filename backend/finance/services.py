@@ -175,7 +175,8 @@ class InvoiceService:
         
         # Handle USA Sales Tax
         sales_tax_rate = to_float(invoice_data.get('sales_tax_rate'), 0)
-        sales_tax_amount = round(taxable_amount * (sales_tax_rate / 100), 2) if invoice_type == InvoiceType.USA else 0
+        # Taxation is not applicable to AE USA
+        sales_tax_amount = 0
         
         grand_total = taxable_amount + total_tax + sales_tax_amount
         
@@ -333,35 +334,19 @@ class InvoiceService:
             memo=invoice_data.get('memo', ''),
             billing_address=invoice_data.get('billing_address', ''),
             shipping_address=invoice_data.get('shipping_address', ''),
-            irn=None, ack_no=None, ack_date=None,
             signature_image=None, company_seal=None,
+            get_customer_name=invoice_data.get('customer_name', '---'),
+            get_customer_address=invoice_data.get('billing_address') or '---',
+            get_customer_gstin=invoice_data.get('customer_gstin') or '---',
+            get_customer_pan=invoice_data.get('customer_pan'),
+            get_customer_state_name=invoice_data.get('customer_state_name'),
+            get_customer_state_code=invoice_data.get('customer_state_code'),
+            gst_declaration=invoice_data.get('gst_declaration', "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. This invoice is issued under Rule 46 of the CGST Rules, 2017."),
+            lut_declaration=invoice_data.get('lut_declaration', "Supply meant for export under Letter of Undertaking (LUT) without payment of Integrated Tax as per Section 16(3) of the IGST Act, 2017 and Rule 96A of the CGST Rules, 2017."),
         )
 
         # Mock methods required by template
-        def get_customer_name():
-            return invoice_data.get('customer_name', '---')
-        
-        def get_customer_address():
-            return invoice_data.get('billing_address') or '---'
-            
-        def get_customer_gstin():
-            return invoice_data.get('customer_gstin') or '---'
-            
-        def get_customer_pan():
-            return invoice_data.get('customer_pan')
-            
-        def get_customer_state_name():
-            return invoice_data.get('customer_state_name')
-            
-        def get_customer_state_code():
-            return invoice_data.get('customer_state_code')
-
-        invoice_mock.get_customer_name = get_customer_name
-        invoice_mock.get_customer_address = get_customer_address
-        invoice_mock.get_customer_gstin = get_customer_gstin
-        invoice_mock.get_customer_pan = get_customer_pan
-        invoice_mock.get_customer_state_name = get_customer_state_name
-        invoice_mock.get_customer_state_code = get_customer_state_code
+        # Line items are processed below
 
         # Process line items for template
         items_mock = []

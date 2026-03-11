@@ -16,12 +16,7 @@ interface LineItem {
     gst_rate: number;
 }
 
-const GST_TYPE_LABELS: Record<string, string> = {
-    'CGST_SGST_9': 'CGST – Rate 9% + SGST – Rate 9%',
-    'IGST_18': 'IGST – Rate 18%',
-    'IGST_0_SEZ': 'IGST – Rate 0%',
-    'IGST_0_EXPORT': 'IGST – Rate 0%'
-};
+
 
 const InvoiceForm: React.FC<{
     onBack: () => void,
@@ -30,7 +25,6 @@ const InvoiceForm: React.FC<{
     initialMilestoneId?: number | null
 }> = ({ onBack, invoiceId, initialSoId, initialMilestoneId }) => {
     const { showNotification, showConfirm } = useNotification();
-    const [leads, setLeads] = useState<any[]>([]);
     const [milestones, setMilestones] = useState<any[]>([]);
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [companyProfiles, setCompanyProfiles] = useState<any[]>([]);
@@ -76,7 +70,8 @@ const InvoiceForm: React.FC<{
         memo: '',
         selected_company: '',
         customer: '',
-        customer_country: 'India'
+        customer_country: 'India',
+        customer_name: ''
     });
 
     const [signatureFile, setSignatureFile] = useState<File | null>(null);
@@ -146,7 +141,8 @@ const InvoiceForm: React.FC<{
                 memo: '',
                 selected_company: '',
                 customer: '',
-                customer_country: 'India'
+                customer_country: 'India',
+                customer_name: ''
             });
             setLineItems([
                 { type: 'Service', description: '', hsn_sac: '', quantity: 0, rate: 0, discount: 0, gst_rate: 18 }
@@ -231,7 +227,6 @@ const InvoiceForm: React.FC<{
                 api.get('/sales-orders/?status=APPROVED'),
                 api.get('/finance/company-profile/')
             ]);
-            setLeads(leadsRes.data);
             setStates(statesRes.data);
             setSalesOrders(soRes.data);
             setCompanyProfiles(cpRes.data);
@@ -272,7 +267,7 @@ const InvoiceForm: React.FC<{
                 po_date: so.po_date || '',
                 milestone: initialMilestoneId ? initialMilestoneId.toString() : prev.milestone,
                 gst_customer_type: ((cp?.gst_customer_type === 'DOMESTIC' || lead?.gst_customer_type === 'DOMESTIC') ? 'CGST_SGST_9' : (cp?.gst_customer_type || lead?.gst_customer_type)) || prev.gst_customer_type,
-                currency_symbol: cp?.currency_symbol || (so.currency === 'INR' ? '₹' : (cp?.currency_symbol || prev.currency_symbol))
+                currency_symbol: (so.currency || prev.currency) === 'INR' ? '₹' : '$'
             }));
 
             try {
@@ -331,14 +326,15 @@ const InvoiceForm: React.FC<{
                 po_number: inv.po_number || '',
                 po_date: inv.po_date || '',
                 gst_customer_type: (inv.lead_details?.gst_customer_type === 'DOMESTIC' || inv.gst_customer_type === 'DOMESTIC') ? 'CGST_SGST_9' : (inv.lead_details?.gst_customer_type || inv.gst_customer_type || 'CGST_SGST_9'),
-                currency_symbol: inv.currency_symbol || (inv.currency === 'INR' ? '₹' : '$'),
+                currency_symbol: inv.currency === 'INR' ? '₹' : '$',
                 memo: inv.memo || '',
-                selected_company: '',
+                selected_company: inv.customer?.toString() || '',
                 customer: inv.customer?.toString() || '',
-                customer_country: inv.customer_country || 'India'
+                customer_country: inv.customer_country || 'India',
+                customer_name: inv.customer_name || inv.lead_details?.customer_name || ''
             });
 
-            if (inv.lead_details) {
+            if (inv.lead_details && !inv.customer) {
                 const cp = companyProfiles.find(c => c.name?.toLowerCase().trim() === inv.lead_details.customer_name?.toLowerCase().trim());
                 if (cp) {
                     setFormData(prev => ({ ...prev, selected_company: cp.id.toString() }));
@@ -398,7 +394,7 @@ const InvoiceForm: React.FC<{
                 shipping_address: cp.address_line_1 || prev.shipping_address,
                 gst_customer_type: gct,
                 currency: cp.base_currency || prev.currency,
-                currency_symbol: cp.currency_symbol || (prev.currency === 'INR' ? '₹' : '$'),
+                currency_symbol: (cp.base_currency || prev.currency) === 'INR' ? '₹' : '$',
                 customer_country: country,
                 payment_terms_days: cp.payment_terms === 'IMMEDIATE' ? 0 : cp.payment_terms === 'NET_30' ? 30 : cp.payment_terms === 'NET_60' ? 60 : cp.payment_terms === 'NET_90' ? 90 : 30,
                 // Clear SO/Milestone if customer changes
@@ -406,18 +402,43 @@ const InvoiceForm: React.FC<{
                 milestone: ''
             }));
 
-            // Fetch milestones for SOs belonging to this customer
+            // Fetch milestones for SOs belonging to this customer and autopopulate
             try {
                 const customerSOs = salesOrders.filter(so =>
                     so.customer_name?.toLowerCase().trim() === cp.name?.toLowerCase().trim()
                 );
                 if (customerSOs.length > 0) {
-                    const milestonePromises = customerSOs.map((so: any) =>
-                        api.get(`/milestones/?sales_order=${so.id}`).catch(() => ({ data: [] }))
-                    );
-                    const results = await Promise.all(milestonePromises);
-                    const allMilestones = results.flatMap((r: any) => r.data);
-                    setMilestones(allMilestones);
+                    const firstSO = customerSOs[0];
+                    const milestonePromise = api.get(`/milestones/?sales_order=${firstSO.id}`);
+                    const response = await milestonePromise;
+                    const customerMilestones = response.data;
+
+                    setMilestones(customerMilestones);
+
+                    // Autopopulate SO and first Milestone
+                    const firstMilestone = customerMilestones.length > 0 ? customerMilestones[0] : null;
+
+                    setFormData(prev => ({
+                        ...prev,
+                        sales_order: firstSO.id.toString(),
+                        milestone: firstMilestone ? firstMilestone.id.toString() : '',
+                        po_number: firstSO.po_number || prev.po_number,
+                        po_date: firstSO.po_date || prev.po_date,
+                        billing_address: firstSO.billing_address || prev.billing_address,
+                        shipping_address: firstSO.shipping_address || prev.shipping_address,
+                    }));
+
+                    if (firstSO.items && firstSO.items.length > 0) {
+                        setLineItems(firstSO.items.map((item: any) => ({
+                            type: item.item_type === 'SERVICES' ? 'Service' : 'Product',
+                            description: item.product_name + (item.description ? ` - ${item.description}` : ''),
+                            hsn_sac: '',
+                            quantity: parseFloat(item.qty),
+                            rate: parseFloat(item.rate),
+                            discount: parseFloat(item.discount) || 0,
+                            gst_rate: 18
+                        })));
+                    }
                 } else {
                     setMilestones([]);
                 }
@@ -434,97 +455,7 @@ const InvoiceForm: React.FC<{
 
 
 
-    const handleMilestoneChange = async (milestoneId: string) => {
-        const ms = milestones.find(m => m.id.toString() === milestoneId.toString());
-        if (ms) {
-            const soId = ms.sales_order?.toString() || ms.sales_order_details?.id?.toString();
 
-            setFormData(prev => ({
-                ...prev,
-                milestone: milestoneId.toString(),
-                sales_order: soId || prev.sales_order,
-                // Autopopulate other fields from Milestone if needed (e.g. amount if standard)
-            }));
-
-            if (soId) {
-                const so = salesOrders.find(s => s.id.toString() === soId);
-                if (so) {
-                    const lead = so.customer_name ? (leads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : null;
-                    const cp = so.customer_name ? (companyProfiles.find(c => c.name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : (lead ? (companyProfiles.find(c => c.name?.toLowerCase().trim() === lead.customer_name?.toLowerCase().trim())) : null);
-
-
-                    if (lead || cp) {
-                        setFormData(prev => ({
-                            ...prev,
-                            lead: lead ? lead.id.toString() : prev.lead,
-                            selected_company: cp ? cp.id.toString() : prev.selected_company,
-                            customer: cp ? cp.id.toString() : prev.customer,
-                            customer_gstin: cp?.gstin || lead?.gstin || prev.customer_gstin,
-                            customer_state: cp?.state?.toString() || prev.customer_state,
-                            billing_address: so.billing_address || cp?.address_line_1 || lead?.address || prev.billing_address,
-                            shipping_address: so.shipping_address || cp?.address_line_1 || lead?.address || prev.shipping_address,
-                            po_number: so.po_number || '',
-                            po_date: so.po_date || '',
-                            currency: so.currency || prev.currency,
-                            currency_symbol: cp?.currency_symbol || (so.currency === 'INR' ? '₹' : (cp?.currency_symbol || prev.currency_symbol)),
-                            gst_customer_type: (cp?.gst_customer_type === 'DOMESTIC' || lead?.gst_customer_type === 'DOMESTIC') ? 'CGST_SGST_9' : (cp?.gst_customer_type || lead?.gst_customer_type || prev.gst_customer_type),
-                            payment_terms_days: cp?.payment_terms === 'IMMEDIATE' ? 0 : cp?.payment_terms === 'NET_30' ? 30 : cp?.payment_terms === 'NET_60' ? 60 : cp?.payment_terms === 'NET_90' ? 90 : 30
-                        }));
-                    }
-                }
-            }
-        } else {
-            setFormData(prev => ({ ...prev, milestone: milestoneId }));
-        }
-    };
-
-    const handleSalesOrderChange = async (soId: string) => {
-        const so = salesOrders.find(s => s.id.toString() === soId.toString());
-        if (so) {
-            const lead = so.customer_name ? (leads.find(l => l.customer_name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : null;
-            const cp = so.customer_name ? (companyProfiles.find(c => c.name?.toLowerCase().trim() === so.customer_name?.toLowerCase().trim())) : null;
-            const gstin = cp?.gstin || lead?.gstin || '';
-
-            setFormData(prev => ({
-                ...prev,
-                sales_order: soId.toString(),
-                lead: lead ? lead.id.toString() : prev.lead,
-                customer_gstin: gstin,
-                customer_state: cp?.state?.toString() || prev.customer_state,
-                currency: so.currency || prev.currency,
-                billing_address: so.billing_address || cp?.address_line_1 || (lead ? lead.address : prev.billing_address),
-                shipping_address: so.shipping_address || cp?.address_line_1 || (lead ? lead.address : prev.shipping_address),
-                po_number: so.po_number || '',
-                po_date: so.po_date || '',
-                gst_customer_type: cp?.gst_customer_type || lead?.gst_customer_type || prev.gst_customer_type,
-                currency_symbol: cp?.currency_symbol || (so.currency === 'INR' ? '₹' : (cp?.currency_symbol || prev.currency_symbol)),
-                payment_terms_days: cp?.payment_terms === 'IMMEDIATE' ? 0 : cp?.payment_terms === 'NET_30' ? 30 : cp?.payment_terms === 'NET_60' ? 60 : cp?.payment_terms === 'NET_90' ? 90 : 30
-            }));
-
-            // Fetch milestones for this sales order
-            try {
-                const response = await api.get(`/milestones/?sales_order=${soId}`);
-                setMilestones(response.data);
-            } catch (error) {
-                console.error('Error fetching milestones', error);
-                setMilestones([]);
-            }
-
-            if (so.items && so.items.length > 0) {
-                setLineItems(so.items.map((item: any) => ({
-                    type: item.item_type === 'SERVICES' ? 'Service' : 'Product',
-                    description: item.product_name + (item.description ? ` - ${item.description}` : ''),
-                    hsn_sac: '',
-                    quantity: parseFloat(item.qty),
-                    rate: parseFloat(item.rate),
-                    discount: parseFloat(item.discount) || 0,
-                    gst_rate: 18
-                })));
-            }
-        } else {
-            setFormData(prev => ({ ...prev, sales_order: soId }));
-        }
-    };
 
     const calculateTotals = () => {
         let subtotal = 0;
@@ -572,7 +503,7 @@ const InvoiceForm: React.FC<{
         const taxableAmount = subtotal - totalDiscount;
         let sales_tax_amount = 0;
         if (formData.invoice_type === 'USA') {
-            sales_tax_amount = taxableAmount * (formData.sales_tax_rate / 100);
+            sales_tax_amount = 0; // Taxation is not applicable to AE USA
         }
 
         setTotals({
@@ -754,9 +685,9 @@ const InvoiceForm: React.FC<{
                     <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer</label>
-                            {isReadOnly ? (
-                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
-                                    {companyProfiles.find(cp => cp.id.toString() === formData.selected_company.toString())?.name || 'No Customer Selected'}
+                            {isReadOnly || invoiceId ? (
+                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>
+                                    {(formData as any).customer_name || companyProfiles.find(cp => cp.id.toString() === formData.selected_company.toString())?.name || '---'}
                                 </div>
                             ) : (
                                 <SearchableDropdown
@@ -769,31 +700,15 @@ const InvoiceForm: React.FC<{
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Sales Order Reference</label>
-                            <select className="ae-input" disabled={isReadOnly} value={formData.sales_order} onChange={e => handleSalesOrderChange(e.target.value)}>
-                                <option value="">Select Sales Order (Optional)</option>
-                                {salesOrders
-                                    .filter(so => {
-                                        if (!formData.selected_company) return true;
-                                        const selectedCompany = companyProfiles.find(cp => cp.id.toString() === formData.selected_company.toString());
-                                        if (!selectedCompany) return true;
-                                        // Always show currently selected sales order even if customer changed, to prevent data loss or weird UI state temporarily
-                                        if (so.id.toString() === formData.sales_order) return true;
-                                        return so.customer_name?.toLowerCase().trim() === selectedCompany.name?.toLowerCase().trim();
-                                    })
-                                    .map(so => (
-                                        <option key={so.id} value={so.id.toString()}>{so.so_number}</option>
-                                    ))}
-                            </select>
+                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>
+                                {salesOrders.find(so => so.id.toString() === formData.sales_order)?.so_number || '---'}
+                            </div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Milestone Reference</label>
-                            <select className="ae-input" disabled={isReadOnly} value={formData.milestone} onChange={e => handleMilestoneChange(e.target.value)}>
-                                <option value="">Select Milestone (Optional)</option>
-                                {/* Milestones are loaded per-customer in handleCompanyChange */}
-                                {milestones.map(m => (
-                                    <option key={m.id} value={m.id.toString()}>{m.milestone_no} - {m.description}</option>
-                                ))}
-                            </select>
+                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>
+                                {milestones.find(m => m.id.toString() === formData.milestone)?.milestone_no || '---'}
+                            </div>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -807,16 +722,6 @@ const InvoiceForm: React.FC<{
                                 className="ae-input"
                                 disabled
                                 value={states.find(s => s.id.toString() === formData.customer_state.toString())?.name || 'Not Set'}
-                                style={{ background: '#f8fafc' }}
-                            />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>GST Customer Type</label>
-                            <input
-                                type="text"
-                                className="ae-input"
-                                disabled
-                                value={GST_TYPE_LABELS[formData.gst_customer_type] || formData.gst_customer_type || 'Domestic'}
                                 style={{ background: '#f8fafc' }}
                             />
                         </div>
@@ -883,7 +788,7 @@ const InvoiceForm: React.FC<{
                         position: 'relative',
                         zIndex: 10
                     }}>
-                        <table className="ae-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+                        <table className="ae-table no-row-hover" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                             <colgroup>
                                 <col style={{ width: '40px' }} />
                                 <col style={{ width: '60px' }} />
@@ -1133,15 +1038,15 @@ const InvoiceForm: React.FC<{
                                             />
                                         </td>
                                         <td style={{ textAlign: 'center', padding: '8px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', position: 'relative' }}>
-                                                <span style={{ position: 'absolute', left: '12px', color: '#718096', fontSize: '0.85rem' }}>{formData.currency_symbol}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                                <span style={{ position: 'absolute', left: '8px', color: '#718096', fontSize: '0.75rem', pointerEvents: 'none', zIndex: 1 }}>{formData.currency_symbol}</span>
                                                 <input
                                                     type="number"
                                                     disabled={isReadOnly}
                                                     className="ae-input"
-                                                    style={{ width: '100%', height: '36px', borderRadius: '8px', padding: '4px 8px 4px 24px' }}
+                                                    style={{ width: '100%', height: '36px', borderRadius: '8px', padding: '4px 8px 4px 24px', textAlign: 'right' }}
                                                     value={item.rate === 0 ? '' : item.rate}
-                                                    placeholder="0"
+                                                    placeholder="0.00"
                                                     onChange={e => updateLineItem(index, 'rate', parseFloat(e.target.value) || 0)}
                                                 />
                                             </div>
@@ -1288,52 +1193,52 @@ const InvoiceForm: React.FC<{
                         {totals.total_discount > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                 <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>Total Discount</span>
-                                <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#E53E3E' }}>- {totals.total_discount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#E53E3E' }}>- {formData.currency_symbol} {totals.total_discount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                         )}
                         {totals.total_discount > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px dashed #E2E8F0' }}>
                                 <span style={{ color: '#4A5568', fontSize: '0.9rem', fontWeight: 600 }}>Taxable Amount</span>
-                                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{totals.taxable_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{formData.currency_symbol} {totals.taxable_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                         )}
 
                         {formData.is_gst_applicable && totals.cgst_total > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                 <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>CGST – Rate 9%</span>
-                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{totals.cgst_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{formData.currency_symbol} {totals.cgst_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                         )}
                         {formData.is_gst_applicable && totals.sgst_total > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                 <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>SGST – Rate 9%</span>
-                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{totals.sgst_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{formData.currency_symbol} {totals.sgst_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                         )}
                         {formData.is_gst_applicable && totals.igst_total > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                 <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>IGST – Rate 18%</span>
-                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{totals.igst_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{formData.currency_symbol} {totals.igst_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                         )}
                         {formData.is_gst_applicable && formData.gst_customer_type.includes('IGST_0') && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                 <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>IGST – Rate 0%</span>
-                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>0.00</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{formData.currency_symbol} 0.00</span>
                             </div>
                         )}
 
                         {!formData.is_gst_applicable && totals.total_tax > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                 <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>Total Tax</span>
-                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{totals.total_tax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{formData.currency_symbol} {totals.total_tax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                         )}
 
                         {formData.invoice_type === 'USA' && formData.sales_tax_rate > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #E2E8F0' }}>
-                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>Sales Tax ({formData.sales_tax_rate}%)</span>
-                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{formData.sales_tax_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                <span style={{ color: '#4A5568', fontSize: '0.9rem' }}>Sales Tax (0.00%)</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{formData.currency_symbol} 0.00</span>
                             </div>
                         )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', paddingTop: '12px', borderTop: '1px solid #E2E8F0' }}>

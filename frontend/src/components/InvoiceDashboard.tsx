@@ -156,6 +156,11 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
         localStorage.setItem('invoiceDashboard_visibleColumns', JSON.stringify(visibleColumns));
     }, [visibleColumns]);
 
+    const colsToShow = useMemo(() => 
+        ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)), 
+        [visibleColumns]
+    );
+
     const wrapperRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -873,14 +878,14 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                 <div style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)' }}>
                     <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                         <colgroup>
-                            {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
-                                <col key={col.key} style={{ width: `${getColWidth(col.key)}px` }} />
+                            {colsToShow.map(col => (
+                                <col key={col.key} style={{ width: getColWidth(col.key) }} />
                             ))}
-                            <col style={{ width: `${getColWidth('actions')}px` }} />
+                            <col style={{ width: 100 }} />
                         </colgroup>
                         <thead>
                             <tr>
-                                {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                {colsToShow.map(col => (
                                     <th key={col.key} style={{
                                         backgroundColor: 'var(--ae-table-header-bg)',
                                         position: 'relative',
@@ -935,7 +940,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                             </tr>
                             {showFilters && (
                                 <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
-                                    {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => (
+                                    {colsToShow.map(col => (
                                         <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
                                             <div className="ae-input-group" style={{ margin: 0 }}>
                                                 {(() => {
@@ -1048,7 +1053,8 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                             ) : (
                                 paginatedInvoices.map((inv: Invoice) => (
                                     <tr key={inv.id}>
-                                        {visibleColumns.map(key => {
+                                        {colsToShow.map(col => {
+                                            const key = col.key;
                                             const cellStyle = {
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',

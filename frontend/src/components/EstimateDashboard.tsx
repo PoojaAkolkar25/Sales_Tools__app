@@ -975,113 +975,103 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
                                         const hasProposal = (est as any).proposals?.length > 0;
                                         return (
                                             <tr key={est.id}>
-                                                {visibleColumns.includes('deal_id') && (
-                                                    <td style={{ fontWeight: 400, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }} onClick={() => navigate(`/deal?id=${est.deal}`)}>
-                                                        {est.deal_id}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('deal_amount') && (
-                                                    <td style={{ fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }}>
-                                                        ₹{parseFloat(est.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('cost_sheet_no') && (
-                                                    <td style={{ fontWeight: 400, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }} onClick={() => navigate(`/cost-sheet?id=${est.cost_sheet}`)}>
-                                                        {est.cost_sheet_no}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('cost_sheet_price') && (
-                                                    <td style={{ fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }}>
-                                                        ₹{parseFloat(est.cost_sheet_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('estimate_id') && (
-                                                    <td style={{ fontWeight: 400, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }} onClick={() => onView(est.id)}>
-                                                        {est.estimate_id}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('version') && (
-                                                    <td style={{ fontWeight: 400, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }}>
-                                                        v{est.version}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('created_at') && (
-                                                    <td style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px' }}>
-                                                        {est.created_at ? formatToAppDate(est.created_at) : '-'}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('estimate_date') && (
-                                                    <td style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px' }}>
-                                                        {est.estimate_date ? formatToAppDate(est.estimate_date) : '-'}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('customer_name') && (
-                                                    <td style={{ fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }}>
-                                                        {est.customer_name}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('project_name') && (
-                                                    <td style={{ fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }}>
-                                                        {est.project_name}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('total_price') && (
-                                                    <td style={{ fontWeight: 400, color: 'var(--theme-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px', fontSize: '0.75rem' }}>
-                                                        ₹{parseFloat(est.total_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('status') && (
-                                                    <td style={{ padding: '4px 6px' }}>
-                                                        <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: style.bg, color: style.text, whiteSpace: 'nowrap' }}>{style.label}</span>
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('subscription_from') && (
-                                                    <td style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px' }}>
-                                                        {est.subscription_from ? formatToAppDate(est.subscription_from) : '-'}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('subscription_to') && (
-                                                    <td style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '4px 6px' }}>
-                                                        {est.subscription_to ? formatToAppDate(est.subscription_to) : '-'}
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('proposal') && (
-                                                    <td style={{ overflow: 'hidden', padding: '4px 6px' }}>
-                                                        {hasProposal ? (
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#16a34a', fontSize: '0.75rem', fontWeight: 700 }}>
-                                                                <CheckCircle2 size={14} /> Attached
-                                                            </div>
-                                                        ) : (
-                                                            <button
-                                                                onClick={() => onView(est.id)}
-                                                                style={{
-                                                                    display: 'inline-flex',
-                                                                    alignItems: 'center',
-                                                                    gap: '6px',
-                                                                    background: 'rgba(255, 107, 0, 0.1)',
-                                                                    color: 'var(--theme-primary)',
-                                                                    border: '1px solid rgba(255, 107, 0, 0.2)',
-                                                                    padding: '4px 12px',
-                                                                    borderRadius: '20px',
-                                                                    fontSize: '0.72rem',
-                                                                    fontWeight: 700,
-                                                                    cursor: 'pointer',
-                                                                    transition: 'all 0.2s'
-                                                                }}
-                                                                onMouseEnter={(e) => {
-                                                                    e.currentTarget.style.background = 'var(--theme-primary)';
-                                                                    e.currentTarget.style.color = 'white';
-                                                                }}
-                                                                onMouseLeave={(e) => {
-                                                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)';
-                                                                    e.currentTarget.style.color = 'var(--theme-primary)';
-                                                                }}
-                                                            >
-                                                                <Paperclip size={12} /> Attach
-                                                            </button>
-                                                        )}
-                                                    </td>
-                                                )}
+                                                {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => {
+                                                    const cellStyle = {
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                        padding: '4px 6px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 400
+                                                    } as React.CSSProperties;
+
+                                                    switch (col.key) {
+                                                        case 'deal_id':
+                                                            return (
+                                                                <td key={col.key} style={{ ...cellStyle, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/deal?id=${est.deal}`)}>
+                                                                    {est.deal_id}
+                                                                </td>
+                                                            );
+                                                        case 'deal_amount':
+                                                            return <td key={col.key} style={cellStyle}>₹{parseFloat(est.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
+                                                        case 'cost_sheet_no':
+                                                            return (
+                                                                <td key={col.key} style={{ ...cellStyle, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/cost-sheet?id=${est.cost_sheet}`)}>
+                                                                    {est.cost_sheet_no}
+                                                                </td>
+                                                            );
+                                                        case 'cost_sheet_price':
+                                                            return <td key={col.key} style={cellStyle}>₹{parseFloat(est.cost_sheet_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
+                                                        case 'estimate_id':
+                                                            return (
+                                                                <td key={col.key} style={{ ...cellStyle, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => onView(est.id)}>
+                                                                    {est.estimate_id}
+                                                                </td>
+                                                            );
+                                                        case 'version':
+                                                            return <td key={col.key} style={{ ...cellStyle, textAlign: 'center' }}>v{est.version}</td>;
+                                                        case 'created_at':
+                                                            return <td key={col.key} style={cellStyle}>{est.created_at ? formatToAppDate(est.created_at) : '-'}</td>;
+                                                        case 'estimate_date':
+                                                            return <td key={col.key} style={cellStyle}>{est.estimate_date ? formatToAppDate(est.estimate_date) : '-'}</td>;
+                                                        case 'customer_name':
+                                                            return <td key={col.key} style={cellStyle}>{est.customer_name}</td>;
+                                                        case 'project_name':
+                                                            return <td key={col.key} style={cellStyle}>{est.project_name}</td>;
+                                                        case 'total_price':
+                                                            return <td key={col.key} style={{ ...cellStyle, color: 'var(--theme-primary)' }}>₹{parseFloat(est.total_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
+                                                        case 'status':
+                                                            return (
+                                                                <td key={col.key} style={{ padding: '4px 6px' }}>
+                                                                    <span style={{ padding: '4px 10px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, background: style.bg, color: style.text, whiteSpace: 'nowrap' }}>{style.label}</span>
+                                                                </td>
+                                                            );
+                                                        case 'subscription_from':
+                                                            return <td key={col.key} style={cellStyle}>{est.subscription_from ? formatToAppDate(est.subscription_from) : '-'}</td>;
+                                                        case 'subscription_to':
+                                                            return <td key={col.key} style={cellStyle}>{est.subscription_to ? formatToAppDate(est.subscription_to) : '-'}</td>;
+                                                        case 'proposal':
+                                                            return (
+                                                                <td key={col.key} style={{ overflow: 'hidden', padding: '4px 6px' }}>
+                                                                    {hasProposal ? (
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#16a34a', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                                            <CheckCircle2 size={14} /> Attached
+                                                                        </div>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={() => onView(est.id)}
+                                                                            style={{
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '6px',
+                                                                                background: 'rgba(255, 107, 0, 0.1)',
+                                                                                color: 'var(--theme-primary)',
+                                                                                border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                                                padding: '4px 12px',
+                                                                                borderRadius: '20px',
+                                                                                fontSize: '0.72rem',
+                                                                                fontWeight: 700,
+                                                                                cursor: 'pointer',
+                                                                                transition: 'all 0.2s'
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                                e.currentTarget.style.color = 'white';
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)';
+                                                                                e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                            }}
+                                                                        >
+                                                                            <Paperclip size={12} /> Attach
+                                                                        </button>
+                                                                    )}
+                                                                </td>
+                                                            );
+                                                        default:
+                                                            return <td key={col.key} style={cellStyle}>-</td>;
+                                                    }
+                                                })}
                                                 <td style={{ padding: '4px 6px' }}>
                                                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                                                         <button

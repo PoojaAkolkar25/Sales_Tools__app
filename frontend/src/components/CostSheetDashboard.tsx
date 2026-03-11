@@ -998,7 +998,8 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                             {isExpanded ? <Minus size={16} strokeWidth={3} /> : <Plus size={16} strokeWidth={3} />}
                                                         </button>
                                                     </td>
-                                                    {visibleColumns.map(key => {
+                                                    {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => {
+                                                        const key = col.key;
                                                         const cellStyle = {
                                                             overflow: 'hidden',
                                                             textOverflow: 'ellipsis',

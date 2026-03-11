@@ -719,167 +719,40 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                     ))}
                                 </tr>
                                 <tr style={{ background: 'var(--ae-filter-row-bg)' }}>
-                                    {visibleColumns.deal_id && (
-                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.deal_id}
-                                                    onChange={e => setFilters({ ...filters, deal_id: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
+                                    {ALL_COL_CONFIG.filter(col => visibleColumns[col.key as keyof typeof visibleColumns]).map(col => (
+                                        <th key={col.key} style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
+                                            {col.key !== 'actions' ? (
+                                                <div className="ae-input-group">
+                                                    <Search className="ae-search-icon" size={12} />
+                                                    <input
+                                                        className="ae-input"
+                                                        placeholder="Filter..."
+                                                        value={(filters as any)[col.key === 'customer' ? 'customer_name' : col.key === 'cust_id' ? 'customer_code' : col.key === 'items' ? 'items_summary' : col.key] || ''}
+                                                        onChange={e => setFilters({ ...filters, [col.key === 'customer' ? 'customer_name' : col.key === 'cust_id' ? 'customer_code' : col.key === 'items' ? 'items_summary' : col.key]: e.target.value })}
+                                                        style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setFilters({
+                                                        deal_id: '',
+                                                        so_number: '',
+                                                        order_date: '',
+                                                        customer_name: '',
+                                                        customer_code: '',
+                                                        po_number: '',
+                                                        items_summary: '',
+                                                        amount: '',
+                                                        po_date: '',
+                                                        status: ''
+                                                    })}
+                                                    style={{ height: '20px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
+                                                >
+                                                    Clear
+                                                </button>
+                                            )}
                                         </th>
-                                    )}
-                                    {visibleColumns.so_number && (
-                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.so_number}
-                                                    onChange={e => setFilters({ ...filters, so_number: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.order_date && (
-                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.order_date}
-                                                    onChange={e => setFilters({ ...filters, order_date: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.customer && (
-                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.customer_name}
-                                                    onChange={e => setFilters({ ...filters, customer_name: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.cust_code && (
-                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.customer_code}
-                                                    onChange={e => setFilters({ ...filters, customer_code: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.po_number && (
-                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.po_number}
-                                                    onChange={e => setFilters({ ...filters, po_number: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.items && (
-                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.items_summary}
-                                                    onChange={e => setFilters({ ...filters, items_summary: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.status && (
-                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.status}
-                                                    onChange={e => setFilters({ ...filters, status: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.amount && (
-                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.amount}
-                                                    onChange={e => setFilters({ ...filters, amount: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.po_date && (
-                                        <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)' }}>
-                                            <div className="ae-input-group">
-                                                <Search className="ae-search-icon" size={12} />
-                                                <input
-                                                    className="ae-input"
-                                                    placeholder="Filter..."
-                                                    value={filters.po_date}
-                                                    onChange={e => setFilters({ ...filters, po_date: e.target.value })}
-                                                    style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }}
-                                                />
-                                            </div>
-                                        </th>
-                                    )}
-                                    {visibleColumns.actions && (
-                                        <th style={{ textAlign: 'center', backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px 6px' }}>
-                                            <button
-                                                onClick={() => setFilters({
-                                                    deal_id: '',
-                                                    so_number: '',
-                                                    order_date: '',
-                                                    customer_name: '',
-                                                    customer_code: '',
-                                                    po_number: '',
-                                                    items_summary: '',
-                                                    amount: '',
-                                                    po_date: '',
-                                                    status: ''
-                                                })}
-                                                style={{ height: '20px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
-                                            >
-                                                Clear
-                                            </button>
-                                        </th>
-                                    )}
+                                    ))}
                                 </tr>
                             </thead>
                             <tbody>
@@ -893,205 +766,141 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                     </tr>
                                 ) : paginatedSalesOrders.map((so) => (
                                     <tr key={so.id}>
-                                        {visibleColumns.deal_id && (
-                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis', padding: '4px 20px 4px 6px', borderBottom: '1px solid var(--border-secondary)' }}>
-                                                <span
-                                                    style={{ fontWeight: 600, color: 'var(--theme-primary)', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
-                                                    onClick={() => navigate(`/deal?id=${so.deal}`)}
-                                                >
-                                                    {so.deal_id || '---'}
-                                                </span>
-                                            </td>
-                                        )}
-                                        {visibleColumns.so_number && (
-                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis', padding: '4px 20px 4px 6px', borderBottom: '1px solid var(--border-secondary)' }}>
-                                                <span
-                                                    style={{ fontWeight: 600, color: 'var(--theme-primary)', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
-                                                    onClick={() => onView(so.id)}
-                                                >
-                                                    {so.so_number || `DRAFT - ${so.id}`}
-                                                </span>
-                                            </td>
-                                        )}
-                                        {visibleColumns.order_date && (
-                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis', padding: '4px 20px 4px 6px', borderBottom: '1px solid var(--border-secondary)' }}>
-                                                <span style={{ fontSize: '0.75rem' }}>{so.order_date ? formatToAppDate(so.order_date) : '---'}</span>
-                                            </td>
-                                        )}
-                                        {visibleColumns.customer && (
-                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis', padding: '4px 20px 4px 6px', borderBottom: '1px solid var(--border-secondary)' }}>
-                                                <div className="flex flex-col">
-                                                    <span style={{ fontWeight: 400, fontSize: '0.75rem' }}>{so.customer_name || 'N/A'}</span>
-                                                </div>
-                                            </td>
-                                        )}
-                                        {visibleColumns.cust_code && (
-                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis', padding: '4px 20px 4px 6px', borderBottom: '1px solid var(--border-secondary)' }}>
-                                                <span style={{ fontSize: '0.75rem' }}>{so.customer_code || '---'}</span>
-                                            </td>
-                                        )}
-                                        {visibleColumns.po_number && (
-                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis', padding: '4px 20px 4px 6px', borderBottom: '1px solid var(--border-secondary)' }}>
-                                                <span style={{ fontSize: '0.75rem' }}>{so.po_number}</span>
-                                            </td>
-                                        )}
-                                        {visibleColumns.items && (
-                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis', padding: '4px 20px 4px 6px', borderBottom: '1px solid var(--border-secondary)' }}>
-                                                <div className="flex flex-col text-xs">
-                                                    {so.items && so.items.length > 0 ? (
-                                                        <>
-                                                            <span className="text-slate-700 truncate max-w-[150px]" style={{ fontSize: '0.75rem' }} title={so.items[0].description || so.items[0].product_name}>
-                                                                {so.items[0].description || (so.items[0].product ? `Product #${so.items[0].product} ` : 'Unmapped Item')}
-                                                            </span>
-                                                            {so.items.length > 1 && (
-                                                                <span className="text-orange-600 font-normal" style={{ fontSize: '0.65rem' }}>
-                                                                    + {so.items.length - 1} more items
-                                                                </span>
-                                                            )}
-                                                        </>
-                                                    ) : (
-                                                        <span className="text-gray-400 italic" style={{ fontSize: '0.75rem' }}>No Items</span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        )}
-                                        {visibleColumns.status && (
-                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis', padding: '4px 20px 4px 6px', borderBottom: '1px solid var(--border-secondary)' }}>
-                                                <span style={{
-                                                    padding: '2px 8px',
-                                                    borderRadius: '99px',
-                                                    fontSize: '0.7rem',
-                                                    fontWeight: 700,
-                                                    background: 'var(--bg-secondary)',
-                                                    color: 'var(--theme-primary)'
-                                                }}>
-                                                    {so.status}
-                                                </span>
-                                            </td>
-                                        )}
-                                        {visibleColumns.amount && (
-                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis', padding: '4px 20px 4px 6px', borderBottom: '1px solid var(--border-secondary)' }}>
-                                                <span style={{ fontWeight: 400, color: 'var(--text-primary)', fontSize: '0.75rem' }}>{so.currency} {parseFloat(so.total_amount).toLocaleString()}</span>
-                                            </td>
-                                        )}
-                                        {visibleColumns.po_date && (
-                                            <td className="whitespace-nowrap" style={{ overflow: 'hidden', textOverflow: 'ellipsis', padding: '4px 20px 4px 6px', borderBottom: '1px solid var(--border-secondary)' }}>
-                                                <span style={{ fontSize: '0.75rem' }}>{so.po_date ? formatToAppDate(so.po_date) : (so.order_date ? formatToAppDate(so.order_date) : '-')}</span>
-                                            </td>
-                                        )}
-                                        {visibleColumns.actions && (
-                                            <td style={{ textAlign: 'center', verticalAlign: 'middle', borderBottom: '1px solid var(--border-secondary)', padding: '4px 6px' }}>
-                                                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
-                                                    {/* View button */}
-                                                    <button
-                                                        onClick={() => onView(so.id)}
-                                                        title="View"
-                                                        style={{
-                                                            height: '30px',
-                                                            width: '30px',
-                                                            padding: '0',
-                                                            borderRadius: '8px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            border: '1px solid rgba(255,107,0,0.3)',
-                                                            background: 'rgba(255,107,0,0.08)',
-                                                            color: 'var(--theme-primary)',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            e.currentTarget.style.background = 'var(--theme-primary)';
-                                                            e.currentTarget.style.color = 'white';
-                                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(255,107,0,0.35)';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
-                                                            e.currentTarget.style.color = 'var(--theme-primary)';
-                                                            e.currentTarget.style.borderColor = 'rgba(255,107,0,0.3)';
-                                                            e.currentTarget.style.boxShadow = 'none';
-                                                        }}
-                                                    >
-                                                        <Eye size={15} />
-                                                    </button>
-                                                    {/* Download button */}
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDownloadReport(so.id, so.so_number);
-                                                        }}
-                                                        title="Download PDF"
-                                                        style={{
-                                                            height: '30px',
-                                                            width: '30px',
-                                                            padding: '0',
-                                                            borderRadius: '8px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            border: '1px solid rgba(255,107,0,0.3)',
-                                                            background: 'rgba(255,107,0,0.08)',
-                                                            color: 'var(--theme-primary)',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            e.currentTarget.style.background = 'var(--theme-primary)';
-                                                            e.currentTarget.style.color = 'white';
-                                                            e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(255,107,0,0.35)';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
-                                                            e.currentTarget.style.color = 'var(--theme-primary)';
-                                                            e.currentTarget.style.borderColor = 'rgba(255,107,0,0.3)';
-                                                            e.currentTarget.style.boxShadow = 'none';
-                                                        }}
-                                                    >
-                                                        <Download size={15} />
-                                                    </button>
-                                                    {/* Create Invoice button */}
-                                                    {so.status === 'APPROVED' && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                navigate(`/invoice?action=create&so_id=${so.id}`);
-                                                            }}
-                                                            title="Create Invoice"
-                                                            style={{
-                                                                height: '30px',
-                                                                width: '30px',
-                                                                padding: '0',
-                                                                borderRadius: '8px',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                border: '1px solid #10b981',
-                                                                background: 'rgba(16, 185, 129, 0.08)',
-                                                                color: '#10b981',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                            onMouseEnter={(e) => {
-                                                                e.currentTarget.style.background = '#10b981';
-                                                                e.currentTarget.style.color = 'white';
-                                                                e.currentTarget.style.borderColor = '#10b981';
-                                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.35)';
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
-                                                                e.currentTarget.style.color = '#10b981';
-                                                                e.currentTarget.style.borderColor = '#10b981';
-                                                                e.currentTarget.style.boxShadow = 'none';
-                                                            }}
-                                                        >
-                                                            <Plus size={15} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        )}
+                                        {ALL_COL_CONFIG.filter(col => visibleColumns[col.key as keyof typeof visibleColumns]).map(col => {
+                                            const cellStyle = {
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                                padding: '4px 6px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 400
+                                            } as React.CSSProperties;
+
+                                            switch (col.key) {
+                                                case 'deal_id':
+                                                    return (
+                                                        <td key={col.key} style={{ ...cellStyle, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/deal?id=${so.deal}`)}>
+                                                            {so.deal_id}
+                                                        </td>
+                                                    );
+                                                case 'so_number':
+                                                    return (
+                                                        <td key={col.key} style={{ ...cellStyle, color: 'var(--theme-primary)', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => onView(so.id)}>
+                                                            {so.so_number || `DRAFT - ${so.id}`}
+                                                        </td>
+                                                    );
+                                                case 'order_date':
+                                                    return <td key={col.key} style={cellStyle}>{so.order_date ? formatToAppDate(so.order_date) : '-'}</td>;
+                                                case 'customer':
+                                                    return <td key={col.key} style={cellStyle}>{so.customer_name}</td>;
+                                                case 'cust_id':
+                                                    return <td key={col.key} style={cellStyle}>{so.cust_id || so.customer_code || '-'}</td>;
+                                                case 'po_number':
+                                                    return <td key={col.key} style={cellStyle}>{so.po_number || '-'}</td>;
+                                                case 'items':
+                                                    return (
+                                                        <td key={col.key} style={cellStyle} title={so.items && so.items.length > 0 ? so.items.map((it: any) => it.product_name).join(', ') : ''}>
+                                                            {so.items && so.items.length > 0 ? (so.items[0].product_name + (so.items.length > 1 ? ` +${so.items.length - 1}` : '')) : '-'}
+                                                        </td>
+                                                    );
+                                                case 'status':
+                                                    const getStatusStyle = (status: string) => {
+                                                        const base = { padding: '3px 8px', borderRadius: '12px', fontSize: '0.65rem', fontWeight: 700, whiteSpace: 'nowrap' } as React.CSSProperties;
+                                                        switch (status) {
+                                                            case 'APPROVED': return { ...base, background: 'rgba(56, 161, 105, 0.1)', color: '#38A169' };
+                                                            case 'REJECTED': return { ...base, background: 'rgba(229, 62, 62, 0.1)', color: '#E53E3E' };
+                                                            case 'PENDING_APPROVAL':
+                                                            case 'SUBMITTED': return { ...base, background: 'rgba(49, 130, 206, 0.1)', color: '#3182CE' };
+                                                            case 'REVERTED': return { ...base, background: 'rgba(113, 128, 150, 0.1)', color: '#718096' };
+                                                            case 'CANCELLED': return { ...base, background: 'rgba(113, 128, 150, 0.1)', color: '#718096' };
+                                                            default: return { ...base, background: 'var(--bg-secondary)', color: 'var(--text-secondary)' };
+                                                        }
+                                                    };
+                                                    return (
+                                                        <td key={col.key} style={cellStyle}>
+                                                            <span style={getStatusStyle(so.status)}>{so.status?.replace('_', ' ')}</span>
+                                                        </td>
+                                                    );
+                                                case 'amount':
+                                                    return <td key={col.key} style={cellStyle}>{so.currency} {parseFloat(so.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
+                                                case 'po_date':
+                                                    return <td key={col.key} style={cellStyle}>{so.po_date ? formatToAppDate(so.po_date) : (so.order_date ? formatToAppDate(so.order_date) : '-')}</td>;
+                                                case 'actions':
+                                                    return (
+                                                        <td key={col.key} style={{ ...cellStyle, textAlign: 'center' }}>
+                                                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                                                                <button
+                                                                    onClick={() => onView(so.id)}
+                                                                    style={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        width: '28px',
+                                                                        height: '28px',
+                                                                        background: 'rgba(255, 107, 0, 0.1)',
+                                                                        color: 'var(--theme-primary)',
+                                                                        border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                                        borderRadius: '6px',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; }}
+                                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)'; e.currentTarget.style.color = 'var(--theme-primary)'; }}
+                                                                    title="View Details"
+                                                                >
+                                                                    <Eye size={14} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDownloadReport(so.id, so.so_number)}
+                                                                    style={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        width: '28px',
+                                                                        height: '28px',
+                                                                        background: 'rgba(255, 107, 0, 0.1)',
+                                                                        color: 'var(--theme-primary)',
+                                                                        border: '1px solid rgba(255, 107, 0, 0.2)',
+                                                                        borderRadius: '6px',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.color = 'white'; }}
+                                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 107, 0, 0.1)'; e.currentTarget.style.color = 'var(--theme-primary)'; }}
+                                                                    title="Download PDF"
+                                                                >
+                                                                    <Download size={14} />
+                                                                </button>
+                                                                {so.status === 'APPROVED' && (
+                                                                    <button
+                                                                        onClick={() => navigate(`/invoice?so_id=${so.id}`)}
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            width: '28px',
+                                                                            height: '28px',
+                                                                            background: 'rgba(56, 161, 105, 0.1)',
+                                                                            color: '#38A169',
+                                                                            border: '1px solid rgba(56, 161, 105, 0.2)',
+                                                                            borderRadius: '6px',
+                                                                            cursor: 'pointer',
+                                                                            transition: 'all 0.2s'
+                                                                        }}
+                                                                        onMouseEnter={(e) => { e.currentTarget.style.background = '#38A169'; e.currentTarget.style.color = 'white'; }}
+                                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(56, 161, 105, 0.1)'; e.currentTarget.style.color = '#38A169'; }}
+                                                                        title="Create Invoice"
+                                                                    >
+                                                                        <Plus size={14} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    );
+                                                default:
+                                                    return <td key={col.key} style={cellStyle}>-</td>;
+                                            }
+                                        })}
                                     </tr>
                                 ))}
                             </tbody>

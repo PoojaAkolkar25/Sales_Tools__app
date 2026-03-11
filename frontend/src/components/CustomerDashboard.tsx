@@ -392,7 +392,8 @@ const CustomerDashboard: React.FC = () => {
                             <tbody className="divide-y divide-[var(--border-primary)]">
                                 {filteredCustomers.map((customer) => (
                                     <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
-                                        {visibleColumns.map(key => {
+                                        {ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)).map(col => {
+                                            const key = col.key;
                                             const cellStyle = {
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
