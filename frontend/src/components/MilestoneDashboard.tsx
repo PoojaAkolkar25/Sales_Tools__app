@@ -15,7 +15,7 @@ const ALL_COL_CONFIG = [
     { key: 'sales_order', label: 'Sales Order', shortLabel: 'S.O.' },
     { key: 'customer', label: 'Customer', shortLabel: 'CUST.' },
     { key: 'description', label: 'Description', shortLabel: 'DESC.' },
-    { key: 'due_date', label: 'Due Date', shortLabel: 'DATE' },
+    { key: 'created_at', label: 'Created Date', shortLabel: 'DATE' },
     { key: 'amount', label: 'Amount', shortLabel: 'AMT.' },
     { key: 'invoice_no', label: 'Invoice No', shortLabel: 'INV. NO' },
     { key: 'invoice_total', label: 'Invoice Total', shortLabel: 'INV. TOT' }
@@ -27,7 +27,7 @@ const SHORT_COL_WIDTHS: Record<string, number> = {
     sales_order: 50,
     customer: 55,
     description: 55,
-    due_date: 50,
+    created_at: 50,
     amount: 45,
     status: 35,
     invoice_no: 55,
@@ -41,7 +41,7 @@ const FULL_LABEL_WIDTHS: Record<string, number> = {
     sales_order: 100,
     customer: 180,
     description: 220,
-    due_date: 85,
+    created_at: 85,
     amount: 100,
     status: 90,
     invoice_no: 110,
@@ -54,7 +54,7 @@ const MAX_COL_WIDTHS: Record<string, number> = {
     milestone_no: 150,
     deal: 120,
     sales_order: 150,
-    due_date: 120,
+    created_at: 120,
     amount: 150,
     invoice_no: 150,
     actions: 120
@@ -300,6 +300,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                     amount: so.total_amount,
                     status: 'DRAFT',
                     due_date: so.delivery_date,
+                    created_at: so.created_at,
                     isVirtual: true
                 });
             }
@@ -315,7 +316,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
             const matchesSO = (m.sales_order_details?.so_number || '').toLowerCase().includes(filters.soNumber.toLowerCase());
             const matchesCustomer = (m.sales_order_details?.customer_name || '').toLowerCase().includes(filters.customerName.toLowerCase());
             const matchesDescription = (m.description || '').toLowerCase().includes(filters.description.toLowerCase());
-            const matchesDueDate = (m.due_date ? formatToAppDate(m.due_date) : '').toLowerCase().includes(filters.dueDateSearch.toLowerCase());
+            const matchesCreatedDate = (m.created_at ? formatToAppDate(m.created_at) : '').toLowerCase().includes(filters.dueDateSearch.toLowerCase());
             const matchesAmount = (m.amount?.toString() || '').includes(filters.amountSearch);
             const matchesStatusSearch = (m.status || '').toLowerCase().includes(filters.statusSearch.toLowerCase());
             const matchesInvoice = (m.invoice_details?.invoice_no || '').toLowerCase().includes(filters.invoiceNo.toLowerCase());
@@ -323,7 +324,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
             // Period date filtering
             let matchesDate = true;
             if (filters.period) {
-                const milestoneDate = parseDateSafe(m.due_date);
+                const milestoneDate = parseDateSafe(m.created_at);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
@@ -362,7 +363,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
             }
 
             return matchesMilestone && matchesDeal && matchesSO && matchesCustomer &&
-                matchesDescription && matchesDueDate && matchesAmount &&
+                matchesDescription && matchesCreatedDate && matchesAmount &&
                 matchesStatusSearch && matchesInvoice && matchesDate;
         });
 
@@ -822,6 +823,15 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                             background-color: white !important;
                             background: white !important;
                         }
+                        .ae-table tr.expanded-row > td {
+                            background-color: white !important;
+                        }
+                        .sticky-actions-cell {
+                            background-color: white !important;
+                        }
+                        .ae-table tr:hover td.sticky-actions-cell {
+                            background-color: var(--bg-hover) !important;
+                        }
                         /* Keep header and footer distinct but kill their hover tints */
                         .milestone-breakdown-table thead tr {
                             background-color: #f1f5f9 !important;
@@ -843,8 +853,8 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                         }
                     `}</style>
 
-                    <div ref={tableScrollRef} style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)', minHeight: '400px' }}>
-                        <table className="ae-table compact-table" style={{ width: '100%', tableLayout: 'fixed' }}>
+                    <div ref={tableScrollRef} className="ae-table-wrapper" style={{ overflowX: 'auto', background: 'var(--bg-primary)', borderRadius: '0', border: '1px solid var(--border-primary)', minHeight: '400px' }}>
+                        <table className="ae-table compact-table" style={{ tableLayout: 'fixed', width: 'max-content', minWidth: '100%' }}>
                             <colgroup>
                                 <col style={{ width: '40px' }} />
                                 {ALL_COL_CONFIG.filter(col => {
@@ -868,7 +878,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                     }).map(col => (
                                         <th key={col.key} style={{
                                             position: 'relative',
-                                            backgroundColor: '#f8fafc',
+                                            backgroundColor: 'var(--ae-table-header-bg)',
                                             whiteSpace: 'normal',
                                             wordBreak: 'break-word',
                                             userSelect: 'none',
@@ -903,10 +913,12 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                         </th>
                                     ))}
                                     <th style={{
-                                        backgroundColor: '#f8fafc',
+                                        backgroundColor: 'var(--ae-table-header-bg)',
                                         zIndex: 12,
                                         padding: '4px 6px 4px 6px',
                                         whiteSpace: 'nowrap',
+                                        position: 'sticky',
+                                        right: 0,
                                         top: 0,
                                         color: 'var(--text-secondary)',
                                         borderBottom: '1px solid var(--border-secondary)',
@@ -932,7 +944,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                                 case 'sales_order': return filters.soNumber;
                                                                 case 'customer': return filters.customerName;
                                                                 case 'description': return filters.description;
-                                                                case 'due_date': return filters.dueDateSearch;
+                                                                case 'created_at': return filters.dueDateSearch;
                                                                 case 'amount': return filters.amountSearch;
                                                                 case 'status': return filters.statusSearch;
                                                                 case 'invoice_no': return filters.invoiceNo;
@@ -947,7 +959,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                                 case 'sales_order': setFilters({ ...filters, soNumber: val }); break;
                                                                 case 'customer': setFilters({ ...filters, customerName: val }); break;
                                                                 case 'description': setFilters({ ...filters, description: val }); break;
-                                                                case 'due_date': setFilters({ ...filters, dueDateSearch: val }); break;
+                                                                case 'created_at': setFilters({ ...filters, dueDateSearch: val }); break;
                                                                 case 'amount': setFilters({ ...filters, amountSearch: val }); break;
                                                                 case 'status': setFilters({ ...filters, statusSearch: val }); break;
                                                                 case 'invoice_no': setFilters({ ...filters, invoiceNo: val }); break;
@@ -961,7 +973,10 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                         <th style={{
                                             textAlign: 'center',
                                             backgroundColor: 'var(--ae-filter-row-bg)',
-                                            borderBottom: '1px solid var(--border-secondary)'
+                                            borderBottom: '1px solid var(--border-secondary)',
+                                            position: 'sticky',
+                                            right: 0,
+                                            zIndex: 12
                                         }}>
                                             <button
                                                 onClick={() => setFilters({
@@ -1097,10 +1112,10 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                                 return <td key={key} style={cellStyle}>{m.sales_order_details?.customer_name}</td>;
                                                             case 'description':
                                                                 return <td key={key} style={cellStyle} title={m.description || '—'}>{m.description}</td>;
-                                                            case 'due_date':
+                                                            case 'created_at':
                                                                 return (
                                                                     <td key={key} style={cellStyle}>
-                                                                        {m.due_date ? formatToAppDate(m.due_date) : '---'}
+                                                                        {m.created_at ? formatToAppDate(m.created_at) : '---'}
                                                                     </td>
                                                                 );
                                                             case 'amount': {
@@ -1141,7 +1156,13 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                                 return null;
                                                         }
                                                     })}
-                                                    <td style={{ padding: '4px 12px' }}>
+                                                    <td className="sticky-actions-cell" style={{ 
+                                                        padding: '4px 12px',
+                                                        position: 'sticky',
+                                                        right: 0,
+                                                        zIndex: 8,
+                                                        boxShadow: '-2px 0 5px rgba(0,0,0,0.05)'
+                                                    }}>
                                                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
                                                             {/* Issue Invoice — show for any row with at least one non-invoiced real milestone */}
                                                             {(() => {
@@ -1196,9 +1217,10 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initial
                                                                     </button>
                                                                 );
                                                             })()}
-                                                            {/* View button */}
+                                                        {/* View button */}
                                                             <button
-                                                                onClick={() => {
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
                                                                     const soIdToPass = m.sales_order || m.sales_order_details?.id;
                                                                     if (m.isVirtual) {
                                                                         if (onView && soIdToPass) onView(`virtual-${soIdToPass}`);
