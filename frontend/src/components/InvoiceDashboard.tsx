@@ -1188,7 +1188,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                 >
                                                     <Download size={15} />
                                                 </button>
-                                                {inv.status === 'FINALISED' && (
+                                                {(inv.status === 'FINALISED' || inv.status === 'SUBMITTED') && (
                                                     <button
                                                         onClick={() => openEmailModal(inv.id)}
                                                         style={{
@@ -1215,7 +1215,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                             e.currentTarget.style.color = '#059669';
                                                             e.currentTarget.style.borderColor = 'rgba(16,185,129,0.25)';
                                                         }}
-                                                        title="Send Email"
+                                                        title={inv.status === 'SUBMITTED' ? "Resend Email" : "Send Email"}
                                                     >
                                                         <Mail size={15} />
                                                     </button>

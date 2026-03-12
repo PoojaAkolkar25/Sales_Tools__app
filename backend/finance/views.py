@@ -284,6 +284,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Only draft invoices can be finalised'}, status=400)
         
         invoice.status = 'FINALISED'
+        invoice.invoice_date = timezone.now().date()
         invoice.save()
         
         # Log audit trail for submission
