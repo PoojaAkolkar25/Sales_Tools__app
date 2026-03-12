@@ -1941,6 +1941,17 @@ option {
   height: 30px;
 }
 
+/* Hide number spinners */
+.ae-no-spinner::-webkit-inner-spin-button,
+.ae-no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.ae-no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 .ae-textarea-auto {
   width: 100%;
   padding: 6px 10px;
