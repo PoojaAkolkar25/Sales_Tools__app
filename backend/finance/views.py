@@ -510,8 +510,11 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             # Attach PO if requested
             if include_po and invoice.sales_order and invoice.sales_order.po_file:
                 po_file = invoice.sales_order.po_file.file
-                email.attach(po_file.name.split('/')[-1], po_file.read(), 'application/pdf')
-                po_file.seek(0)
+                try:
+                    po_file.open()
+                    email.attach(po_file.name.split('/')[-1], po_file.read(), 'application/pdf')
+                finally:
+                    po_file.close()
                 
             email.send()
             
