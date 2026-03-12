@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Download, XCircle, BarChart3, ChevronDown, FileText, FileSpreadsheet, Columns, Eye, Check, Mail } from 'lucide-react';
+import { Download, XCircle, BarChart3, ChevronDown, FileText, FileSpreadsheet, Columns, Eye, Check, Mail, Mails } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -231,6 +231,28 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
         }
     };
 
+    const handleViewPDF = async (id: number) => {
+        try {
+            const response = await api.get(`/finance/invoices/${id}/download_pdf/`, { responseType: 'blob' });
+            const file = new Blob([response.data], { type: 'application/pdf' });
+            const fileURL = URL.createObjectURL(file);
+            window.open(fileURL, '_blank');
+        } catch (error) {
+            showNotification('Error viewing PDF', 'error');
+        }
+    };
+
+    const handleViewPO = async (id: number) => {
+        try {
+            const response = await api.get(`/finance/invoices/${id}/download_po/`, { responseType: 'blob' });
+            const file = new Blob([response.data], { type: 'application/pdf' });
+            const fileURL = URL.createObjectURL(file);
+            window.open(fileURL, '_blank');
+        } catch (error) {
+            showNotification('Error viewing PO', 'error');
+        }
+    };
+
 
     const [emailModal, setEmailModal] = useState<{
         show: boolean;
@@ -328,7 +350,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                 body: emailModal.body,
                 include_po: emailModal.include_po
             });
-            showNotification('Invoice emailed successfully', 'success');
+            showNotification('mail sent successfully', 'success');
             setEmailModal(prev => ({ ...prev, show: false, loading: false }));
             fetchInvoices();
         } catch (error: any) {
@@ -1217,7 +1239,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                         }}
                                                         title={inv.status === 'SUBMITTED' ? "Resend Email" : "Send Email"}
                                                     >
-                                                        <Mail size={15} />
+                                                        {inv.status === 'SUBMITTED' ? <Mails size={15} /> : <Mail size={15} />}
                                                     </button>
                                                 )}
                                             </div>
@@ -1470,17 +1492,48 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                 <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Attachments</h4>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                                     <Check size={16} color="#00C853" />
-                                    <span>Generated Invoice PDF</span>
+                                    <span 
+                                        onClick={() => emailModal.invoiceId && handleViewPDF(emailModal.invoiceId)}
+                                        style={{ 
+                                            cursor: 'pointer', 
+                                            textDecoration: 'underline', 
+                                            color: 'var(--theme-primary)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                        }}
+                                        title="Click to view"
+                                    >
+                                        Generated Invoice PDF <Eye size={14} />
+                                    </span>
                                 </div>
                                 {emailModal.has_po ? (
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={emailModal.include_po}
-                                            onChange={(e) => setEmailModal(prev => ({ ...prev, include_po: e.target.checked }))}
-                                        />
-                                        Include Purchase Order ({emailModal.po_filename})
-                                    </label>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={emailModal.include_po}
+                                                onChange={(e) => setEmailModal(prev => ({ ...prev, include_po: e.target.checked }))}
+                                            />
+                                            Include Purchase Order
+                                        </label>
+                                        <div 
+                                            onClick={() => emailModal.invoiceId && handleViewPO(emailModal.invoiceId)}
+                                            style={{ 
+                                                marginLeft: '24px', 
+                                                fontSize: '0.8rem', 
+                                                color: 'var(--theme-primary)', 
+                                                cursor: 'pointer', 
+                                                textDecoration: 'underline',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
+                                            }}
+                                            title="Click to view PO"
+                                        >
+                                            ({emailModal.po_filename}) <Eye size={14} />
+                                        </div>
+                                    </div>
                                 ) : (
                                     <div style={{ fontSize: '0.8rem', color: '#A0AEC0', fontStyle: 'italic' }}>
                                         No Purchase Order attached to this Sales Order.

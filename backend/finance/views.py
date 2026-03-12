@@ -348,6 +348,21 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             logger.error(f"Error in download_pdf (finance): {str(e)}", exc_info=True)
             return Response({'error': str(e)}, status=500)
 
+    @action(detail=True, methods=['get'])
+    def download_po(self, request, pk=None):
+        from django.http import FileResponse  # type: ignore
+        invoice = self.get_object()
+        
+        if not invoice.sales_order or not invoice.sales_order.po_file:
+            return Response({'error': 'No PO file associated with this invoice'}, status=404)
+            
+        po_file = invoice.sales_order.po_file.file
+        try:
+            return FileResponse(po_file.open('rb'), content_type='application/pdf')
+        except Exception as e:
+            logger.error(f"Error in download_po (finance): {str(e)}", exc_info=True)
+            return Response({'error': str(e)}, status=500)
+
     @action(detail=False, methods=['post'])
     def preview_pdf(self, request):
         import json
