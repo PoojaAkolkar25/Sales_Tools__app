@@ -253,17 +253,17 @@ class Invoice(models.Model):
     @property
     def get_customer_cin(self):
         if self.customer:
-            return self.customer.cin
+            return getattr(self.customer, 'cin', None)
         if self.deal and self.deal.customer:
-            return self.deal.customer.cin
+            return getattr(self.deal.customer, 'cin', None)
         return None
 
     @property
     def get_customer_msme(self):
         if self.customer:
-            return self.customer.msme_number
+            return getattr(self.customer, 'msme_number', None)
         if self.deal and self.deal.customer:
-            return self.deal.customer.msme_number
+            return getattr(self.deal.customer, 'msme_number', None)
         return None
 
     @property
