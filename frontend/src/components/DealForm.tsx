@@ -63,6 +63,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
     const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploadFeedback, setUploadFeedback] = useState<{ type: 'success' | 'error' | ''; message: string }>({ type: '', message: '' });
+    const [dateTypingValues, setDateTypingValues] = useState<{ [key: string]: string }>({});
 
     const [localId, setLocalId] = useState<number | null>(id);
 
@@ -285,6 +286,120 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                 });
             }
         }
+    };
+
+    const handleDateFocus = (name: string) => {
+        if (!dateTypingValues[name] && formData[name]) {
+            const [y, m, d] = formData[name].split('-');
+            if (y && m && d) {
+                setDateTypingValues(prev => ({ ...prev, [name]: `${d}-${m}-${y}` }));
+            }
+        }
+    };
+
+    const handleDateInputChange = (name: string, value: string) => {
+        const prevValue = dateTypingValues[name] || '';
+        const isDeletion = value.length < prevValue.length;
+
+        // If deleting a separator, remove the digit before it too
+        let processedValue = value;
+        if (isDeletion && prevValue.endsWith('-') && !value.endsWith('-')) {
+            processedValue = value.slice(0, -1);
+        }
+
+        let formatted = '';
+
+        // Slot-aware logic: if dashes exist, try to preserve segments
+        if (processedValue.includes('-') || (prevValue.includes('-') && isDeletion)) {
+            const parts = processedValue.split('-');
+            const dayStr = (parts[0] || '').replace(/\D/g, '').substring(0, 2);
+            const monthStr = (parts[1] || '').replace(/\D/g, '').substring(0, 2);
+            const yearStr = (parts[2] || '').replace(/\D/g, '').substring(0, 4);
+
+            // Validation for segments
+            if (dayStr.length > 0) {
+                if (parseInt(dayStr[0]) > 3) return;
+                if (dayStr.length === 2 && (parseInt(dayStr) > 31 || dayStr === '00')) return;
+            }
+            if (monthStr.length > 0) {
+                if (parseInt(monthStr[0]) > 1) return;
+                if (monthStr.length === 2 && (parseInt(monthStr) > 12 || monthStr === '00')) return;
+            }
+
+            formatted = dayStr;
+            if (dayStr.length === 2 || parts.length > 1) {
+                formatted += '-';
+                if (monthStr.length > 0 || parts.length > 1) {
+                    formatted += monthStr;
+                    if (monthStr.length === 2 || parts.length > 2) {
+                        formatted += '-';
+                        if (yearStr.length > 0) {
+                            formatted += yearStr;
+                        }
+                    }
+                }
+            }
+
+            // Cleanup trailing dashes if it was a deletion and we are at a boundary
+            if (isDeletion && formatted.endsWith('-') && !processedValue.endsWith('-')) {
+                formatted = formatted.slice(0, -1);
+            }
+        } else {
+            // Greedy logic for raw input (no dashes)
+            let digits = processedValue.replace(/\D/g, '');
+
+            if (digits.length > 0) {
+                if (parseInt(digits[0]) > 3) return;
+                if (digits.length >= 2) {
+                    const d = parseInt(digits.substring(0, 2));
+                    if (d > 31 || d === 0) if (digits.length === 2) return;
+                    if (digits.length >= 3) {
+                        if (parseInt(digits[2]) > 1) return;
+                        if (digits.length >= 4) {
+                            const m = parseInt(digits.substring(2, 4));
+                            if (m > 12 || m === 0) return;
+                        }
+                    }
+                }
+            }
+
+            if (digits.length > 0) {
+                formatted = digits.substring(0, 2);
+                if (digits.length > 2 || (digits.length === 2 && !isDeletion)) {
+                    formatted += '-';
+                    if (digits.length > 2) {
+                        formatted += digits.substring(2, 4);
+                        if (digits.length > 4 || (digits.length === 4 && !isDeletion)) {
+                            formatted += '-';
+                            if (digits.length > 4) {
+                                formatted += digits.substring(4, 8);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Update local typing state
+        setDateTypingValues(prev => ({ ...prev, [name]: formatted }));
+
+        // Update formData
+        if (formatted.length < 10) {
+            if (formData[name] !== '') setFormData((prev: any) => ({ ...prev, [name]: '' }));
+        } else {
+            const [d, m, y] = formatted.split('-').map(Number);
+            const isoDate = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+            if (formData[name] !== isoDate) setFormData((prev: any) => ({ ...prev, [name]: isoDate }));
+        }
+    };
+
+    const handleDateBlur = (name: string) => {
+        // Clear typing state on blur so it reverts to formatToAppDate display if invalid
+        setDateTypingValues(prev => {
+            const next = { ...prev };
+            delete next[name];
+            return next;
+        });
     };
 
     const handleDealTypeChange = (index: number, field: string, value: any) => {
@@ -635,15 +750,51 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Date</label>
-                                <input
-                                    type="text"
-                                    name="deal_date"
-                                    value={formatToAppDate(formData.deal_date)}
-                                    placeholder="Enter date"
-                                    className="ae-input"
-                                    disabled
-                                    style={{ background: '#F7FAFC', color: '#718096', cursor: 'not-allowed' }}
-                                />
+                                <div style={{ position: 'relative', width: '100%' }}>
+                                    <input
+                                        type="text"
+                                        name="deal_date"
+                                        value={dateTypingValues['deal_date'] !== undefined ? dateTypingValues['deal_date'] : formatToAppDate(formData.deal_date)}
+                                        placeholder="DD-MM-YYYY"
+                                        className="ae-input"
+                                        style={{ width: '100%', paddingRight: '32px' }}
+                                        onChange={(e) => handleDateInputChange('deal_date', e.target.value)}
+                                        onBlur={() => handleDateBlur('deal_date')}
+                                        onFocus={() => handleDateFocus('deal_date')}
+                                    />
+                                    <input
+                                        type="date"
+                                        id="deal-date-picker"
+                                        name="deal_date"
+                                        value={formData.deal_date}
+                                        onChange={handleInputChange}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            opacity: 0,
+                                            cursor: 'pointer',
+                                            pointerEvents: 'none'
+                                        }}
+                                    />
+                                    <Calendar
+                                        size={16}
+                                        style={{
+                                            position: 'absolute',
+                                            right: '10px',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            color: '#718096',
+                                            cursor: 'pointer'
+                                        }}
+                                        onClick={() => {
+                                            const picker = document.getElementById('deal-date-picker') as HTMLInputElement;
+                                            if (picker) picker.showPicker?.();
+                                        }}
+                                    />
+                                </div>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Deal Number</label>
@@ -868,17 +1019,17 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                     )}
                                                 </td>
                                             </tr>
-                                        );
-                                    })}
-                                </tbody>
+                                            );
+                                        })}
+                                    </tbody>
                                 <tfoot>
-                                    <tr style={{ background: 'var(--bg-accent)' }}>
-                                        <td colSpan={7} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: 'black' }}>Total Deal Value:</td>
-                                        <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '0.95rem', fontWeight: 800, color: '#FF6B00' }}>
+                                    <tr style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                                        <td colSpan={7} style={{ padding: '10px 16px', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700, color: 'black' }}>Total Deal Value:</td>
+                                        <td style={{ padding: '10px 4px', textAlign: 'center', fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)' }}>
                                             {getCurrencySymbol(formData.currency)}
                                             {parseFloat(formData.deal_amount || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
-                                        <td></td>
+                                        <td style={{ padding: '10px 4px' }}></td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -920,15 +1071,14 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 <div style={{ position: 'relative', width: '100%' }}>
                                     <input
                                         type="text"
-                                        value={formatToAppDate(formData.expected_close_date)}
-                                        readOnly
-                                        placeholder="Enter date"
+                                        name="expected_close_date"
+                                        value={dateTypingValues['expected_close_date'] !== undefined ? dateTypingValues['expected_close_date'] : formatToAppDate(formData.expected_close_date)}
+                                        placeholder="DD-MM-YYYY"
                                         className="ae-input"
-                                        style={{ width: '100%', cursor: 'pointer', paddingRight: '32px' }}
-                                        onClick={() => {
-                                            const picker = document.getElementById('deal-expected-date-picker') as HTMLInputElement;
-                                            if (picker) picker.showPicker?.();
-                                        }}
+                                        style={{ width: '100%', paddingRight: '32px' }}
+                                        onChange={(e) => handleDateInputChange('expected_close_date', e.target.value)}
+                                        onBlur={() => handleDateBlur('expected_close_date')}
+                                        onFocus={() => handleDateFocus('expected_close_date')}
                                     />
                                     <input
                                         type="date"
@@ -955,7 +1105,11 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                             top: '50%',
                                             transform: 'translateY(-50%)',
                                             color: '#718096',
-                                            pointerEvents: 'none'
+                                            cursor: 'pointer'
+                                        }}
+                                        onClick={() => {
+                                            const picker = document.getElementById('deal-expected-date-picker') as HTMLInputElement;
+                                            if (picker) picker.showPicker?.();
                                         }}
                                     />
                                 </div>

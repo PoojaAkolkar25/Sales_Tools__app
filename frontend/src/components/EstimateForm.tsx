@@ -53,7 +53,7 @@ const getInitialFormData = () => ({
         subscription_to: 'Sub. To',
         qty: 'Qty',
         rate: 'Rate',
-        discount: 'Discount',
+        discount: 'Disc%',
         amount: 'Amount'
     }
 });
@@ -239,10 +239,20 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.status === 'PENDING_APPROVAL' || estimate?.status === 'SUBMITTED' || estimate?.status === 'REWOUND';
 
     const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', padding: '0 4px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '4px', height: '22px', background: 'var(--ae-blue)', borderRadius: '2px' }}></div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+        <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '16px'
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                    width: '4px',
+                    height: '18px',
+                    background: 'var(--ae-blue)',
+                    borderRadius: '2px'
+                }}></span>
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--theme-primary)', margin: 0 }}>
                     {title}
                 </h3>
             </div>
@@ -308,12 +318,21 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                 terms_conditions: response.data.terms_conditions || '',
                 deal: response.data.deal || '',
                 cost_sheet: response.data.cost_sheet || '',
-                items: response.data.items?.length > 0 ? response.data.items.map((item: any) => ({
-                    ...item,
-                    item_type: item.item_type || 'License',
-                    subscription_from: item.subscription_from || '',
-                    subscription_to: item.subscription_to || ''
-                })) : [
+                items: response.data.items?.length > 0 ? response.data.items.map((item: any) => {
+                    const qty = parseFloat(item.qty) || 0;
+                    const rate = parseFloat(item.rate) || 0;
+                    const discountAmt = parseFloat(item.discount) || 0;
+                    const initial = qty * rate;
+                    const discountPercent = initial > 0 ? ((discountAmt / initial) * 100).toFixed(2) : '0';
+
+                    return {
+                        ...item,
+                        item_type: item.item_type || 'License',
+                        subscription_from: item.subscription_from || '',
+                        subscription_to: item.subscription_to || '',
+                        discount: discountPercent
+                    };
+                }) : [
                     { id: Date.now(), sr_no: 1, item_type: 'License', particulars: '', description: '', subscription_from: '', subscription_to: '', qty: 0, rate: 0, discount: 0, amount: 0 }
                 ],
                 column_labels: response.data.column_labels || {
@@ -368,7 +387,12 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
             if (item.id === id) {
                 const newItem = { ...item, [field]: value };
                 if (field === 'qty' || field === 'rate' || field === 'discount') {
-                    newItem.amount = (newItem.qty || 0) * (newItem.rate || 0) - (newItem.discount || 0);
+                    const qty = parseFloat(newItem.qty) || 0;
+                    const rate = parseFloat(newItem.rate) || 0;
+                    const discPercent = parseFloat(newItem.discount) || 0;
+                    const initial = qty * rate;
+                    const discountAmt = (initial * (discPercent / 100));
+                    newItem.amount = initial - discountAmt;
                 } else if (field === 'amount') {
                     // If amount is edited manually, reverse calculate the rate
                     const qty = parseFloat(newItem.qty) || 0;
@@ -518,7 +542,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                     subscription_to: item.subscription_to || null,
                     qty: parseFloat(item.qty) || 0,
                     rate: parseFloat(item.rate) || 0,
-                    discount: parseFloat(item.discount) || 0,
+                    discount: (parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0) * ((parseFloat(item.discount) || 0) / 100),
                     amount: parseFloat(item.amount) || 0
                 };
                 // Remove frontend timestamp IDs before sending to backend
@@ -1394,7 +1418,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             fontWeight: 700,
                                             color: 'black',
                                             whiteSpace: 'nowrap',
-                                            width: '100px'
+                                            width: '80px'
                                         }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                                                 {editingColumn === 'qty' ? (
@@ -1422,7 +1446,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                             fontWeight: 700,
                                             color: 'black',
                                             whiteSpace: 'nowrap',
-                                            width: '150px'
+                                            width: '100px'
                                         }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                                                 {editingColumn === 'rate' ? (
@@ -1445,19 +1469,19 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         </th>
                                         <th style={{
                                             padding: '10px 4px',
-                                            textAlign: 'right',
+                                            textAlign: 'center',
                                             fontSize: '0.8rem',
                                             fontWeight: 700,
                                             color: 'black',
                                             whiteSpace: 'nowrap',
-                                            width: '100px'
+                                            width: '85px'
                                         }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                                                 {editingColumn === 'discount' ? (
                                                     <input
                                                         autoFocus
                                                         className="ae-input-subtle"
-                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'right', fontSize: '0.75rem' }}
+                                                        style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', textAlign: 'center', fontSize: '0.75rem' }}
                                                         value={formData.column_labels.discount}
                                                         onChange={(e) => handleHeaderChange('discount', e.target.value)}
                                                         onBlur={() => setEditingColumn(null)}
@@ -1465,7 +1489,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                     />
                                                 ) : (
                                                     <>
-                                                        <span>{formData.column_labels.discount || 'Discount'}</span>
+                                                        <span>{(!formData.column_labels.discount || formData.column_labels.discount === 'Discount') ? 'Disc%' : formData.column_labels.discount}</span>
                                                         {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096' }} onClick={() => setEditingColumn('discount')} />}
                                                     </>
                                                 )}
@@ -1658,19 +1682,21 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                 </div>
                                             </td>
                                             <td style={{ padding: '6px 4px' }}>
-                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                                    <span style={{ position: 'absolute', left: '8px', fontSize: '0.85rem', color: '#718096', fontWeight: 600 }}>{getCurrencySymbol(formData.currency || 'INR')}</span>
+                                                <div style={{ display: 'flex', alignItems: 'center', width: '75px', margin: '0 auto', border: '1px solid #E0E6ED', borderRadius: '8px', overflow: 'hidden', background: 'white' }}>
                                                     <input
                                                         type="number"
-                                                        className="ae-input"
-                                                        style={{ height: '30px', padding: '4px 8px 4px 20px', textAlign: 'right', width: '100%', fontSize: '0.85rem', fontWeight: 600, borderRadius: '6px' }}
-                                                        value={item.discount || ''}
+                                                        className="ae-no-spinner"
+                                                        style={{ width: '100%', padding: '4px 2px 4px 8px', fontSize: '0.85rem', color: '#C53030', textAlign: 'center', fontWeight: 700, height: '30px', border: 'none', outline: 'none', background: 'transparent' }}
+                                                        value={(item.discount === 0 || item.discount === 0.0 || item.discount === '0' || item.discount === '0.00') ? '' : item.discount}
                                                         placeholder="0"
                                                         onChange={(e) => handleItemChange(item.id, 'discount', e.target.value)}
                                                         disabled={isReadOnly}
+                                                        min="0"
+                                                        max="100"
+                                                        step="0.01"
                                                         onKeyDown={(e) => {
                                                             if (e.key === 'Tab' && !e.shiftKey && index === formData.items.length - 1) {
-                                                                const isEmpty = (item.item_type === 'License' || !item.item_type) && !item.particulars && !item.description && !item.rate && !item.discount;
+                                                                const isEmpty = (item.item_type === 'License' || !item.item_type) && !item.particulars && !item.description && !item.rate && (!item.discount || item.discount === '0');
                                                                 if (isEmpty) return;
 
                                                                 e.preventDefault();
@@ -1678,6 +1704,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                             }
                                                         }}
                                                     />
+                                                    <span style={{ paddingRight: '4px', fontSize: '0.85rem', color: '#C53030', fontWeight: 700 }}>%</span>
                                                 </div>
                                             </td>
                                             <td style={{ padding: '6px 4px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36' }}>
