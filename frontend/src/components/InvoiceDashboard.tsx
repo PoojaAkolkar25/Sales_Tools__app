@@ -156,8 +156,8 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
         localStorage.setItem('invoiceDashboard_visibleColumns', JSON.stringify(visibleColumns));
     }, [visibleColumns]);
 
-    const colsToShow = useMemo(() => 
-        ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)), 
+    const colsToShow = useMemo(() =>
+        ALL_COL_CONFIG.filter(col => visibleColumns.includes(col.key)),
         [visibleColumns]
     );
 

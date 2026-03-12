@@ -716,20 +716,18 @@ const InvoiceForm: React.FC<{
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice No.</label>
-                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>
-                                {formData.invoice_no || 'Auto-generated'}
+                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px', cursor: 'default' }}>
+                                {formData.invoice_no || 'Auto-generated on Submit'}
                             </div>
                         </div>
-                        <div></div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO date</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Date</label>
                             <input type="text" className="ae-input" disabled value={formatToAppDate(formData.po_date)} style={{ background: '#f8fafc' }} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Number</label>
-                            <input type="text" className="ae-input" disabled={isReadOnly} value={formData.po_number} onChange={e => setFormData({ ...formData, po_number: e.target.value })} />
+                            <input type="text" className="ae-input" disabled={isReadOnly} value={formData.po_number} onChange={e => setFormData({ ...formData, po_number: e.target.value })} placeholder="Purchase Order Number" />
                         </div>
-
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Name</label>
                             {isReadOnly || invoiceId ? (
@@ -745,26 +743,32 @@ const InvoiceForm: React.FC<{
                                 />
                             )}
                         </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Address (Bill to)</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Billing Address</label>
                             <AutoExpandingTextarea
                                 className="ae-input"
                                 disabled={isReadOnly}
                                 value={formData.billing_address}
                                 onChange={e => setFormData({ ...formData, billing_address: e.target.value })}
-                                placeholder="Address (Bill to)"
+                                placeholder="Billing Address"
                             />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Address (Shift to)</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Shipping Address</label>
                             <AutoExpandingTextarea
                                 className="ae-input"
                                 disabled={isReadOnly}
                                 value={formData.shipping_address}
                                 onChange={e => setFormData({ ...formData, shipping_address: e.target.value })}
-                                placeholder="Address (Shift to)"
+                                placeholder="Shipping Address"
                             />
                         </div>
+                    </div>
+
+                    <div className="ae-grid-responsive-5" style={{ marginBottom: '0px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment Terms</label>
                             <input type="number" className="ae-input" disabled={isReadOnly} value={formData.payment_terms_days} onChange={e => setFormData({ ...formData, payment_terms_days: parseInt(e.target.value) || 0 })} />
@@ -773,6 +777,9 @@ const InvoiceForm: React.FC<{
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment due date</label>
                             <input type="text" className="ae-input" disabled value={formatToAppDate(formData.due_date)} style={{ background: '#f8fafc' }} />
                         </div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
                     </div>
                 </div>
 
@@ -781,7 +788,7 @@ const InvoiceForm: React.FC<{
                     <SectionHeader title="Invoice Items" />
                     <div className="ae-table-wrapper" style={{
                         marginTop: '24px',
-                        borderRadius: '12px',
+                        borderRadius: '0',
                         border: '1px solid #E2E8F0',
                         overflowX: 'auto',
                         background: 'white',
@@ -920,7 +927,7 @@ const InvoiceForm: React.FC<{
                                                 />
                                             ) : (
                                                 <>
-                                                    <span>{column_labels.discount_percent || 'DISCOUNT %'}</span>
+                                                    <span>{(!column_labels.discount_percent || column_labels.discount_percent === 'DISCOUNT %' || column_labels.discount_percent === 'Discount %') ? 'Disc%' : column_labels.discount_percent}</span>
                                                     {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('discount_percent')} />}
                                                 </>
                                             )}
@@ -1052,16 +1059,20 @@ const InvoiceForm: React.FC<{
                                             </div>
                                         </td>
                                         <td style={{ textAlign: 'center', padding: '8px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', width: '75px', margin: '0 auto', border: '1px solid #E0E6ED', borderRadius: '8px', overflow: 'hidden', background: 'white' }}>
                                                 <input
                                                     type="number"
+                                                    className="ae-no-spinner"
+                                                    style={{ width: '100%', padding: '4px 2px 4px 8px', fontSize: '0.85rem', color: '#C53030', textAlign: 'center', fontWeight: 700, height: '30px', border: 'none', outline: 'none', background: 'transparent' }}
                                                     disabled={isReadOnly}
-                                                    className="ae-input"
-                                                    style={{ width: '80px', height: '36px', borderRadius: '8px', padding: '4px 8px', textAlign: 'center' }}
-                                                    value={item.discount_percent === 0 ? '' : item.discount_percent}
+                                                    value={(item.discount_percent === 0 || item.discount_percent as any === 0.0 || item.discount_percent as any === '0' || item.discount_percent as any === '0.00') ? '' : item.discount_percent}
                                                     placeholder="0"
                                                     onChange={e => updateLineItem(index, 'discount_percent', parseFloat(e.target.value) || 0)}
+                                                    min="0"
+                                                    max="100"
+                                                    step="0.01"
                                                 />
+                                                <span style={{ paddingRight: '4px', fontSize: '0.85rem', color: '#C53030', fontWeight: 700 }}>%</span>
                                             </div>
                                         </td>
                                         <td style={{ textAlign: 'right', fontWeight: 700, color: '#1a1f36', paddingRight: '12px', fontSize: '0.9rem' }}>
@@ -1147,11 +1158,61 @@ const InvoiceForm: React.FC<{
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Signature & Seal</label>
                             <div style={{ display: 'flex', gap: '10px' }}>
-                                <label style={{ flex: 1, padding: '8px', border: '1px dashed #E0E6ED', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontSize: '0.7rem' }}>
+                                <label style={{
+                                    flex: 1,
+                                    padding: '8px 12px',
+                                    border: '1px solid var(--theme-primary)',
+                                    background: 'white',
+                                    borderRadius: '8px',
+                                    textAlign: 'center',
+                                    cursor: 'pointer',
+                                    fontSize: '0.75rem',
+                                    color: 'var(--text-primary)',
+                                    fontWeight: 700,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    minHeight: '34px',
+                                    transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--ae-orange)';
+                                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                }}
+                                >
                                     {signatureFile ? 'Signature selected' : 'Upload Signature'}
                                     <input type="file" hidden accept="image/*" onChange={e => setSignatureFile(e.target.files?.[0] || null)} />
                                 </label>
-                                <label style={{ flex: 1, padding: '8px', border: '1px dashed #E0E6ED', borderRadius: '6px', textAlign: 'center', cursor: 'pointer', fontSize: '0.7rem' }}>
+                                <label style={{
+                                    flex: 1,
+                                    padding: '8px 12px',
+                                    border: '1px solid var(--theme-primary)',
+                                    background: 'white',
+                                    borderRadius: '8px',
+                                    textAlign: 'center',
+                                    cursor: 'pointer',
+                                    fontSize: '0.75rem',
+                                    color: 'var(--text-primary)',
+                                    fontWeight: 700,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    minHeight: '34px',
+                                    transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--ae-orange)';
+                                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                }}
+                                >
                                     {sealFile ? 'Seal selected' : 'Upload Seal'}
                                     <input type="file" hidden accept="image/*" onChange={e => setSealFile(e.target.files?.[0] || null)} />
                                 </label>
