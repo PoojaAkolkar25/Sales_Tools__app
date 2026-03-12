@@ -1,5 +1,5 @@
-from django.db import models
-from leads.models import Lead
+from django.db import models  # type: ignore
+from leads.models import Lead  # type: ignore
 from deals.models import GSTCustomerType
 import re
 
@@ -16,7 +16,7 @@ class StateMaster(models.Model):
 
 class EntityType(models.TextChoices):
     AE_IND = 'AE_IND', 'AE ind'
-    AE_USA = 'AE_USA', 'AE Usa'
+    AE_USA = 'AE_USA', 'AE Usa'  
 
 class IndustryType(models.TextChoices):
     IT = 'IT', 'IT'
@@ -251,6 +251,22 @@ class Invoice(models.Model):
         return None
 
     @property
+    def get_customer_cin(self):
+        if self.customer:
+            return self.customer.cin
+        if self.deal and self.deal.customer:
+            return self.deal.customer.cin
+        return None
+
+    @property
+    def get_customer_msme(self):
+        if self.customer:
+            return self.customer.msme_number
+        if self.deal and self.deal.customer:
+            return self.deal.customer.msme_number
+        return None
+
+    @property
     def get_customer_state_name(self):
         if self.customer and self.customer.state:
             return self.customer.state.name
@@ -271,6 +287,30 @@ class Invoice(models.Model):
             if hasattr(state, 'code'):
                 return state.code
             return getattr(self.deal.customer, 'state_code', None)
+        return None
+
+    @property
+    def get_customer_address_line_2(self):
+        if self.customer:
+            return self.customer.address_line_2
+        if self.deal and self.deal.customer:
+            return getattr(self.deal.customer, 'address_line_2', None)
+        return None
+
+    @property
+    def get_customer_city(self):
+        if self.customer:
+            return self.customer.city
+        if self.deal and self.deal.customer:
+            return getattr(self.deal.customer, 'city', None)
+        return None
+
+    @property
+    def get_customer_pincode(self):
+        if self.customer:
+            return self.customer.pincode
+        if self.deal and self.deal.customer:
+            return getattr(self.deal.customer, 'pincode', None)
         return None
 
     def save(self, *args, **kwargs):
@@ -594,7 +634,7 @@ class FinancialYear(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def clean(self):
-        from django.core.exceptions import ValidationError
+        from django.core.exceptions import ValidationError  # type: ignore
         if self.start_date and self.end_date and self.start_date >= self.end_date:
             raise ValidationError("End Date must be greater than Start Date")
 
@@ -604,7 +644,7 @@ class FinancialYear(models.Model):
             # Auto-generate code if empty, e.g., FY2025-26
             sy = self.start_date.year
             ey = self.end_date.year
-            self.code = f"FY{sy}-{str(ey)[2:]}"
+            self.code = f"FY{sy}-{ey % 100:02d}"
         
         if self.is_current_fy:
             # Mark all others as not current

@@ -1,4 +1,4 @@
-from django import template
+from django import template  # type: ignore
 from datetime import date, datetime
 
 register = template.Library()

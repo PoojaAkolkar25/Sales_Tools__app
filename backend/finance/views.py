@@ -1,25 +1,25 @@
-from rest_framework import viewsets, status, filters
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from .filters import InvoiceFilter
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from django.utils import timezone
-from django.contrib.contenttypes.models import ContentType
-from .models import (
+from rest_framework import viewsets, status, filters  # type: ignore
+from django_filters.rest_framework import DjangoFilterBackend  # type: ignore
+from rest_framework.decorators import action  # type: ignore
+from rest_framework.response import Response  # type: ignore
+from .filters import InvoiceFilter  # type: ignore
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser  # type: ignore
+from django.utils import timezone  # type: ignore
+from django.contrib.contenttypes.models import ContentType  # type: ignore
+from .models import (  # type: ignore
     Invoice, InvoiceLineItem, StateMaster, CompanyProfile,
     BankConnection, BankTransaction, ReceiptVoucher, ReceiptAdjustment, 
-    BankTransactionStatus, ReceiptStatus, BankTransactionSource,
+    ReceiptAttachment, BankTransactionStatus, ReceiptStatus, BankTransactionSource,
     CustomerPartner, EndCustomer, FinancialYear
 )
-from deals.models import AuditTrail
-from .serializers import (
+from deals.models import AuditTrail  # type: ignore
+from .serializers import (  # type: ignore
     InvoiceSerializer, InvoiceLineItemSerializer, StateMasterSerializer, 
     CompanyProfileSerializer, BankConnectionSerializer, BankTransactionSerializer, 
     ReceiptVoucherSerializer, ReceiptAdjustmentSerializer,
     CustomerPartnerSerializer, EndCustomerSerializer, FinancialYearSerializer
 )
-from .services import InvoiceService
+from .services import InvoiceService  # type: ignore
 import csv
 import io
 import logging
@@ -109,7 +109,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         
         deal_id = self.request.data.get('deal')
         if deal_id:
-            from deals.models import Deal
+            from deals.models import Deal  # type: ignore
             deal_obj = Deal.objects.filter(id=deal_id).select_related('customer').first()
             if deal_obj and deal_obj.customer:
                 if not billing_address:
@@ -169,7 +169,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             pass
         
         # Log audit trail for invoice creation
-        from deals.models import AuditTrail
+        from deals.models import AuditTrail  # type: ignore
         content_type = ContentType.objects.get_for_model(Invoice)
         AuditTrail.objects.create(
             content_type=content_type,
@@ -210,7 +210,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         
         deal_id = self.request.data.get('deal')
         if deal_id:
-            from deals.models import Deal
+            from deals.models import Deal  # type: ignore
             deal_obj = Deal.objects.filter(id=deal_id).select_related('customer').first()
             if deal_obj and deal_obj.customer:
                 if not billing_address:
@@ -320,7 +320,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         invoice.save()
         
         # Log audit trail for rejection
-        from deals.models import AuditTrail
+        from deals.models import AuditTrail  # type: ignore
         content_type = ContentType.objects.get_for_model(Invoice)
         AuditTrail.objects.create(
             content_type=content_type,
@@ -336,7 +336,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def download_pdf(self, request, pk=None):
-        from django.http import HttpResponse
+        from django.http import HttpResponse  # type: ignore
         invoice = self.get_object()
         try:
             pdf_content = InvoiceService.generate_pdf(invoice)
@@ -350,7 +350,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def preview_pdf(self, request):
         import json
-        from django.http import HttpResponse
+        from django.http import HttpResponse  # type: ignore
         
         try:
             # Get data from request
@@ -412,8 +412,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def send_email(self, request, pk=None):
-        from django.core.mail import EmailMessage
-        from django.conf import settings
+        from django.core.mail import EmailMessage  # type: ignore
+        from django.conf import settings  # type: ignore
         
         invoice = self.get_object()
         if invoice.status not in ['FINALISED', 'SUBMITTED', 'PARTIAL', 'PAID']:
@@ -539,7 +539,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def report_tax_summary(self, request):
-        from django.db.models import Sum
+        from django.db.models import Sum  # type: ignore
         summary = Invoice.objects.filter(status__in=['FINALISED', 'SUBMITTED', 'PAID', 'PARTIAL']).aggregate(
             total_cgst=Sum('line_items__cgst_amount'),
             total_sgst=Sum('line_items__sgst_amount'),
@@ -553,7 +553,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         """
         Customer-wise billing report showing total invoiced amount, paid amount, and outstanding balance per customer.
         """
-        from django.db.models import Sum, Count, Q
+        from django.db.models import Sum, Count, Q  # type: ignore
         
         # Get customer-grouped data
         customer_billing = Invoice.objects.values(
@@ -584,8 +584,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def export_excel(self, request):
-        import xlsxwriter
-        from django.http import HttpResponse
+        import xlsxwriter  # type: ignore
+        from django.http import HttpResponse  # type: ignore
         
         invoices = self.filter_queryset(self.get_queryset())
         today = timezone.now().date()
@@ -633,9 +633,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def export_pdf(self, request):
         try:
-            from django.template.loader import render_to_string
-            from django.http import HttpResponse
-            from xhtml2pdf import pisa
+            from django.template.loader import render_to_string  # type: ignore
+            from django.http import HttpResponse  # type: ignore
+            from xhtml2pdf import pisa  # type: ignore
             import io
             
             invoices = self.filter_queryset(self.get_queryset())
@@ -753,7 +753,7 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
                 reader = csv.DictReader(io_string)
                 data = list(reader)
             else:
-                import pandas as pd
+                import pandas as pd  # type: ignore
                 
                 # Detect Header Row Dynamically
                 header_row = 0
@@ -898,7 +898,7 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
                             withdrawal = 0
                         else:
                             deposit = 0
-                            withdrawal = abs(amount)
+                            withdrawal = abs(float(amount))
                         balance = parse_decimal(row.get('Running Bal.'))
 
                     else: # Generic
@@ -910,7 +910,7 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
                         else:
                             amount = parse_decimal(row.get('Amount'))
                             deposit = amount if amount > 0 else 0
-                            withdrawal = abs(amount) if amount < 0 else 0
+                            withdrawal = abs(float(amount)) if amount < 0 else 0
                         balance = parse_decimal(row.get('Balance'))
 
                     if not tx_date:
@@ -1049,7 +1049,7 @@ class ReceiptVoucherViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         from decimal import Decimal
         import json
-        from leads.models import Lead
+        from leads.models import Lead  # type: ignore
 
         # Try to find a matching lead if customer_name is provided
         customer_name = self.request.data.get('customer_name')
@@ -1130,13 +1130,13 @@ class ReceiptVoucherViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def download_pdf(self, request, pk=None):
         try:
-            from django.template.loader import render_to_string
-            from django.http import HttpResponse
-            from xhtml2pdf import pisa
+            from django.template.loader import render_to_string  # type: ignore
+            from django.http import HttpResponse  # type: ignore
+            from xhtml2pdf import pisa  # type: ignore
             import io
             import os
-            from django.conf import settings
-            from django.utils import timezone
+            from django.conf import settings  # type: ignore
+            from django.utils import timezone  # type: ignore
             
             voucher = self.get_object()
             

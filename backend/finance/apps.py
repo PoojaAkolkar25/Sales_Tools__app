@@ -1,4 +1,4 @@
-from django.apps import AppConfig
+from django.apps import AppConfig  # type: ignore
 
 
 class FinanceConfig(AppConfig):
@@ -6,4 +6,4 @@ class FinanceConfig(AppConfig):
     name = "finance"
 
     def ready(self):
-        import finance.signals
+        import finance.signals  # type: ignore

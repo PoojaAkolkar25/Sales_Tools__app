@@ -1,7 +1,7 @@
 
-from django.core.management.base import BaseCommand
-from finance.models import StateMaster, CompanyProfile
-from django.db import transaction
+from django.core.management.base import BaseCommand  # type: ignore
+from finance.models import StateMaster, CompanyProfile  # type: ignore
+from django.db import transaction  # type: ignore
 
 class Command(BaseCommand):
     help = 'Seed StateMaster and a default CompanyProfile'

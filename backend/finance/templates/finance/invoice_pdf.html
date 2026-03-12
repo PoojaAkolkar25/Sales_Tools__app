@@ -21,8 +21,9 @@
             font-size: 14pt;
             font-weight: bold;
             color: #003399;
-            border-bottom: 2px solid #003399;
-            padding: 4px 0;
+            border-top: 1px dotted #003399;
+            border-bottom: 1px dotted #003399;
+            padding: 6px 0;
             margin-bottom: 5px;
             text-transform: uppercase;
         }
@@ -91,8 +92,8 @@
         }
 
         .dashed-divider {
-            border-top: 1px dashed #003399;
-            margin: 10px 0;
+            border-top: 1px dotted #003399;
+            margin: 12px 0;
         }
 
         .address-box {
@@ -118,14 +119,14 @@
         }
 
         .items-table th {
-            border-top: 1px dashed #003399;
-            border-bottom: 1px dashed #003399;
+            border-top: 1.5pt dotted #003399;
+            border-bottom: 1.5pt dotted #003399;
             color: #003399;
             text-align: left;
-            padding: 6px 4px;
+            padding: 8px 4px;
             font-weight: bold;
             text-transform: uppercase;
-            font-size: 9pt;
+            font-size: 9.5pt;
         }
 
         .items-table td {
@@ -228,24 +229,37 @@
     <table class="section-table">
         <tr>
             <td class="company-info">
-                <div class="company-name">{{ company.name|upper }}</div>
-                <div>{{ company.address_line_1|default:"" }}{% if company.address_line_2 %}, {{ company.address_line_2|default:"" }}{% endif %}</div>
-                <div>{{ company.city|default:"" }}{% if company.pincode %} - {{ company.pincode }}{% endif %}</div>
+                <div class="company-name">{{ company.name|striptags|upper }}</div>
+                <div>
+                    {% if company.address_line_1 %}
+                        {{ company.address_line_1|striptags|linebreaksbr }}
+                        {% if company.address_line_2 %}, <br>{{ company.address_line_2|striptags|linebreaksbr }}{% endif %}
+                    {% else %}
+                        {{ company.registered_address|striptags|linebreaksbr|default:"" }}
+                    {% endif %}
+                </div>
+                <div>{{ company.city|striptags|default:"" }}{% if company.pincode %} - {{ company.pincode|striptags }}{% endif %}</div>
                 {% if company.gstin %}
-                <div><span class="bold blue">GSTIN/UIN:</span> {{ company.gstin }}</div>
+                <div>GSTIN/UIN: {{ company.gstin }}</div>
                 {% endif %}
                 {% if company.state %}
-                <div><span class="bold blue">State Name :</span> {{ company.state.name|default:"" }}, <span class="bold blue">Code :</span> {{ company.state.code|default:"" }}</div>
+                <div>State Name : {{ company.state.name|default:"" }}, Code : {{ company.state.code|default:"" }}</div>
+                {% endif %}
+                {% if company.pan %}
+                <div>PAN : {{ company.pan }}</div>
                 {% endif %}
                 {% if company.msme_number %}
-                <div><span class="bold blue">MSME Number -</span> {{ company.msme_number|default:"" }}</div>
-                <div><span class="bold blue">UDYAM :</span> {{ company.msme_number|default:"" }} (Micro/Services)</div>
+                <div>MSME Number - {{ company.msme_number|default:"" }}</div>
+                <div>UDYAM : {{ company.msme_number|default:"" }} (Micro/Services)</div>
                 {% endif %}
                 {% if company.cin %}
-                <div><span class="bold blue">CIN:</span> {{ company.cin|default:"" }}</div>
+                <div>CIN: {{ company.cin|default:"" }}</div>
+                {% endif %}
+                {% if company.phone_number %}
+                <div>Phone : {{ company.phone_number }}</div>
                 {% endif %}
                 {% if company.email %}
-                <div><span class="bold blue">E-Mail :</span> {{ company.email }}</div>
+                <div>E-Mail : {{ company.email }}</div>
                 {% endif %}
             </td>
             <td class="invoice-meta">
@@ -253,11 +267,11 @@
                     {% if company.logo %}
                     <img src="{{ company.logo.path }}" class="logo">
                     {% endif %}
+                    <div style="border-bottom: 1px dotted #003399; margin-top: 2px; margin-bottom: 2px;"></div>
                     {% if company.website_url %}
-                    <div style="font-size: 8pt; color: #666; text-decoration: underline;">{{ company.website_url }}
+                    <div style="font-size: 8pt; color: #000; text-align: center; text-decoration: underline;">{{ company.website_url }}
                     </div>
                     {% endif %}
-                    <div style="border-bottom: 1px dashed #003399; margin-top: 2px; margin-bottom: 5px;"></div>
                 </div>
                 <table class="meta-table">
                     <tr>
@@ -293,30 +307,58 @@
         <tr>
             <td class="address-col">
                 <div class="address-title blue">Buyer (Bill to)</div>
-                <div class="bold">{{ invoice.get_customer_name }}</div>
-                <div>{{ invoice.get_customer_address|linebreaksbr }}</div>
+                <div class="bold blue">{{ invoice.get_customer_name|striptags }}</div>
+                <div>{{ invoice.get_customer_address|striptags|linebreaksbr|safe }}</div>
+                {% if invoice.get_customer_address_line_2 %}
+                <div>{{ invoice.get_customer_address_line_2|striptags|linebreaksbr|safe }}</div>
+                {% endif %}
+                {% if invoice.get_customer_city or invoice.get_customer_pincode %}
+                <div>{{ invoice.get_customer_city|striptags }}{% if invoice.get_customer_pincode %} - {{ invoice.get_customer_pincode|striptags }}{% endif %}</div>
+                {% endif %}
                 {% if invoice.get_customer_gstin %}
-                <div><span class="bold">GSTIN/UIN :</span> {{ invoice.get_customer_gstin }}</div>
+                <div>GSTIN/UIN : {{ invoice.get_customer_gstin|striptags }}</div>
                 {% endif %}
                 {% if invoice.get_customer_pan %}
-                <div><span class="bold">PAN/IT No :</span> {{ invoice.get_customer_pan }}</div>
+                <div>PAN/IT No : {{ invoice.get_customer_pan }}</div>
                 {% endif %}
                 {% if invoice.get_customer_state_name %}
-                <div><span class="bold">State Name :</span> {{ invoice.get_customer_state_name }}{% if invoice.get_customer_state_code %}, <span class="bold">Code :</span> {{ invoice.get_customer_state_code }}{% endif %}</div>
+                <div>State Name : {{ invoice.get_customer_state_name }}{% if invoice.get_customer_state_code %}, Code : {{ invoice.get_customer_state_code }}{% endif %}</div>
+                {% endif %}
+                {% if invoice.get_customer_cin %}
+                <div>CIN : {{ invoice.get_customer_cin }}</div>
+                {% endif %}
+                {% if invoice.get_customer_msme %}
+                <div>MSME No. : {{ invoice.get_customer_msme }}</div>
                 {% endif %}
             </td>
             <td class="address-col">
                 <div class="address-title blue">Consignee (Ship to)</div>
-                <div class="bold">{{ invoice.get_customer_name }}</div>
-                <div>{% firstof invoice.shipping_address invoice.get_customer_address|default:"" as ship_addr %}{{ ship_addr|linebreaksbr }}</div>
+                <div class="bold blue">{{ invoice.get_customer_name|striptags }}</div>
+                {% if invoice.shipping_address %}
+                <div>{{ invoice.shipping_address|striptags|linebreaksbr|safe }}</div>
+                {% else %}
+                <div>{{ invoice.get_customer_address|striptags|linebreaksbr|safe }}</div>
+                {% if invoice.get_customer_address_line_2 %}
+                <div>{{ invoice.get_customer_address_line_2|striptags|linebreaksbr|safe }}</div>
+                {% endif %}
+                {% if invoice.get_customer_city or invoice.get_customer_pincode %}
+                <div>{{ invoice.get_customer_city|striptags }}{% if invoice.get_customer_pincode %} - {{ invoice.get_customer_pincode|striptags }}{% endif %}</div>
+                {% endif %}
+                {% endif %}
                 {% if invoice.get_customer_gstin %}
-                <div><span class="bold">GSTIN/UIN :</span> {{ invoice.get_customer_gstin }}</div>
+                <div>GSTIN/UIN : {{ invoice.get_customer_gstin|striptags }}</div>
                 {% endif %}
                 {% if invoice.get_customer_pan %}
-                <div><span class="bold">PAN/IT No :</span> {{ invoice.get_customer_pan }}</div>
+                <div>PAN/IT No : {{ invoice.get_customer_pan }}</div>
                 {% endif %}
                 {% if invoice.get_customer_state_name %}
-                <div><span class="bold">State Name :</span> {{ invoice.get_customer_state_name }}{% if invoice.get_customer_state_code %}, <span class="bold">Code :</span> {{ invoice.get_customer_state_code }}{% endif %}</div>
+                <div>State Name : {{ invoice.get_customer_state_name }}{% if invoice.get_customer_state_code %}, Code : {{ invoice.get_customer_state_code }}{% endif %}</div>
+                {% endif %}
+                {% if invoice.get_customer_cin %}
+                <div>CIN : {{ invoice.get_customer_cin }}</div>
+                {% endif %}
+                {% if invoice.get_customer_msme %}
+                <div>MSME No. : {{ invoice.get_customer_msme }}</div>
                 {% endif %}
             </td>
         </tr>
@@ -338,12 +380,12 @@
             {% for item in items %}
             <tr>
                 <td>
-                    <div class="bold">{{ item.description|linebreaksbr }}</div>
+                    <div class="bold">{{ item.description|striptags|linebreaksbr|safe }}</div>
                 </td>
                 <td>{{ item.hsn_sac }}</td>
                 <td class="text-center">{{ item.quantity|floatformat:0 }}</td>
-                <td class="text-right">{{ currency_symbol }} {{ item.rate|floatformat:2 }}</td>
-                <td class="text-right bold">{{ currency_symbol }} {{ item.taxable_value|floatformat:2 }}</td>
+                <td class="text-right">{{ currency_symbol }}{{ item.rate|floatformat:2 }}</td>
+                <td class="text-right bold">{{ currency_symbol }}{{ item.taxable_value|floatformat:2 }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -356,40 +398,40 @@
             <td style="width: 60%; vertical-align: bottom;">
                 <div class="amount-words">
                     <div style="font-weight: normal; margin-bottom: 2px;">Amount Chargeable (in words)</div>
-                    <div class="bold">{{ currency_symbol }} {{ grand_total_words }}</div>
+                    <div class="bold">{{ invoice.currency }} {{ grand_total_words }}</div>
                 </div>
             </td>
             <td style="width: 40%;">
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
                         <td style="text-align: right; padding-right: 10px;">SUBTOTAL</td>
-                        <td style="text-align: right; font-weight: bold; width: 100px;">{{ currency_symbol }} {{ invoice.subtotal|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold; width: 100px;">{{ currency_symbol }}{{ invoice.subtotal|floatformat:2 }}</td>
                     </tr>
                     {% if invoice.invoice_type == 'DOMESTIC' %}
                     <tr>
                         <td style="text-align: right; padding-right: 10px; color: #003399;">CGST – Rate 9%</td>
-                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{ invoice.cgst_total|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }}{{ invoice.cgst_total|floatformat:2 }}</td>
                     </tr>
                     <tr>
                         <td style="text-align: right; padding-right: 10px; color: #003399;">SGST – Rate 9%</td>
-                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{ invoice.sgst_total|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }}{{ invoice.sgst_total|floatformat:2 }}</td>
                     </tr>
                     {% elif invoice.invoice_type == 'INTER_STATE' %}
                     <tr>
                         <td style="text-align: right; padding-right: 10px; color: #003399;">IGST – Rate 18%</td>
-                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{ invoice.igst_total|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }}{{ invoice.igst_total|floatformat:2 }}</td>
                     </tr>
                     {% elif invoice.invoice_type == 'EXPORT' or invoice.invoice_type == 'SEZ' %}
                     <tr>
                         <td style="text-align: right; padding-right: 10px; color: #003399;">IGST – Rate 0%</td>
-                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }} {{ invoice.igst_total|floatformat:2 }}</td>
+                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }}{{ invoice.igst_total|floatformat:2 }}</td>
                     </tr>
                     {% elif invoice.invoice_type == 'USA' %}
                     <!-- Taxation is not applicable to AE USA -->
                     {% endif %}
-                    <tr style="border-top: 1px dashed #003399;">
-                        <td class="bold" style="text-align: right; padding-right: 10px; padding-top: 5px;">TOTAL</td>
-                        <td class="bold" style="text-align: right; padding-top: 5px; font-size: 11pt;">{{ currency_symbol }} {{ invoice.total_amount|floatformat:2 }}</td>
+                    <tr style="border-top: 1.5pt dotted #003399; border-bottom: 1.5pt dotted #003399;">
+                        <td class="bold" style="text-align: right; padding-right: 10px; padding-top: 5px; padding-bottom: 5px;">TOTAL</td>
+                        <td class="bold" style="text-align: right; padding-top: 5px; padding-bottom: 5px; font-size: 11pt;">{{ currency_symbol }}{{ invoice.total_amount|floatformat:2 }}</td>
                     </tr>
                 </table>
             </td>
@@ -397,10 +439,18 @@
     </table>
     <div class="dashed-divider"></div>
 
-    {% if invoice.irn or invoice.ack_no %}
+    {% if invoice.memo %}
+    <div style="margin-top: 10px; padding: 10px; border: 1px dotted #ccc; border-radius: 5px;">
+        <div class="bold blue" style="margin-bottom: 5px;">Description / Memo:</div>
+        <div style="font-size: 9pt; color: #000;">{{ invoice.memo|striptags|linebreaksbr|safe }}</div>
+    </div>
+    <div class="dashed-divider"></div>
+    {% endif %}
+
+    {% if invoice.irn or invoice.ack_no or invoice.ack_date %}
     <div class="einvoice-info">
-        <div class="einvoice-title">e-Invoice details</div>
-        <div>
+        <div class="bold blue" style="font-size: 10pt; margin-bottom: 4px;">e-Invoice details</div>
+        <div style="line-height: 1.5;">
             {% if invoice.irn %}
             <div><span class="bold">IRN</span> {{ invoice.irn }}</div>
             {% endif %}
@@ -408,17 +458,9 @@
             <div><span class="bold">Ack No.</span> {{ invoice.ack_no }}</div>
             {% endif %}
             {% if invoice.ack_date %}
-            <div><span class="bold">Ack Date</span> {{ invoice.ack_date|date:"d-M-y" }}</div>
+            <div><span class="bold">Ack Date</span> {{ invoice.ack_date|date:"j-M-y" }}</div>
             {% endif %}
         </div>
-    </div>
-    <div class="dashed-divider"></div>
-    {% endif %}
-
-    {% if invoice.memo %}
-    <div style="margin-top: 10px; padding: 10px; border: 1px dotted #ccc; border-radius: 5px;">
-        <div class="bold blue" style="margin-bottom: 5px;">Description / Memo:</div>
-        <div style="font-size: 9pt; color: #000;">{{ invoice.memo|linebreaksbr }}</div>
     </div>
     <div class="dashed-divider"></div>
     {% endif %}
@@ -442,8 +484,8 @@
                     {% endif %}
                 </div>
             </td>
-            <td style="width: 50%; text-align: right;">
-                <div class="bold blue" style="text-transform: uppercase;">{{ company.name }}</div>
+            <td style="width: 50%; text-align: right; border-top: 1.5pt dotted #003399; padding-top: 8px;">
+                <div class="bold blue" style="text-transform: uppercase;">{{ company.name|upper }}</div>
                 <div style="height: 60px; margin-top: 10px;">
                     {% if invoice.signature_image %}
                     <img src="{{ invoice.signature_image.path }}" style="max-height: 50px;">

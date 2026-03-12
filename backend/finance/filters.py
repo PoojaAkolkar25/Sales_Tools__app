@@ -1,7 +1,7 @@
-from django_filters import rest_framework as filters
+from django_filters import rest_framework as filters  # type: ignore
 from .models import Invoice
 from datetime import datetime, timedelta
-from django.utils import timezone
+from django.utils import timezone  # type: ignore
 
 
 class InvoiceFilter(filters.FilterSet):
