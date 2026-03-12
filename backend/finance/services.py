@@ -1,8 +1,13 @@
 import re
 from datetime import date
-from django.db import transaction
-from django.db.models import Max
-from .models import Invoice, InvoiceType, CompanyProfile, StateMaster, BankConnection
+from types import SimpleNamespace
+
+try:
+    import django  # type: ignore
+except ImportError:
+    pass
+
+from .models import Invoice, InvoiceType, CompanyProfile, StateMaster, BankConnection  # type: ignore
 
 class InvoiceService:
     @staticmethod
@@ -13,9 +18,9 @@ class InvoiceService:
         today = date.today()
         year = today.year
         if today.month < 4:
-            fy = f"{year-1}-{str(year)[2:]}"
+            fy = f"{year-1}-{year % 100:02d}"
         else:
-            fy = f"{year}-{str(year+1)[2:]}"
+            fy = f"{year}-{(year+1) % 100:02d}"
         
         prefix = f"INV/{fy}/"
         
@@ -62,7 +67,7 @@ class InvoiceService:
             gst_customer_type = invoice_data.get('gst_customer_type', 'CGST_SGST_9') or 'CGST_SGST_9'
             
             if deal_id:
-                from deals.models import Deal
+                from deals.models import Deal  # type: ignore
                 deal = Deal.objects.filter(id=deal_id).select_related('customer').first()
                 if deal:
                     # Get gst_customer_type from deal's customer
@@ -134,11 +139,11 @@ class InvoiceService:
             if invoice_type == InvoiceType.DOMESTIC:
                 cgst_rate = gst_rate / 2
                 sgst_rate = gst_rate / 2
-                cgst_amount = round(taxable_value * (cgst_rate / 100), 2)
-                sgst_amount = round(taxable_value * (sgst_rate / 100), 2)
+                cgst_amount = round(taxable_value * (cgst_rate / 100) * 100) / 100.0
+                sgst_amount = round(taxable_value * (sgst_rate / 100) * 100) / 100.0
             elif invoice_type == InvoiceType.INTER_STATE:
                 igst_rate = gst_rate
-                igst_amount = round(taxable_value * (igst_rate / 100), 2)
+                igst_amount = round(taxable_value * (igst_rate / 100) * 100) / 100.0
             elif invoice_type == InvoiceType.SEZ:
                 # SEZ: IGST 0%
                 igst_rate = 0
@@ -208,7 +213,7 @@ class InvoiceService:
         Commas are stripped so the output reads cleanly (e.g. "Twenty Six Lakh" not "Twenty-Six Lakh,").
         """
         try:
-            from num2words import num2words
+            from num2words import num2words  # type: ignore
             if currency == 'INR':
                 words = num2words(int(number), lang='en_IN').title()
             else:
@@ -224,9 +229,9 @@ class InvoiceService:
         """
         Generates PDF using xhtml2pdf and the HTML template.
         """
-        from django.template.loader import render_to_string
+        from django.template.loader import render_to_string  # type: ignore
         from io import BytesIO
-        from xhtml2pdf import pisa
+        from xhtml2pdf import pisa  # type: ignore
         
         company = CompanyProfile.objects.first()
         items = invoice.line_items.all().order_by('sr_no')
@@ -240,7 +245,7 @@ class InvoiceService:
         po_date = invoice.po_date
         
         if not po_number:
-            from sales_orders.models import SalesOrder
+            from sales_orders.models import SalesOrder  # type: ignore
             target_customer = None
             if invoice.deal and invoice.deal.customer:
                 target_customer = invoice.deal.customer
@@ -294,15 +299,18 @@ class InvoiceService:
         """
         Generates a preview PDF from unsaved data.
         """
-        from django.template.loader import render_to_string
+        from django.template.loader import render_to_string  # type: ignore
         from io import BytesIO
-        from xhtml2pdf import pisa
+        from xhtml2pdf import pisa  # type: ignore
         from types import SimpleNamespace
         
         # Calculate taxes using existing logic
         calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
         
-        company = CompanyProfile.objects.first()
+        # Try to find the AutomationEdge profile or the first one
+        company = CompanyProfile.objects.filter(name__icontains='AutomationEdge').first()
+        if not company:
+            company = CompanyProfile.objects.first()
         
         def safe_date(date_str):
             if not date_str:
@@ -336,13 +344,24 @@ class InvoiceService:
             shipping_address=invoice_data.get('shipping_address', ''),
             signature_image=None, company_seal=None,
             get_customer_name=invoice_data.get('customer_name', '---'),
-            get_customer_address=invoice_data.get('billing_address') or '---',
-            get_customer_gstin=invoice_data.get('customer_gstin') or '---',
-            get_customer_pan=invoice_data.get('customer_pan'),
-            get_customer_state_name=invoice_data.get('customer_state_name'),
-            get_customer_state_code=invoice_data.get('customer_state_code'),
+            get_customer_address=invoice_data.get('billing_address') or invoice_data.get('customer_address') or '---',
+            get_customer_gstin=invoice_data.get('customer_gstin') or invoice_data.get('gstin') or '',
+            get_customer_pan=invoice_data.get('customer_pan') or invoice_data.get('pan') or '',
+            get_customer_cin=invoice_data.get('customer_cin') or invoice_data.get('cin') or '',
+            get_customer_msme=invoice_data.get('customer_msme') or invoice_data.get('msme_number') or '',
+            get_customer_address_line_2=invoice_data.get('customer_address_line_2', ''),
+            get_customer_city=invoice_data.get('customer_city', ''),
+            get_customer_pincode=invoice_data.get('customer_pincode', ''),
+            get_customer_state_name=invoice_data.get('customer_state_name') or invoice_data.get('billing_state_name') or '',
+            get_customer_state_code=invoice_data.get('customer_state_code') or invoice_data.get('billing_state_code') or '',
+            # Keep aliases used by template directly
+            customer_cin=invoice_data.get('customer_cin'),
+            customer_msme=invoice_data.get('customer_msme'),
             gst_declaration=invoice_data.get('gst_declaration', "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. This invoice is issued under Rule 46 of the CGST Rules, 2017."),
             lut_declaration=invoice_data.get('lut_declaration', "Supply meant for export under Letter of Undertaking (LUT) without payment of Integrated Tax as per Section 16(3) of the IGST Act, 2017 and Rule 96A of the CGST Rules, 2017."),
+            irn=invoice_data.get('irn'),
+            ack_no=invoice_data.get('ack_no'),
+            ack_date=safe_date(invoice_data.get('ack_date')) if invoice_data.get('ack_date') else None,
         )
 
         # Mock methods required by template
@@ -350,7 +369,10 @@ class InvoiceService:
 
         # Process line items for template
         items_mock = []
-        for i, item in enumerate(calc_results['processed_items']):
+        processed_items = calc_results.get('processed_items', [])
+        if not isinstance(processed_items, list):
+            processed_items = []
+        for i, item in enumerate(processed_items):
             items_mock.append(SimpleNamespace(sr_no=i+1, **item))
 
         bank = BankConnection.objects.filter(is_primary_for_invoices=True).first()
@@ -365,7 +387,8 @@ class InvoiceService:
             'AED': 'AED',
             'SGD': 'S$',
         }
-        currency_symbol = currency_symbols.get(invoice_mock.currency, invoice_mock.currency)
+        invoice_currency = getattr(invoice_mock, 'currency', 'INR')
+        currency_symbol = currency_symbols.get(invoice_currency, invoice_currency)
 
         context = {
             'invoice': invoice_mock,

@@ -13,6 +13,7 @@ interface LineItem {
     quantity: number;
     rate: number;
     discount: number;
+    discount_percent?: number;
     gst_rate: number;
 }
 
@@ -25,7 +26,7 @@ const InvoiceForm: React.FC<{
     initialMilestoneId?: number | null
 }> = ({ onBack, invoiceId, initialSoId, initialMilestoneId }) => {
     const { showNotification, showConfirm } = useNotification();
-    const [milestones, setMilestones] = useState<any[]>([]);
+    const [, setMilestones] = useState<any[]>([]);
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [companyProfiles, setCompanyProfiles] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
@@ -83,12 +84,12 @@ const InvoiceForm: React.FC<{
         currency: 'CURRENCY',
         quantity: 'QTY',
         rate: 'RATE',
-        gst_rate: 'GST %',
+        discount_percent: 'DISCOUNT %',
         amount: 'AMOUNT'
     });
 
     const [lineItems, setLineItems] = useState<LineItem[]>([
-        { type: 'Service', description: '', hsn_sac: '', quantity: 0, rate: 0, discount: 0, gst_rate: 18 }
+        { type: 'Service', description: '', hsn_sac: '', quantity: 0, rate: 0, discount: 0, discount_percent: 0, gst_rate: 0 }
     ]);
 
     const [totals, setTotals] = useState({
@@ -145,7 +146,7 @@ const InvoiceForm: React.FC<{
                 customer_name: ''
             });
             setLineItems([
-                { type: 'Service', description: '', hsn_sac: '', quantity: 0, rate: 0, discount: 0, gst_rate: 18 }
+                { type: 'Service', description: '', hsn_sac: '', quantity: 0, rate: 0, discount: 0, discount_percent: 0, gst_rate: 0 }
             ]);
             setMilestones([]);
             setStatus('DRAFT');
@@ -278,15 +279,22 @@ const InvoiceForm: React.FC<{
             }
 
             if (so.items && so.items.length > 0) {
-                setLineItems(so.items.map((item: any) => ({
-                    type: item.item_type === 'SERVICES' ? 'Service' : 'Product',
-                    description: item.product_name + (item.description ? ` - ${item.description}` : ''),
-                    hsn_sac: '',
-                    quantity: parseFloat(item.qty),
-                    rate: parseFloat(item.rate),
-                    discount: parseFloat(item.discount) || 0,
-                    gst_rate: 18
-                })));
+                setLineItems(so.items.map((item: any) => {
+                    const qty = parseFloat(item.qty) || 0;
+                    const rate = parseFloat(item.rate) || 0;
+                    const discount = parseFloat(item.discount) || 0;
+                    const discount_percent = (qty * rate) > 0 ? (discount / (qty * rate)) * 100 : 0;
+                    return {
+                        type: item.item_type === 'SERVICES' ? 'Service' : 'Product',
+                        description: item.product_name + (item.description ? ` - ${item.description}` : ''),
+                        hsn_sac: '',
+                        quantity: qty,
+                        rate: rate,
+                        discount: discount,
+                        discount_percent: discount_percent,
+                        gst_rate: 0
+                    };
+                }));
             }
         }
     };
@@ -345,14 +353,22 @@ const InvoiceForm: React.FC<{
             setIsReadOnly(inv.status !== 'DRAFT');
 
             if (inv.line_items && inv.line_items.length > 0) {
-                setLineItems(inv.line_items.map((item: any) => ({
-                    description: item.description,
-                    hsn_sac: item.hsn_sac || '',
-                    quantity: item.quantity,
-                    rate: item.rate,
-                    discount: item.discount || 0,
-                    gst_rate: item.igst_rate > 0 ? item.igst_rate : (item.cgst_rate + item.sgst_rate)
-                })));
+                setLineItems(inv.line_items.map((item: any) => {
+                    const qty = parseFloat(item.quantity) || 0;
+                    const rate = parseFloat(item.rate) || 0;
+                    const discount = parseFloat(item.discount) || 0;
+                    const discount_percent = (qty * rate) > 0 ? (discount / (qty * rate)) * 100 : 0;
+                    return {
+                        type: item.type || 'Service',
+                        description: item.description,
+                        hsn_sac: item.hsn_sac || '',
+                        quantity: qty,
+                        rate: rate,
+                        discount: discount,
+                        discount_percent: discount_percent,
+                        gst_rate: item.igst_rate > 0 ? item.igst_rate : (item.cgst_rate + item.sgst_rate)
+                    };
+                }));
             }
             if (inv.sales_order) {
                 try {
@@ -429,15 +445,22 @@ const InvoiceForm: React.FC<{
                     }));
 
                     if (firstSO.items && firstSO.items.length > 0) {
-                        setLineItems(firstSO.items.map((item: any) => ({
-                            type: item.item_type === 'SERVICES' ? 'Service' : 'Product',
-                            description: item.product_name + (item.description ? ` - ${item.description}` : ''),
-                            hsn_sac: '',
-                            quantity: parseFloat(item.qty),
-                            rate: parseFloat(item.rate),
-                            discount: parseFloat(item.discount) || 0,
-                            gst_rate: 18
-                        })));
+                        setLineItems(firstSO.items.map((item: any) => {
+                            const qty = parseFloat(item.qty) || 0;
+                            const rate = parseFloat(item.rate) || 0;
+                            const discount = parseFloat(item.discount) || 0;
+                            const discount_percent = (qty * rate) > 0 ? (discount / (qty * rate)) * 100 : 0;
+                            return {
+                                type: item.item_type === 'SERVICES' ? 'Service' : 'Product',
+                                description: item.product_name + (item.description ? ` - ${item.description}` : ''),
+                                hsn_sac: '',
+                                quantity: qty,
+                                rate: rate,
+                                discount: discount,
+                                discount_percent: discount_percent,
+                                gst_rate: 0
+                            };
+                        }));
                     }
                 } else {
                     setMilestones([]);
@@ -468,7 +491,8 @@ const InvoiceForm: React.FC<{
         lineItems.forEach(item => {
             const qty = parseFloat(item.quantity.toString()) || 0;
             const rate = parseFloat(item.rate.toString()) || 0;
-            const discount = parseFloat(item.discount.toString()) || 0;
+            const discount_percent = parseFloat((item as any).discount_percent?.toString() || '0') || 0;
+            const discount = (qty * rate * discount_percent) / 100;
             const gst_rate = parseFloat(item.gst_rate.toString()) || 0;
 
             const lineSubtotal = qty * rate;
@@ -520,7 +544,7 @@ const InvoiceForm: React.FC<{
     };
 
     const addLineItem = () => {
-        setLineItems([...lineItems, { type: 'Service', description: '', hsn_sac: '', quantity: 0, rate: 0, discount: 0, gst_rate: 18 }]);
+        setLineItems([...lineItems, { type: 'Service', description: '', hsn_sac: '', quantity: 0, rate: 0, discount: 0, discount_percent: 0, gst_rate: 0 }]);
     };
 
     const removeLineItem = (index: number) => {
@@ -563,7 +587,11 @@ const InvoiceForm: React.FC<{
             });
 
             // Append line items as JSON string (or handle differently if needed)
-            data.append('line_items_data', JSON.stringify(lineItems));
+            const itemsToSubmit = lineItems.map(item => ({
+                ...item,
+                discount: (Number(item.quantity) || 0) * (Number(item.rate) || 0) * (Number(item.discount_percent) || 0) / 100
+            }));
+            data.append('line_items_data', JSON.stringify(itemsToSubmit));
 
             if (signatureFile) data.append('signature_image', signatureFile);
             if (sealFile) data.append('company_seal', sealFile);
@@ -608,25 +636,24 @@ const InvoiceForm: React.FC<{
             let response;
             let filename = `Invoice_${formData.invoice_no || 'Draft'}_Preview.pdf`;
 
-            if (!invoiceId) {
-                // Preview for unsaved invoice
-                const currentCustomer = companyProfiles.find(c => c.id.toString() === formData.customer);
-                const currentState = states.find(s => s.id.toString() === formData.customer_state);
+            // Always use preview logic to show unsaved changes
+            const currentCustomer = companyProfiles.find(c => c.id.toString() === formData.customer);
+            const currentState = states.find(s => s.id.toString() === formData.customer_state);
 
-                const payload = {
-                    ...formData,
-                    customer_name: currentCustomer?.name || '---',
-                    customer_state_name: currentState?.name || '',
-                    customer_state_code: currentState?.code || '',
-                    customer_pan: currentCustomer?.pan || '',
-                    line_items: lineItems
-                };
-                response = await api.post(`/finance/invoices/preview_pdf/`, payload, { responseType: 'blob' });
-            } else {
-                // Existing logic for saved invoice
-                response = await api.get(`/finance/invoices/${invoiceId}/download_pdf/`, { responseType: 'blob' });
-                filename = `Invoice_${formData.invoice_no}.pdf`;
-            }
+            const payload = {
+                ...formData,
+                customer_name: currentCustomer?.name || '---',
+                customer_state_name: currentState?.name || '',
+                customer_state_code: currentState?.code || '',
+                customer_pan: currentCustomer?.pan || '',
+                customer_address_line_2: currentCustomer?.address_line_2 || '',
+                customer_city: currentCustomer?.city || '',
+                customer_pincode: currentCustomer?.pincode || '',
+                customer_cin: currentCustomer?.cin || '',
+                customer_msme: currentCustomer?.msme_number || '',
+                line_items: lineItems
+            };
+            response = await api.post(`/finance/invoices/preview_pdf/`, payload, { responseType: 'blob' });
 
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
@@ -684,7 +711,27 @@ const InvoiceForm: React.FC<{
                     <SectionHeader title="Invoice Details" />
                     <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
+                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.invoice_date)} style={{ background: '#f8fafc' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice No.</label>
+                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>
+                                {formData.invoice_no || 'Auto-generated'}
+                            </div>
+                        </div>
+                        <div></div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO date</label>
+                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.po_date)} style={{ background: '#f8fafc' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Number</label>
+                            <input type="text" className="ae-input" disabled={isReadOnly} value={formData.po_number} onChange={e => setFormData({ ...formData, po_number: e.target.value })} />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Name</label>
                             {isReadOnly || invoiceId ? (
                                 <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>
                                     {(formData as any).customer_name || companyProfiles.find(cp => cp.id.toString() === formData.selected_company.toString())?.name || '---'}
@@ -699,79 +746,32 @@ const InvoiceForm: React.FC<{
                             )}
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Sales Order Reference</label>
-                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>
-                                {salesOrders.find(so => so.id.toString() === formData.sales_order)?.so_number || '---'}
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Milestone Reference</label>
-                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>
-                                {milestones.find(m => m.id.toString() === formData.milestone)?.milestone_no || '---'}
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
-                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.invoice_date)} style={{ background: '#f8fafc' }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Place of Supply (State)</label>
-                            <input
-                                type="text"
-                                className="ae-input"
-                                disabled
-                                value={states.find(s => s.id.toString() === formData.customer_state.toString())?.name || 'Not Set'}
-                                style={{ background: '#f8fafc' }}
-                            />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer GSTIN</label>
-                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
-                                {formData.customer_gstin || 'Not Provided'}
-                            </div>
-                        </div>
-                        {formData.invoice_type === 'USA' && (
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Sales Tax %</label>
-                                <input type="number" className="ae-input" disabled={isReadOnly} value={formData.sales_tax_rate} onChange={e => setFormData({ ...formData, sales_tax_rate: parseFloat(e.target.value) || 0 })} />
-                            </div>
-                        )}
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment Terms (Days)</label>
-                            <input type="number" className="ae-input" disabled={isReadOnly} value={formData.payment_terms_days} onChange={e => setFormData({ ...formData, payment_terms_days: parseInt(e.target.value) || 0 })} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Due Date</label>
-                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.due_date)} style={{ background: '#f8fafc' }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Number</label>
-                            <input type="text" className="ae-input" disabled={isReadOnly} value={formData.po_number} onChange={e => setFormData({ ...formData, po_number: e.target.value })} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Date</label>
-                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.po_date)} style={{ background: '#f8fafc' }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 2' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Billing Address</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Address (Bill to)</label>
                             <AutoExpandingTextarea
                                 className="ae-input"
                                 disabled={isReadOnly}
                                 value={formData.billing_address}
                                 onChange={e => setFormData({ ...formData, billing_address: e.target.value })}
-                                placeholder="Billing Address"
+                                placeholder="Address (Bill to)"
                             />
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gridColumn: 'span 2' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Shipping Address</label>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Address (Shift to)</label>
                             <AutoExpandingTextarea
                                 className="ae-input"
                                 disabled={isReadOnly}
                                 value={formData.shipping_address}
                                 onChange={e => setFormData({ ...formData, shipping_address: e.target.value })}
-                                placeholder="Shipping Address"
+                                placeholder="Address (Shift to)"
                             />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment Terms</label>
+                            <input type="number" className="ae-input" disabled={isReadOnly} value={formData.payment_terms_days} onChange={e => setFormData({ ...formData, payment_terms_days: parseInt(e.target.value) || 0 })} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment due date</label>
+                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.due_date)} style={{ background: '#f8fafc' }} />
                         </div>
                     </div>
                 </div>
@@ -908,20 +908,20 @@ const InvoiceForm: React.FC<{
                                     </th>
                                     <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid #E0E6ED' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                                            {editingColumn === 'gst_rate' ? (
+                                            {editingColumn === 'discount_percent' ? (
                                                 <input
                                                     autoFocus
                                                     className="ae-input-subtle"
                                                     style={{ background: 'white', border: '1px solid #E2E8F0', padding: '2px 4px', borderRadius: '4px', fontWeight: 700, width: '100%', outline: 'none', fontSize: '0.75rem', textAlign: 'center' }}
-                                                    value={column_labels.gst_rate}
-                                                    onChange={(e) => handleHeaderChange('gst_rate', e.target.value)}
+                                                    value={column_labels.discount_percent}
+                                                    onChange={(e) => handleHeaderChange('discount_percent', e.target.value)}
                                                     onBlur={() => setEditingColumn(null)}
                                                     onKeyDown={(e) => e.key === 'Enter' && setEditingColumn(null)}
                                                 />
                                             ) : (
                                                 <>
-                                                    <span>{column_labels.gst_rate || 'GST %'}</span>
-                                                    {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('gst_rate')} />}
+                                                    <span>{column_labels.discount_percent || 'DISCOUNT %'}</span>
+                                                    {!isReadOnly && <Pencil size={10} style={{ cursor: 'pointer', color: '#718096', marginLeft: '4px' }} onClick={() => setEditingColumn('discount_percent')} />}
                                                 </>
                                             )}
                                         </div>
@@ -1052,26 +1052,25 @@ const InvoiceForm: React.FC<{
                                             </div>
                                         </td>
                                         <td style={{ textAlign: 'center', padding: '8px' }}>
-                                            <SearchableDropdown
-                                                options={[
-                                                    { value: '0', label: '0%' },
-                                                    { value: '5', label: '5%' },
-                                                    { value: '12', label: '12%' },
-                                                    { value: '18', label: '18%' },
-                                                    { value: '28', label: '28%' }
-                                                ]}
-                                                value={item.gst_rate.toString()}
-                                                onChange={val => updateLineItem(index, 'gst_rate', parseInt(String(val)))}
-                                                disabled={isReadOnly}
-                                                placeholder="Select GST %"
-                                            />
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                                <input
+                                                    type="number"
+                                                    disabled={isReadOnly}
+                                                    className="ae-input"
+                                                    style={{ width: '80px', height: '36px', borderRadius: '8px', padding: '4px 8px', textAlign: 'center' }}
+                                                    value={item.discount_percent === 0 ? '' : item.discount_percent}
+                                                    placeholder="0"
+                                                    onChange={e => updateLineItem(index, 'discount_percent', parseFloat(e.target.value) || 0)}
+                                                />
+                                            </div>
                                         </td>
                                         <td style={{ textAlign: 'right', fontWeight: 700, color: '#1a1f36', paddingRight: '12px', fontSize: '0.9rem' }}>
                                             {formData.currency_symbol}
                                             {(() => {
                                                 const qty = Number(item.quantity) || 0;
                                                 const rate = Number(item.rate) || 0;
-                                                const discount = Number(item.discount) || 0;
+                                                const discount_pct = Number(item.discount_percent) || 0;
+                                                const discount = (qty * rate * discount_pct) / 100;
                                                 const gst = formData.is_gst_applicable ? (Number(item.gst_rate) || 0) : 0;
                                                 const val = (qty * rate - discount) * (1 + gst / 100);
                                                 return isNaN(val) ? '0.00' : val.toLocaleString(undefined, { minimumFractionDigits: 2 });
@@ -1128,11 +1127,11 @@ const InvoiceForm: React.FC<{
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Ack Date</label>
                             <input
-                                type="text"
+                                type="date"
                                 className="ae-input"
-                                disabled
-                                value={formatToAppDate(formData.ack_date)}
-                                style={{ background: '#f8fafc' }}
+                                disabled={isReadOnly}
+                                value={formData.ack_date}
+                                onChange={e => setFormData({ ...formData, ack_date: e.target.value })}
                             />
                         </div>
                     </div>

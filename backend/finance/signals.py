@@ -1,7 +1,7 @@
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from .models import CompanyProfile
-from deals.models import Customer, CustomerType
+from django.db.models.signals import post_save  # type: ignore
+from django.dispatch import receiver  # type: ignore
+from .models import CompanyProfile  # type: ignore
+from deals.models import Customer, CustomerType  # type: ignore
 
 @receiver(post_save, sender=CompanyProfile)
 def sync_company_profile_to_customer(sender, instance, created, **kwargs):
