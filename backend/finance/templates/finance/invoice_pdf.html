@@ -315,20 +315,20 @@
                 {% if invoice.get_customer_city or invoice.get_customer_pincode %}
                 <div>{{ invoice.get_customer_city|striptags }}{% if invoice.get_customer_pincode %} - {{ invoice.get_customer_pincode|striptags }}{% endif %}</div>
                 {% endif %}
-                {% if invoice.get_customer_gstin %}
-                <div>GSTIN/UIN : {{ invoice.get_customer_gstin|striptags }}</div>
-                {% endif %}
                 {% if invoice.get_customer_pan %}
-                <div>PAN/IT No : {{ invoice.get_customer_pan }}</div>
+                <div>PAN/IT No : {{ invoice.get_customer_pan|striptags }}</div>
                 {% endif %}
                 {% if invoice.get_customer_state_name %}
                 <div>State Name : {{ invoice.get_customer_state_name }}{% if invoice.get_customer_state_code %}, Code : {{ invoice.get_customer_state_code }}{% endif %}</div>
                 {% endif %}
+                {% if invoice.get_customer_gstin %}
+                <div>GSTIN/UIN : {{ invoice.get_customer_gstin|striptags }}</div>
+                {% endif %}
                 {% if invoice.get_customer_cin %}
-                <div>CIN : {{ invoice.get_customer_cin }}</div>
+                <div>CIN : {{ invoice.get_customer_cin|striptags }}</div>
                 {% endif %}
                 {% if invoice.get_customer_msme %}
-                <div>MSME No. : {{ invoice.get_customer_msme }}</div>
+                <div>MSME No. : {{ invoice.get_customer_msme|striptags }}</div>
                 {% endif %}
             </td>
             <td class="address-col">
@@ -345,20 +345,20 @@
                 <div>{{ invoice.get_customer_city|striptags }}{% if invoice.get_customer_pincode %} - {{ invoice.get_customer_pincode|striptags }}{% endif %}</div>
                 {% endif %}
                 {% endif %}
-                {% if invoice.get_customer_gstin %}
-                <div>GSTIN/UIN : {{ invoice.get_customer_gstin|striptags }}</div>
-                {% endif %}
                 {% if invoice.get_customer_pan %}
-                <div>PAN/IT No : {{ invoice.get_customer_pan }}</div>
+                <div>PAN/IT No : {{ invoice.get_customer_pan|striptags }}</div>
                 {% endif %}
                 {% if invoice.get_customer_state_name %}
                 <div>State Name : {{ invoice.get_customer_state_name }}{% if invoice.get_customer_state_code %}, Code : {{ invoice.get_customer_state_code }}{% endif %}</div>
                 {% endif %}
+                {% if invoice.get_customer_gstin %}
+                <div>GSTIN/UIN : {{ invoice.get_customer_gstin|striptags }}</div>
+                {% endif %}
                 {% if invoice.get_customer_cin %}
-                <div>CIN : {{ invoice.get_customer_cin }}</div>
+                <div>CIN : {{ invoice.get_customer_cin|striptags }}</div>
                 {% endif %}
                 {% if invoice.get_customer_msme %}
-                <div>MSME No. : {{ invoice.get_customer_msme }}</div>
+                <div>MSME No. : {{ invoice.get_customer_msme|striptags }}</div>
                 {% endif %}
             </td>
         </tr>
