@@ -712,26 +712,34 @@ const InvoiceForm: React.FC<{
                     <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
-                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.invoice_date)} style={{ background: '#f8fafc' }} />
+                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.invoice_date)} style={{ background: '#f8fafc', height: '38px' }} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice No.</label>
-                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px', cursor: 'default' }}>
+                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', height: '38px', cursor: 'default' }}>
                                 {formData.invoice_no || 'Auto-generated on Submit'}
                             </div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Date</label>
-                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.po_date)} style={{ background: '#f8fafc' }} />
+                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.po_date)} style={{ background: '#f8fafc', height: '38px' }} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Number</label>
-                            <input type="text" className="ae-input" disabled={isReadOnly} value={formData.po_number} onChange={e => setFormData({ ...formData, po_number: e.target.value })} placeholder="Purchase Order Number" />
+                            <input
+                                type="text"
+                                className="ae-input"
+                                disabled={true}
+                                value={formData.po_number}
+                                onChange={e => setFormData({ ...formData, po_number: e.target.value })}
+                                placeholder="Purchase Order Number"
+                                style={{ background: '#f8fafc', height: '38px' }}
+                            />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Name</label>
                             {isReadOnly || invoiceId ? (
-                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>
+                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', height: '38px' }}>
                                     {(formData as any).customer_name || companyProfiles.find(cp => cp.id.toString() === formData.selected_company.toString())?.name || '---'}
                                 </div>
                             ) : (
@@ -740,6 +748,7 @@ const InvoiceForm: React.FC<{
                                     value={formData.selected_company}
                                     onChange={(val) => handleCompanyChange(String(val))}
                                     placeholder="Select Customer"
+                                    className="standard-height-dropdown"
                                 />
                             )}
                         </div>
@@ -1097,16 +1106,7 @@ const InvoiceForm: React.FC<{
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot>
-                                <tr style={{ background: 'var(--bg-accent)', borderTop: '1px solid #E0E6ED' }}>
-                                    <td colSpan={8} style={{ padding: '8px 16px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Invoice Value:</td>
-                                    <td style={{ padding: '8px 16px', textAlign: 'right', fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-                                        <span style={{ color: 'var(--theme-primary)', marginRight: '4px' }}>{formData.currency_symbol}</span>
-                                        {totals.grand_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                    </td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
+
                         </table>
                     </div>
                 </div>
@@ -1175,14 +1175,14 @@ const InvoiceForm: React.FC<{
                                     minHeight: '34px',
                                     transition: 'all 0.2s ease'
                                 }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--ae-orange)';
-                                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                    e.currentTarget.style.boxShadow = 'none';
-                                }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.borderColor = 'var(--ae-orange)';
+                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
                                 >
                                     {signatureFile ? 'Signature selected' : 'Upload Signature'}
                                     <input type="file" hidden accept="image/*" onChange={e => setSignatureFile(e.target.files?.[0] || null)} />
@@ -1204,14 +1204,14 @@ const InvoiceForm: React.FC<{
                                     minHeight: '34px',
                                     transition: 'all 0.2s ease'
                                 }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--ae-orange)';
-                                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                                    e.currentTarget.style.boxShadow = 'none';
-                                }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.borderColor = 'var(--ae-orange)';
+                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 107, 0, 0.1)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
                                 >
                                     {sealFile ? 'Seal selected' : 'Upload Seal'}
                                     <input type="file" hidden accept="image/*" onChange={e => setSealFile(e.target.files?.[0] || null)} />

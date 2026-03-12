@@ -3158,3 +3158,7 @@ option {
   white-space: pre-wrap;
   word-wrap: break-word;
 }
+
+.standard-height-dropdown .ae-input {
+  height: 38px !important;
+}

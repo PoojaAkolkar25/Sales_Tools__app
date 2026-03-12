@@ -201,7 +201,7 @@ class Deal(models.Model):
         if hasattr(self, 'invoices') and self.invoices.exists():
             # Check if any invoice has payments/receipts
             for invoice in self.invoices.all():
-                if hasattr(invoice, 'receipt_vouchers') and invoice.receipt_vouchers.exists():
+                if hasattr(invoice, 'adjustments') and invoice.adjustments.exists():
                     return DealStage.PAYMENT
             # If invoices exist but no payments, stage is INVOICE
             return DealStage.INVOICE

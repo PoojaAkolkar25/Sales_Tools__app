@@ -1,0 +1,9 @@
+{
+    "python.analysis.extraPaths": [
+        "./backend"
+    ],
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.testing.cwd": "./backend"
+}
