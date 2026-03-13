@@ -11,6 +11,7 @@ import {
   Users,
   LayoutDashboard,
   PlusCircle,
+  CheckCircle2,
   Loader2,
   ChevronLeft,
   ChevronRight,
@@ -287,6 +288,7 @@ const AppContent: React.FC = () => {
   const [initialSoId, setInitialSoId] = useState<number | null>(null);
   const [initialMilestoneId, setInitialMilestoneId] = useState<number | null>(null);
   const [viewSingleMilestoneId, setViewSingleMilestoneId] = useState<number | null>(null);
+  const [isFormReadOnly, setIsFormReadOnly] = useState(false);
   const [activeMilestoneTab, setActiveMilestoneTab] = useState<string>('all');
 
   // Other UI States
@@ -508,7 +510,7 @@ const AppContent: React.FC = () => {
           </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
-      <Route path="/Dashboard" element={<Navigate to="/home" />} />
+      <Route path="/" element={<Navigate to="/home" />} />
       <Route path="/cost-sheet" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
@@ -1000,14 +1002,47 @@ const AppContent: React.FC = () => {
                       </button>
                     </div>
                   </div>
+                  {isFormReadOnly && estimateView === 'form' && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '4px 12px',
+                      background: 'rgba(49, 130, 206, 0.04)',
+                      border: '1px solid rgba(49, 130, 206, 0.1)',
+                      borderRadius: '12px',
+                      color: '#2c5282'
+                    }}>
+                      <div style={{
+                        background: 'rgba(49, 130, 206, 0.1)',
+                        padding: '4px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}>
+                        <CheckCircle2 size={14} className="text-blue-600" />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>Read Only Mode</span>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 500, color: '#3182ce' }}>This estimate is Submitted and cannot be edited.</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {estimateView === 'form' ? (
                   <EstimateForm
                     id={editingEstimateId!}
-                    onBack={() => setEstimateView('dashboard')}
-                    onSave={() => setEstimateView('dashboard')}
+                    onBack={() => {
+                      setEstimateView('dashboard');
+                      setIsFormReadOnly(false);
+                    }}
+                    onSave={() => {
+                      setEstimateView('dashboard');
+                      setIsFormReadOnly(false);
+                    }}
                     user={user}
+                    setIsReadOnly={setIsFormReadOnly}
                   />
                 ) : (
                   <EstimateDashboard
@@ -1017,10 +1052,10 @@ const AppContent: React.FC = () => {
                 )}
               </div>
             </div>
-          </ModuleWrapper >
+          </ModuleWrapper>
         ) : <Navigate to="/login" />
       } />
-      < Route path="/sales-order" element={
+      <Route path="/sales-order" element={
         user ? (
           <ModuleWrapper {...commonWrapperProps}>
             <div className="main-route-container" style={{ background: '#FFFFF0', padding: '0' }}>

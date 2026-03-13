@@ -400,7 +400,12 @@ class EstimateViewSet(viewsets.ModelViewSet):
         estimate = self.get_object()
         
         # New customizable fields
-        recipient_email = request.data.get('to') or estimate.deal.customer_email or (estimate.deal.customer.email if estimate.deal.customer else None)
+        recipient_email = (request.data.get('to') or '').strip()
+        if not recipient_email:
+            recipient_email = (estimate.deal.customer_email or '').strip() or \
+                             ((estimate.deal.customer.email or '').strip() if estimate.deal and estimate.deal.customer else '') or \
+                             ((estimate.deal.lead.email or '').strip() if estimate.deal and estimate.deal.lead else '')
+        
         cc_emails = request.data.get('cc', '')
         bcc_emails = request.data.get('bcc', '')
         customer_alias = estimate.deal.customer.alias_name if estimate.deal and estimate.deal.customer else ""
@@ -410,7 +415,7 @@ class EstimateViewSet(viewsets.ModelViewSet):
         
         if not recipient_email:
             return Response(
-                {"error": "No recipient email provided or found in records."},
+                {"error": "No recipient email provided or found in records. Please update the Lead or Deal contact info, or provide it in the request."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -470,6 +475,10 @@ class EstimateViewSet(viewsets.ModelViewSet):
         
         if status_code == 'FAILED':
              return Response({"error": f"Failed to send email: {error_msg}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # 4. Update estimate status to SUBMITTED
+        estimate.status = EstimateStatus.SUBMITTED
+        estimate.save()
              
         return Response({"message": "Email sent successfully"})
 

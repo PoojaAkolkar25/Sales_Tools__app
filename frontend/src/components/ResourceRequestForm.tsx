@@ -62,8 +62,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
         finance_head_remarks: '',
     });
 
-
-    const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel' | 'approve' | 'reject' | 'issue'>('submit');
+    const [dateTypingValues, setDateTypingValues] = useState<{ [key: string]: string }>({});    const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel' | 'approve' | 'reject' | 'issue'>('submit');
     const [isConfirmingExit, setIsConfirmingExit] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectRemarks, setRejectRemarks] = useState('');
@@ -176,6 +175,55 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                     client_name: deal.customer_detail?.name || prev.client_name
                 }));
             }
+        }
+    };
+
+    const handleDateFocus = (name: string, value: string | null) => {
+        setDateTypingValues((prev: any) => ({
+            ...prev,
+            [name]: value ? formatToAppDate(value) : ''
+        }));
+    };
+
+    const handleDateChange = (name: string, displayValue: string) => {
+        setDateTypingValues((prev: any) => ({
+            ...prev,
+            [name]: displayValue
+        }));
+
+        // Allow partial typing like "1", "12", "12-", etc.
+        if (displayValue === '') {
+            setFormData((prev: any) => ({ ...prev, [name]: null }));
+            return;
+        }
+
+        const parts = displayValue.split('-');
+        if (parts.length === 3 && parts[2].length === 4) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parseInt(parts[2], 10);
+            const d = new Date(year, month, day);
+            if (!isNaN(d.getTime())) {
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                setFormData((prev: any) => ({ ...prev, [name]: `${yyyy}-${mm}-${dd}` }));
+            }
+        }
+    };
+
+    const handleDateBlur = (name: string, value: string | null) => {
+        const typingValue = dateTypingValues[name];
+        if (typingValue && typingValue.trim() !== '') {
+            const parts = typingValue.split('-');
+            if (parts.length !== 3 || parts[2].length !== 4) {
+                setDateTypingValues((prev: any) => ({
+                    ...prev,
+                    [name]: value ? formatToAppDate(value) : ''
+                }));
+            }
+        } else {
+            setFormData((prev: any) => ({ ...prev, [name]: null }));
         }
     };
 
@@ -453,7 +501,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                             type="text"
                                             readOnly
                                             className="ae-input"
-                                            style={{ height: '38px', padding: '4px 34px 4px 12px', width: '100%', cursor: 'pointer', background: 'white' }}
+                                            style={{ height: '30px', padding: '6px 34px 6px 10px', width: '100%', cursor: 'pointer', background: 'white' }}
                                             value={formData.request_date ? formatToAppDate(formData.request_date) : ''}
                                             onClick={() => (document.getElementById('hidden-request-date') as HTMLInputElement)?.showPicker()}
                                             placeholder="DD/MMM/YYYY"
@@ -491,7 +539,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Request Status</label>
-                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>
+                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '30px' }}>
                                     {formData.status_display || formData.status?.toLowerCase().replace('_', ' ') || 'Draft'}
                                 </div>
                             </div>
@@ -768,12 +816,12 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                         <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Database Required</label>
-                                <div style={{ display: 'flex', background: '#F1F5F9', padding: '3px', borderRadius: '8px', width: 'fit-content', height: '38px', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', background: '#F1F5F9', padding: '3px', borderRadius: '8px', width: 'fit-content', height: '30px', alignItems: 'center' }}>
                                     <button
                                         type="button"
                                         onClick={() => !isReadOnly && setFormData((p: any) => ({ ...p, database_required: true }))}
                                         style={{
-                                            height: '32px',
+                                            height: '24px',
                                             padding: '0 16px',
                                             borderRadius: '6px',
                                             fontSize: '0.8rem',
@@ -790,7 +838,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                         type="button"
                                         onClick={() => !isReadOnly && setFormData((p: any) => ({ ...p, database_required: false, rds_type: '', database_engine: '', db_storage_gb: '' }))}
                                         style={{
-                                            height: '32px',
+                                            height: '24px',
                                             padding: '0 16px',
                                             borderRadius: '6px',
                                             fontSize: '0.8rem',
@@ -846,7 +894,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                             value={formData.db_storage_gb}
                                             onChange={handleInputChange}
                                             className="ae-input"
-                                            style={{ height: '38px' }}
+                                            style={{ height: '30px' }}
                                             disabled={isReadOnly}
                                             placeholder="0"
                                         />
@@ -862,7 +910,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                                 cursor: isReadOnly ? 'not-allowed' : 'pointer',
                                                 background: formData.backup_required ? '#EBF8FF' : '#F8FAFC',
                                                 padding: '0 16px',
-                                                height: '38px',
+                                                height: '30px',
                                                 borderRadius: '8px',
                                                 border: `1px solid ${formData.backup_required ? '#3182CE' : '#E2E8F0'}`,
                                                 width: 'fit-content',
@@ -903,8 +951,8 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     disabled={isReadOnly}
                                     placeholder="Enter purpose"
                                     style={{
-                                        minHeight: '48px',
-                                        padding: '8px 12px',
+                                        minHeight: '30px',
+                                        padding: '6px 10px',
                                         width: '100%',
                                         border: '1px solid #E2E8F0',
                                         borderRadius: '6px',
@@ -922,8 +970,8 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     disabled={isReadOnly}
                                     placeholder="Enter justification"
                                     style={{
-                                        minHeight: '48px',
-                                        padding: '8px 12px',
+                                        minHeight: '30px',
+                                        padding: '6px 10px',
                                         width: '100%',
                                         border: '1px solid #E2E8F0',
                                         borderRadius: '6px',
@@ -936,21 +984,25 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Expected Start Date <span style={{ color: '#ef4444' }}>*</span></label>
                                     {isReadOnly ? (
-                                        <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>{formatToAppDate(formData.expected_start_date)}</div>
+                                        <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '30px' }}>{formatToAppDate(formData.expected_start_date)}</div>
                                     ) : (
                                         <div style={{ position: 'relative' }}>
                                             <input
                                                 type="text"
-                                                readOnly
+                                                name="expected_start_date"
                                                 className="ae-input"
-                                                style={{ height: '38px', padding: '4px 34px 4px 12px', width: '100%', cursor: 'pointer', background: 'white' }}
-                                                value={formData.expected_start_date ? formatToAppDate(formData.expected_start_date) : ''}
-                                                onClick={() => (document.getElementById('hidden-start-date') as HTMLInputElement)?.showPicker()}
-                                                placeholder="Enter date"
+                                                style={{ height: '30px', padding: '6px 34px 6px 10px', width: '100%', cursor: 'text', background: 'white' }}
+                                                value={dateTypingValues['expected_start_date'] !== undefined ? dateTypingValues['expected_start_date'] : (formData.expected_start_date ? formatToAppDate(formData.expected_start_date) : '')}
+                                                onChange={(e) => handleDateChange('expected_start_date', e.target.value)}
+                                                onFocus={() => handleDateFocus('expected_start_date', formData.expected_start_date)}
+                                                onBlur={() => handleDateBlur('expected_start_date', formData.expected_start_date)}
+                                                placeholder="DD-MM-YYYY"
+                                                autoComplete="off"
                                             />
                                             <Calendar
                                                 size={16}
-                                                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ae-blue)', pointerEvents: 'none' }}
+                                                onClick={() => (document.getElementById('hidden-start-date') as HTMLInputElement)?.showPicker()}
+                                                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ae-blue)', cursor: 'pointer' }}
                                             />
                                             <input
                                                 type="date"
@@ -958,7 +1010,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                                 name="expected_start_date"
                                                 value={formData.expected_start_date || ''}
                                                 onChange={handleInputChange}
-                                                style={{ position: 'absolute', opacity: 0, inset: 0, pointerEvents: 'none' }}
+                                                style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
                                             />
                                         </div>
                                     )}
@@ -966,21 +1018,25 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Expected End Date</label>
                                     {isReadOnly ? (
-                                        <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>{formatToAppDate(formData.expected_end_date)}</div>
+                                        <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '30px' }}>{formatToAppDate(formData.expected_end_date)}</div>
                                     ) : (
                                         <div style={{ position: 'relative' }}>
                                             <input
                                                 type="text"
-                                                readOnly
+                                                name="expected_end_date"
                                                 className="ae-input"
-                                                style={{ height: '38px', padding: '4px 34px 4px 12px', width: '100%', cursor: 'pointer', background: 'white' }}
-                                                value={formData.expected_end_date ? formatToAppDate(formData.expected_end_date) : ''}
-                                                onClick={() => (document.getElementById('hidden-end-date') as HTMLInputElement)?.showPicker()}
-                                                placeholder="Enter date"
+                                                style={{ height: '30px', padding: '6px 34px 6px 10px', width: '100%', cursor: 'text', background: 'white' }}
+                                                value={dateTypingValues['expected_end_date'] !== undefined ? dateTypingValues['expected_end_date'] : (formData.expected_end_date ? formatToAppDate(formData.expected_end_date) : '')}
+                                                onChange={(e) => handleDateChange('expected_end_date', e.target.value)}
+                                                onFocus={() => handleDateFocus('expected_end_date', formData.expected_end_date)}
+                                                onBlur={() => handleDateBlur('expected_end_date', formData.expected_end_date)}
+                                                placeholder="DD-MM-YYYY"
+                                                autoComplete="off"
                                             />
                                             <Calendar
                                                 size={16}
-                                                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ae-blue)', pointerEvents: 'none' }}
+                                                onClick={() => (document.getElementById('hidden-end-date') as HTMLInputElement)?.showPicker()}
+                                                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ae-blue)', cursor: 'pointer' }}
                                             />
                                             <input
                                                 type="date"
@@ -988,7 +1044,7 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                                 name="expected_end_date"
                                                 value={formData.expected_end_date || ''}
                                                 onChange={handleInputChange}
-                                                style={{ position: 'absolute', opacity: 0, inset: 0, pointerEvents: 'none' }}
+                                                style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
                                             />
                                         </div>
                                     )}
@@ -1007,13 +1063,19 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     type="text"
                                     value={formData.resource_assigned_detail?.server_name || 'N/A'}
                                     className="ae-input"
-                                    style={{ background: '#f8fafc', fontWeight: 700 }}
+                                    style={{ background: '#f8fafc' }}
                                     disabled
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Issued Date</label>
-                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', minHeight: '38px' }}>{formData.issued_at ? formatToAppDate(formData.issued_at) : 'N/A'}</div>
+                                <input
+                                    type="text"
+                                    value={formData.issued_at ? formatToAppDate(formData.issued_at) : 'N/A'}
+                                    className="ae-input"
+                                    style={{ background: '#f8fafc' }}
+                                    disabled
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Issued By</label>
@@ -1025,11 +1087,15 @@ const ResourceRequestForm: React.FC<ResourceRequestFormProps> = ({ id, user, onB
                                     disabled
                                 />
                             </div>
-                            <div className="col-span-3" style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Allocation Status</label>
-                                <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-[#E3F2FD] text-[#1E88E5]">
-                                    {formData.status === 'ISSUED' ? 'Issued' : 'N/A'}
-                                </div>
+                                <input
+                                    type="text"
+                                    value={formData.status === 'ISSUED' ? 'Issued' : 'N/A'}
+                                    className="ae-input"
+                                    style={{ background: '#f8fafc' }}
+                                    disabled
+                                />
                             </div>
                         </div>
                     </div>

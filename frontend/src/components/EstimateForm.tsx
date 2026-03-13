@@ -31,6 +31,7 @@ interface EstimateFormProps {
     onBack: () => void;
     onSave?: () => void;
     user: any;
+    setIsReadOnly?: (isReadOnly: boolean) => void;
 }
 
 const getInitialFormData = () => ({
@@ -58,7 +59,7 @@ const getInitialFormData = () => ({
     }
 });
 
-const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user }) => {
+const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, setIsReadOnly }) => {
     const { showNotification, showConfirm } = useNotification();
     const [estimate, setEstimate] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -67,135 +68,15 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
     const [deals, setDeals] = useState<any[]>([]);
     const [costSheets, setCostSheets] = useState<any[]>([]);
-    const [companyProfile, setCompanyProfile] = useState<any>(null);
-    const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel'>('submit');
 
-    const [emailModal, setEmailModal] = useState<{
-        open: boolean;
-        to: string;
-        cc: string;
-        bcc: string;
-        subject: string;
-        body: string;
-        templateType: 'standard' | 'followup' | 'revised';
-        customer_alias: string;
-    }>({
-        open: false,
-        to: '',
-        cc: '',
-        bcc: '',
-        subject: '',
-        body: '',
-        templateType: 'standard',
-        customer_alias: ''
-    });
-    const [sendingEmail, setSendingEmail] = useState(false);
+    const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel'>('submit');
+    const [dateTypingValues, setDateTypingValues] = useState<{ [key: string]: string }>({});
+    
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [editingColumn, setEditingColumn] = useState<string | null>(null);
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectComment, setRejectComment] = useState('');
 
-    const EMAIL_TEMPLATES = {
-        standard: {
-            name: 'Standard Proposal',
-            subject: (companyName: string, customerAlias: string, estimateId: string) =>
-                `${companyName} / ${customerAlias || 'Customer'} / ${estimateId}`,
-            body: (clientName: string, projectName: string, companyName: string, expirationDate: string, yourName: string) =>
-                `Dear ${clientName},\n\nGreetings from ${companyName} !!\n\nIt was a pleasure discussing ${projectName} with you. Based on our conversation, I’ve attached a detailed proposal including estimates / quotation for the services and license we discussed.\n\nYou can find the full breakdown of costs and timelines in the attached PDF.\n\nThis proposal is valid until ${expirationDate}. Please let me know if you have any questions or if you’d like to move forward.\n\nBest regards,\n${yourName}`
-        },
-        followup: {
-            name: 'Follow-Up',
-            subject: (companyName: string, customerAlias: string, estimateId: string) =>
-                `Follow up: ${companyName} / ${customerAlias || 'Customer'} / ${estimateId}`,
-            body: (clientName: string, _projectName: string, sentDate: string, yourName: string) =>
-                `Dear ${clientName},\n\nI’m checking in to see if you had a chance to review the proposal I sent on ${sentDate}. I’ve re-attached it here for your convenience.\n\nAre there any specific details or technical aspects I can clarify for you? I’m happy to hop on a 5-minute call to walk you through it.\n\nLooking forward to your thoughts.\n\nBest,\n${yourName}`
-        },
-        revised: {
-            name: 'Revised Quotation',
-            subject: (companyName: string, customerAlias: string, estimateId: string) =>
-                `Revised: ${companyName} / ${customerAlias || 'Customer'} / ${estimateId}`,
-            body: (clientName: string, _projectName: string, _companyName: string, revisionDetails: string, yourName: string) =>
-                `Dear ${clientName},\n\nThank you for your feedback on the initial proposal. As discussed, I have revised the scope to include ${revisionDetails} and adjusted the pricing accordingly.\n\nYou will find the updated proposal attached. Let me know if this aligns better with your current budget and requirements.\n\nKind regards,\n${yourName}`
-        }
-    };
-
-    const openEmailModal = (type: keyof typeof EMAIL_TEMPLATES = 'standard') => {
-        const clientName = estimate?.customer_name || '[Client Name]';
-        const projectName = estimate?.project_name || '[Project Name]';
-        const customerAlias = estimate?.customer_alias || estimate?.customer?.alias_name || '';
-        const estimateId = estimate?.estimate_id || '';
-        const companyName = companyProfile?.name || "Automation Edge";
-        const yourName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || "Sales Team" : "Sales Team";
-        const estDate = estimate?.estimate_date ? new Date(estimate.estimate_date) : new Date();
-        const expDate = new Date(estDate);
-        expDate.setDate(expDate.getDate() + 30);
-        const expirationDate = expDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const sentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const revisionDetails = estimate?.description_memo || "[specific change]";
-
-        let subject = "";
-        let body = "";
-
-        if (type === 'standard') {
-            subject = EMAIL_TEMPLATES.standard.subject(companyName, customerAlias, estimateId);
-            body = EMAIL_TEMPLATES.standard.body(clientName, projectName, companyName, expirationDate, yourName);
-        } else if (type === 'followup') {
-            subject = EMAIL_TEMPLATES.followup.subject(companyName, customerAlias, estimateId);
-            body = EMAIL_TEMPLATES.followup.body(clientName, projectName, sentDate, yourName);
-        } else if (type === 'revised') {
-            subject = EMAIL_TEMPLATES.revised.subject(companyName, customerAlias, estimateId);
-            body = EMAIL_TEMPLATES.revised.body(clientName, projectName, companyName, revisionDetails, yourName);
-        }
-
-        setEmailModal({
-            open: false,
-            to: estimate?.customer_email || (estimate?.customer?.email) || '',
-            cc: '',
-            bcc: '',
-            subject: subject,
-            body: body,
-            templateType: type,
-            customer_alias: estimate?.customer_alias || ''
-        });
-        // Open modal after state update
-        setTimeout(() => setEmailModal(prev => ({ ...prev, open: true })), 0);
-    };
-
-    const handleTemplateChange = (type: keyof typeof EMAIL_TEMPLATES) => {
-        const clientName = estimate?.customer_name || '[Client Name]';
-        const projectName = estimate?.project_name || '[Project Name]';
-        const customerAlias = emailModal.customer_alias || estimate?.customer_alias || '';
-        const estimateId = estimate?.estimate_id || '';
-        const companyName = companyProfile?.name || "Automation Edge";
-        const yourName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || "Sales Team" : "Sales Team";
-        const estDate = estimate?.estimate_date ? new Date(estimate.estimate_date) : new Date();
-        const expDate = new Date(estDate);
-        expDate.setDate(expDate.getDate() + 30);
-        const expirationDate = expDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const sentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const revisionDetails = estimate?.description_memo || "[specific change]";
-
-        let subject = "";
-        let body = "";
-
-        if (type === 'standard') {
-            subject = EMAIL_TEMPLATES.standard.subject(companyName, customerAlias, estimateId);
-            body = EMAIL_TEMPLATES.standard.body(clientName, projectName, companyName, expirationDate, yourName);
-        } else if (type === 'followup') {
-            subject = EMAIL_TEMPLATES.followup.subject(companyName, customerAlias, estimateId);
-            body = EMAIL_TEMPLATES.followup.body(clientName, projectName, sentDate, yourName);
-        } else if (type === 'revised') {
-            subject = EMAIL_TEMPLATES.revised.subject(companyName, customerAlias, estimateId);
-            body = EMAIL_TEMPLATES.revised.body(clientName, projectName, companyName, revisionDetails, yourName);
-        }
-
-        setEmailModal({
-            ...emailModal,
-            subject: subject,
-            body: body,
-            templateType: type
-        });
-    };
 
     const handlePreview = () => {
         if (!id) {
@@ -205,38 +86,13 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
         window.open(`${api.defaults.baseURL}/estimates/${id}/preview_pdf/`, '_blank');
     };
 
-    const handleSendEmail = async () => {
-        setSendingEmail(true);
-        try {
-            await api.post(`/estimates/${id}/send_email/`, {
-                to: emailModal.to,
-                cc: emailModal.cc,
-                bcc: emailModal.bcc,
-                subject: emailModal.subject,
-                body: emailModal.body
-            });
-            showNotification('Email sent successfully', 'success');
-
-            // If estimate is not yet submitted, trigger the submit status change
-            if (estimate?.status !== 'SUBMITTED') {
-                try {
-                    await api.post(`/estimates/${id}/submit/`);
-                } catch (subErr) {
-                    console.error('Status update failed after email', subErr);
-                }
-            }
-
-            setEmailModal({ ...emailModal, open: false });
-            fetchEstimateDetails(); // Refresh to show new status
-        } catch (error: any) {
-            console.error('Error sending email', error);
-            showNotification(error.response?.data?.error || 'Failed to send email', 'error');
-        } finally {
-            setSendingEmail(false);
-        }
-    };
-
     const isReadOnly = estimate?.approval_status === 'APPROVED' || estimate?.status === 'PENDING_APPROVAL' || estimate?.status === 'SUBMITTED' || estimate?.status === 'REWOUND';
+
+    useEffect(() => {
+        if (setIsReadOnly) {
+            setIsReadOnly(isReadOnly);
+        }
+    }, [isReadOnly, setIsReadOnly]);
 
     const SectionHeader = ({ title, extra }: { title: string, extra?: React.ReactNode }) => (
         <div style={{
@@ -285,14 +141,12 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
     const fetchInitialData = async () => {
         try {
-            const [dealsRes, csRes, companyRes] = await Promise.all([
+            const [dealsRes, csRes] = await Promise.all([
                 api.get('/deals/'),
-                api.get('/cost-sheets/?status=APPROVED'),
-                api.get('/finance/company-profile/')
+                api.get('/cost-sheets/?status=APPROVED')
             ]);
             setDeals(dealsRes.data);
             setCostSheets(csRes.data);
-            setCompanyProfile(companyRes.data[0]); // Get first company profile
         } catch (error) {
             console.error('Error fetching initial data', error);
             showNotification('Error loading deals or cost sheets', 'error');
@@ -304,12 +158,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
         setLoading(true);
         try {
-            const [response, companyRes] = await Promise.all([
-                api.get(`/estimates/${id}/`),
-                api.get('/finance/company-profile/')
-            ]);
+            const response = await api.get(`/estimates/${id}/`);
             setEstimate(response.data);
-            setCompanyProfile(companyRes.data[0]); // Get first company profile
             setFormData({
                 estimate_date: response.data.estimate_date || new Date().toISOString().split('T')[0],
                 subscription_from: response.data.subscription_from || '',
@@ -409,6 +259,123 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
     const calculateTotal = () => {
         return formData.items.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0);
+    };
+
+    const handleDateFocus = (id: number, field: string) => {
+        const key = `${id}-${field}`;
+        const item = formData.items.find((i: any) => i.id === id);
+        if (item && !dateTypingValues[key] && item[field]) {
+            const [y, m, d] = item[field].split('-');
+            if (y && m && d) {
+                setDateTypingValues(prev => ({ ...prev, [key]: `${d}-${m}-${y}` }));
+            }
+        }
+    };
+
+    const handleDateInputChange = (id: number, field: string, value: string) => {
+        const key = `${id}-${field}`;
+        const prevValue = dateTypingValues[key] || '';
+        const isDeletion = value.length < prevValue.length;
+
+        // If deleting a separator, remove the digit before it too
+        let processedValue = value;
+        if (isDeletion && prevValue.endsWith('-') && !value.endsWith('-')) {
+            processedValue = value.slice(0, -1);
+        }
+
+        let formatted = '';
+
+        // Slot-aware logic: if dashes exist, try to preserve segments
+        if (processedValue.includes('-') || (prevValue.includes('-') && isDeletion)) {
+            const parts = processedValue.split('-');
+            const dayStr = (parts[0] || '').replace(/\D/g, '').substring(0, 2);
+            const monthStr = (parts[1] || '').replace(/\D/g, '').substring(0, 2);
+            const yearStr = (parts[2] || '').replace(/\D/g, '').substring(0, 4);
+
+            // Validation for segments
+            if (dayStr.length > 0) {
+                if (parseInt(dayStr[0]) > 3) return;
+                if (dayStr.length === 2 && (parseInt(dayStr) > 31 || dayStr === '00')) return;
+            }
+            if (monthStr.length > 0) {
+                if (parseInt(monthStr[0]) > 1) return;
+                if (monthStr.length === 2 && (parseInt(monthStr) > 12 || monthStr === '00')) return;
+            }
+
+            formatted = dayStr;
+            if (dayStr.length === 2 || parts.length > 1) {
+                formatted += '-';
+                if (monthStr.length > 0 || parts.length > 1) {
+                    formatted += monthStr;
+                    if (monthStr.length === 2 || parts.length > 2) {
+                        formatted += '-';
+                        if (yearStr.length > 0) {
+                            formatted += yearStr;
+                        }
+                    }
+                }
+            }
+
+            // Cleanup trailing dashes if it was a deletion and we are at a boundary
+            if (isDeletion && formatted.endsWith('-') && !processedValue.endsWith('-')) {
+                formatted = formatted.slice(0, -1);
+            }
+        } else {
+            // Greedy logic for raw input (no dashes)
+            let digits = processedValue.replace(/\D/g, '');
+
+            if (digits.length > 0) {
+                if (parseInt(digits[0]) > 3) return;
+                if (digits.length >= 2) {
+                    const d = parseInt(digits.substring(0, 2));
+                    if (d > 31 || d === 0) if (digits.length === 2) return;
+                    if (digits.length >= 3) {
+                        if (parseInt(digits[2]) > 1) return;
+                        if (digits.length >= 4) {
+                            const m = parseInt(digits.substring(2, 4));
+                            if (m > 12 || m === 0) return;
+                        }
+                    }
+                }
+            }
+
+            if (digits.length > 0) {
+                formatted = digits.substring(0, 2);
+                if (digits.length > 2 || (digits.length === 2 && !isDeletion)) {
+                    formatted += '-';
+                    if (digits.length > 2) {
+                        formatted += digits.substring(2, 4);
+                        if (digits.length > 4 || (digits.length === 4 && !isDeletion)) {
+                            formatted += '-';
+                            if (digits.length > 4) {
+                                formatted += digits.substring(4, 8);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Update local typing state
+        setDateTypingValues(prev => ({ ...prev, [key]: formatted }));
+
+        // Update item date
+        if (formatted.length === 10) {
+            const [d, m, y] = formatted.split('-').map(Number);
+            const isoDate = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+            handleItemChange(id, field, isoDate);
+        } else if (value === '') {
+            handleItemChange(id, field, '');
+        }
+    };
+
+    const handleDateBlur = (id: number, field: string) => {
+        const key = `${id}-${field}`;
+        setDateTypingValues(prev => {
+            const next = { ...prev };
+            delete next[key];
+            return next;
+        });
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -682,47 +649,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
     };
 
 
-    const getApprovalStatusBadge = () => {
-        if (!estimate) return null;
-
-        // Hide Pending Approval badge for Draft/Negotiation
-        if (estimate.approval_status === 'PENDING' && (estimate.status === 'DRAFT' || estimate.status === 'NEGOTIATION')) {
-            return null;
-        }
-
-        const statusConfig: any = {
-            'PENDING': { color: '#FFA500', bg: '#FFF4E5', icon: Clock, label: 'Pending Approval' },
-            'APPROVED': { color: '#38A169', bg: '#E6F7ED', icon: CheckCircle2, label: 'Approved' },
-            'REJECTED': { color: '#E53E3E', bg: '#FFF5F5', icon: XCircle, label: 'Rejected' }
-        };
-
-        const config = statusConfig[estimate.approval_status];
-        if (!config) return null;
-
-        const Icon = config.icon;
-
-        return (
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '6px 12px',
-                background: config.bg,
-                borderRadius: '6px',
-                border: `1px solid ${config.color}`
-            }}>
-                <Icon size={16} color={config.color} />
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: config.color }}>
-                    {config.label}
-                </span>
-                {estimate.approved_by_name && (
-                    <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '4px' }}>
-                        by {estimate.approved_by_name}
-                    </span>
-                )}
-            </div>
-        );
-    };
 
 
 
@@ -736,45 +662,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
     return (
         <div className="space-y-6" style={{ background: '#fff', color: '#333' }}>
-            {/* Read Only Banner */}
-            {isReadOnly && (
-                <div style={{
-                    background: 'rgba(49, 130, 206, 0.04)',
-                    border: '1px solid rgba(49, 130, 206, 0.1)',
-                    borderLeft: '4px solid #3182CE',
-                    borderRadius: '16px',
-                    padding: '12px 20px',
-                    marginBottom: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    boxShadow: 'var(--shadow-sm)'
-                }}>
-                    <div style={{
-                        background: 'rgba(49, 130, 206, 0.1)',
-                        padding: '8px',
-                        borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                        <CheckCircle2 size={18} className="text-blue-600" />
-                    </div>
-                    <div>
-                        <p style={{ margin: 0, fontWeight: 800, color: '#2c5282', fontSize: '0.85rem' }}>Read Only Mode</p>
-                        <p style={{ margin: '2px 0 0 0', color: '#3182ce', fontSize: '0.75rem', fontWeight: 500 }}>
-                            This estimate is <strong>{estimate.approval_status === 'APPROVED' ? 'Approved' : 'Submitted'}</strong> and cannot be edited.
-                            {estimate.approval_status === 'APPROVED' && " Use Rewind to create a new version for negotiation."}
-                        </p>
-                    </div>
-                </div>
-            )}
-
             {/* Header Controls */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {getApprovalStatusBadge()}
-                </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                 <div style={{ display: 'flex', gap: '12px' }}>
                     {/* Rejection Comments Banner */}
                     {estimate?.approval_status === 'REJECTED' && estimate?.approval_notes && (
@@ -816,54 +705,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
 
                         {/* Unapprove/Reopen button removed - Approved estimates are now locked */}
 
-                        {/* Rewind Logic: Visible if Latest Version AND Approved (per user request) */}
-                        {id && estimate?.is_latest && estimate?.approval_status === 'APPROVED' && (
-                            <button
-                                onClick={handleRewind}
-                                disabled={saving}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '6px 16px',
-                                    borderRadius: '8px',
-                                    background: '#EBF8FF',
-                                    color: '#3182CE',
-                                    border: '1px solid #BEE3F8',
-                                    fontWeight: 700,
-                                    fontSize: '0.8rem',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <History size={16} /> Rewind (New Version)
-                            </button>
-                        )}
-
-                        {/* Unapprove Button - Visible for Approved/Rejected estimates if latest */}
+                        {/* Rewind and Submit to Customer buttons moved to footer */}
 
                     </div>
 
 
-
-                    {/* Submit to Customer button (via Email Modal) */}
-                    {(estimate?.status === 'SUBMITTED' || estimate?.approval_status === 'APPROVED') && estimate?.status !== 'REWOUND' && (
-                        <button
-                            onClick={() => openEmailModal()}
-                            className="ae-btn-primary"
-                            disabled={estimate?.approval_status !== 'APPROVED'}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                background: '#38A169',
-                                opacity: (estimate?.approval_status !== 'APPROVED') ? 0.5 : 1,
-                                cursor: (estimate?.approval_status !== 'APPROVED') ? 'not-allowed' : 'pointer'
-                            }}
-                            title={estimate?.approval_status !== 'APPROVED' ? "Estimate must be approved to send email" : "Submit to Customer"}
-                        >
-                            <Mail size={18} /> Submit to Customer
-                        </button>
-                    )}
                 </div>
             </div>
 
@@ -1237,22 +1083,12 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                     {/* Line Items Table */}
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Product Line Items" />
-                        <div className="ae-table-wrapper" style={{ border: '1.5px solid #E2E8F0', borderRadius: '12px', overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+                        <div className="ae-table-wrapper" style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '12px' }}>
                                 <thead>
                                     <tr style={{ background: 'var(--bg-accent)' }}>
-                                        <th style={{ padding: '10px 8px', width: '40px' }}></th>
-                                        <th style={{
-                                            padding: '10px 4px',
-                                            textAlign: 'center',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 700,
-                                            color: 'black',
-                                            textTransform: 'none',
-                                            letterSpacing: 'normal',
-                                            whiteSpace: 'nowrap',
-                                            width: '60px'
-                                        }}>
+                                        <th style={{ padding: '10px 4px', width: '40px' }}></th>
+                                        <th style={{ padding: '10px 4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: 'black', width: '60px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                                                 {editingColumn === 'sr_no' ? (
                                                     <input
@@ -1594,17 +1430,14 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                 <div style={{ position: 'relative' }}>
                                                     <input
                                                         type="text"
-                                                        readOnly
                                                         className="ae-input"
-                                                        style={{ height: '30px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer', background: isReadOnly ? '#f7fafc' : 'white', borderRadius: '6px' }}
-                                                        value={item.subscription_from ? formatToAppDate(item.subscription_from) : ''}
-                                                        onClick={() => {
-                                                            if (!isReadOnly) {
-                                                                const picker = document.getElementById(`sub-from-${item.id}`) as HTMLInputElement;
-                                                                if (picker) picker.showPicker?.();
-                                                            }
-                                                        }}
-                                                        placeholder="Enter date"
+                                                        style={{ height: '30px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'text', background: isReadOnly ? '#f7fafc' : 'white', borderRadius: '6px' }}
+                                                        value={dateTypingValues[`${item.id}-subscription_from`] !== undefined ? dateTypingValues[`${item.id}-subscription_from`] : (item.subscription_from ? formatToAppDate(item.subscription_from) : '')}
+                                                        onChange={(e) => handleDateInputChange(item.id, 'subscription_from', e.target.value)}
+                                                        onFocus={() => handleDateFocus(item.id, 'subscription_from')}
+                                                        onBlur={() => handleDateBlur(item.id, 'subscription_from')}
+                                                        disabled={isReadOnly}
+                                                        placeholder="DD-MM-YYYY"
                                                     />
                                                     <input
                                                         type="date"
@@ -1615,24 +1448,38 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                         onChange={(e) => handleItemChange(item.id, 'subscription_from', e.target.value)}
                                                         disabled={isReadOnly}
                                                     />
-                                                    <Calendar size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
+                                                    <Calendar
+                                                        size={14}
+                                                        style={{
+                                                            position: 'absolute',
+                                                            right: '10px',
+                                                            top: '50%',
+                                                            transform: 'translateY(-50%)',
+                                                            color: '#A0AEC0',
+                                                            cursor: isReadOnly ? 'default' : 'pointer',
+                                                            pointerEvents: isReadOnly ? 'none' : 'auto'
+                                                        }}
+                                                        onClick={() => {
+                                                            if (!isReadOnly) {
+                                                                const picker = document.getElementById(`sub-from-${item.id}`) as HTMLInputElement;
+                                                                if (picker) picker.showPicker?.();
+                                                            }
+                                                        }}
+                                                    />
                                                 </div>
                                             </td>
                                             <td style={{ padding: '6px 4px' }}>
                                                 <div style={{ position: 'relative' }}>
                                                     <input
                                                         type="text"
-                                                        readOnly
                                                         className="ae-input"
-                                                        style={{ height: '30px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'pointer', background: isReadOnly ? '#f7fafc' : 'white', borderRadius: '6px' }}
-                                                        value={item.subscription_to ? formatToAppDate(item.subscription_to) : ''}
-                                                        onClick={() => {
-                                                            if (!isReadOnly) {
-                                                                const picker = document.getElementById(`sub-to-${item.id}`) as HTMLInputElement;
-                                                                if (picker) picker.showPicker?.();
-                                                            }
-                                                        }}
-                                                        placeholder="Enter date"
+                                                        style={{ height: '30px', padding: '4px 30px 4px 8px', width: '100%', fontSize: '0.85rem', cursor: isReadOnly ? 'default' : 'text', background: isReadOnly ? '#f7fafc' : 'white', borderRadius: '6px' }}
+                                                        value={dateTypingValues[`${item.id}-subscription_to`] !== undefined ? dateTypingValues[`${item.id}-subscription_to`] : (item.subscription_to ? formatToAppDate(item.subscription_to) : '')}
+                                                        onChange={(e) => handleDateInputChange(item.id, 'subscription_to', e.target.value)}
+                                                        onFocus={() => handleDateFocus(item.id, 'subscription_to')}
+                                                        onBlur={() => handleDateBlur(item.id, 'subscription_to')}
+                                                        disabled={isReadOnly}
+                                                        placeholder="DD-MM-YYYY"
                                                     />
                                                     <input
                                                         type="date"
@@ -1643,7 +1490,24 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                         onChange={(e) => handleItemChange(item.id, 'subscription_to', e.target.value)}
                                                         disabled={isReadOnly}
                                                     />
-                                                    <Calendar size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#A0AEC0', pointerEvents: 'none' }} />
+                                                    <Calendar
+                                                        size={14}
+                                                        style={{
+                                                            position: 'absolute',
+                                                            right: '10px',
+                                                            top: '50%',
+                                                            transform: 'translateY(-50%)',
+                                                            color: '#A0AEC0',
+                                                            cursor: isReadOnly ? 'default' : 'pointer',
+                                                            pointerEvents: isReadOnly ? 'none' : 'auto'
+                                                        }}
+                                                        onClick={() => {
+                                                            if (!isReadOnly) {
+                                                                const picker = document.getElementById(`sub-to-${item.id}`) as HTMLInputElement;
+                                                                if (picker) picker.showPicker?.();
+                                                            }
+                                                        }}
+                                                    />
                                                 </div>
                                             </td>
 
@@ -1686,7 +1550,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                     <input
                                                         type="number"
                                                         className="ae-no-spinner"
-                                                        style={{ width: '100%', padding: '4px 2px 4px 8px', fontSize: '0.85rem', color: '#C53030', textAlign: 'center', fontWeight: 700, height: '30px', border: 'none', outline: 'none', background: 'transparent' }}
+                                                        style={{ width: '100%', padding: '4px 2px 4px 8px', fontSize: '0.85rem', color: 'black', textAlign: 'center', fontWeight: 600, height: '30px', border: 'none', outline: 'none', background: 'transparent' }}
                                                         value={(item.discount === 0 || item.discount === 0.0 || item.discount === '0' || item.discount === '0.00') ? '' : item.discount}
                                                         placeholder="0"
                                                         onChange={(e) => handleItemChange(item.id, 'discount', e.target.value)}
@@ -1704,7 +1568,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                                             }
                                                         }}
                                                     />
-                                                    <span style={{ paddingRight: '4px', fontSize: '0.85rem', color: '#C53030', fontWeight: 700 }}>%</span>
+                                                    <span style={{ paddingRight: '4px', fontSize: '0.85rem', color: 'black', fontWeight: 700 }}>%</span>
                                                 </div>
                                             </td>
                                             <td style={{ padding: '6px 4px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 800, color: '#1a1f36' }}>
@@ -1855,6 +1719,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     boxShadow: activeAction === 'draft' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                                 }}
                                 onMouseEnter={() => setActiveAction('draft')}
+                                onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+                                onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                onMouseLeave={() => { setActiveAction('submit'); }}
                             >
                                 <Save size={16} /> Save Draft
                             </button>
@@ -1879,6 +1746,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     boxShadow: activeAction === 'submit' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
                                 }}
                                 onMouseEnter={() => setActiveAction('submit')}
+                                onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+                                onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                onMouseLeave={() => { setActiveAction('submit'); }}
                             >
                                 <PlusCircle size={18} /> Submit for Approval
                             </button>
@@ -1934,8 +1804,10 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     cursor: 'pointer',
                                     transition: 'all 0.2s'
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#00ad48'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = '#00C853'}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = '#00ad48'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = '#00C853'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+                                onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                             >
                                 <CheckCircle2 size={15} /> Approve
                             </button>
@@ -1954,8 +1826,11 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                     fontSize: '0.85rem',
                                     fontWeight: 700,
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s'
                                 }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(229, 62, 62, 0.1)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(229, 62, 62, 0.06)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+                                onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                             >
                                 <XCircle size={15} /> Reject
                             </button>
@@ -1975,8 +1850,12 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                 border: '1px solid #38A169',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '8px'
-                            }}>
+                                gap: '8px',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = '#def7e5'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = '#E6F7ED'; }}
+                            >
                                 <CheckCircle2 size={18} /> Approved
                             </span>
                             {estimate?.is_latest && estimate?.version === 1 && (
@@ -1994,8 +1873,13 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                                         border: '1px solid #BEE3F8',
                                         fontWeight: 700,
                                         fontSize: '0.85rem',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
                                     }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#DBEEFE'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = '#EBF8FF'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                    onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+                                    onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                                 >
                                     <History size={18} /> Rewind (New Version)
                                 </button>
@@ -2015,149 +1899,19 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user })
                             border: '1px solid #CBD5E1',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px'
-                        }}>
+                            gap: '8px',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#e8eff5'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = '#F1F5F9'; }}
+                        >
                             <History size={18} /> Rewound
                         </span>
                     )
                 }
-            </div >
+            </div>
 
-            {/* Email Modal */}
-            {
-                emailModal.open && createPortal(
-                    <div style={{
-                        position: 'fixed',
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        background: 'rgba(0,0,0,0.45)',
-                        backdropFilter: 'blur(12px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 2000
-                    }}>
-                        <div style={{
-                            background: 'white',
-                            padding: '32px',
-                            borderRadius: '16px',
-                            width: '850px',
-                            maxWidth: '95%',
-                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                            maxHeight: '90vh',
-                            overflowY: 'auto'
-                        }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                                <div>
-                                    <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1A202C' }}>Compose Proposal Email</h3>
-                                    <p style={{ color: '#718096', fontSize: '0.85rem', marginTop: '4px' }}>Combined Estimate and Proposal will be attached automatically.</p>
-                                </div>
-                                <button
-                                    onClick={() => setEmailModal({ ...emailModal, open: false })}
-                                    style={{ padding: '8px', borderRadius: '50%', background: '#F7FAFC', border: 'none', cursor: 'pointer' }}
-                                >
-                                    <X size={20} />
-                                </button>
-                            </div>
 
-                            <div style={{ marginBottom: '24px' }}>
-                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Select Template:</label>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    {(Object.keys(EMAIL_TEMPLATES) as Array<keyof typeof EMAIL_TEMPLATES>).map((type) => (
-                                        <button
-                                            key={type}
-                                            onClick={() => handleTemplateChange(type)}
-                                            style={{
-                                                padding: '8px 16px',
-                                                borderRadius: '8px',
-                                                fontSize: '0.8rem',
-                                                fontWeight: 600,
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s',
-                                                border: '1.5px solid',
-                                                background: emailModal.templateType === type ? '#38A169' : 'white',
-                                                color: emailModal.templateType === type ? 'white' : '#4A5568',
-                                                borderColor: emailModal.templateType === type ? '#38A169' : '#E2E8F0'
-                                            }}
-                                        >
-                                            {EMAIL_TEMPLATES[type].name}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
-                                    <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>To:</label>
-                                    <input
-                                        className="ae-input"
-                                        value={emailModal.to}
-                                        onChange={(e) => setEmailModal({ ...emailModal, to: e.target.value })}
-                                        placeholder="recipient@example.com"
-                                    />
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
-                                    <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>CC:</label>
-                                    <input
-                                        className="ae-input"
-                                        value={emailModal.cc}
-                                        onChange={(e) => setEmailModal({ ...emailModal, cc: e.target.value })}
-                                        placeholder="cc@example.com (comma separated)"
-                                    />
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
-                                    <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Subject:</label>
-                                    <input
-                                        className="ae-input"
-                                        value={emailModal.subject}
-                                        onChange={(e) => setEmailModal({ ...emailModal, subject: e.target.value })}
-                                        placeholder="Enter subject"
-                                    />
-                                </div>
-
-                                <div style={{ marginTop: '16px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Message Body</label>
-                                    <AutoExpandingTextarea
-                                        className="ae-input"
-                                        value={emailModal.body}
-                                        onChange={(e) => setEmailModal({ ...emailModal, body: e.target.value })}
-                                        style={{ minHeight: '180px', padding: '12px' }}
-                                        placeholder="Write your message here..."
-                                    />
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '32px' }}>
-                                <button
-                                    className="ae-btn-secondary"
-                                    onClick={() => setEmailModal({ ...emailModal, open: false })}
-                                    disabled={sendingEmail}
-                                    style={{ padding: '10px 24px' }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    className="ae-btn-primary"
-                                    onClick={handleSendEmail}
-                                    disabled={sendingEmail}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        padding: '10px 32px',
-                                        background: '#38A169'
-                                    }}
-                                >
-                                    {sendingEmail ? <RefreshCw className="animate-spin" size={18} /> : <Mail size={18} />}
-                                    {sendingEmail ? 'Sending...' : 'Send Now'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>,
-                    document.body
-                )
-            }
 
             {/* Rejection Modal */}
             {

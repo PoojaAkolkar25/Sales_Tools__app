@@ -431,7 +431,7 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
             case 'SUBMITTED': return { bg: 'rgba(159, 122, 234, 0.1)', color: '#9F7AEA', label: 'Submitted' };
             case 'CANCELLED': return { bg: 'rgba(160, 174, 192, 0.1)', color: '#A0AEC0', label: 'Cancelled' };
             case 'DRAFT':
-            case 'OPEN': return { bg: 'rgba(113, 128, 150, 0.1)', color: '#718096', label: 'Draft' };
+            case 'OPEN': return { bg: 'rgba(255, 107, 0, 0.1)', color: 'var(--theme-primary)', label: 'Draft' };
             default: return { bg: 'var(--bg-secondary)', color: 'var(--theme-primary)', label: status.replace('_', ' ') };
         }
     };
@@ -1188,23 +1188,23 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                         justifyContent: 'center',
                                                         width: '28px',
                                                         height: '28px',
-                                                        background: 'rgba(59,130,246,0.08)',
-                                                        color: '#2563EB',
-                                                        border: '1px solid rgba(59,130,246,0.25)',
+                                                        background: 'rgba(255,107,0,0.08)',
+                                                        color: 'var(--theme-primary)',
+                                                        border: '1px solid rgba(255,107,0,0.25)',
                                                         borderRadius: '6px',
                                                         cursor: 'pointer',
                                                         transition: 'all 0.2s',
                                                         flexShrink: 0
                                                     }}
                                                     onMouseOver={(e) => {
-                                                        e.currentTarget.style.background = '#2563EB';
+                                                        e.currentTarget.style.background = 'var(--theme-primary)';
                                                         e.currentTarget.style.color = 'white';
-                                                        e.currentTarget.style.borderColor = '#2563EB';
+                                                        e.currentTarget.style.borderColor = 'var(--theme-primary)';
                                                     }}
                                                     onMouseOut={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(59,130,246,0.08)';
-                                                        e.currentTarget.style.color = '#2563EB';
-                                                        e.currentTarget.style.borderColor = 'rgba(59,130,246,0.25)';
+                                                        e.currentTarget.style.background = 'rgba(255,107,0,0.08)';
+                                                        e.currentTarget.style.color = 'var(--theme-primary)';
+                                                        e.currentTarget.style.borderColor = 'rgba(255,107,0,0.25)';
                                                     }}
                                                     title="Download Invoice"
                                                 >
