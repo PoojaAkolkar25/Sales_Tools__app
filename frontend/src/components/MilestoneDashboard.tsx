@@ -62,10 +62,11 @@ const MAX_COL_WIDTHS: Record<string, number> = {
 
 interface MilestoneDashboardProps {
     onView?: (id: number | string, tab?: string) => void;
+    onCreate?: () => void;
     initialTab?: string;
 }
 
-const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, initialTab }) => {
+const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreate, initialTab }) => {
     const navigate = useNavigate();
     const [milestones, setMilestones] = useState<any[]>([]);
     const [salesOrders, setSalesOrders] = useState<any[]>([]);

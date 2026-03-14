@@ -63,7 +63,7 @@ const TableHeader = ({ columns, isReadOnly }: { columns: string[], isReadOnly: b
     );
 };
 
-const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly, onKeyDown, symbol = "", suffix = "", placeholder, maxRows }: any) => {
+const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly, onKeyDown, symbol = "", suffix = "", placeholder, maxRows, maxWidth, cellWidth }: any) => {
     const handleChange = (e: any) => {
         const val = e.target.value;
         if (type === 'number') {
@@ -83,11 +83,12 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly,
     const displayValue = (type === 'number' && (value === 0 || value === '0' || value === '')) ? '' : value;
 
     return (
-        <td style={{ padding: '6px 4px' }}>
+        <td style={{ padding: '6px 4px', width: cellWidth || 'auto' }}>
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 width: '100%',
+                maxWidth: maxWidth || 'none',
                 background: 'white',
                 border: '1px solid #E2E8F0',
                 borderRadius: '6px',
@@ -148,19 +149,56 @@ const InputCell = ({ value, onChange, type = "text", className = "", isReadOnly,
     );
 };
 
-const ReadOnlyCell = ({ value, bold = false, symbol = '', color, fontSize, fontWeight }: any) => (
-    <td style={{
-        padding: '6px 4px',
-        fontSize: fontSize || (bold ? '0.9rem' : '0.9rem'),
-        fontWeight: fontWeight || (bold ? 700 : 600),
-        color: color || (bold ? 'var(--text-primary)' : 'var(--text-secondary)'),
-        background: 'transparent',
-        textAlign: 'right'
-    }}>
-        {symbol && <span style={{ marginRight: '2px', opacity: 0.8 }}>{symbol}</span>}
-        {typeof value === 'number' ? value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value}
-    </td>
-);
+const ReadOnlyCell = ({ value, bold = false, symbol = '', color, fontSize, fontWeight, maxWidth, showBox, cellWidth, justifyContent, textAlign }: any) => {
+    const content = (
+        <>
+            {symbol && <span style={{ marginRight: '2px', opacity: 0.8 }}>{symbol}</span>}
+            {typeof value === 'number' ? value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value}
+        </>
+    );
+
+    if (showBox) {
+        return (
+            <td style={{ padding: '6px 4px', width: cellWidth || 'auto' }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: justifyContent || 'flex-end',
+                    width: '100%',
+                    maxWidth: maxWidth || 'none',
+                    background: 'white',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '6px',
+                    height: '30px',
+                    padding: '0 8px',
+                    fontSize: fontSize || '0.9rem',
+                    fontWeight: fontWeight || (bold ? 700 : 600),
+                    color: color || (bold ? 'var(--text-primary)' : 'var(--text-secondary)'),
+                }}>
+                    {content}
+                </div>
+            </td>
+        );
+    }
+
+    return (
+        <td style={{
+            padding: '6px 4px',
+            width: cellWidth || 'auto',
+            fontSize: fontSize || (bold ? '0.9rem' : '0.9rem'),
+            fontWeight: fontWeight || (bold ? 700 : 600),
+            color: color || (bold ? 'var(--text-primary)' : 'var(--text-secondary)'),
+            background: 'transparent',
+            textAlign: textAlign || 'right',
+            maxWidth: maxWidth || 'none',
+            overflow: maxWidth ? 'hidden' : 'visible',
+            textOverflow: maxWidth ? 'ellipsis' : 'clip',
+            whiteSpace: maxWidth ? 'nowrap' : 'normal'
+        }}>
+            {content}
+        </td>
+    );
+};
 
 const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     const { showNotification, showConfirm } = useNotification();
@@ -782,50 +820,85 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Tabs */}
-            <div style={{
-                display: 'flex',
-                gap: '4px',
-                background: 'var(--bg-primary)',
-                padding: '6px',
-                borderRadius: '12px',
-                border: '1px solid var(--border-primary)',
-                flexWrap: 'wrap',
-                justifyContent: 'center'
-            }}>
-                <button
-                    onClick={() => setActiveTab('form')}
-                    style={{
-                        padding: '10px 24px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: activeTab === 'form' ? 'var(--theme-primary)' : 'transparent',
-                        color: activeTab === 'form' ? 'white' : 'var(--text-secondary)',
-                        boxShadow: activeTab === 'form' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                    }}
-                >
-                    Cost Sheet
-                </button>
-                <button
-                    onClick={() => setActiveTab('summary')}
-                    style={{
-                        padding: '10px 24px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: activeTab === 'summary' ? 'var(--theme-primary)' : 'transparent',
-                        color: activeTab === 'summary' ? 'white' : 'var(--text-secondary)',
-                        boxShadow: activeTab === 'summary' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
-                    }}
-                >
-                    Cost Sheet Summary
-                </button>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <div style={{
+                    display: 'flex',
+                    background: 'white',
+                    padding: '4px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-primary)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                    width: 'fit-content'
+                }}>
+                    <button
+                        onClick={() => setActiveTab('form')}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: activeTab === 'form' ? 'var(--theme-primary)' : 'transparent',
+                            color: activeTab === 'form' ? 'white' : 'var(--text-secondary)',
+                            boxShadow: activeTab === 'form' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (activeTab !== 'form') {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                e.currentTarget.style.color = 'var(--ae-orange)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (activeTab !== 'form') {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
+                            }
+                        }}
+                    >
+                        Cost Sheet
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('summary')}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            background: activeTab === 'summary' ? 'var(--theme-primary)' : 'transparent',
+                            color: activeTab === 'summary' ? 'white' : 'var(--text-secondary)',
+                            boxShadow: activeTab === 'summary' ? '0 2px 8px rgba(187, 77, 0, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (activeTab !== 'summary') {
+                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.05)';
+                                e.currentTarget.style.color = 'var(--ae-orange)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (activeTab !== 'summary') {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
+                            }
+                        }}
+                    >
+                        Cost Sheet Summary
+                    </button>
+                </div>
             </div>
 
             {activeTab === 'form' ? (
@@ -1092,13 +1165,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                 )}
                                                 <InputCell isReadOnly={isReadOnly} value={item.name} onChange={(v: string) => updateItem(idx, 'name', v, licenseItems, setLicenseItems)} placeholder="License Name" />
                                                 <InputCell isReadOnly={isReadOnly} value={item.type} onChange={(v: string) => updateItem(idx, 'type', v, licenseItems, setLicenseItems)} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.rate} onChange={(v: number) => updateItem(idx, 'rate', v, licenseItems, setLicenseItems)} type="number" className="no-spinner" symbol={currencySymbol} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.qty} onChange={(v: number) => updateItem(idx, 'qty', v, licenseItems, setLicenseItems)} type="number" className="no-spinner" />
-                                                <InputCell isReadOnly={isReadOnly} value={item.period} onChange={(v: string) => updateItem(idx, 'period', v, licenseItems, setLicenseItems)} />
-                                                <ReadOnlyCell value={cost} symbol={currencySymbol} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, licenseItems, setLicenseItems)} type="number" suffix="%" />
-                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} />
-                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.rate} onChange={(v: number) => updateItem(idx, 'rate', v, licenseItems, setLicenseItems)} type="number" className="no-spinner" symbol={currencySymbol} maxWidth="115px" cellWidth="140px" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.qty} onChange={(v: number) => updateItem(idx, 'qty', v, licenseItems, setLicenseItems)} type="number" className="no-spinner" maxWidth="115px" cellWidth="140px" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.period} onChange={(v: string) => updateItem(idx, 'period', v, licenseItems, setLicenseItems)} maxWidth="115px" cellWidth="140px" />
+                                                <ReadOnlyCell value={cost} symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, licenseItems, setLicenseItems)} type="number" suffix="%" maxWidth="115px" cellWidth="140px" />
+                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
+                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
                                                 <InputCell
                                                     isReadOnly={isReadOnly}
                                                     value={item.remark}
@@ -1141,10 +1214,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
                                         <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total License:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
-                                        <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
-                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
+                                        <td style={{ width: '140px' }}></td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
+                                        <ReadOnlyCell value={calculateCategoryTotals(licenseItems, 'license').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1191,14 +1264,14 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     </td>
                                                 )}
                                                 <InputCell isReadOnly={isReadOnly} value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, implementationItems, setImplementationItems)} placeholder="Resource Category" maxRows={5} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.num_resources} onChange={(v: number) => updateItem(idx, 'num_resources', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" />
-                                                <InputCell isReadOnly={isReadOnly} value={item.num_days} onChange={(v: number) => updateItem(idx, 'num_days', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" />
-                                                <ReadOnlyCell value={totalDays} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.rate_per_day} onChange={(v: number) => updateItem(idx, 'rate_per_day', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" symbol={currencySymbol} />
-                                                <ReadOnlyCell value={cost} symbol={currencySymbol} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, implementationItems, setImplementationItems)} type="number" suffix="%" />
-                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} />
-                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.num_resources} onChange={(v: number) => updateItem(idx, 'num_resources', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" maxWidth="115px" cellWidth="140px" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.num_days} onChange={(v: number) => updateItem(idx, 'num_days', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" maxWidth="115px" cellWidth="140px" />
+                                                <ReadOnlyCell value={totalDays} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.rate_per_day} onChange={(v: number) => updateItem(idx, 'rate_per_day', v, implementationItems, setImplementationItems)} type="number" className="no-spinner" symbol={currencySymbol} maxWidth="115px" cellWidth="140px" />
+                                                <ReadOnlyCell value={cost} symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, implementationItems, setImplementationItems)} type="number" suffix="%" maxWidth="115px" cellWidth="140px" />
+                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
+                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
                                                 <InputCell
                                                     isReadOnly={isReadOnly}
                                                     value={item.remark}
@@ -1241,10 +1314,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
                                         <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total Implementation:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
-                                        <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
-                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
+                                        <td style={{ width: '140px' }}></td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
+                                        <ReadOnlyCell value={calculateCategoryTotals(implementationItems, 'implementation').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1291,14 +1364,14 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     </td>
                                                 )}
                                                 <InputCell isReadOnly={isReadOnly} value={item.category} onChange={(v: string) => updateItem(idx, 'category', v, supportItems, setSupportItems)} placeholder="Resource Category" maxRows={5} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.num_resources} onChange={(v: number) => updateItem(idx, 'num_resources', v, supportItems, setSupportItems)} type="number" className="no-spinner" />
-                                                <InputCell isReadOnly={isReadOnly} value={item.num_days} onChange={(v: number) => updateItem(idx, 'num_days', v, supportItems, setSupportItems)} type="number" className="no-spinner" />
-                                                <ReadOnlyCell value={totalDays} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.rate_per_day} onChange={(v: number) => updateItem(idx, 'rate_per_day', v, supportItems, setSupportItems)} type="number" className="no-spinner" symbol={currencySymbol} />
-                                                <ReadOnlyCell value={cost} symbol={currencySymbol} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, supportItems, setSupportItems)} type="number" suffix="%" />
-                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} />
-                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.num_resources} onChange={(v: number) => updateItem(idx, 'num_resources', v, supportItems, setSupportItems)} type="number" className="no-spinner" maxWidth="115px" cellWidth="140px" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.num_days} onChange={(v: number) => updateItem(idx, 'num_days', v, supportItems, setSupportItems)} type="number" className="no-spinner" maxWidth="115px" cellWidth="140px" />
+                                                <ReadOnlyCell value={totalDays} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.rate_per_day} onChange={(v: number) => updateItem(idx, 'rate_per_day', v, supportItems, setSupportItems)} type="number" className="no-spinner" symbol={currencySymbol} maxWidth="115px" cellWidth="140px" />
+                                                <ReadOnlyCell value={cost} symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, supportItems, setSupportItems)} type="number" suffix="%" maxWidth="115px" cellWidth="140px" />
+                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
+                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
                                                 <InputCell
                                                     isReadOnly={isReadOnly}
                                                     value={item.remark}
@@ -1341,10 +1414,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
                                         <td colSpan={5} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total Support:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
-                                        <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
-                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
+                                        <td style={{ width: '140px' }}></td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
+                                        <ReadOnlyCell value={calculateCategoryTotals(supportItems, 'support').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1390,13 +1463,13 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     </td>
                                                 )}
                                                 <InputCell isReadOnly={isReadOnly} value={item.name} onChange={(v: string) => updateItem(idx, 'name', v, infraItems, setInfraItems)} placeholder="Infra Name" maxRows={5} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.qty} onChange={(v: number) => updateItem(idx, 'qty', v, infraItems, setInfraItems)} type="number" className="no-spinner" />
-                                                <InputCell isReadOnly={isReadOnly} value={item.months} onChange={(v: number) => updateItem(idx, 'months', v, infraItems, setInfraItems)} type="number" className="no-spinner" />
-                                                <InputCell isReadOnly={isReadOnly} value={item.rate_per_month} onChange={(v: number) => updateItem(idx, 'rate_per_month', v, infraItems, setInfraItems)} type="number" className="no-spinner" symbol={currencySymbol} />
-                                                <ReadOnlyCell value={cost} symbol={currencySymbol} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, infraItems, setInfraItems)} type="number" suffix="%" />
-                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} />
-                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.qty} onChange={(v: number) => updateItem(idx, 'qty', v, infraItems, setInfraItems)} type="number" className="no-spinner" maxWidth="115px" cellWidth="140px" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.months} onChange={(v: number) => updateItem(idx, 'months', v, infraItems, setInfraItems)} type="number" className="no-spinner" maxWidth="115px" cellWidth="140px" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.rate_per_month} onChange={(v: number) => updateItem(idx, 'rate_per_month', v, infraItems, setInfraItems)} type="number" className="no-spinner" symbol={currencySymbol} maxWidth="115px" cellWidth="140px" />
+                                                <ReadOnlyCell value={cost} symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, infraItems, setInfraItems)} type="number" suffix="%" maxWidth="115px" cellWidth="140px" />
+                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
+                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
                                                 <InputCell
                                                     isReadOnly={isReadOnly}
                                                     value={item.remark}
@@ -1439,10 +1512,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
                                         <td colSpan={4} style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total Infra:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
-                                        <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
-                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
+                                        <td style={{ width: '140px' }}></td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
+                                        <ReadOnlyCell value={calculateCategoryTotals(infraItems, 'infra').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>
@@ -1488,10 +1561,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                                     </td>
                                                 )}
                                                 <InputCell isReadOnly={isReadOnly} value={item.description} onChange={(v: string) => updateItem(idx, 'description', v, otherItems, setOtherItems)} placeholder="Description" type="textarea" maxRows={5} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.estimated_cost} onChange={(v: number) => updateItem(idx, 'estimated_cost', v, otherItems, setOtherItems)} type="number" className="no-spinner" symbol={currencySymbol} />
-                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, otherItems, setOtherItems)} type="number" suffix="%" />
-                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} />
-                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} />
+                                                <InputCell isReadOnly={isReadOnly} value={item.estimated_cost} onChange={(v: number) => updateItem(idx, 'estimated_cost', v, otherItems, setOtherItems)} type="number" className="no-spinner" symbol={currencySymbol} maxWidth="115px" cellWidth="140px" />
+                                                <InputCell isReadOnly={isReadOnly} value={item.margin_percentage} onChange={(v: number) => updateItem(idx, 'margin_percentage', v, otherItems, setOtherItems)} type="number" suffix="%" maxWidth="115px" cellWidth="140px" />
+                                                <ReadOnlyCell value={marginAmount} symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
+                                                <ReadOnlyCell value={price} bold symbol={currencySymbol} maxWidth="115px" showBox={true} cellWidth="140px" justifyContent="flex-start" />
                                                 <InputCell
                                                     isReadOnly={isReadOnly}
                                                     value={item.remark}
@@ -1534,10 +1607,10 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
                                     <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                                         {!isReadOnly && <td></td>}
                                         <td style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.9rem', color: 'black', fontWeight: 700 }}>Total Other:</td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
-                                        <td></td>
-                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
-                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} />
+                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catCost} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
+                                        <td style={{ width: '140px' }}></td>
+                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catMarginAmount} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
+                                        <ReadOnlyCell value={calculateCategoryTotals(otherItems, 'other').catPrice} symbol={currencySymbol} bold color="var(--theme-primary)" fontSize="0.95rem" fontWeight={800} cellWidth="140px" textAlign="left" />
                                         <td></td>
                                         {!isReadOnly && <td></td>}
                                     </tr>

@@ -880,7 +880,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                     <div style={{ borderTop: '1px solid #E0E6ED', paddingTop: '24px', marginTop: '24px' }}>
                         <SectionHeader title="Value" />
 
-                        <div className="ae-table-wrapper" style={{ overflowX: 'auto', border: '1px solid var(--border-primary)', borderRadius: '8px' }}>
+                        <div className="ae-table-wrapper" style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '12px' }}>
                                 <thead>
                                     <tr style={{ background: 'var(--bg-accent)' }}>
@@ -1122,8 +1122,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         <SectionHeader title="Team" />
                         <div className="ae-grid-responsive-5">
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Inside Salesperson Name</label>
                                 <SearchableDropdown
-                                    label="Inside Salesperson Name"
                                     options={insideSalespersonNames}
                                     value={formData.inside_salesperson}
                                     onChange={(val) => handleInputChange({ target: { name: 'inside_salesperson', value: val } } as any)}
@@ -1132,8 +1132,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Inside Sales Head</label>
                                 <SearchableDropdown
-                                    label="Inside Sales Head"
                                     options={insideSalesHeads}
                                     value={formData.inside_sales_head}
                                     onChange={(val) => handleInputChange({ target: { name: 'inside_sales_head', value: val } } as any)}
@@ -1142,8 +1142,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Salesperson Name</label>
                                 <SearchableDropdown
-                                    label="Salesperson Name"
                                     options={salespersonNames}
                                     value={formData.salesperson_name}
                                     onChange={(val) => handleInputChange({ target: { name: 'salesperson_name', value: val } } as any)}
@@ -1152,8 +1152,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Sales Head</label>
                                 <SearchableDropdown
-                                    label="Sales Head"
                                     options={salesHeads}
                                     value={formData.sales_head}
                                     onChange={(val) => handleInputChange({ target: { name: 'sales_head', value: val } } as any)}
@@ -1162,8 +1162,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Manager</label>
                                 <SearchableDropdown
-                                    label="Project Manager"
                                     options={projectManagers}
                                     value={formData.project_manager}
                                     onChange={(val) => handleInputChange({ target: { name: 'project_manager', value: val } } as any)}
@@ -1172,8 +1172,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                 />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'black', display: 'block', marginBottom: '4px' }}>Project Manager Head</label>
                                 <SearchableDropdown
-                                    label="Project Manager Head"
                                     options={projectManagerHeads}
                                     value={formData.project_manager_head}
                                     onChange={(val) => handleInputChange({ target: { name: 'project_manager_head', value: val } } as any)}

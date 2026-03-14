@@ -207,8 +207,7 @@
         <tr>
             <td class="company-info">
                 <div class="company-name">{{ company.name|upper }}</div>
-                <div>{{ company.address_line_1 }}{% if company.address_line_2 %}, {{ company.address_line_2 }}{% endif
-                    %}</div>
+                <div>{{ company.address_line_1 }}{% if company.address_line_2 %}, {{ company.address_line_2 }}{% endif %}</div>
                 <div>{{ company.city }}{% if company.pincode %} - {{ company.pincode }}{% endif %}</div>
                 {% if company.gstin %}
                 <div><span class="bold blue">GSTIN/UIN:</span> {{ company.gstin }}</div>
@@ -251,8 +250,7 @@
                     {% if po_number %}
                     <tr>
                         <td class="meta-label">PO & DATE</td>
-                        <td class="meta-value">: {{ po_number }} {% if po_date %} - {{ po_date|date:"d-M-Y" }}{% endif
-                            %}</td>
+                        <td class="meta-value">: {{ po_number }} {% if po_date %} - {{ po_date|date:"d-M-Y" }}{% endif %}</td>
                     </tr>
                     {% endif %}
                     {% if estimate.deal.deal_id %}
@@ -273,8 +271,7 @@
             <td class="address-col">
                 <div class="address-title blue">Buyer</div>
                 <div class="bold">{{ estimate.deal.customer.name }}</div>
-                <div>{{ estimate.deal.customer.address|linebreaksbr|default:estimate.deal.customer.state|linebreaksbr }}
-                </div>
+                <div>{{ estimate.deal.customer.address|linebreaksbr|default:estimate.deal.customer.state|linebreaksbr }}</div>
                 {% if estimate.deal.customer.gstin %}
                 <div><span class="bold">GSTIN/UIN:</span> {{ estimate.deal.customer.gstin }}</div>
                 {% endif %}
@@ -291,8 +288,7 @@
             <td class="address-col">
                 <div class="address-title blue">Consignee</div>
                 <div class="bold">{{ estimate.deal.customer.name }}</div>
-                <div>{{ estimate.deal.customer.address|linebreaksbr|default:estimate.deal.customer.state|linebreaksbr }}
-                </div>
+                <div>{{ estimate.deal.customer.address|linebreaksbr|default:estimate.deal.customer.state|linebreaksbr }}</div>
                 {% if estimate.deal.customer.gstin %}
                 <div><span class="bold">GSTIN/UIN:</span> {{ estimate.deal.customer.gstin }}</div>
                 {% endif %}

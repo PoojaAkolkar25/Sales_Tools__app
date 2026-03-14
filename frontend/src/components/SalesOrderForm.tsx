@@ -88,6 +88,144 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
 
     const [activeAction, setActiveAction] = useState<'draft' | 'submit' | 'cancel' | 'approve' | 'reject' | 'revert'>('submit');
     const { showNotification } = useNotification();
+    
+    // --- Date Typing Logic (from Deal Form) ---
+    const [dateTypingValues, setDateTypingValues] = useState<{ [key: string]: string }>({});
+
+    const handleDateFocus = (name: string, isItemDate: boolean = false, itemIndex: number = -1) => {
+        const stateKey = isItemDate ? `${name}_${itemIndex}` : name;
+        if (!dateTypingValues[stateKey]) {
+            let targetValue = '';
+            if (isItemDate && itemIndex >= 0) {
+                targetValue = salesOrder.items[itemIndex]?.[name] || '';
+            } else {
+                targetValue = salesOrder[name] || '';
+            }
+
+            if (targetValue) {
+                const parts = targetValue.split('-');
+                if (parts.length === 3) {
+                    const [y, m, d] = parts;
+                    setDateTypingValues(prev => ({ ...prev, [stateKey]: `${d}-${m}-${y}` }));
+                }
+            }
+        }
+    };
+
+    const handleDateInputChange = (name: string, value: string, isItemDate: boolean = false, itemIndex: number = -1) => {
+        const stateKey = isItemDate ? `${name}_${itemIndex}` : name;
+        const prevValue = dateTypingValues[stateKey] || '';
+        const isDeletion = value.length < prevValue.length;
+
+        let processedValue = value;
+        if (isDeletion && prevValue.endsWith('-') && !value.endsWith('-')) {
+            processedValue = value.slice(0, -1);
+        }
+
+        let formatted = '';
+
+        if (processedValue.includes('-') || (prevValue.includes('-') && isDeletion)) {
+            const parts = processedValue.split('-');
+            const dayStr = (parts[0] || '').replace(/\D/g, '').substring(0, 2);
+            const monthStr = (parts[1] || '').replace(/\D/g, '').substring(0, 2);
+            const yearStr = (parts[2] || '').replace(/\D/g, '').substring(0, 4);
+
+            if (dayStr.length > 0) {
+                if (parseInt(dayStr[0]) > 3) return;
+                if (dayStr.length === 2 && (parseInt(dayStr) > 31 || dayStr === '00')) return;
+            }
+            if (monthStr.length > 0) {
+                if (parseInt(monthStr[0]) > 1) return;
+                if (monthStr.length === 2 && (parseInt(monthStr) > 12 || monthStr === '00')) return;
+            }
+
+            formatted = dayStr;
+            if (dayStr.length === 2 || parts.length > 1) {
+                formatted += '-';
+                if (monthStr.length > 0 || parts.length > 1) {
+                    formatted += monthStr;
+                    if (monthStr.length === 2 || parts.length > 2) {
+                        formatted += '-';
+                        if (yearStr.length > 0) {
+                            formatted += yearStr;
+                        }
+                    }
+                }
+            }
+
+            if (isDeletion && formatted.endsWith('-') && !processedValue.endsWith('-')) {
+                formatted = formatted.slice(0, -1);
+            }
+        } else {
+            let digits = processedValue.replace(/\D/g, '');
+
+            if (digits.length > 0) {
+                if (parseInt(digits[0]) > 3) return;
+                if (digits.length >= 2) {
+                    const d = parseInt(digits.substring(0, 2));
+                    if (d > 31 || d === 0) if (digits.length === 2) return;
+                    if (digits.length >= 3) {
+                        if (parseInt(digits[2]) > 1) return;
+                        if (digits.length >= 4) {
+                            const m = parseInt(digits.substring(2, 4));
+                            if (m > 12 || m === 0) return;
+                        }
+                    }
+                }
+            }
+
+            if (digits.length > 0) {
+                formatted = digits.substring(0, 2);
+                if (digits.length > 2 || (digits.length === 2 && !isDeletion)) {
+                    formatted += '-';
+                    if (digits.length > 2) {
+                        formatted += digits.substring(2, 4);
+                        if (digits.length > 4 || (digits.length === 4 && !isDeletion)) {
+                            formatted += '-';
+                            if (digits.length > 4) {
+                                formatted += digits.substring(4, 8);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        setDateTypingValues(prev => ({ ...prev, [stateKey]: formatted }));
+
+        if (formatted.length < 10) {
+            if (isItemDate && itemIndex >= 0) {
+                if (salesOrder.items[itemIndex]?.[name] !== '') {
+                    handleItemChange(itemIndex, name, '');
+                }
+            } else {
+                if (salesOrder[name] !== '') {
+                    setSalesOrder((prev: any) => ({ ...prev, [name]: '' }));
+                }
+            }
+        } else {
+            const [d, m, y] = formatted.split('-').map(Number);
+            const isoDate = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+            if (isItemDate && itemIndex >= 0) {
+                if (salesOrder.items[itemIndex]?.[name] !== isoDate) {
+                    handleItemChange(itemIndex, name, isoDate);
+                }
+            } else {
+                if (salesOrder[name] !== isoDate) {
+                    setSalesOrder((prev: any) => ({ ...prev, [name]: isoDate }));
+                }
+            }
+        }
+    };
+
+    const handleDateBlur = (name: string, isItemDate: boolean = false, itemIndex: number = -1) => {
+        const stateKey = isItemDate ? `${name}_${itemIndex}` : name;
+        setDateTypingValues(prev => {
+            const next = { ...prev };
+            delete next[stateKey];
+            return next;
+        });
+    };
 
     useEffect(() => {
         fetchCustomers();
@@ -752,32 +890,48 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                         {salesOrder.estimate_date ? formatToAppDate(salesOrder.estimate_date) : ''}
                                     </div>
                                 ) : (
-                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
                                         <input
                                             type="text"
-                                            value={salesOrder.estimate_date ? formatToAppDate(salesOrder.estimate_date) : ''}
-                                            readOnly
+                                            name="estimate_date"
+                                            value={dateTypingValues['estimate_date'] !== undefined ? dateTypingValues['estimate_date'] : formatToAppDate(salesOrder.estimate_date)}
+                                            placeholder="DD-MM-YYYY"
                                             className="ae-input"
-                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px' }}
-                                            onClick={(e) => {
-                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
-                                                if (dateInput) dateInput.showPicker();
-                                            }}
-                                            placeholder="Enter date"
+                                            style={{ width: '100%', paddingRight: '32px' }}
+                                            onChange={(e) => handleDateInputChange('estimate_date', e.target.value)}
+                                            onBlur={() => handleDateBlur('estimate_date')}
+                                            onFocus={() => handleDateFocus('estimate_date')}
                                         />
                                         <input
-                                            name="estimate_date"
                                             type="date"
+                                            id="estimate-date-picker"
+                                            name="estimate_date"
                                             value={salesOrder.estimate_date || ''}
                                             onChange={handleInputChange}
                                             style={{
                                                 position: 'absolute',
-                                                visibility: 'hidden',
-                                                width: 0,
-                                                height: 0
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                opacity: 0,
+                                                cursor: 'pointer',
+                                                pointerEvents: 'none'
                                             }}
                                         />
-                                        <Calendar size={14} style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
+                                        <Calendar 
+                                            size={16} 
+                                            style={{ 
+                                                position: 'absolute', 
+                                                right: '10px', 
+                                                color: '#718096', 
+                                                cursor: 'pointer' 
+                                            }} 
+                                            onClick={() => {
+                                                const picker = document.getElementById('estimate-date-picker') as HTMLInputElement;
+                                                if (picker) picker.showPicker?.();
+                                            }}
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -787,32 +941,48 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                 {isSubmitted ? (
                                     <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px' }}>{salesOrder.po_date ? formatToAppDate(salesOrder.po_date) : ''}</div>
                                 ) : (
-                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
                                         <input
                                             type="text"
-                                            value={salesOrder.po_date ? formatToAppDate(salesOrder.po_date) : ''}
-                                            readOnly
+                                            name="po_date"
+                                            value={dateTypingValues['po_date'] !== undefined ? dateTypingValues['po_date'] : formatToAppDate(salesOrder.po_date)}
+                                            placeholder="DD-MM-YYYY"
                                             className="ae-input"
-                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px' }}
-                                            onClick={(e) => {
-                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
-                                                if (dateInput) dateInput.showPicker();
-                                            }}
-                                            placeholder="Enter date"
+                                            style={{ width: '100%', paddingRight: '32px' }}
+                                            onChange={(e) => handleDateInputChange('po_date', e.target.value)}
+                                            onBlur={() => handleDateBlur('po_date')}
+                                            onFocus={() => handleDateFocus('po_date')}
                                         />
                                         <input
-                                            name="po_date"
                                             type="date"
+                                            id="po-date-picker"
+                                            name="po_date"
                                             value={salesOrder.po_date || ''}
                                             onChange={handleInputChange}
                                             style={{
                                                 position: 'absolute',
-                                                visibility: 'hidden',
-                                                width: 0,
-                                                height: 0
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                opacity: 0,
+                                                cursor: 'pointer',
+                                                pointerEvents: 'none'
                                             }}
                                         />
-                                        <Calendar size={14} style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
+                                        <Calendar 
+                                            size={16} 
+                                            style={{ 
+                                                position: 'absolute', 
+                                                right: '10px', 
+                                                color: '#718096', 
+                                                cursor: 'pointer' 
+                                            }} 
+                                            onClick={() => {
+                                                const picker = document.getElementById('po-date-picker') as HTMLInputElement;
+                                                if (picker) picker.showPicker?.();
+                                            }}
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -822,32 +992,48 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                 {isSubmitted ? (
                                     <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px' }}>{salesOrder.po_from_date ? formatToAppDate(salesOrder.po_from_date) : ''}</div>
                                 ) : (
-                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
                                         <input
                                             type="text"
-                                            value={salesOrder.po_from_date ? formatToAppDate(salesOrder.po_from_date) : ''}
-                                            readOnly
+                                            name="po_from_date"
+                                            value={dateTypingValues['po_from_date'] !== undefined ? dateTypingValues['po_from_date'] : formatToAppDate(salesOrder.po_from_date)}
+                                            placeholder="DD-MM-YYYY"
                                             className="ae-input"
-                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px' }}
-                                            onClick={(e) => {
-                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
-                                                if (dateInput) dateInput.showPicker();
-                                            }}
-                                            placeholder="Enter date"
+                                            style={{ width: '100%', paddingRight: '32px' }}
+                                            onChange={(e) => handleDateInputChange('po_from_date', e.target.value)}
+                                            onBlur={() => handleDateBlur('po_from_date')}
+                                            onFocus={() => handleDateFocus('po_from_date')}
                                         />
                                         <input
-                                            name="po_from_date"
                                             type="date"
+                                            id="po-from-date-picker"
+                                            name="po_from_date"
                                             value={salesOrder.po_from_date || ''}
                                             onChange={handleInputChange}
                                             style={{
                                                 position: 'absolute',
-                                                visibility: 'hidden',
-                                                width: 0,
-                                                height: 0
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                opacity: 0,
+                                                cursor: 'pointer',
+                                                pointerEvents: 'none'
                                             }}
                                         />
-                                        <Calendar size={14} style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
+                                        <Calendar 
+                                            size={16} 
+                                            style={{ 
+                                                position: 'absolute', 
+                                                right: '10px', 
+                                                color: '#718096', 
+                                                cursor: 'pointer' 
+                                            }} 
+                                            onClick={() => {
+                                                const picker = document.getElementById('po-from-date-picker') as HTMLInputElement;
+                                                if (picker) picker.showPicker?.();
+                                            }}
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -857,32 +1043,48 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                 {isSubmitted ? (
                                     <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px' }}>{salesOrder.po_to_date ? formatToAppDate(salesOrder.po_to_date) : ''}</div>
                                 ) : (
-                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
                                         <input
                                             type="text"
-                                            value={salesOrder.po_to_date ? formatToAppDate(salesOrder.po_to_date) : ''}
-                                            readOnly
+                                            name="po_to_date"
+                                            value={dateTypingValues['po_to_date'] !== undefined ? dateTypingValues['po_to_date'] : formatToAppDate(salesOrder.po_to_date)}
+                                            placeholder="DD-MM-YYYY"
                                             className="ae-input"
-                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px' }}
-                                            onClick={(e) => {
-                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
-                                                if (dateInput) dateInput.showPicker();
-                                            }}
-                                            placeholder="Enter date"
+                                            style={{ width: '100%', paddingRight: '32px' }}
+                                            onChange={(e) => handleDateInputChange('po_to_date', e.target.value)}
+                                            onBlur={() => handleDateBlur('po_to_date')}
+                                            onFocus={() => handleDateFocus('po_to_date')}
                                         />
                                         <input
-                                            name="po_to_date"
                                             type="date"
+                                            id="po-to-date-picker"
+                                            name="po_to_date"
                                             value={salesOrder.po_to_date || ''}
                                             onChange={handleInputChange}
                                             style={{
                                                 position: 'absolute',
-                                                visibility: 'hidden',
-                                                width: 0,
-                                                height: 0
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                opacity: 0,
+                                                cursor: 'pointer',
+                                                pointerEvents: 'none'
                                             }}
                                         />
-                                        <Calendar size={14} style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
+                                        <Calendar 
+                                            size={16} 
+                                            style={{ 
+                                                position: 'absolute', 
+                                                right: '10px', 
+                                                color: '#718096', 
+                                                cursor: 'pointer' 
+                                            }} 
+                                            onClick={() => {
+                                                const picker = document.getElementById('po-to-date-picker') as HTMLInputElement;
+                                                if (picker) picker.showPicker?.();
+                                            }}
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -915,33 +1117,50 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                 {isSubmitted ? (
                                     <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '34px', ...getHighlightStyle(salesOrder.order_date) }}>{salesOrder.order_date ? formatToAppDate(salesOrder.order_date) : ''}</div>
                                 ) : (
-                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
                                         <input
                                             type="text"
-                                            value={salesOrder.order_date ? formatToAppDate(salesOrder.order_date) : ''}
-                                            readOnly
+                                            name="order_date"
+                                            value={dateTypingValues['order_date'] !== undefined ? dateTypingValues['order_date'] : formatToAppDate(salesOrder.order_date)}
+                                            placeholder="DD-MM-YYYY"
                                             className="ae-input"
-                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '32px', height: '34px', ...getHighlightStyle(salesOrder.order_date) }}
-                                            onClick={(e) => {
-                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
-                                                if (dateInput) dateInput.showPicker();
-                                            }}
-                                            placeholder="Enter date"
+                                            style={{ width: '100%', paddingRight: '32px', height: '34px', ...getHighlightStyle(salesOrder.order_date) }}
+                                            onChange={(e) => handleDateInputChange('order_date', e.target.value)}
+                                            onBlur={() => handleDateBlur('order_date')}
+                                            onFocus={() => handleDateFocus('order_date')}
                                         />
                                         <input
-                                            name="order_date"
                                             type="date"
+                                            id="order-date-picker"
+                                            name="order_date"
                                             value={salesOrder.order_date || ''}
                                             onChange={handleInputChange}
                                             tabIndex={-1}
                                             style={{
                                                 position: 'absolute',
-                                                visibility: 'hidden',
-                                                width: 0,
-                                                height: 0
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                opacity: 0,
+                                                cursor: 'pointer',
+                                                pointerEvents: 'none'
                                             }}
                                         />
-                                        <Calendar size={14} focusable="false" style={{ position: 'absolute', right: '10px', color: '#718096', pointerEvents: 'none' }} />
+                                        <Calendar 
+                                            size={16} 
+                                            focusable="false" 
+                                            style={{ 
+                                                position: 'absolute', 
+                                                right: '10px', 
+                                                color: '#718096', 
+                                                cursor: 'pointer' 
+                                            }} 
+                                            onClick={() => {
+                                                const picker = document.getElementById('order-date-picker') as HTMLInputElement;
+                                                if (picker) picker.showPicker?.();
+                                            }}
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -1237,32 +1456,50 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                 {isSubmitted ? (
                                                     <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '30px', fontSize: '0.85rem' }}>{item.start_date ? formatToAppDate(item.start_date) : ''}</div>
                                                 ) : (
-                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '140px' }}>
+                                                    <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
                                                         <input
                                                             type="text"
-                                                            value={item.start_date ? formatToAppDate(item.start_date) : ''}
-                                                            readOnly
+                                                            name={`start_date_${index}`}
+                                                            value={dateTypingValues[`start_date_${index}`] !== undefined ? dateTypingValues[`start_date_${index}`] : formatToAppDate(item.start_date)}
+                                                            placeholder="DD-MM-YYYY"
                                                             className="ae-input"
-                                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '28px', fontSize: '0.85rem', width: '100%', height: '30px' }}
-                                                            onClick={(e) => {
-                                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
-                                                                if (dateInput) dateInput.showPicker();
-                                                            }}
-                                                            placeholder="Enter date"
+                                                            style={{ width: '100%', paddingRight: '28px', fontSize: '0.85rem', height: '30px' }}
+                                                            onChange={(e) => handleDateInputChange('start_date', e.target.value, true, index)}
+                                                            onBlur={() => handleDateBlur('start_date', true, index)}
+                                                            onFocus={() => handleDateFocus('start_date', true, index)}
                                                         />
                                                         <input
                                                             type="date"
+                                                            id={`start-date-picker-${index}`}
+                                                            name={`start_date_${index}`}
                                                             value={item.start_date || ''}
                                                             onChange={(e) => handleItemChange(index, 'start_date', e.target.value)}
                                                             tabIndex={-1}
                                                             style={{
                                                                 position: 'absolute',
-                                                                visibility: 'hidden',
-                                                                width: 0,
-                                                                height: 0
+                                                                top: 0,
+                                                                left: 0,
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                opacity: 0,
+                                                                cursor: 'pointer',
+                                                                pointerEvents: 'none'
                                                             }}
                                                         />
-                                                        <Calendar size={14} focusable="false" style={{ position: 'absolute', right: '8px', color: '#718096', pointerEvents: 'none' }} />
+                                                        <Calendar 
+                                                            size={14} 
+                                                            focusable="false" 
+                                                            style={{ 
+                                                                position: 'absolute', 
+                                                                right: '8px', 
+                                                                color: '#718096', 
+                                                                cursor: 'pointer' 
+                                                            }} 
+                                                            onClick={() => {
+                                                                const picker = document.getElementById(`start-date-picker-${index}`) as HTMLInputElement;
+                                                                if (picker) picker.showPicker?.();
+                                                            }}
+                                                        />
                                                     </div>
                                                 )}
                                             </td>
@@ -1270,32 +1507,50 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                                 {isSubmitted ? (
                                                     <div className="ae-input !bg-gray-50 flex items-center" style={{ minHeight: '30px', fontSize: '0.85rem' }}>{item.end_date ? formatToAppDate(item.end_date) : ''}</div>
                                                 ) : (
-                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '140px' }}>
+                                                    <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
                                                         <input
                                                             type="text"
-                                                            value={item.end_date ? formatToAppDate(item.end_date) : ''}
-                                                            readOnly
+                                                            name={`end_date_${index}`}
+                                                            value={dateTypingValues[`end_date_${index}`] !== undefined ? dateTypingValues[`end_date_${index}`] : formatToAppDate(item.end_date)}
+                                                            placeholder="DD-MM-YYYY"
                                                             className="ae-input"
-                                                            style={{ backgroundColor: 'white', cursor: 'pointer', paddingRight: '28px', fontSize: '0.85rem', width: '100%', height: '30px' }}
-                                                            onClick={(e) => {
-                                                                const dateInput = e.currentTarget.nextElementSibling as HTMLInputElement;
-                                                                if (dateInput) dateInput.showPicker();
-                                                            }}
-                                                            placeholder="Enter date"
+                                                            style={{ width: '100%', paddingRight: '28px', fontSize: '0.85rem', height: '30px' }}
+                                                            onChange={(e) => handleDateInputChange('end_date', e.target.value, true, index)}
+                                                            onBlur={() => handleDateBlur('end_date', true, index)}
+                                                            onFocus={() => handleDateFocus('end_date', true, index)}
                                                         />
                                                         <input
                                                             type="date"
+                                                            id={`end-date-picker-${index}`}
+                                                            name={`end_date_${index}`}
                                                             value={item.end_date || ''}
                                                             onChange={(e) => handleItemChange(index, 'end_date', e.target.value)}
                                                             tabIndex={-1}
                                                             style={{
                                                                 position: 'absolute',
-                                                                visibility: 'hidden',
-                                                                width: 0,
-                                                                height: 0
+                                                                top: 0,
+                                                                left: 0,
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                opacity: 0,
+                                                                cursor: 'pointer',
+                                                                pointerEvents: 'none'
                                                             }}
                                                         />
-                                                        <Calendar size={14} focusable="false" style={{ position: 'absolute', right: '8px', color: '#718096', pointerEvents: 'none' }} />
+                                                        <Calendar 
+                                                            size={14} 
+                                                            focusable="false" 
+                                                            style={{ 
+                                                                position: 'absolute', 
+                                                                right: '8px', 
+                                                                color: '#718096', 
+                                                                cursor: 'pointer' 
+                                                            }} 
+                                                            onClick={() => {
+                                                                const picker = document.getElementById(`end-date-picker-${index}`) as HTMLInputElement;
+                                                                if (picker) picker.showPicker?.();
+                                                            }}
+                                                        />
                                                     </div>
                                                 )}
                                             </td>

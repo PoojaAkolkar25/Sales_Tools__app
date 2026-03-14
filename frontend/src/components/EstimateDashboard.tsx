@@ -14,7 +14,8 @@ import {
     RefreshCcw,
     Paperclip,
     Eye,
-    Check
+    Check,
+    Mails
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -248,6 +249,8 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
         subject: string;
         body: string;
         templateType: keyof typeof EMAIL_TEMPLATES;
+        has_proposal: boolean;
+        proposal_filename: string;
     }>({
         open: false,
         estimateId: null,
@@ -256,7 +259,9 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
         bcc: '',
         subject: '',
         body: '',
-        templateType: 'standard'
+        templateType: 'standard',
+        has_proposal: false,
+        proposal_filename: ''
     });
     const [sending, setSending] = useState(false);
 
@@ -445,7 +450,8 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
                 subject: emailModal.subject,
                 body: emailModal.body
             });
-            showNotification('Email sent successfully', 'success');
+            showNotification('mail sent successfully', 'success');
+            setEmailModal(prev => ({ ...prev, open: false }));
 
             // If estimate is not yet submitted, trigger the submit status change
             const est = estimates.find(e => e.id === emailModal.estimateId);
@@ -457,8 +463,6 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
                     console.error('Status update failed after email', subErr);
                 }
             }
-
-            setEmailModal({ ...emailModal, open: false });
         } catch (error: any) {
             console.error('Error sending email', error);
             showNotification(error.response?.data?.error || 'Failed to send email', 'error');
@@ -473,7 +477,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
             const response = await api.get(`/estimates/${id}/download_pdf/`, {
                 responseType: 'blob'
             });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', `Estimate_${estId}_Combined.pdf`);
@@ -482,6 +486,18 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
             link.parentNode?.removeChild(link);
         } catch (error) {
             showNotification('Failed to download PDF', 'error');
+        }
+    };
+
+    const handleViewPDF = async (id: number) => {
+        try {
+            const response = await api.get(`/estimates/${id}/download_pdf/`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+            window.open(url, '_blank');
+        } catch (error) {
+            showNotification('Failed to view PDF', 'error');
         }
     };
 
@@ -520,9 +536,9 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
 
     const statusFlow = [
         { label: `Draft (${counts.draft})`, value: 'DRAFT', color: 'var(--text-secondary)' },
-        { label: `Submitted (${counts.submitted})`, value: 'SUBMITTED', color: 'var(--ae-blue)' },
         { label: `Pending Approval (${counts.pending})`, value: 'PENDING_APPROVAL', color: 'var(--ae-navy)' },
         { label: `Approved (${counts.approved})`, value: 'APPROVED', color: 'var(--ae-green)' },
+        { label: `Submitted (${counts.submitted})`, value: 'SUBMITTED', color: 'var(--ae-blue)' },
         { label: `Rejected (${counts.rejected})`, value: 'REJECTED', color: '#E53E3E' },
         { label: `Rewound (${counts.rewound})`, value: 'REWOUND', color: '#718096' },
         { label: `All (${counts.all})`, value: '', color: 'var(--text-secondary)' }
@@ -1132,55 +1148,62 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
                                                         >
                                                             <Download size={16} />
                                                         </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                const companyName = "Automation Edge";
-                                                                const subject = EMAIL_TEMPLATES.standard.subject(companyName, est.customer_name || '', est.estimate_id);
-                                                                const yourName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || "Sales Team" : "Sales Team";
+                                                        {(filters.status === 'APPROVED' || filters.status === 'SUBMITTED') && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    const companyName = "Automation Edge";
+                                                                    const subject = EMAIL_TEMPLATES.standard.subject(companyName, est.customer_name || '', est.estimate_id);
+                                                                    const yourName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || "Sales Team" : "Sales Team";
 
-                                                                const estDate = est.estimate_date ? new Date(est.estimate_date) : new Date();
-                                                                const expDate = new Date(estDate);
-                                                                expDate.setDate(expDate.getDate() + 30);
-                                                                const expirationDate = expDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                                                                    const estDate = est.estimate_date ? new Date(est.estimate_date) : new Date();
+                                                                    const expDate = new Date(estDate);
+                                                                    expDate.setDate(expDate.getDate() + 30);
+                                                                    const expirationDate = expDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-                                                                const body = EMAIL_TEMPLATES.standard.body(est.customer_name, est.project_name, companyName, expirationDate, yourName, est.estimate_id);
-                                                                setEmailModal({
-                                                                    ...emailModal,
-                                                                    open: true,
-                                                                    estimateId: est.id,
-                                                                    to: est.customer_email || '',
-                                                                    subject,
-                                                                    body,
-                                                                    templateType: 'standard'
-                                                                });
-                                                            }}
-                                                            style={{
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                width: '32px',
-                                                                height: '32px',
-                                                                background: 'rgba(255, 107, 0, 0.08)',
-                                                                color: 'var(--theme-primary)',
-                                                                border: '1px solid rgba(255, 107, 0, 0.15)',
-                                                                borderRadius: '8px',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s',
-                                                            }}
-                                                            onMouseEnter={(e) => {
-                                                                e.currentTarget.style.background = 'var(--theme-primary)';
-                                                                e.currentTarget.style.color = 'white';
-                                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
-                                                                e.currentTarget.style.color = 'var(--theme-primary)';
-                                                                e.currentTarget.style.boxShadow = 'none';
-                                                            }}
-                                                            title="Send via Email"
-                                                        >
-                                                            <Mail size={16} />
-                                                        </button>
+                                                                    const body = EMAIL_TEMPLATES.standard.body(est.customer_name, est.project_name, companyName, expirationDate, yourName, est.estimate_id);
+                                                                    const proposals = est.proposals || [];
+                                                                    const latestProposal = proposals.length > 0 ? [...proposals].sort((a, b) => b.version - a.version)[0] : null;
+
+                                                                    setEmailModal({
+                                                                        ...emailModal,
+                                                                        open: true,
+                                                                        estimateId: est.id,
+                                                                        to: est.customer_email || '',
+                                                                        subject,
+                                                                        body,
+                                                                        templateType: 'standard',
+                                                                        has_proposal: !!latestProposal,
+                                                                        proposal_filename: latestProposal?.filename || ''
+                                                                    });
+                                                                }}
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    width: '32px',
+                                                                    height: '32px',
+                                                                    background: 'rgba(255, 107, 0, 0.08)',
+                                                                    color: 'var(--theme-primary)',
+                                                                    border: '1px solid rgba(255, 107, 0, 0.15)',
+                                                                    borderRadius: '8px',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.2s',
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.currentTarget.style.background = 'var(--theme-primary)';
+                                                                    e.currentTarget.style.color = 'white';
+                                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 0, 0.25)';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.background = 'rgba(255, 107, 0, 0.08)';
+                                                                    e.currentTarget.style.color = 'var(--theme-primary)';
+                                                                    e.currentTarget.style.boxShadow = 'none';
+                                                                }}
+                                                                title={est.status === 'SUBMITTED' ? "Resend Email" : "Send via Email"}
+                                                            >
+                                                                {est.status === 'SUBMITTED' ? <Mails size={16} /> : <Mail size={16} />}
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -1258,6 +1281,36 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
                                             style={{ minHeight: '180px', padding: '12px' }}
                                             placeholder="Write your message here..."
                                         />
+                                    </div>
+
+                                    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Attached Files:</label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                            <Paperclip size={18} color="#64748b" />
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                                                <span
+                                                    onClick={() => handleViewPDF(emailModal.estimateId!)}
+                                                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--theme-primary)', fontWeight: 600, textDecoration: 'underline' }}
+                                                >
+                                                    <Eye size={14} /> Combined Estimate & Proposal PDF
+                                                </span>
+                                                {emailModal.has_proposal && (
+                                                    <span
+                                                        onClick={() => {
+                                                            const est = estimates.find(e => e.id === emailModal.estimateId);
+                                                            const proposals = est?.proposals || [];
+                                                            const latestProposal = proposals.length > 0 ? [...proposals].sort((a, b) => b.version - a.version)[0] : null;
+                                                            if (latestProposal?.file) {
+                                                                window.open(latestProposal.file, '_blank');
+                                                            }
+                                                        }}
+                                                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--theme-primary)', fontWeight: 600, textDecoration: 'underline' }}
+                                                    >
+                                                        <Eye size={14} /> {emailModal.proposal_filename}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '32px' }}>
