@@ -530,10 +530,13 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                 <tbody>
                                     {(() => {
                                         const filteredItems = getFilteredMilestones();
-                                        return filteredItems.map(({ milestone, originalIndex }, visibleIndex) => {
-                                            const isInvoiced = milestone.status === 'INVOICED';
+                                        const isFullyBilled = selectedSO && milestones.length > 0 && 
+                                            milestones.filter(m => m.status === 'INVOICED').reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0) >= parseFloat(selectedSO.total_amount) - 0.01;
 
-                                            const isDisabled = !!milestone.id || isInvoiced || !!viewSingleMilestoneId;
+                                        return filteredItems.map(({ milestone, originalIndex }, visibleIndex) => {
+                                                const isInvoiced = milestone.status === 'INVOICED';
+
+                                                const isDisabled = isInvoiced || !!viewSingleMilestoneId;
                                             const isFocused = focusedMilestoneId === milestone.id;
                                             return (
                                                 <tr
@@ -546,7 +549,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                                                     }}
                                                 >
                                                     <td style={{ padding: '4px 0', textAlign: 'center', width: '35px' }}>
-                                                        {visibleIndex === filteredItems.length - 1 && !viewSingleMilestoneId && (
+                                                        {visibleIndex === filteredItems.length - 1 && !viewSingleMilestoneId && !isFullyBilled && (
                                                             <button
                                                                 type="button"
                                                                 onClick={handleAddMilestone}
@@ -904,7 +907,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
                 }}>
                     <button
                         onClick={handleSave}
-                        disabled={saving || !selectedSO}
+                        disabled={saving || !selectedSO || (selectedSO && milestones.length > 0 && milestones.filter(m => m.status === 'INVOICED').reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0) >= parseFloat(selectedSO.total_amount) - 0.01)}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
