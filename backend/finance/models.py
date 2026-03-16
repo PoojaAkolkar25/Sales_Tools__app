@@ -1,4 +1,5 @@
 from django.db import models  # type: ignore
+from django.utils import timezone  # type: ignore
 from leads.models import Lead  # type: ignore
 from deals.models import GSTCustomerType
 import re
@@ -654,3 +655,15 @@ class FinancialYear(models.Model):
 
     def __str__(self):
         return f"{self.label} ({self.code})"
+
+class ExchangeRate(models.Model):
+    currency_code = models.CharField(max_length=10)
+    rate_to_inr = models.DecimalField(max_digits=20, decimal_places=6)
+    date = models.DateField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('currency_code', 'date')
+        verbose_name_plural = "Exchange Rates"
+
+    def __str__(self):
+        return f"{self.currency_code} to INR: {self.rate_to_inr} on {self.date}"

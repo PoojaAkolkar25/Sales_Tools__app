@@ -56,7 +56,18 @@ class EstimateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Estimate
-        fields = '__all__'
+        fields = [
+            'id', 'estimate_id', 'cost_sheet', 'deal', 'version', 'status',
+            'estimate_date', 'subscription_from', 'subscription_to', 'description_memo',
+            'terms_conditions', 'markup_adjustment', 'commercial_terms',
+            'total_cost', 'total_margin', 'total_price', 'parent_estimate',
+            'is_latest', 'column_labels', 'approval_status', 'approved_by',
+            'approved_at', 'approval_notes', 'created_by', 'created_at',
+            'updated_at', 'proposals', 'renewals', 'items', 'email_logs',
+            'created_by_name', 'approved_by_name', 'customer_name',
+            'customer_alias', 'customer_email', 'project_name', 'deal_id',
+            'company', 'deal_amount', 'cost_sheet_no', 'cost_sheet_price'
+        ]
         read_only_fields = ('estimate_id', 'version', 'is_latest', 'total_cost', 'total_margin', 'total_price', 'approval_status', 'approved_by', 'approved_at')
 
     def get_customer_email(self, obj):
