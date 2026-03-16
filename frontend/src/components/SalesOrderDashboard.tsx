@@ -131,6 +131,8 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
         localStorage.setItem('salesOrderDashboard_colWidths', JSON.stringify(colWidths));
     }, [colWidths]);
 
+    const exportMenuRef = useRef<HTMLDivElement>(null);
+    const columnMenuRef = useRef<HTMLDivElement>(null);
     const tableScrollRef = useRef<HTMLDivElement>(null);
 
     const resizingRef = useRef<{ colKey: string; startWidth: number; startX: number } | null>(null);
@@ -214,6 +216,22 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
     const [selectedStatus, setSelectedStatus] = useState('DRAFT');
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+                setShowExportMenu(false);
+            }
+            if (columnMenuRef.current && !columnMenuRef.current.contains(event.target as Node)) {
+                setShowColumnMenu(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const filteredSalesOrders = salesOrders.filter((so: any) => {
         const matchesDealId = (so.deal_id || '').toLowerCase().includes(filters.deal_id.toLowerCase());
@@ -385,7 +403,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                             </select>
                         </div>
 
-                        <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'relative' }} ref={exportMenuRef}>
                             <button
                                 className="ae-btn-secondary"
                                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -439,7 +457,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                         </div>
 
 
-                        <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'relative' }} ref={columnMenuRef}>
                             <button
                                 className="ae-btn-secondary"
                                 onClick={() => setShowColumnMenu(!showColumnMenu)}
