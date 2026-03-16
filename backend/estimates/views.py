@@ -262,6 +262,18 @@ class EstimateViewSet(viewsets.ModelViewSet):
                 amount=item.amount
             )
 
+        # Copy proposals
+        for prop in original_estimate.proposals.all():
+            if prop.file:
+                # Create a new version of the proposal for the new estimate
+                Proposal.objects.create(
+                    estimate=new_estimate,
+                    file=prop.file,
+                    filename=prop.filename,
+                    version=1, # Reset version for the new estimate
+                    uploaded_by=request.user if request.user.is_authenticated else None
+                )
+
         return Response(EstimateSerializer(new_estimate).data, status=status.HTTP_201_CREATED)
 
     @decorators.action(detail=True, methods=['post'])
