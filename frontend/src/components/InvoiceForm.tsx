@@ -712,17 +712,17 @@ const InvoiceForm: React.FC<{
                     <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
-                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.invoice_date)} style={{ background: '#f8fafc', height: '38px' }} />
+                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.invoice_date)} style={{ background: '#f8fafc' }} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice No.</label>
-                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', height: '38px', cursor: 'default' }}>
+                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', cursor: 'default' }}>
                                 {formData.invoice_no || 'Auto-generated on Submit'}
                             </div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Date</label>
-                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.po_date)} style={{ background: '#f8fafc', height: '38px' }} />
+                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.po_date)} style={{ background: '#f8fafc' }} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Number</label>
@@ -733,13 +733,13 @@ const InvoiceForm: React.FC<{
                                 value={formData.po_number}
                                 onChange={e => setFormData({ ...formData, po_number: e.target.value })}
                                 placeholder="Purchase Order Number"
-                                style={{ background: '#f8fafc', height: '38px' }}
+                                style={{ background: '#f8fafc' }}
                             />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Name</label>
                             {isReadOnly || invoiceId ? (
-                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', height: '38px' }}>
+                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
                                     {(formData as any).customer_name || companyProfiles.find(cp => cp.id.toString() === formData.selected_company.toString())?.name || '---'}
                                 </div>
                             ) : (
@@ -748,10 +748,23 @@ const InvoiceForm: React.FC<{
                                     value={formData.selected_company}
                                     onChange={(val) => handleCompanyChange(String(val))}
                                     placeholder="Select Customer"
-                                    className="standard-height-dropdown"
                                 />
                             )}
                         </div>
+                    </div>
+
+                    <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment Terms</label>
+                            <input type="number" className="ae-input" disabled={isReadOnly} value={formData.payment_terms_days} onChange={e => setFormData({ ...formData, payment_terms_days: parseInt(e.target.value) || 0 })} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment due date</label>
+                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.due_date)} style={{ background: '#f8fafc' }} />
+                        </div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px', marginBottom: '16px' }}>
@@ -775,20 +788,6 @@ const InvoiceForm: React.FC<{
                                 placeholder="Shipping Address"
                             />
                         </div>
-                    </div>
-
-                    <div className="ae-grid-responsive-5" style={{ marginBottom: '0px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment Terms</label>
-                            <input type="number" className="ae-input" disabled={isReadOnly} value={formData.payment_terms_days} onChange={e => setFormData({ ...formData, payment_terms_days: parseInt(e.target.value) || 0 })} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment due date</label>
-                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.due_date)} style={{ background: '#f8fafc' }} />
-                        </div>
-                        <div></div>
-                        <div></div>
-                        <div></div>
                     </div>
                 </div>
 

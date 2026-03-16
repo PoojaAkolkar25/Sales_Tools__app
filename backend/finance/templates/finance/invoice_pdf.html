@@ -21,10 +21,10 @@
             font-size: 14pt;
             font-weight: bold;
             color: #003399;
-            border-top: 1px dotted #003399;
-            border-bottom: 1px dotted #003399;
-            padding: 6px 0;
-            margin-bottom: 5px;
+            border-top: 1.5pt solid #003399;
+            border-bottom: 1.5pt solid #003399;
+            padding: 5px 0;
+            margin-bottom: 2px;
             text-transform: uppercase;
         }
 
@@ -32,6 +32,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 5px;
+            table-layout: fixed;
         }
 
         .section-table td {
@@ -64,13 +65,19 @@
         }
 
         .logo {
-            max-height: 60px;
-            max-width: 180px;
+            max-height: 50px;
+            max-width: 250px;
         }
 
         .meta-table {
             width: 100%;
             border-collapse: collapse;
+        }
+
+        .meta-divider {
+            border-bottom: 1.2pt dotted #003399;
+            margin: 4px 0;
+            width: 100%;
         }
 
         .meta-table td {
@@ -82,8 +89,9 @@
             color: #003399;
             font-weight: bold;
             text-align: left;
-            width: 40%;
+            width: 35%;
             text-transform: uppercase;
+            font-size: 9pt;
         }
 
         .meta-value {
@@ -92,8 +100,9 @@
         }
 
         .dashed-divider {
-            border-top: 1px dotted #003399;
-            margin: 12px 0;
+            border-top: 1.2pt dotted #003399;
+            margin: 6px 0;
+            width: 100%;
         }
 
         .address-box {
@@ -103,8 +112,10 @@
 
         .address-col {
             width: 50%;
-            padding-right: 15px;
+            padding: 0;
         }
+        .address-col.left { padding-right: 15px; }
+        .address-col.right { padding-left: 15px; }
 
         .address-title {
             font-weight: bold;
@@ -115,27 +126,36 @@
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .items-table th {
-            border-top: 1.5pt dotted #003399;
-            border-bottom: 1.5pt dotted #003399;
+            border-top: 1.2pt dotted #003399;
+            border-bottom: 1.2pt dotted #003399;
             color: #003399;
             text-align: left;
-            padding: 8px 4px;
+            padding: 6px 0;
             font-weight: bold;
             text-transform: uppercase;
             font-size: 9.5pt;
         }
 
         .items-table td {
-            padding: 8px 4px;
+            padding: 8px 0;
             vertical-align: top;
+        }
+        
+        .items-table th.text-right, .items-table td.text-right {
+            padding-right: 0;
+        }
+        
+        .items-table th:first-child, .items-table td:first-child {
+            padding-left: 0;
         }
 
         .items-table .text-right {
             text-align: right;
+            padding-right: 0;
         }
 
         .items-table .text-center {
@@ -143,10 +163,10 @@
         }
 
         .total-row td {
-            border-top: 1px dashed #003399;
-            border-bottom: 1px dashed #003399;
+            border-top: 1.2pt dotted #003399;
+            border-bottom: 1.2pt dotted #003399;
             font-weight: bold;
-            padding: 8px 4px;
+            padding: 6px 4px;
             font-size: 10pt;
             vertical-align: middle;
         }
@@ -157,7 +177,7 @@
         }
 
         .subtotals-table td {
-            padding: 2px 10px;
+            padding: 2px 2px;
         }
 
         .amount-words {
@@ -170,6 +190,13 @@
             width: 100%;
             margin-top: 20px;
             table-layout: fixed;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            vertical-align: top;
+            padding: 0;
+            border: none;
         }
 
         .bank-info {
@@ -214,6 +241,14 @@
         .blue {
             color: #003399;
         }
+
+        .text-blue {
+            color: #003399;
+        }
+
+        .border-dotted {
+            border: 1.2pt dotted #003399;
+        }
     </style>
 </head>
 {% load date_filters %}
@@ -229,15 +264,22 @@
     <table class="section-table">
         <tr>
             <td class="company-info">
-                <div class="company-name">{{ company.name|striptags|upper }}</div>
+                <div class="company-name">{{ company.name|striptags|upper|default:"" }}</div>
                 <div>
                     {% if company.address_line_1 %}
-                        {{ company.address_line_1|striptags|linebreaksbr }}
+                        {{ company.address_line_1|striptags }}
                         {% if company.address_line_2 %}, <br>{{ company.address_line_2|striptags|linebreaksbr }}{% endif %}
                     {% else %}
                         {{ company.registered_address|striptags|linebreaksbr|default:"" }}
                     {% endif %}
                 </div>
+                {% if invoice.invoice_type == 'USA' %}
+                <div>2500 Wilcrest Drive, Suite 300,</div>
+                <div>Houston, TX 77042, USA</div>
+                <div>Contact person : Siva Juturi (VP, Americas)</div>
+                <div>Phone : +1 281 650 1256</div>
+                <div>Email : siva.juturi@automationedge.com</div>
+                {% else %}
                 <div>{{ company.city|striptags|default:"" }}{% if company.pincode %} - {{ company.pincode|striptags }}{% endif %}</div>
                 {% if company.gstin %}
                 <div>GSTIN/UIN: {{ company.gstin }}</div>
@@ -261,17 +303,19 @@
                 {% if company.email %}
                 <div>E-Mail : {{ company.email }}</div>
                 {% endif %}
+                {% endif %}
             </td>
             <td class="invoice-meta">
                 <div class="logo-container">
-                    {% if company.logo %}
+                    {% if logo_path %}
+                    <img src="{{ logo_path }}" class="logo">
+                    {% elif company.logo %}
                     <img src="{{ company.logo.path }}" class="logo">
                     {% endif %}
-                    <div style="border-bottom: 1px dotted #003399; margin-top: 2px; margin-bottom: 2px;"></div>
                     {% if company.website_url %}
-                    <div style="font-size: 8pt; color: #000; text-align: center; text-decoration: underline;">{{ company.website_url }}
-                    </div>
+                    <div style="font-size: 8pt; color: #000; text-align: center; text-decoration: underline; margin-top: 4px;">{{ company.website_url }}</div>
                     {% endif %}
+                    <div class="meta-divider"></div>
                 </div>
                 <table class="meta-table">
                     <tr>
@@ -305,8 +349,10 @@
     <!-- Buyer and Consignee Section -->
     <table class="section-table address-box">
         <tr>
-            <td class="address-col">
-                <div class="address-title blue">Buyer (Bill to)</div>
+            <td class="address-col left">
+                <div class="address-title blue">
+                    {% if invoice.invoice_type == 'USA' %}BILL TO{% else %}Buyer (Bill to){% endif %}
+                </div>
                 <div class="bold blue">{{ invoice.get_customer_name|striptags }}</div>
                 <div>{{ invoice.get_customer_address|striptags|linebreaksbr|safe }}</div>
                 {% if invoice.get_customer_address_line_2 %}
@@ -331,9 +377,11 @@
                 <div>MSME No. : {{ invoice.get_customer_msme|striptags }}</div>
                 {% endif %}
             </td>
-            <td class="address-col">
-                <div class="address-title blue">Consignee (Ship to)</div>
-                <div class="bold blue">{{ invoice.get_customer_name|striptags }}</div>
+            <td class="address-col right">
+                <div class="address-title blue">
+                    {% if invoice.invoice_type == 'USA' %}{% else %}Consignee (Ship to){% endif %}
+                </div>
+                {% if invoice.invoice_type == 'USA' %}{% else %}<div class="bold blue">{{ invoice.get_customer_name|striptags }}</div>{% endif %}
                 {% if invoice.shipping_address %}
                 <div>{{ invoice.shipping_address|striptags|linebreaksbr|safe }}</div>
                 {% else %}
@@ -363,7 +411,7 @@
             </td>
         </tr>
     </table>
-    <div class="dashed-divider" style="margin-top: 5px;"></div>
+    <div class="dashed-divider"></div>
 
     <!-- Items Table -->
     <table class="items-table">
@@ -395,13 +443,12 @@
     <!-- Totals and e-Invoice -->
     <table class="section-table">
         <tr>
-            <td style="width: 60%; vertical-align: bottom;">
+            <td style="width: 55%; vertical-align: bottom; padding-bottom: 5px;">
                 <div class="amount-words">
-                    <div style="font-weight: normal; margin-bottom: 2px;">Amount Chargeable (in words)</div>
-                    <div class="bold">{{ invoice.currency }} {{ grand_total_words }}</div>
+                    <div class="bold blue" style="font-size: 9.5pt;">{{ grand_total_words }}</div>
                 </div>
             </td>
-            <td style="width: 40%;">
+            <td style="width: 45%;">
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
                         <td style="text-align: right; padding-right: 10px;">SUBTOTAL</td>
@@ -409,29 +456,36 @@
                     </tr>
                     {% if invoice.invoice_type == 'DOMESTIC' %}
                     <tr>
-                        <td style="text-align: right; padding-right: 10px; color: #003399;">CGST – Rate 9%</td>
+                        <td style="text-align: right; padding-right: 10px; color: #000;">CGST 9%</td>
                         <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }}{{ invoice.cgst_total|floatformat:2 }}</td>
                     </tr>
                     <tr>
-                        <td style="text-align: right; padding-right: 10px; color: #003399;">SGST – Rate 9%</td>
+                        <td style="text-align: right; padding-right: 10px; color: #000;">SGST 9%</td>
                         <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }}{{ invoice.sgst_total|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right; padding-right: 10px; color: #000;">TOTAL GST</td>
+                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }}{{ invoice.total_tax|floatformat:2 }}</td>
                     </tr>
                     {% elif invoice.invoice_type == 'INTER_STATE' %}
                     <tr>
-                        <td style="text-align: right; padding-right: 10px; color: #003399;">IGST – Rate 18%</td>
+                        <td style="text-align: right; padding-right: 10px; color: #000;">IGST 18%</td>
                         <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }}{{ invoice.igst_total|floatformat:2 }}</td>
                     </tr>
                     {% elif invoice.invoice_type == 'EXPORT' or invoice.invoice_type == 'SEZ' %}
                     <tr>
-                        <td style="text-align: right; padding-right: 10px; color: #003399;">IGST – Rate 0%</td>
+                        <td style="text-align: right; padding-right: 10px; color: #000;">IGST 0%</td>
                         <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }}{{ invoice.igst_total|floatformat:2 }}</td>
                     </tr>
                     {% elif invoice.invoice_type == 'USA' %}
-                    <!-- Taxation is not applicable to AE USA -->
+                    <tr>
+                        <td style="text-align: right; padding-right: 10px; color: #000;">TAX</td>
+                        <td style="text-align: right; font-weight: bold; width: 120px;">{{ currency_symbol }}0.00</td>
+                    </tr>
                     {% endif %}
-                    <tr style="border-top: 1.5pt dotted #003399; border-bottom: 1.5pt dotted #003399;">
-                        <td class="bold" style="text-align: right; padding-right: 10px; padding-top: 5px; padding-bottom: 5px;">TOTAL</td>
-                        <td class="bold" style="text-align: right; padding-top: 5px; padding-bottom: 5px; font-size: 11pt;">{{ currency_symbol }}{{ invoice.total_amount|floatformat:2 }}</td>
+                    <tr style="border-top: 1.2pt dotted #003399; border-bottom: 1.2pt dotted #003399;">
+                        <td class="bold" style="text-align: right; padding-right: 10px; padding-top: 4px; padding-bottom: 4px;">TOTAL</td>
+                        <td class="bold" style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-size: 11pt;">{{ currency_symbol }}{{ invoice.total_amount|floatformat:2 }}</td>
                     </tr>
                 </table>
             </td>
@@ -465,27 +519,38 @@
     <div class="dashed-divider"></div>
     {% endif %}
 
+    <div class="dashed-divider"></div>
+
     <!-- Bank and Footer -->
-    <table class="footer-table">
+    <table class="section-table">
         <tr>
-            <td style="width: 50%;">
+            <td style="width: 55%; vertical-align: top;">
                 <div class="bank-title">BANK</div>
                 <div class="bank-info">
                     {% if bank %}
-                    {{ company.name }}<br />
-                    {{ bank.bank_name }}<br />
-                    {% if bank.branch_name %}{{ bank.branch_name }}<br />{% endif %}
-                    A/C No. {{ bank.account_number }}<br />
-                    {% if bank.ifsc_code %}IFSC {{ bank.ifsc_code }}{% endif %}
+                    {% if invoice.invoice_type == 'USA' %}
+                    AutomationEdge Technologies Inc<br />
+                    Bank of America<br />
+                    A/C No. 5860 3780 7923<br />
+                    ACH Routing 111000025<br />
                     <br />
-                    {% if bank.swift_code %}SWIFT Code {{ bank.swift_code }}{% endif %}
+                    <div class="bold">Send Checks To</div>
+                    P.O Box 3221, 225 Matlage Way,<br />
+                    Sugar Land, TX 77478, USA
+                    {% else %}
+                    Automationedge Technologies Pvt. Ltd.<br />
+                    ICICI Bank Ltd<br />
+                    A/C No. 007305009924<br />
+                    IFSC ICIC0000073<br />
+                    SWIFT Code ICICINBBCTS
+                    {% endif %}
                     {% else %}
                     No bank details linked.
                     {% endif %}
                 </div>
             </td>
-            <td style="width: 50%; text-align: right; border-top: 1.5pt dotted #003399; padding-top: 8px;">
-                <div class="bold blue" style="text-transform: uppercase;">{{ company.name|upper }}</div>
+            <td style="width: 45%; text-align: right; vertical-align: top; padding-top: 2px;">
+                <div class="bold blue" style="text-transform: uppercase; margin-bottom: 2px; font-size: 9.5pt;">{% if invoice.invoice_type == 'USA' %}AUTOMATIONEDGE TECHNOLOGIES INC{% else %}AUTOMATIONEDGE TECHNOLOGIES PVT. LTD.{% endif %}</div>
                 <div style="height: 60px; margin-top: 10px;">
                     {% if invoice.signature_image %}
                     <img src="{{ invoice.signature_image.path }}" style="max-height: 50px;">

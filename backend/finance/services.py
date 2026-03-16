@@ -210,7 +210,7 @@ class InvoiceService:
     def number_to_words(number, currency='INR'):
         """
         Simple number to words converter for INR and USD.
-        Commas are stripped so the output reads cleanly (e.g. "Twenty Six Lakh" not "Twenty-Six Lakh,").
+        Prefuxes with currency code (e.g., INR, USD) to match images.
         """
         try:
             from num2words import num2words  # type: ignore
@@ -218,11 +218,12 @@ class InvoiceService:
                 words = num2words(int(number), lang='en_IN').title()
             else:
                 words = num2words(int(number), lang='en').title()
+            
             # Remove commas from the words output
             words = words.replace(',', '')
-            return words + " Only"
+            return f"{currency} {words} Only"
         except ImportError:
-            return f"{number} Only"
+            return f"{currency} {number} Only"
 
     @staticmethod
     def generate_pdf(invoice):
@@ -232,8 +233,15 @@ class InvoiceService:
         from django.template.loader import render_to_string  # type: ignore
         from io import BytesIO
         from xhtml2pdf import pisa  # type: ignore
+        import os
         
         company = CompanyProfile.objects.first()
+        
+        # Handle Logo Path (Absolute path needed for xhtml2pdf)
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        logo_path = os.path.join(base_dir, 'frontend', 'public', 'Ae_Logo.png')
+        if not os.path.exists(logo_path):
+            logo_path = company.logo.path if company and company.logo else None
         items = invoice.line_items.all().order_by('sr_no')
         
         bank = BankConnection.objects.filter(is_primary_for_invoices=True).first()
@@ -278,6 +286,7 @@ class InvoiceService:
             'items': items,
             'company': company,
             'bank': bank,
+            'logo_path': logo_path,
             'po_number': po_number,
             'po_date': po_date,
             'now': date.today(),
@@ -303,14 +312,34 @@ class InvoiceService:
         from io import BytesIO
         from xhtml2pdf import pisa  # type: ignore
         from types import SimpleNamespace
+        import os
+        from django.conf import settings
         
         # Calculate taxes using existing logic
         calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
         
-        # Try to find the AutomationEdge profile or the first one
-        company = CompanyProfile.objects.filter(name__icontains='AutomationEdge').first()
+        # Determine Entity (AE India vs AE USA)
+        is_usa = invoice_data.get('invoice_type') == 'USA' or invoice_data.get('currency') == 'USD'
+        
+        # Select correct company profile
+        if is_usa:
+            company = CompanyProfile.objects.filter(name__icontains='INC').first() or \
+                      CompanyProfile.objects.filter(name__icontains='Technologies INC').first()
+        else:
+            company = CompanyProfile.objects.filter(name__icontains='PVT').first() or \
+                      CompanyProfile.objects.filter(name__icontains='Technologies PVT').first() or \
+                      CompanyProfile.objects.filter(name__icontains='AutomationEdge').first()
+            
         if not company:
             company = CompanyProfile.objects.first()
+
+        # Using the logo provided by user in frontend/public: Ae_Logo.png
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        logo_path = os.path.join(base_dir, 'frontend', 'public', 'Ae_Logo.png')
+        
+        # If the file doesn't exist, fallback to company.logo.path or None
+        if not os.path.exists(logo_path):
+            logo_path = company.logo.path if company and company.logo else None
         
         def safe_date(date_str):
             if not date_str:
@@ -375,7 +404,14 @@ class InvoiceService:
         for i, item in enumerate(processed_items):
             items_mock.append(SimpleNamespace(sr_no=i+1, **item))
 
-        bank = BankConnection.objects.filter(is_primary_for_invoices=True).first()
+        # Select correct bank based on entity
+        if is_usa:
+            bank = BankConnection.objects.filter(bank_name__icontains='America').first()
+        else:
+            bank = BankConnection.objects.filter(bank_name__icontains='ICICI').first()
+
+        if not bank:
+            bank = BankConnection.objects.filter(is_primary_for_invoices=True).first()
         if not bank:
             bank = BankConnection.objects.filter(is_active=True).first()
 
@@ -395,6 +431,7 @@ class InvoiceService:
             'items': items_mock,
             'company': company,
             'bank': bank,
+            'logo_path': logo_path,
             'po_number': invoice_data.get('po_number'),
             'po_date': safe_date(invoice_data.get('po_date')) if invoice_data.get('po_date') else None,
             'now': date.today(),
