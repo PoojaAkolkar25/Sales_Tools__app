@@ -16,7 +16,25 @@ def generate_estimate_pdf(estimate):
     """
     try:
         # Prepare context for the template
-        company = CompanyProfile.objects.first()
+        # Dynamic Issuer Selection Logic (Mirroring Invoice logic without Estimate field)
+        from finance.models import CustomerPartner, CompanyProfile
+        
+        customer_name = estimate.deal.customer.name if estimate.deal and estimate.deal.customer else None
+        company = None
+        
+        if customer_name:
+            # Match customer name to a CompanyProfile to find the linked internal partner
+            cp = CompanyProfile.objects.filter(name__iexact=customer_name).first()
+            if cp and cp.linked_company_profile:
+                company = cp.linked_company_profile
+        
+        if not company:
+            # Fallback to the first AE India profile or the first CustomerPartner
+            company = CustomerPartner.objects.filter(name__icontains='AutomationEdge').first() or \
+                      CustomerPartner.objects.filter(name__icontains='PVT').first() or \
+                      CustomerPartner.objects.first() or \
+                      CompanyProfile.objects.first()
+        
         items = estimate.items.all().order_by('sr_no')
         has_discount = any(float(item.discount or 0) > 0 for item in items)
         

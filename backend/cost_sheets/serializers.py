@@ -215,7 +215,7 @@ class CostSheetSerializer(serializers.ModelSerializer):
                 if deal:
                     if pm: deal.project_manager = pm
                     if sp: deal.salesperson_name = sp
-                    if pn: deal.project_name = pn
+                    if pn: deal.deal_name = pn
                     deal.save()
             except Exception:
                 pass
@@ -269,7 +269,7 @@ class CostSheetSerializer(serializers.ModelSerializer):
                 if deal:
                     if pm: deal.project_manager = pm
                     if sp: deal.salesperson_name = sp
-                    if pn: deal.project_name = pn
+                    if pn: deal.deal_name = pn
                     deal.save()
             except Exception:
                 pass

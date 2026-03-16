@@ -115,7 +115,7 @@
             padding: 0;
         }
         .address-col.left { padding-right: 15px; }
-        .address-col.right { padding-left: 15px; }
+        .address-col.right { padding-left: 0px; }
 
         .address-title {
             font-weight: bold;
@@ -344,12 +344,11 @@
             </td>
         </tr>
     </table>
-    <div class="dashed-divider"></div>
 
-    <!-- Buyer and Consignee Section -->
     <table class="section-table address-box">
         <tr>
-            <td class="address-col left">
+            <td class="address-col left" style="width: 60%;">
+                <!-- Buyer Details -->
                 <div class="address-title blue">
                     {% if invoice.invoice_type == 'USA' %}BILL TO{% else %}Buyer (Bill to){% endif %}
                 </div>
@@ -377,7 +376,8 @@
                 <div>MSME No. : {{ invoice.get_customer_msme|striptags }}</div>
                 {% endif %}
             </td>
-            <td class="address-col right">
+            <td class="address-col right" style="width: 40%; vertical-align: top;">
+                <!-- Consignee Details aligned under invoice meta -->
                 <div class="address-title blue">
                     {% if invoice.invoice_type == 'USA' %}{% else %}Consignee (Ship to){% endif %}
                 </div>
