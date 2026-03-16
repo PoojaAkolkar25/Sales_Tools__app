@@ -34,6 +34,7 @@ const ALL_COL_CONFIG = [
     { key: 'items', label: 'Items (Summary)', shortLabel: 'ITEMS' },
     { key: 'status', label: 'Status', shortLabel: 'ST.' },
     { key: 'amount', label: 'Amount', shortLabel: 'AMT' },
+    { key: 'amount_inr', label: 'INR Amount', shortLabel: 'INR' },
     { key: 'po_date', label: 'PO Date', shortLabel: 'PO DT' },
     { key: 'actions', label: 'Actions', shortLabel: 'ACT.' },
 ];
@@ -48,6 +49,7 @@ const SHORT_COL_WIDTHS: Record<string, number> = {
     items: 75,
     status: 45,
     amount: 55,
+    amount_inr: 55,
     po_date: 60,
     actions: 60
 };
@@ -62,6 +64,7 @@ const FULL_LABEL_WIDTHS: Record<string, number> = {
     items: 110,
     status: 75,
     amount: 90,
+    amount_inr: 100,
     po_date: 85,
     actions: 100
 };
@@ -76,6 +79,7 @@ const MAX_COL_WIDTHS: Record<string, number> = {
     items: 300,
     status: 120,
     amount: 150,
+    amount_inr: 150,
     po_date: 120,
     actions: 120
 };
@@ -94,6 +98,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
         po_number: '',
         items_summary: '',
         amount: '',
+        amount_inr: '',
         po_date: '',
         status: ''
     });
@@ -110,6 +115,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
             items: true,
             status: true,
             amount: true,
+            amount_inr: true,
             po_date: true,
             actions: true
         };
@@ -215,6 +221,19 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
 
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setShowExportMenu(false);
+                setShowColumnMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const filteredSalesOrders = salesOrders.filter((so: any) => {
         const matchesDealId = (so.deal_id || '').toLowerCase().includes(filters.deal_id.toLowerCase());
         const matchesSONumber = (so.so_number || '').toLowerCase().includes(filters.so_number.toLowerCase());
@@ -224,6 +243,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
         const matchesPONumber = (so.po_number || '').toLowerCase().includes(filters.po_number.toLowerCase());
         const matchesItems = (so.items && so.items.length > 0 ? so.items[0].description || so.items[0].product_name || '' : '').toLowerCase().includes(filters.items_summary.toLowerCase());
         const matchesAmount = `${so.currency || ''} ${parseFloat(so.total_amount || 0).toLocaleString()}`.toLowerCase().includes(filters.amount.toLowerCase());
+        const matchesAmountInr = (so.amount_inr || '').toString().toLowerCase().includes(filters.amount_inr.toLowerCase());
         const matchesPODate = (so.po_date ? formatToAppDate(so.po_date) : (so.order_date ? formatToAppDate(so.order_date) : '')).toLowerCase().includes(filters.po_date.toLowerCase());
         const matchesStatusFilter = (so.status || '').toLowerCase().includes(filters.status.toLowerCase());
 
@@ -232,7 +252,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
 
         return matchesDealId && matchesSONumber && matchesOrderDate && matchesCustomer &&
             matchesCustCode && matchesPONumber && matchesItems && matchesAmount &&
-            matchesPODate && matchesStatusFilter && matchesStatus;
+            matchesAmountInr && matchesPODate && matchesStatusFilter && matchesStatus;
     });
 
     const statusFlow = [
@@ -374,7 +394,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                     </div>
 
                     {/* Right Side Actions */}
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div ref={wrapperRef} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Period:</span>
                             <select
@@ -504,6 +524,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                                 items: true,
                                                 status: true,
                                                 amount: true,
+                                                amount_inr: true,
                                                 po_date: true,
                                                 actions: true
                                             })}
@@ -534,6 +555,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                                 items: false,
                                                 status: false,
                                                 amount: false,
+                                                amount_inr: false,
                                                 po_date: false,
                                                 actions: true
                                             })}
@@ -565,6 +587,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                             items: 'Items',
                                             status: 'Status',
                                             amount: 'Amount',
+                                            amount_inr: 'INR Amount',
                                             po_date: 'PO Date',
                                             actions: 'Actions'
                                         }).map(([id, label]) => (
@@ -743,6 +766,7 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                                         po_number: '',
                                                         items_summary: '',
                                                         amount: '',
+                                                        amount_inr: '',
                                                         po_date: '',
                                                         status: ''
                                                     })}
@@ -823,6 +847,8 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
                                                     );
                                                 case 'amount':
                                                     return <td key={col.key} style={cellStyle}>{so.currency} {parseFloat(so.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
+                                                case 'amount_inr':
+                                                    return <td key={col.key} style={{ ...cellStyle, color: 'var(--theme-primary)', fontWeight: 600 }}>₹{parseFloat(so.amount_inr?.toString() || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
                                                 case 'po_date':
                                                     return <td key={col.key} style={cellStyle}>{so.po_date ? formatToAppDate(so.po_date) : (so.order_date ? formatToAppDate(so.order_date) : '-')}</td>;
                                                 case 'actions':

@@ -56,7 +56,7 @@ const MilestoneForm: React.FC<MilestoneFormProps> = ({ onBack, id, initialSoId, 
             case 'INR': return '₹';
             case 'USD': return '$';
             case 'EUR':
-            case 'EURO': return '€';
+            case 'EUR': return '€';
             case 'GBP': return '£';
             default: return code; // Return the code itself if no symbol matches
         }

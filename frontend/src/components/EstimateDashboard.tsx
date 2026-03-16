@@ -36,6 +36,7 @@ const ALL_COL_CONFIG = [
     { key: 'customer_name', label: 'Customer', shortLabel: 'CUST.' },
     { key: 'project_name', label: 'Project', shortLabel: 'PROJ.' },
     { key: 'total_price', label: 'Est. Total Value', shortLabel: 'TOTAL' },
+    { key: 'amount_inr', label: 'Total Value (INR)', shortLabel: 'INR' },
     { key: 'status', label: 'Status', shortLabel: 'ST.' },
     { key: 'subscription_from', label: 'Sub. From', shortLabel: 'FROM' },
     { key: 'subscription_to', label: 'Sub. To', shortLabel: 'TO' },
@@ -54,6 +55,7 @@ const SHORT_COL_WIDTHS: Record<string, number> = {
     customer_name: 55,
     project_name: 55,
     total_price: 55,
+    amount_inr: 55,
     status: 35,
     subscription_from: 55,
     subscription_to: 45,
@@ -73,6 +75,7 @@ const FULL_LABEL_WIDTHS: Record<string, number> = {
     customer_name: 180,
     project_name: 180,
     total_price: 180,
+    amount_inr: 180,
     status: 160,
     subscription_from: 140,
     subscription_to: 140,
@@ -91,6 +94,7 @@ const MAX_COL_WIDTHS: Record<string, number> = {
     customer_name: 500,
     project_name: 600,
     total_price: 300,
+    amount_inr: 300,
     status: 200,
     subscription_from: 200,
     subscription_to: 200,
@@ -120,6 +124,7 @@ interface Estimate {
     subscription_to?: string;
     customer_email?: string;
     description_memo?: string;
+    amount_inr?: number;
     proposals?: any[];
 }
 
@@ -230,6 +235,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
             customer_name: '',
             project_name: '',
             total_price: '',
+            amount_inr: '',
             status: 'DRAFT',
             created_at: '',
             period: '',
@@ -970,7 +976,7 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
                                         <button
                                             onClick={() => setFilters({
                                                 estimate_id: '', version: '', deal_id: '', cost_sheet_no: '', customer_name: '', project_name: '',
-                                                total_price: '', status: '', created_at: '', period: '',
+                                                total_price: '', amount_inr: '', status: '', created_at: '', period: '',
                                                 startDate: '', endDate: '', subscription_from: '', subscription_to: ''
                                             })}
                                             style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
@@ -1036,6 +1042,8 @@ const EstimateDashboard: React.FC<EstimateDashboardProps> = ({ onView, user }) =
                                                             return <td key={col.key} style={cellStyle}>{est.project_name}</td>;
                                                         case 'total_price':
                                                             return <td key={col.key} style={{ ...cellStyle, color: 'var(--theme-primary)' }}>₹{parseFloat(est.total_price || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
+                                                        case 'amount_inr':
+                                                            return <td key={col.key} style={{ ...cellStyle, color: 'var(--theme-primary)', fontWeight: 600 }}>₹{parseFloat(est.amount_inr?.toString() || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
                                                         case 'status':
                                                             return (
                                                                 <td key={col.key} style={{ padding: '4px 6px' }}>

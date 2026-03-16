@@ -101,6 +101,7 @@ class DealSerializer(serializers.ModelSerializer):
     lead_no = serializers.ReadOnlyField(source='lead.lead_no')
     deal_types = DealTypeEntrySerializer(many=True, required=False)
     deal_attachments = DealAttachmentSerializer(many=True, read_only=True)
+    amount_inr = serializers.SerializerMethodField()
     
     class Meta:
         model = Deal
@@ -112,9 +113,13 @@ class DealSerializer(serializers.ModelSerializer):
             'salesperson_name', 'sales_head', 'project_manager', 'project_manager_head', 
             'expected_close_date', 'remark', 'won_lost_reason', 'hubspot_id', 
             'last_synced_at', 'is_read', 'created_at', 'updated_at', 'deal_types', 
-            'deal_attachments', 'customer_name', 'lead_name', 'lead_no'
+            'deal_attachments', 'customer_name', 'lead_name', 'lead_no', 'amount_inr'
         ]
         read_only_fields = ['deal_id', 'deal_date', 'created_at', 'updated_at']
+    
+    def get_amount_inr(self, obj):
+        from finance.services import ExchangeRateService
+        return float(ExchangeRateService.convert_to_inr(obj.deal_amount, obj.currency, None))
     
 
     def create(self, validated_data):

@@ -79,7 +79,9 @@
                 <th>Customer Name</th>
                 <th>Status</th>
                 <th>Total Amount</th>
+                <th>Total Amount (INR)</th>
                 <th>Open Balance</th>
+                <th>Open Balance (INR)</th>
             </tr>
         </thead>
         <tbody>
@@ -95,11 +97,13 @@
                 </td>
                 <td>{{ inv.status }}</td>
                 <td>{{ inv.currency }} {{ inv.total_amount|floatformat:2 }}</td>
+                <td style="font-weight: bold;">₹ {{ inv.amount_inr|floatformat:2 }}</td>
                 <td>{{ inv.currency }} {{ inv.open_balance|floatformat:2 }}</td>
+                <td style="font-weight: bold;">₹ {{ inv.open_balance_inr|floatformat:2 }}</td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" style="text-align: center; padding: 30px;">No invoices found.</td>
+                <td colspan="9" style="text-align: center; padding: 30px;">No invoices found.</td>
             </tr>
             {% endfor %}
         </tbody>

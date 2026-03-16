@@ -16,6 +16,8 @@ interface Invoice {
     invoice_date: string;
     valid_until?: string;
     total_amount: number;
+    amount_inr?: number;
+    open_balance_inr?: number;
     currency: string;
     status: string;
     invoice_type: string;
@@ -64,6 +66,8 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
         { key: 'customer', label: 'Customer', shortLabel: 'CUST.' },
         { key: 'date', label: 'Date', shortLabel: 'DATE' },
         { key: 'amount', label: 'Amount', shortLabel: 'AMT' },
+        { key: 'amount_inr', label: 'Amount (INR)', shortLabel: 'INR AMT' },
+        { key: 'open_balance_inr', label: 'Open Bal (INR)', shortLabel: 'OPEN INR' },
         { key: 'type', label: 'Type', shortLabel: 'TYPE' },
         { key: 'status', label: 'Status', shortLabel: 'ST.' }
     ];
@@ -75,6 +79,8 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
         customer: 55,
         date: 45,
         amount: 50,
+        amount_inr: 50,
+        open_balance_inr: 50,
         type: 45,
         status: 35,
         actions: 60
@@ -87,6 +93,8 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
         customer: 120,
         date: 75,
         amount: 85,
+        amount_inr: 100,
+        open_balance_inr: 100,
         type: 85,
         status: 75
     };
@@ -98,6 +106,8 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
         customer: 250,
         date: 120,
         amount: 150,
+        amount_inr: 150,
+        open_balance_inr: 150,
         type: 120,
         status: 120,
         actions: 120
@@ -1115,7 +1125,11 @@ const InvoiceDashboard: React.FC<{ onView: (id: number) => void }> = ({ onView }
                                                 case 'date':
                                                     return <td key={key} style={cellStyle}>{inv.invoice_date ? formatToAppDate(inv.invoice_date) : '---'}</td>;
                                                 case 'amount':
-                                                    return <td key={key} style={{ ...cellStyle, textAlign: 'right' }}>{inv.currency} {inv.total_amount.toLocaleString()}</td>;
+                                                    return <td key={key} style={{ ...cellStyle, textAlign: 'right' }}>{inv.currency === 'INR' ? '₹' : inv.currency === 'USD' ? '$' : inv.currency === 'EUR' ? '€' : inv.currency === 'GBP' ? '£' : inv.currency} {inv.total_amount.toLocaleString()}</td>;
+                                                case 'amount_inr':
+                                                    return <td key={key} style={{ ...cellStyle, textAlign: 'right', color: 'var(--theme-primary)', fontWeight: 600 }}>₹{parseFloat(inv.amount_inr?.toString() || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
+                                                case 'open_balance_inr':
+                                                    return <td key={key} style={{ ...cellStyle, textAlign: 'right', color: 'var(--theme-primary)', fontWeight: 600 }}>₹{parseFloat(inv.open_balance_inr?.toString() || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>;
                                                 case 'type':
                                                     return <td key={key} style={cellStyle}>
                                                         <span style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>

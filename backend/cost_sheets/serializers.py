@@ -150,6 +150,9 @@ class CostSheetSerializer(serializers.ModelSerializer):
     lead_no = serializers.SerializerMethodField()
     lead_details = serializers.SerializerMethodField()
     total_margin_percentage = serializers.SerializerMethodField()
+    total_estimated_price_inr = serializers.SerializerMethodField()
+    total_estimated_cost_inr = serializers.SerializerMethodField()
+    total_estimated_margin_inr = serializers.SerializerMethodField()
 
     class Meta:
         model = CostSheet
@@ -182,6 +185,21 @@ class CostSheetSerializer(serializers.ModelSerializer):
             percentage = (obj.total_estimated_margin / obj.total_estimated_price) * 100
             return round(percentage, 2)
         return 0.00
+
+    def get_total_estimated_price_inr(self, obj):
+        from finance.services import ExchangeRateService
+        currency = obj.deal.currency if obj.deal else 'INR'
+        return float(ExchangeRateService.convert_to_inr(obj.total_estimated_price, currency, None))
+
+    def get_total_estimated_cost_inr(self, obj):
+        from finance.services import ExchangeRateService
+        currency = obj.deal.currency if obj.deal else 'INR'
+        return float(ExchangeRateService.convert_to_inr(obj.total_estimated_cost, currency, None))
+
+    def get_total_estimated_margin_inr(self, obj):
+        from finance.services import ExchangeRateService
+        currency = obj.deal.currency if obj.deal else 'INR'
+        return float(ExchangeRateService.convert_to_inr(obj.total_estimated_margin, currency, None))
 
     def create(self, validated_data):
         license_data = validated_data.pop('license_items', [])

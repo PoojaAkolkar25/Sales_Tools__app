@@ -1212,7 +1212,7 @@ const UserManagement: React.FC = () => {
         switch (val) {
             case 'INR': symbol = '₹ / INR'; break;
             case 'USD': symbol = '$ / USD'; break;
-            case 'EURO': symbol = '€ / EURO'; break;
+            case 'EUR': symbol = '€ / EUR'; break;
         }
 
         if (viewMode === 'partner') {
@@ -2881,7 +2881,7 @@ const UserManagement: React.FC = () => {
                                                     options={[
                                                         { value: 'INR', label: 'INR' },
                                                         { value: 'USD', label: 'USD' },
-                                                        { value: 'EURO', label: 'EURO' }
+                                                        { value: 'EUR', label: 'EUR' }
                                                     ]}
                                                     value={productFormData.currency}
                                                     onChange={(val) => setProductFormData({ ...productFormData, currency: val as string })}

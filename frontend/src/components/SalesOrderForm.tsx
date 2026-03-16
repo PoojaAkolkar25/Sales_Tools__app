@@ -354,8 +354,8 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                 billing_address: matchedPartner?.address || selectedCustomer.address || prev.billing_address,
                 shipping_address: matchedPartner?.address || selectedCustomer.address || prev.shipping_address,
                 // Prioritize base_currency from Company Profile (User Management)
-                currency: (matchedCompany?.base_currency === 'EUR' ? 'EURO' : matchedCompany?.base_currency) ||
-                    (selectedCustomer.currency === 'EUR' ? 'EURO' : selectedCustomer.currency) ||
+                currency: matchedCompany?.base_currency ||
+                    selectedCustomer.currency ||
                     prev.currency || 'INR'
             }));
         }
@@ -713,7 +713,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
         switch (currency) {
             case 'INR': return '₹';
             case 'USD': return '$';
-            case 'EURO': return '€';
+            case 'EUR': return '€';
             default: return currency;
         }
     };
@@ -1098,7 +1098,7 @@ const SalesOrderForm: React.FC<SalesOrderFormProps> = ({ id, onBack, onSave, use
                                             ? 'INR - Indian Rupee'
                                             : salesOrder.currency === 'USD'
                                                 ? 'USD - US Dollar'
-                                                : salesOrder.currency === 'EURO'
+                                                : salesOrder.currency === 'EUR'
                                                     ? 'EURO - Euro'
                                                     : salesOrder.currency
                                         : ''}

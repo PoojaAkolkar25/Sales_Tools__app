@@ -1,0 +1,9 @@
+--- Testing Frankfurter API ---
+Frankfurter USD -> INR: 92.38
+Frankfurter EUR -> INR: 106.02
+
+--- Testing ExchangeRate-API ---
+USD base.
+USD -> INR: 92.7
+USD -> EUR: 0.875
+Calculated EUR -> INR: 92.7 / 0.875 = 105.94285714285715

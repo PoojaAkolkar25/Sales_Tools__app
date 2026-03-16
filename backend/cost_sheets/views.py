@@ -499,8 +499,7 @@ class CostSheetViewSet(viewsets.ModelViewSet):
             currency_symbols = {
                 'INR': 'Rs.',
                 'USD': '$',
-                'EUR': 'EUR',
-                'EURO': '€',
+                'EUR': '€',
                 'GBP': '£',
                 'AED': 'AED',
                 'SGD': 'S$',

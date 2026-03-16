@@ -53,6 +53,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     deal_amount = serializers.DecimalField(source='deal.deal_amount', max_digits=15, decimal_places=2, read_only=True)
     cost_sheet_no = serializers.ReadOnlyField(source='cost_sheet.cost_sheet_no')
     cost_sheet_price = serializers.DecimalField(source='cost_sheet.total_estimated_price', max_digits=15, decimal_places=2, read_only=True)
+    amount_inr = serializers.SerializerMethodField()
     
     class Meta:
         model = Estimate
@@ -66,7 +67,7 @@ class EstimateSerializer(serializers.ModelSerializer):
             'updated_at', 'proposals', 'renewals', 'items', 'email_logs',
             'created_by_name', 'approved_by_name', 'customer_name',
             'customer_alias', 'customer_email', 'project_name', 'deal_id',
-            'company', 'deal_amount', 'cost_sheet_no', 'cost_sheet_price'
+            'company', 'deal_amount', 'cost_sheet_no', 'cost_sheet_price', 'amount_inr'
         ]
         read_only_fields = ('estimate_id', 'version', 'is_latest', 'total_cost', 'total_margin', 'total_price', 'approval_status', 'approved_by', 'approved_at')
 
@@ -78,6 +79,11 @@ class EstimateSerializer(serializers.ModelSerializer):
         if obj.deal and getattr(obj.deal, 'lead', None) and getattr(obj.deal.lead, 'email', None):
             return obj.deal.lead.email
         return ""
+
+    def get_amount_inr(self, obj):
+        from finance.services import ExchangeRateService
+        currency = obj.deal.currency if obj.deal else 'INR'
+        return float(ExchangeRateService.convert_to_inr(obj.total_price, currency, None))
 
     def validate(self, data):
         # Prevent editing if Approved

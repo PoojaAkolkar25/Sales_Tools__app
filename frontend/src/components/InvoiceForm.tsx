@@ -268,7 +268,7 @@ const InvoiceForm: React.FC<{
                 po_date: so.po_date || '',
                 milestone: initialMilestoneId ? initialMilestoneId.toString() : prev.milestone,
                 gst_customer_type: ((cp?.gst_customer_type === 'DOMESTIC' || lead?.gst_customer_type === 'DOMESTIC') ? 'CGST_SGST_9' : (cp?.gst_customer_type || lead?.gst_customer_type)) || prev.gst_customer_type,
-                currency_symbol: (so.currency || prev.currency) === 'INR' ? '₹' : '$'
+                currency_symbol: (so.currency || prev.currency) === 'INR' ? '₹' : (so.currency || prev.currency) === 'EUR' ? '€' : (so.currency || prev.currency) === 'GBP' ? '£' : '$'
             }));
 
             try {
@@ -334,7 +334,7 @@ const InvoiceForm: React.FC<{
                 po_number: inv.po_number || '',
                 po_date: inv.po_date || '',
                 gst_customer_type: (inv.lead_details?.gst_customer_type === 'DOMESTIC' || inv.gst_customer_type === 'DOMESTIC') ? 'CGST_SGST_9' : (inv.lead_details?.gst_customer_type || inv.gst_customer_type || 'CGST_SGST_9'),
-                currency_symbol: inv.currency === 'INR' ? '₹' : '$',
+                currency_symbol: inv.currency === 'INR' ? '₹' : inv.currency === 'EUR' ? '€' : inv.currency === 'GBP' ? '£' : '$',
                 memo: inv.memo || '',
                 selected_company: inv.customer?.toString() || '',
                 customer: inv.customer?.toString() || '',
@@ -410,7 +410,7 @@ const InvoiceForm: React.FC<{
                 shipping_address: cp.address_line_1 || prev.shipping_address,
                 gst_customer_type: gct,
                 currency: cp.base_currency || prev.currency,
-                currency_symbol: (cp.base_currency || prev.currency) === 'INR' ? '₹' : '$',
+                currency_symbol: (cp.base_currency || prev.currency) === 'INR' ? '₹' : (cp.base_currency || prev.currency) === 'EUR' ? '€' : (cp.base_currency || prev.currency) === 'GBP' ? '£' : '$',
                 customer_country: country,
                 payment_terms_days: cp.payment_terms === 'IMMEDIATE' ? 0 : cp.payment_terms === 'NET_30' ? 30 : cp.payment_terms === 'NET_60' ? 60 : cp.payment_terms === 'NET_90' ? 90 : 30,
                 // Clear SO/Milestone if customer changes

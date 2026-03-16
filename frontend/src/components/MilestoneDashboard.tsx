@@ -17,6 +17,7 @@ const ALL_COL_CONFIG = [
     { key: 'description', label: 'Description', shortLabel: 'DESC.' },
     { key: 'created_at', label: 'Created Date', shortLabel: 'DATE' },
     { key: 'amount', label: 'Amount', shortLabel: 'AMT.' },
+    { key: 'amount_inr', label: 'Amount (INR)', shortLabel: 'INR' },
     { key: 'invoice_no', label: 'Invoice No', shortLabel: 'INV. NO' },
     { key: 'invoice_total', label: 'Invoice Total', shortLabel: 'INV. TOT' }
 ];
@@ -29,6 +30,7 @@ const SHORT_COL_WIDTHS: Record<string, number> = {
     description: 55,
     created_at: 50,
     amount: 45,
+    amount_inr: 50,
     status: 35,
     invoice_no: 55,
     invoice_total: 55,
@@ -43,6 +45,7 @@ const FULL_LABEL_WIDTHS: Record<string, number> = {
     description: 220,
     created_at: 85,
     amount: 100,
+    amount_inr: 120,
     status: 90,
     invoice_no: 110,
     invoice_total: 110
@@ -56,6 +59,7 @@ const MAX_COL_WIDTHS: Record<string, number> = {
     sales_order: 150,
     created_at: 120,
     amount: 150,
+    amount_inr: 180,
     invoice_no: 150,
     actions: 120
 };
@@ -901,7 +905,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                             zIndex: 12,
                                             top: 0,
                                             color: 'var(--text-secondary)',
-                                            textAlign: (col.key === 'amount') ? 'right' : (col.key === 'status') ? 'center' : 'left'
+                                            textAlign: (col.key === 'amount' || col.key === 'amount_inr') ? 'right' : (col.key === 'status') ? 'center' : 'left'
                                         }}>
                                             <span title={col.label}>
                                                 {getColWidth(col.key) < (SHORT_COL_WIDTHS[col.key] + 5)
@@ -1143,9 +1147,17 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                                                 return (
                                                                     <td key={key} style={{ ...cellStyle, textAlign: 'right' }}>
                                                                         <span style={{ color: 'var(--text-primary)' }}>
-                                                                            {m.sales_order_details?.currency === 'INR' ? '₹' : '$'}
+                                                                            {m.sales_order_details?.currency === 'INR' ? '₹' : (m.sales_order_details?.currency === 'USD' ? '$' : (m.sales_order_details?.currency === 'EUR' ? '€' : '$'))}
                                                                             {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                         </span>
+                                                                    </td>
+                                                                );
+                                                            }
+                                                            case 'amount_inr': {
+                                                                const totalAmountINR = (m.allMilestones || [m]).reduce((sum: number, ms: any) => sum + (parseFloat(ms.amount_inr || 0)), 0);
+                                                                return (
+                                                                    <td key={key} style={{ ...cellStyle, textAlign: 'right', color: 'var(--theme-primary)', fontWeight: 600 }}>
+                                                                        ₹{totalAmountINR.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                     </td>
                                                                 );
                                                             }
@@ -1374,6 +1386,7 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                                                             <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Description</th>
                                                                             <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Due Date</th>
                                                                             <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Amount</th>
+                                                                            <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Amount (INR)</th>
                                                                             <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>Status</th>
                                                                         </tr>
                                                                     </thead>
@@ -1399,8 +1412,11 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                                                                     <td style={{ padding: '10px 12px', fontSize: '0.75rem', color: '#334155', whiteSpace: 'nowrap' }}>{ms.description || '—'}</td>
                                                                                     <td style={{ padding: '10px 12px', fontSize: '0.75rem', textAlign: 'center', color: '#334155', whiteSpace: 'nowrap' }}>{ms.due_date ? formatToAppDate(ms.due_date) : '—'}</td>
                                                                                     <td style={{ padding: '10px 12px', fontSize: '0.75rem', textAlign: 'right', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>
-                                                                                        {m.sales_order_details?.currency === 'INR' ? '₹' : '$'}
+                                                                                        {m.sales_order_details?.currency === 'INR' ? '₹' : (m.sales_order_details?.currency === 'USD' ? '$' : (m.sales_order_details?.currency === 'EUR' ? '€' : '$'))}
                                                                                         {parseFloat(ms.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                                    </td>
+                                                                                    <td style={{ padding: '10px 12px', fontSize: '0.75rem', textAlign: 'right', fontWeight: 600, color: 'var(--theme-primary)', whiteSpace: 'nowrap' }}>
+                                                                                        ₹{parseFloat(ms.amount_inr || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                                     </td>
                                                                                     <td style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                                                                                         <span style={{
@@ -1423,8 +1439,11 @@ const MilestoneDashboard: React.FC<MilestoneDashboardProps> = ({ onView, onCreat
                                                                         <tr>
                                                                             <td colSpan={3} style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 800, color: '#334155', whiteSpace: 'nowrap' }}>Total:</td>
                                                                             <td style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap' }}>
-                                                                                {m.sales_order_details?.currency === 'INR' ? '₹' : '$'}
+                                                                                {m.sales_order_details?.currency === 'INR' ? '₹' : (m.sales_order_details?.currency === 'USD' ? '$' : (m.sales_order_details?.currency === 'EUR' ? '€' : '$'))}
                                                                                 {(m.allMilestones || [m]).reduce((sum: number, ms: any) => sum + (parseFloat(ms.amount) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                            </td>
+                                                                            <td style={{ padding: '10px 12px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 800, color: 'var(--theme-primary)', whiteSpace: 'nowrap' }}>
+                                                                                ₹{(m.allMilestones || [m]).reduce((sum: number, ms: any) => sum + (parseFloat(ms.amount_inr || 0)), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                             </td>
                                                                             <td></td>
                                                                         </tr>

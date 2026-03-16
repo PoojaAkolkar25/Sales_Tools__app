@@ -327,6 +327,16 @@ class Invoice(models.Model):
     def __str__(self):
         return self.invoice_no
 
+    @property
+    def amount_inr(self):
+        from .services import ExchangeRateService
+        return float(ExchangeRateService.convert_to_inr(self.total_amount, self.currency, None))
+
+    @property
+    def open_balance_inr(self):
+        from .services import ExchangeRateService
+        return float(ExchangeRateService.convert_to_inr(self.open_balance, self.currency, None))
+
 class InvoiceLineItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='line_items')
     sr_no = models.IntegerField()

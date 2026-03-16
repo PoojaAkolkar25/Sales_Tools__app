@@ -260,8 +260,7 @@ class DealViewSet(viewsets.ModelViewSet):
             currency_symbols = {
                 'INR': 'Rs.',
                 'USD': '$',
-                'EUR': 'EUR',
-                'EURO': '€', # Helvetica supports Euro
+                'EUR': '€', # Helvetica supports Euro
                 'GBP': '£',  # Helvetica supports Pound
                 'AED': 'AED',
                 'SGD': 'S$',

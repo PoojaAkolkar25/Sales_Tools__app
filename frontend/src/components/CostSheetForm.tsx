@@ -244,7 +244,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         switch (code) {
             case 'USD': return '$';
             case 'EUR':
-            case 'EURO': return '€';
+            case 'EUR': return '€';
             default: return '₹';
         }
     };
@@ -363,9 +363,9 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         const matchedCompany = companies.find(c => c.name === customerName);
 
         if (matchedCompany?.base_currency) {
-            setCurrency(matchedCompany.base_currency === 'EUR' ? 'EURO' : matchedCompany.base_currency);
+            setCurrency(matchedCompany.base_currency);
         } else if (matchedCustomer?.currency) {
-            setCurrency(matchedCustomer.currency === 'EUR' ? 'EURO' : matchedCustomer.currency);
+            setCurrency(matchedCustomer.currency);
         }
 
         // Find relevant leads/deals for this customer
@@ -379,7 +379,7 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
             setProjectManager(deal.project_manager || '');
             setSalesPerson(deal.salesperson_name || '');
             setProjectName(deal.deal_name || '');
-            if (deal.currency) setCurrency(deal.currency === 'EUR' ? 'EURO' : deal.currency);
+            if (deal.currency) setCurrency(deal.currency);
 
             if (deal.lead) {
                 const associatedLead = leads.find(l => l.id === deal.lead);

@@ -2,8 +2,13 @@ from rest_framework import serializers
 from .models import (
     Invoice, InvoiceLineItem, StateMaster, CompanyProfile,
     BankConnection, BankTransaction, ReceiptVoucher, ReceiptAdjustment, ReceiptAttachment,
-    CustomerPartner, EndCustomer, FinancialYear
+    CustomerPartner, EndCustomer, FinancialYear, ExchangeRate
 )
+
+class ExchangeRateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExchangeRate
+        fields = '__all__'
 
 class FinancialYearSerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,6 +63,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     deal_no = serializers.CharField(source='deal.deal_id', read_only=True, required=False, allow_null=True)
     approved_by_name = serializers.CharField(source='approved_by.username', read_only=True, required=False, allow_null=True)
     so_no = serializers.SerializerMethodField()
+    amount_inr = serializers.SerializerMethodField()
     
     # Optional/Calculated fields made non-required for validation
     invoice_no = serializers.CharField(required=False, allow_blank=True)
@@ -84,7 +90,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'project_name', 'deal_no', 'approved_by_name', 'sales_tax_rate', 'sales_tax_amount',
             'gst_declaration', 'lut_declaration', 'authorized_signatory', 
             'signature_image', 'company_seal', 'memo', 'irn', 'ack_no', 'ack_date', 'payment_terms_days',
-            'po_number', 'po_date', 'customer_country', 'customer'
+            'po_number', 'po_date', 'customer_country', 'customer', 'amount_inr'
         ]
 
     def get_so_no(self, obj):
@@ -107,6 +113,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
         if obj.sales_order and obj.sales_order.project_name:
             return obj.sales_order.project_name
         return "Direct Invoice"
+
+    def get_amount_inr(self, obj):
+        from .services import ExchangeRateService
+        return float(ExchangeRateService.convert_to_inr(obj.total_amount, obj.currency, None))
 
     def to_internal_value(self, data):
         # Handle empty strings for foreign keys from frontend

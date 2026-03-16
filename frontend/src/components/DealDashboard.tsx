@@ -40,6 +40,7 @@ const SHORT_COL_WIDTHS: Record<string, number> = {
     expected_close_date: 60,
     hubspot_id: 50,
     last_synced_at: 55,
+    amount_inr: 50,
 };
 
 // Width at which the FULL label becomes visible (snaps to full label text)
@@ -66,6 +67,7 @@ const FULL_LABEL_WIDTHS: Record<string, number> = {
     expected_close_date: 115,
     hubspot_id: 85,
     last_synced_at: 115,
+    amount_inr: 100,
 };
 
 // MIN_COL_WIDTHS = smallest allowed (short label width)
@@ -95,6 +97,7 @@ const MAX_COL_WIDTHS: Record<string, number> = {
     expected_close_date: 150,
     hubspot_id: 120,
     last_synced_at: 150,
+    amount_inr: 150,
 };
 
 const ALL_COLUMNS = [
@@ -106,6 +109,7 @@ const ALL_COLUMNS = [
     { key: 'stage', label: 'Stage', shortLabel: 'Stage' },
     { key: 'currency', label: 'Currency', shortLabel: 'Curr.' },
     { key: 'deal_amount', label: 'Amount', shortLabel: 'Amt.' },
+    { key: 'amount_inr', label: 'INR Amount', shortLabel: 'INR' },
     { key: 'deal_type', label: 'Type', shortLabel: 'Type' },
     { key: 'customer_name', label: 'Customer/Partner Name', shortLabel: 'Cust.' },
     { key: 'customer_email', label: 'Customer Email', shortLabel: 'Email' },
@@ -152,6 +156,7 @@ interface Deal {
     created_at: string;
     is_read: boolean;
     lead_no?: string;
+    amount_inr?: number;
 }
 
 interface DealDashboardProps {
@@ -245,6 +250,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
             deal_date: '',
             hubspot_id: '',
             last_synced_at: '',
+            amount_inr: '',
             period: '',
             startDate: '',
             endDate: ''
@@ -311,6 +317,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
             const matchesStage = filters.stage === '' || deal.stage === filters.stage;
             const matchesCurrency = filters.currency === '' || deal.currency === filters.currency;
             const matchesAmount = (deal.deal_amount || '').toString().includes(filters.deal_amount);
+            const matchesAmountInr = (deal.amount_inr || '').toString().includes(filters.amount_inr);
             const matchesType = filters.deal_type === '' || (deal as any).deal_type === filters.deal_type;
             const matchesCustomer = ((deal as any).customer_name || '').toLowerCase().includes((filters.customer_name || '').toLowerCase());
             const matchesEndCustomer = ((deal as any).end_customer || '').toLowerCase().includes((filters.end_customer || '').toLowerCase());
@@ -376,7 +383,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                 matchesCustomer && matchesEndCustomer && matchesClient &&
                 matchesInsideSales && matchesInsideHead && matchesSales &&
                 matchesHead && matchesPM && matchesPMHead && matchesDate &&
-                matchesHubSpot && matchesSync && matchesSearchQuery;
+                matchesHubSpot && matchesSync && matchesAmountInr && matchesSearchQuery;
         });
     }, [deals, filters]);
 
@@ -890,7 +897,7 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                                 inside_sales_head: '', salesperson_name: '', sales_head: '',
                                                 project_manager: '', project_manager_head: '',
                                                 expected_close_date: '', deal_date: '',
-                                                hubspot_id: '', last_synced_at: '',
+                                                hubspot_id: '', last_synced_at: '', amount_inr: '',
                                                 period: '', startDate: '', endDate: ''
                                             })}
                                             style={{ height: '24px', width: '100%', fontSize: '10px', color: 'var(--theme-primary)', fontWeight: 700, cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '6px' }}
@@ -943,8 +950,14 @@ const DealDashboard: React.FC<DealDashboardProps> = ({ onView }) => {
                                                     case 'deal_amount':
                                                         return (
                                                             <td key={key} style={{}}>
-                                                                {deal.currency === 'INR' ? '₹' : deal.currency === 'USD' ? '$' : deal.currency === 'EURO' ? '€' : ''}
+                                                                {deal.currency === 'INR' ? '₹' : deal.currency === 'USD' ? '$' : deal.currency === 'EUR' ? '€' : ''}
                                                                 {parseFloat(deal.deal_amount).toLocaleString()}
+                                                            </td>
+                                                        );
+                                                    case 'amount_inr':
+                                                        return (
+                                                            <td key={key} style={{ color: 'var(--theme-primary)', fontWeight: 600 }}>
+                                                                ₹{parseFloat(deal.amount_inr?.toString() || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                             </td>
                                                         );
                                                     case 'expected_close_date':

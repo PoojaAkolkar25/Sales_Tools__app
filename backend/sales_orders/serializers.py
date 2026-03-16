@@ -18,6 +18,7 @@ class SalesOrderSerializer(serializers.ModelSerializer):
     deal_id = serializers.SerializerMethodField()
     cost_sheet = serializers.SerializerMethodField()
     estimate_amount = serializers.SerializerMethodField()
+    amount_inr = serializers.SerializerMethodField()
 
     def get_estimate_amount(self, obj):
         if obj.estimate:
@@ -58,13 +59,17 @@ class SalesOrderSerializer(serializers.ModelSerializer):
                 "id": obj.customer.id, 
                 "name": obj.customer.name,
                 "address": obj.customer.address,
-                "shipping_address": obj.customer.address # Default shipping to billing if needed, or just address
+                "shipping_address": obj.customer.address 
             }
         return None
     
+    def get_amount_inr(self, obj):
+        from finance.services import ExchangeRateService
+        return float(ExchangeRateService.convert_to_inr(obj.total_amount, obj.currency, None))
+    
     class Meta:
         model = SalesOrder
-        fields = ['id', 'so_number', 'order_date', 'status', 'customer', 'customer_detail', 'customer_name', 'cust_id', 'estimate', 'estimate_no', 'estimate_date', 'estimate_amount', 'po_number', 'po_date', 'po_from_date', 'po_to_date', 'delivery_date', 'billing_address', 'shipping_address', 'currency', 'total_amount', 'po_file', 'po_file_name', 'po_file_url', 'assigned_to', 'items', 'estimates', 'deal', 'deal_id', 'cost_sheet']
+        fields = ['id', 'so_number', 'order_date', 'status', 'customer', 'customer_detail', 'customer_name', 'cust_id', 'estimate', 'estimate_no', 'estimate_date', 'estimate_amount', 'po_number', 'po_date', 'po_from_date', 'po_to_date', 'delivery_date', 'billing_address', 'shipping_address', 'currency', 'total_amount', 'amount_inr', 'po_file', 'po_file_name', 'po_file_url', 'assigned_to', 'items', 'estimates', 'deal', 'deal_id', 'cost_sheet']
         extra_kwargs = {
             'estimates': {'required': False},
             'so_number': {'read_only': True},

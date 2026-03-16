@@ -10,16 +10,17 @@ from .models import (  # type: ignore
     Invoice, InvoiceLineItem, StateMaster, CompanyProfile,
     BankConnection, BankTransaction, ReceiptVoucher, ReceiptAdjustment, 
     ReceiptAttachment, BankTransactionStatus, ReceiptStatus, BankTransactionSource,
-    CustomerPartner, EndCustomer, FinancialYear
+    CustomerPartner, EndCustomer, FinancialYear, ExchangeRate
 )
 from deals.models import AuditTrail  # type: ignore
 from .serializers import (  # type: ignore
     InvoiceSerializer, InvoiceLineItemSerializer, StateMasterSerializer, 
     CompanyProfileSerializer, BankConnectionSerializer, BankTransactionSerializer, 
     ReceiptVoucherSerializer, ReceiptAdjustmentSerializer,
-    CustomerPartnerSerializer, EndCustomerSerializer, FinancialYearSerializer
+    CustomerPartnerSerializer, EndCustomerSerializer, FinancialYearSerializer,
+    ExchangeRateSerializer
 )
-from .services import InvoiceService  # type: ignore
+from .services import InvoiceService, ExchangeRateService  # type: ignore
 import csv
 import io
 import logging
@@ -546,25 +547,51 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         invoices = self.filter_queryset(self.get_queryset())
         data = []
         for inv in invoices:
+            amount_inr = ExchangeRateService.convert_to_inr(inv.total_amount, inv.currency, inv.invoice_date)
             data.append({
                 'invoice_no': inv.invoice_no,
                 'date': inv.invoice_date,
-                'customer': inv.lead.customer_name,
+                'customer': inv.lead.customer_name if inv.lead else (inv.customer.name if inv.customer else '---'),
                 'type': inv.invoice_type,
                 'status': inv.status,
-                'amount': inv.total_amount
+                'currency': inv.currency,
+                'amount': float(inv.total_amount),
+                'amount_inr': float(amount_inr)
             })
         return Response(data)
 
     @action(detail=False, methods=['get'])
     def report_tax_summary(self, request):
         from django.db.models import Sum  # type: ignore
-        summary = Invoice.objects.filter(status__in=['FINALISED', 'SUBMITTED', 'PAID', 'PARTIAL']).aggregate(
+        queryset = Invoice.objects.filter(status__in=['FINALISED', 'SUBMITTED', 'PAID', 'PARTIAL'])
+        
+        summary = queryset.aggregate(
             total_cgst=Sum('line_items__cgst_amount'),
             total_sgst=Sum('line_items__sgst_amount'),
             total_igst=Sum('line_items__igst_amount'),
             total_sales_tax=Sum('sales_tax_amount')
         )
+        
+        # Calculate INR totals manually for accurate conversion based on individual invoice dates
+        total_cgst_inr = 0
+        total_sgst_inr = 0
+        total_igst_inr = 0
+        total_sales_tax_inr = 0
+        
+        for inv in queryset:
+            rate = ExchangeRateService.get_rate(inv.currency, inv.invoice_date)
+            total_cgst_inr += float(inv.line_items.aggregate(s=Sum('cgst_amount'))['s'] or 0) * float(rate)
+            total_sgst_inr += float(inv.line_items.aggregate(s=Sum('sgst_amount'))['s'] or 0) * float(rate)
+            total_igst_inr += float(inv.line_items.aggregate(s=Sum('igst_amount'))['s'] or 0) * float(rate)
+            total_sales_tax_inr += float(inv.sales_tax_amount or 0) * float(rate)
+            
+        summary.update({
+            'total_cgst_inr': total_cgst_inr,
+            'total_sgst_inr': total_sgst_inr,
+            'total_igst_inr': total_igst_inr,
+            'total_sales_tax_inr': total_sales_tax_inr
+        })
+        
         return Response(summary)
     
     @action(detail=False, methods=['get'])
@@ -589,14 +616,29 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         # Format the response
         data = []
         for customer in customer_billing:
+            # Note: For customer billing total across different currencies, 
+            # we'd ideally need a more complex query or pre-calculated INR fields.
+            # Here we provide the base values and a note or converted total if requested.
+            # Simplified: Summing billing amount in INR by fetching all invoices for the customer
+            
+            invoices = Invoice.objects.filter(lead_id=customer['lead__id'])
+            total_billed_inr = 0
+            total_outstanding_inr = 0
+            
+            for inv in invoices:
+                total_billed_inr += ExchangeRateService.convert_to_inr(inv.total_amount, inv.currency, inv.invoice_date)
+                total_outstanding_inr += ExchangeRateService.convert_to_inr(inv.open_balance, inv.currency, inv.invoice_date)
+
             data.append({
                 'customer_id': customer['lead__id'],
                 'customer_name': customer['lead__customer_name'],
                 'total_invoices': customer['total_invoices'],
                 'total_billed': float(customer['total_billed'] or 0),
+                'total_billed_inr': float(total_billed_inr),
                 'total_paid': float(customer['total_paid'] or 0),
                 'total_partial': float(customer['total_partial'] or 0),
-                'total_outstanding': float(customer['total_outstanding'] or 0)
+                'total_outstanding': float(customer['total_outstanding'] or 0),
+                'total_outstanding_inr': float(total_outstanding_inr)
             })
         
         return Response(data)
@@ -620,7 +662,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             'border': 1
         })
 
-        headers = ['Invoice No', 'Date', 'Due Date', 'Customer Name', 'Status', 'Total Amount', 'Open Balance']
+        headers = ['Invoice No', 'Date', 'Due Date', 'Customer Name', 'Status', 'Total Amount', 'Total Amount (INR)', 'Open Balance', 'Open Balance (INR)']
         for col, header in enumerate(headers):
             worksheet.write(0, col, header, header_format)
 
@@ -637,7 +679,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             worksheet.write(row, 3, customer_name or '—')
             worksheet.write(row, 4, inv.status)
             worksheet.write(row, 5, float(inv.total_amount) if inv.total_amount else 0)
-            worksheet.write(row, 6, float(inv.open_balance) if inv.open_balance else 0)
+            worksheet.write(row, 6, float(ExchangeRateService.convert_to_inr(inv.total_amount, inv.currency, inv.invoice_date)))
+            worksheet.write(row, 7, float(inv.open_balance) if inv.open_balance else 0)
+            worksheet.write(row, 8, float(ExchangeRateService.convert_to_inr(inv.open_balance, inv.currency, inv.invoice_date)))
 
         workbook.close()
         output.seek(0)
@@ -1052,6 +1096,37 @@ class BankTransactionViewSet(viewsets.ModelViewSet):
             new_value=BankTransactionStatus.FOR_REVIEW
         )
         return Response({'status': 'Transaction moved back to for review'})
+
+class ReceiptAdjustmentViewSet(viewsets.ModelViewSet):
+    queryset = ReceiptAdjustment.objects.all()
+    serializer_class = ReceiptAdjustmentSerializer
+
+class ExchangeRateViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ExchangeRate.objects.all().order_by('-date')
+    serializer_class = ExchangeRateSerializer
+
+    @action(detail=False, methods=['get'])
+    def latest(self, request):
+        """Returns the latest exchange rates for USD and EUR to INR."""
+        today = timezone.now().date()
+        
+        usd_rate = ExchangeRate.objects.filter(currency_code='USD', date__lte=today).order_by('-date').first()
+        eur_rate = ExchangeRate.objects.filter(currency_code='EUR', date__lte=today).order_by('-date').first()
+        
+        data = {
+            'date': today,
+            'rates': {}
+        }
+        
+        if usd_rate:
+            data['rates']['USD'] = float(usd_rate.rate_to_inr)
+            data['date'] = usd_rate.date # Use the date from the rate if today's is missing
+        if eur_rate:
+            data['rates']['EUR'] = float(eur_rate.rate_to_inr)
+            if not usd_rate:
+                data['date'] = eur_rate.date
+                
+        return Response(data)
 
 class ReceiptVoucherViewSet(viewsets.ModelViewSet):
     queryset = ReceiptVoucher.objects.all()

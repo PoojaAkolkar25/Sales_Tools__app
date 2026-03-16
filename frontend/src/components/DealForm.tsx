@@ -209,7 +209,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
         const code = currencyCode.toUpperCase();
         if (code === 'INR') return '₹';
         if (code === 'USD') return '$';
-        if (code === 'EUR' || code === 'EURO') return '€';
+        if (code === 'EUR') return '€';
         return '';
     };
 
@@ -252,8 +252,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         customer: matchedCustomer.id,
                         customer_email: matchedCustomer.email || prev.customer_email,
                         // Prioritize base_currency from Company Profile (User Management)
-                        currency: (matchedCompany?.base_currency === 'EUR' ? 'EURO' : matchedCompany?.base_currency) ||
-                            (matchedCustomer.currency === 'EUR' ? 'EURO' : matchedCustomer.currency) ||
+                        currency: matchedCompany?.base_currency ||
+                            matchedCustomer.currency ||
                             prev.currency || '',
                         company: linkedName || prev.company,
                         end_customer: '' // Keep blank for manual selection as requested
@@ -277,8 +277,8 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                         ...prev,
                         customer_email: selectedCustomer.email || prev.customer_email,
                         // Prioritize base_currency from Company Profile (User Management)
-                        currency: (matchedCompany?.base_currency === 'EUR' ? 'EURO' : matchedCompany?.base_currency) ||
-                            (selectedCustomer.currency === 'EUR' ? 'EURO' : selectedCustomer.currency) ||
+                        currency: matchedCompany?.base_currency ||
+                            selectedCustomer.currency ||
                             prev.currency || '',
                         company: linkedName || prev.company,
                         end_customer: '' // Reset to blank for manual selection as requested
@@ -949,7 +949,7 @@ const DealForm: React.FC<DealFormProps> = ({ id, onBack, onSave, refreshTrigger 
                                                 </td>
                                                 <td style={{ padding: '6px 4px' }}>
                                                     <div style={{ height: '30px', padding: '4px 0', fontSize: '0.9rem', color: '#4A5568', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        {formData.currency === 'EUR' ? 'EURO' : (formData.currency || '')}
+                                                        {formData.currency || ''}
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '6px 4px' }}>

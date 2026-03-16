@@ -1,5 +1,6 @@
 import re
 from datetime import date
+from decimal import Decimal
 from types import SimpleNamespace
 
 try:
@@ -410,3 +411,94 @@ class InvoiceService:
             raise Exception("Error creating preview PDF with xhtml2pdf")
             
         return pdf_file.getvalue()
+
+class ExchangeRateService:
+    API_URL = "https://api.exchangerate-api.com/v4/latest/USD"
+
+    @staticmethod
+    def fetch_latest_rates():
+        """
+        Fetches latest rates from API and stores them in the database.
+        """
+        import requests
+        from .models import ExchangeRate
+        from django.utils import timezone
+
+        try:
+            response = requests.get(ExchangeRateService.API_URL)
+            response.raise_for_status()
+            data = response.json()
+            
+            rates = data.get("rates", {})
+            inr_rate = rates.get("INR")
+            
+            if inr_rate:
+                # We base everything on USD for this API, so we store USD to INR
+                ExchangeRate.objects.update_or_create(
+                    currency_code="USD",
+                    date=timezone.now().date(),
+                    defaults={"rate_to_inr": Decimal(str(inr_rate))}
+                )
+                
+                # If we need other currencies, we can calculate them relative to INR
+                # Example: EUR to INR = (EUR to USD rate) * (USD to INR rate)
+                # But this API gives all relative to USD, so USD to EUR is rates["EUR"]
+                # So EUR to INR = (1 / rates["EUR"]) * inr_rate
+                
+                for code, rate in rates.items():
+                    if code != "USD" and code != "INR":
+                        rate_to_inr = Decimal(str(inr_rate)) / Decimal(str(rate))
+                        ExchangeRate.objects.update_or_create(
+                            currency_code=code,
+                            date=timezone.now().date(),
+                            defaults={"rate_to_inr": rate_to_inr}
+                        )
+                return True
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching exchange rates: {str(e)}")
+            return False
+
+    @staticmethod
+    def get_rate(currency_code, date_obj=None):
+        """
+        Gets the exchange rate for a specific currency and date.
+        """
+        from .models import ExchangeRate
+        from django.utils import timezone
+        
+        if not date_obj:
+            date_obj = timezone.now().date()
+            
+        if currency_code == "INR":
+            return Decimal("1.0")
+            
+        rate_obj = ExchangeRate.objects.filter(
+            currency_code=currency_code, 
+            date__lte=date_obj
+        ).order_by('-date').first()
+        
+        if rate_obj:
+            return rate_obj.rate_to_inr
+            
+        # Fallback to latest available if none for that date or earlier
+        rate_obj = ExchangeRate.objects.filter(
+            currency_code=currency_code
+        ).order_by('-date').first()
+        
+        if rate_obj:
+            return rate_obj.rate_to_inr
+            
+        return Decimal("1.0") # Default fallback
+
+    @staticmethod
+    def convert_to_inr(amount, currency_code, date_obj=None):
+        """
+        Converts an amount from foreign currency to INR.
+        """
+        if not amount:
+            return Decimal("0.0")
+            
+        rate = ExchangeRateService.get_rate(currency_code, date_obj)
+        return Decimal(str(amount)) * rate

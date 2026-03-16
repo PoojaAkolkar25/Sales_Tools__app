@@ -15,7 +15,10 @@ const ALL_COL_CONFIG = [
     { key: 'status', label: 'Status', shortLabel: 'ST.' },
     { key: 'margin_percentage', label: 'Margin %', shortLabel: 'MARG%' },
     { key: 'est_margin', label: 'Est. Margin', shortLabel: 'MARG' },
-    { key: 'total_price', label: 'Total Price', shortLabel: 'PRICE' }
+    { key: 'total_price', label: 'Total Price', shortLabel: 'PRICE' },
+    { key: 'total_price_inr', label: 'Price (INR)', shortLabel: 'PRICE INR' },
+    { key: 'total_cost_inr', label: 'Cost (INR)', shortLabel: 'COST INR' },
+    { key: 'total_margin_inr', label: 'Margin (INR)', shortLabel: 'MARG INR' }
 ];
 
 const SHORT_COL_WIDTHS: Record<string, number> = {
@@ -29,6 +32,9 @@ const SHORT_COL_WIDTHS: Record<string, number> = {
     margin_percentage: 90,
     est_margin: 110,
     total_price: 110,
+    total_price_inr: 110,
+    total_cost_inr: 110,
+    total_margin_inr: 110,
     actions: 80
 };
 
@@ -42,7 +48,10 @@ const FULL_LABEL_WIDTHS: Record<string, number> = {
     status: 120,
     margin_percentage: 120,
     est_margin: 150,
-    total_price: 150
+    total_price: 150,
+    total_price_inr: 150,
+    total_cost_inr: 150,
+    total_margin_inr: 150
 };
 
 const MAX_COL_WIDTHS: Record<string, number> = {
@@ -56,6 +65,9 @@ const MAX_COL_WIDTHS: Record<string, number> = {
     margin_percentage: 120,
     est_margin: 200,
     total_price: 200,
+    total_price_inr: 200,
+    total_cost_inr: 200,
+    total_margin_inr: 200,
     actions: 120
 };
 
@@ -80,6 +92,9 @@ interface CostSheet {
     infra_items?: any[];
     other_items?: any[];
     total_estimated_cost: string;
+    total_estimated_price_inr?: number;
+    total_estimated_cost_inr?: number;
+    total_estimated_margin_inr?: number;
 }
 
 interface CostSheetDashboardProps {
@@ -974,7 +989,7 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                         const grandTotalMargin = totals.license.catMarginAmount + totals.implementation.catMarginAmount + totals.support.catMarginAmount + totals.infra.catMarginAmount + totals.other.catMarginAmount;
                                         const grandTotalPrice = totals.license.catPrice + totals.implementation.catPrice + totals.support.catPrice + totals.infra.catPrice + totals.other.catPrice;
                                         const grandTotalMarginPercent = grandTotalCost > 0 ? (grandTotalMargin / grandTotalCost) * 100 : 0;
-                                        const currencySymbol = cs.currency === 'INR' ? '₹' : cs.currency === 'USD' ? '$' : cs.currency === 'EURO' ? '€' : '$';
+                                        const currencySymbol = cs.currency === 'INR' ? '₹' : cs.currency === 'USD' ? '$' : cs.currency === 'EUR' ? '€' : '$';
 
                                         return (
                                             <React.Fragment key={cs.id}>
@@ -1059,13 +1074,25 @@ const CostSheetDashboard: React.FC<CostSheetDashboardProps> = ({ onView }) => {
                                                                 </td>;
                                                             case 'est_margin':
                                                                 return <td key={key} style={{ ...cellStyle, textAlign: 'right' }}>
-                                                                    {cs.currency === 'INR' ? '₹' : cs.currency === 'USD' ? '$' : cs.currency === 'EURO' ? '€' : '$'}
+                                                                    {cs.currency === 'INR' ? '₹' : cs.currency === 'USD' ? '$' : cs.currency === 'EUR' ? '€' : '$'}
                                                                     {parseFloat(cs.total_estimated_margin).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                 </td>;
                                                             case 'total_price':
                                                                 return <td key={key} style={{ ...cellStyle, textAlign: 'right' }}>
-                                                                    {cs.currency === 'INR' ? '₹' : cs.currency === 'USD' ? '$' : cs.currency === 'EURO' ? '€' : '$'}
+                                                                    {cs.currency === 'INR' ? '₹' : cs.currency === 'USD' ? '$' : cs.currency === 'EUR' ? '€' : '$'}
                                                                     {parseFloat(cs.total_estimated_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                </td>;
+                                                            case 'total_price_inr':
+                                                                return <td key={key} style={{ ...cellStyle, textAlign: 'right', color: 'var(--theme-primary)', fontWeight: 600 }}>
+                                                                    ₹{parseFloat(cs.total_estimated_price_inr?.toString() || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                </td>;
+                                                            case 'total_cost_inr':
+                                                                return <td key={key} style={{ ...cellStyle, textAlign: 'right', color: 'var(--theme-primary)', fontWeight: 600 }}>
+                                                                    ₹{parseFloat(cs.total_estimated_cost_inr?.toString() || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                </td>;
+                                                            case 'total_margin_inr':
+                                                                return <td key={key} style={{ ...cellStyle, textAlign: 'right', color: 'var(--theme-primary)', fontWeight: 600 }}>
+                                                                    ₹{parseFloat(cs.total_estimated_margin_inr?.toString() || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                 </td>;
                                                             default:
                                                                 return null;

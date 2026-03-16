@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Bell,
     LogOut,
     HelpCircle,
-    User
+    User,
+    DollarSign,
+    Euro
 } from 'lucide-react';
+import api from '../api';
 
 interface NavbarProps {
     user: any;
@@ -16,6 +19,21 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarExpanded, user }) =>
     const [showNotifications, setShowNotifications] = useState(false);
     const [showHelpModal, setShowHelpModal] = useState(false);
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+    const [rates, setRates] = useState<{ USD?: number, EUR?: number }>({});
+    const [rateDate, setRateDate] = useState<string>('');
+
+    useEffect(() => {
+        const fetchRates = async () => {
+            try {
+                const response = await api.get('/finance/exchange-rates/latest/');
+                setRates(response.data.rates);
+                setRateDate(response.data.date);
+            } catch (error) {
+                console.error('Error fetching exchange rates:', error);
+            }
+        };
+        fetchRates();
+    }, []);
 
     return (
         <header className={`ae-navbar ${isSidebarExpanded ? 'sidebar-expanded' : ''}`}>
@@ -25,6 +43,35 @@ const Navbar: React.FC<NavbarProps> = ({ onLogout, isSidebarExpanded, user }) =>
 
             {/* Right Section: Actions & Profile aligned as per image */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                {/* Exchange Rates Display */}
+                {(rates.USD || rates.EUR) && (
+                    <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '12px', 
+                        padding: '4px 12px', 
+                        background: 'rgba(255, 255, 255, 0.05)', 
+                        borderRadius: '20px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        fontSize: '11px',
+                        color: 'rgba(255, 255, 255, 0.8)',
+                    }} title={`Daily Exchange Rates (as of ${rateDate})`}>
+                        {rates.USD && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <DollarSign size={12} style={{ color: '#48BB78' }} />
+                                <span>{rates.USD.toFixed(2)} INR</span>
+                            </div>
+                        )}
+                        <div style={{ width: '1px', height: '12px', background: 'rgba(255, 255, 255, 0.2)' }}></div>
+                        {rates.EUR && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Euro size={12} style={{ color: '#4299E1' }} />
+                                <span>{rates.EUR.toFixed(2)} INR</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* Notification Bell */}
                 <div style={{ position: 'relative' }}>
                     <button

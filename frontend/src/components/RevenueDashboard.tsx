@@ -28,6 +28,7 @@ interface RevenueContract {
     customer: number;
     customer_name: string;
     total_amount: string;
+    total_amount_inr?: number;
     currency: string;
     start_date: string;
     end_date: string;
@@ -40,6 +41,7 @@ const ALL_COLUMNS = [
     { key: 'deal_no', label: 'Deal No.', shortLabel: 'DEAL' },
     { key: 'customer_name', label: 'Customer Name', shortLabel: 'CUST.' },
     { key: 'total_amount', label: 'Amount', shortLabel: 'AMT' },
+    { key: 'total_amount_inr', label: 'Amount (INR)', shortLabel: 'INR' },
     { key: 'period', label: 'Period', shortLabel: 'PER' },
     { key: 'status', label: 'Status', shortLabel: 'ST' },
 ];
@@ -510,7 +512,7 @@ const RevenueDashboard: React.FC = () => {
                                                     textTransform: 'uppercase',
                                                     borderRight: '1px solid var(--border-secondary)',
                                                     borderBottom: '1px solid var(--border-secondary)',
-                                                    textAlign: ['total_amount'].includes(key) ? 'right' : 'left'
+                                                    textAlign: ['total_amount', 'total_amount_inr'].includes(key) ? 'right' : 'left'
                                                 }}>
                                                     {col?.label}
                                                 </th>
@@ -569,8 +571,14 @@ const RevenueDashboard: React.FC = () => {
                                                         case 'total_amount':
                                                             return (
                                                                 <td key={key} style={{ textAlign: 'right', fontWeight: 600 }}>
-                                                                    {contract.currency === 'INR' ? '₹' : contract.currency === 'USD' ? '$' : contract.currency === 'EURO' ? '€' : ''}
+                                                                    {contract.currency === 'INR' ? '₹' : contract.currency === 'USD' ? '$' : contract.currency === 'EUR' ? '€' : ''}
                                                                     {parseFloat(contract.total_amount).toLocaleString()}
+                                                                </td>
+                                                            );
+                                                        case 'total_amount_inr':
+                                                            return (
+                                                                <td key={key} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--theme-primary)' }}>
+                                                                    ₹{parseFloat(contract.total_amount_inr?.toString() || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                                 </td>
                                                             );
                                                         case 'period':

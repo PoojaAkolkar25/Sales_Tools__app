@@ -14,7 +14,7 @@ class DealStage(models.TextChoices):
 class Currency(models.TextChoices):
     INR = 'INR', 'INR'
     USD = 'USD', 'USD'
-    EURO = 'EURO', 'EURO'
+    EUR = 'EUR', 'EUR'
 
 class ClientType(models.TextChoices):
     NEW = 'NEW', 'New'
@@ -186,7 +186,7 @@ class Deal(models.Model):
         symbols = {
             'INR': '₹',
             'USD': '$',
-            'EURO': '€'
+            'EUR': '€'
         }
         return symbols.get(self.currency, self.currency)
 

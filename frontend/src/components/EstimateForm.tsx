@@ -169,7 +169,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, s
         switch (currency) {
             case 'INR': return '₹';
             case 'USD': return '$';
-            case 'EURO': return '€';
+            case 'EUR': return '€';
             default: return currency;
         }
     };

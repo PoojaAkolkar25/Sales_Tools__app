@@ -1,0 +1,7 @@
+--- Find Deals with USD and EUR ---
+Deal AEINDDL0011 (USD): Amount 444.00. amount_inr calculated by serializer: 41158.80000000
+Deal AEINDDL0010 (USD): Amount 46400.00. amount_inr calculated by serializer: 4301280.00000000
+Deal AEUSADL0003 (USD): Amount 2200.00. amount_inr calculated by serializer: 203940.00000000
+Deal AEINDDL0021 (EUR): Amount 210.00. amount_inr calculated by serializer: 22247.99997000
+Deal AEINDDL0020 (EUR): Amount 2.00. amount_inr calculated by serializer: 211.88571400
+Deal AEINDDL0019 (EUR): Amount 23.00. amount_inr calculated by serializer: 2436.68571100

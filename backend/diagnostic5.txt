@@ -1,0 +1,3 @@
+--- Exchange Rate API Math ---
+USD to INR Rate: 92.700000
+Wait, is EUR stored as USD->EUR or EUR->INR? Value stored for EUR today: 105.942857

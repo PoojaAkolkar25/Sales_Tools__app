@@ -1,0 +1,14 @@
+--- Currency Diagnostic ---
+Today's Rates:
+USD: 92.700000
+EUR: 105.942857
+
+Deals:
+Deal AEINDDL0021 (2026-03-01): Amount 210.00 EUR. Hist Rate 105.942857 -> 22247.99997 INR. Curr Rate 105.942857 -> 22247.99997 INR.
+Deal AEINDDL0020 (2026-03-01): Amount 2.00 EUR. Hist Rate 105.942857 -> 211.885714 INR. Curr Rate 105.942857 -> 211.885714 INR.
+Deal AEINDDL0019 (2026-02-27): Amount 23.00 EUR. Hist Rate 105.942857 -> 2436.685711 INR. Curr Rate 105.942857 -> 2436.685711 INR.
+
+Estimates:
+Est EST-0030 (None): Total 0.00 EUR. Hist Rate 105.942857 -> 0.0 INR. Curr Rate 105.942857 -> 0.0 INR.
+Est EST-0029 (None): Total 0.00 EUR. Hist Rate 105.942857 -> 0.0 INR. Curr Rate 105.942857 -> 0.0 INR.
+Est EST-0028 (None): Total 0.00 EUR. Hist Rate 105.942857 -> 0.0 INR. Curr Rate 105.942857 -> 0.0 INR.

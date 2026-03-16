@@ -23,6 +23,7 @@ interface ScheduleEntry {
     id: number;
     period_month: string;
     amount: string;
+    amount_inr?: number;
     is_posted: boolean;
     gl_entry_reference: string;
 }
@@ -35,6 +36,7 @@ interface ContractDetails {
     customer_name: string;
     deal_no: string;
     total_amount: string;
+    total_amount_inr?: number;
     currency: string;
 }
 
@@ -129,6 +131,10 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
         return schedules.reduce((sum: number, s: ScheduleEntry) => sum + Number(s.amount || 0), 0);
     }, [schedules]);
 
+    const totalRecognizedINR = useMemo(() => {
+        return schedules.reduce((sum: number, s: ScheduleEntry) => sum + Number(s.amount_inr || 0), 0);
+    }, [schedules]);
+
     return (
         <div style={{ background: 'var(--bg-primary)', padding: '0', margin: '0', display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Header */}
@@ -173,6 +179,9 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
                         <div>
                             <div className="ae-card-label">Total Contract Value</div>
                             <div className="ae-card-value">{contract ? `${Number(contract.total_amount).toLocaleString()} ${contract.currency}` : '---'}</div>
+                            {contract?.total_amount_inr && (
+                                <div style={{ fontSize: '0.75rem', color: 'var(--theme-primary)', fontWeight: 600 }}>₹{parseFloat(contract.total_amount_inr.toString()).toLocaleString()}</div>
+                            )}
                         </div>
                         <div className="ae-icon-box" style={{ background: 'rgba(0, 102, 204, 0.05)', color: 'var(--ae-blue)' }}><BarChart3 size={16} /></div>
                     </div>
@@ -182,6 +191,9 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
                         <div>
                             <div className="ae-card-label">Total Recognized to Date</div>
                             <div className="ae-card-value" style={{ color: 'var(--theme-accent)' }}>{contract ? `${totalRecognized.toLocaleString()} ${contract.currency}` : '---'}</div>
+                            {totalRecognizedINR > 0 && (
+                                <div style={{ fontSize: '0.75rem', color: 'var(--theme-primary)', fontWeight: 600 }}>₹{totalRecognizedINR.toLocaleString()}</div>
+                            )}
                         </div>
                         <div className="ae-icon-box" style={{ background: 'rgba(0, 200, 83, 0.05)', color: 'var(--ae-green)' }}><TrendingUp size={16} /></div>
                     </div>
@@ -191,6 +203,9 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
                         <div>
                             <div className="ae-card-label">Pending Recognition</div>
                             <div className="ae-card-value" style={{ color: 'var(--theme-primary)' }}>{contract ? `${(Number(contract.total_amount) - totalRecognized).toLocaleString()} ${contract.currency}` : '---'}</div>
+                            {contract?.total_amount_inr && (
+                                <div style={{ fontSize: '0.75rem', color: 'var(--theme-primary)', fontWeight: 600 }}>₹{(Number(contract.total_amount_inr) - totalRecognizedINR).toLocaleString()}</div>
+                            )}
                         </div>
                         <div className="ae-icon-box" style={{ background: 'rgba(187, 77, 0, 0.05)', color: 'var(--ae-orange)' }}><Calculator size={16} /></div>
                     </div>
@@ -205,6 +220,7 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
                             <tr>
                                 <th style={{ backgroundColor: 'var(--ae-table-header-bg)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '12px 16px' }}>Period (Month)</th>
                                 <th style={{ backgroundColor: 'var(--ae-table-header-bg)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', textAlign: 'right', padding: '12px 16px' }}>Recognized Amount</th>
+                                <th style={{ backgroundColor: 'var(--ae-table-header-bg)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', textAlign: 'right', padding: '12px 16px' }}>Amount (INR)</th>
                                 <th style={{ backgroundColor: 'var(--ae-table-header-bg)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', textAlign: 'center', padding: '12px 16px' }}>GL Status</th>
                                 <th style={{ backgroundColor: 'var(--ae-table-header-bg)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '12px 16px' }}>GL Reference</th>
                                 <th style={{ backgroundColor: 'var(--ae-table-header-bg)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border-secondary)', textAlign: 'center', padding: '12px 16px' }}>Actions</th>
@@ -223,6 +239,7 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
                                             <input className="ae-input" placeholder="Filter..." value={filters.amount} onChange={e => setFilters({ ...filters, amount: e.target.value })} style={{ height: '24px', fontSize: '11px', width: '100%', paddingTop: 0, paddingBottom: 0 }} />
                                         </div>
                                     </th>
+                                    <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px' }}></th>
                                     <th style={{ backgroundColor: 'var(--ae-filter-row-bg)', borderRight: '1px solid var(--border-secondary)', borderBottom: '1px solid var(--border-secondary)', padding: '4px' }}>
                                         <div className="ae-input-group" style={{ margin: 0 }}>
                                             <Search className="ae-search-icon" size={12} />
@@ -248,7 +265,7 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '100px' }}><RefreshCcw className="animate-spin text-orange-500" style={{ margin: '0 auto' }} /></td></tr>
+                                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '100px' }}><RefreshCcw className="animate-spin text-orange-500" style={{ margin: '0 auto' }} /></td></tr>
                             ) : schedules.filter((entry: ScheduleEntry) => {
                                 const periodMonthStr = entry.period_month ? new Date(entry.period_month).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : '';
                                 const amountStr = Number(entry.amount || 0).toLocaleString();
@@ -260,7 +277,7 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
                                     statusStr.toLowerCase().includes(filters.status.toLowerCase()) &&
                                     refStr.toLowerCase().includes(filters.gl_reference.toLowerCase());
                             }).length === 0 ? (
-                                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>No recognized revenue entries match the filters.</td></tr>
+                                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>No recognized revenue entries match the filters.</td></tr>
                             ) : (
                                 schedules.filter((entry: ScheduleEntry) => {
                                     const periodMonthStr = entry.period_month ? new Date(entry.period_month).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : '';
@@ -279,6 +296,9 @@ const RevenueScheduleTable: React.FC<RevenueScheduleTableProps> = ({ contractId,
                                         </td>
                                         <td style={{ textAlign: 'right', fontWeight: 600 }}>
                                             {Number(entry.amount || 0).toLocaleString()} {contract?.currency}
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--theme-primary)' }}>
+                                            ₹{parseFloat(entry.amount_inr?.toString() || '0').toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
                                         <td style={{ textAlign: 'center' }}>
                                             {entry.is_posted ? (
