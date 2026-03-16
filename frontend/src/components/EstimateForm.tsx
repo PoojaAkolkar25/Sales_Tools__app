@@ -19,6 +19,7 @@ import {
     PlusCircle,
     Calendar,
     File,
+    Mails,
 } from 'lucide-react';
 import api from '../api';
 import { useNotification } from '../context/NotificationContext';
@@ -59,6 +60,30 @@ const getInitialFormData = () => ({
     }
 });
 
+const EMAIL_TEMPLATES = {
+    standard: {
+        name: 'Standard Proposal',
+        subject: (companyName: string, customerName: string, estimateId: string) =>
+            `${companyName} / ${customerName || 'Customer'} / ${estimateId}`,
+        body: (clientName: string, projectName: string, companyName: string, expirationDate: string, yourName: string, estimateId: string) =>
+            `Dear ${clientName},\n\nGreetings from ${companyName} !!\n\nIt was a pleasure discussing ${projectName} with you. Based on our conversation, I’ve attached a detailed proposal including estimates ${estimateId} for the services and license we discussed.\n\nYou can find the full breakdown of costs and timelines in the attached PDF.\n\nThis proposal is valid until ${expirationDate}. Please let me know if you have any questions or if you’d like to move forward.\n\nBest regards,\n${yourName}`
+    },
+    followup: {
+        name: 'Follow-Up',
+        subject: (companyName: string, customerName: string, estimateId: string) =>
+            `Follow up: ${companyName} / ${customerName || 'Customer'} / ${estimateId}`,
+        body: (clientName: string, _projectName: string, sentDate: string, yourName: string) =>
+            `Dear ${clientName},\n\nI’m checking in to see if you had a chance to review the proposal I sent on ${sentDate}. I’ve re-attached it here for your convenience.\n\nAre there any specific details or technical aspects I can clarify for you? I’m happy to hop on a 5-minute call to walk you through it.\n\nLooking forward to your thoughts.\n\nBest,\n${yourName}`
+    },
+    revised: {
+        name: 'Revised Quotation',
+        subject: (companyName: string, customerName: string, estimateId: string) =>
+            `Revised: ${companyName} / ${customerName || 'Customer'} / ${estimateId}`,
+        body: (clientName: string, _projectName: string, _companyName: string, revisionDetails: string, yourName: string) =>
+            `Dear ${clientName},\n\nThank you for your feedback on the initial proposal. As discussed, I have revised the scope to include ${revisionDetails} and adjusted the pricing accordingly.\n\nYou will find the updated proposal attached. Let me know if this aligns better with your current budget and requirements.\n\nKind regards,\n${yourName}`
+    }
+};
+
 const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, setIsReadOnly }) => {
     const { showNotification, showConfirm } = useNotification();
     const [estimate, setEstimate] = useState<any>(null);
@@ -76,6 +101,30 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, s
     const [editingColumn, setEditingColumn] = useState<string | null>(null);
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectComment, setRejectComment] = useState('');
+
+    // Email Modal State
+    const [emailModal, setEmailModal] = useState<{
+        open: boolean;
+        to: string;
+        cc: string;
+        bcc: string;
+        subject: string;
+        body: string;
+        templateType: keyof typeof EMAIL_TEMPLATES;
+        has_proposal: boolean;
+        proposal_filename: string;
+    }>({
+        open: false,
+        to: '',
+        cc: '',
+        bcc: '',
+        subject: '',
+        body: '',
+        templateType: 'standard',
+        has_proposal: false,
+        proposal_filename: ''
+    });
+    const [sendingEmail, setSendingEmail] = useState(false);
 
 
     const handlePreview = () => {
@@ -645,6 +694,88 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, s
             fetchEstimateDetails();
         } catch (error: any) {
             showNotification(error.response?.data?.error || 'Failed to reject estimate', 'error');
+        }
+    };
+
+    const handleTemplateChange = (type: keyof typeof EMAIL_TEMPLATES) => {
+        if (!estimate) return;
+
+        const clientName = estimate.customer_name || '[Client Name]';
+        const projectName = estimate.project_name || '[Project Name]';
+        const customerName = estimate.customer_name || '';
+        const estimateId = estimate.estimate_id || '';
+        const companyName = "Automation Edge";
+        const yourName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || "Sales Team" : "Sales Team";
+        const estDate = estimate.estimate_date ? new Date(estimate.estimate_date) : new Date();
+        const expDate = new Date(estDate);
+        expDate.setDate(expDate.getDate() + 30);
+        const expirationDate = expDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const sentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const revisionDetails = estimate.description_memo || "[specific change]";
+
+        let subject = "";
+        let body = "";
+
+        if (type === 'standard') {
+            subject = EMAIL_TEMPLATES.standard.subject(companyName, customerName, estimateId);
+            body = EMAIL_TEMPLATES.standard.body(clientName, projectName, companyName, expirationDate, yourName, estimateId);
+        } else if (type === 'followup') {
+            subject = EMAIL_TEMPLATES.followup.subject(companyName, customerName, estimateId);
+            body = EMAIL_TEMPLATES.followup.body(clientName, projectName, sentDate, yourName);
+        } else if (type === 'revised') {
+            subject = EMAIL_TEMPLATES.revised.subject(companyName, customerName, estimateId);
+            body = EMAIL_TEMPLATES.revised.body(clientName, projectName, companyName, revisionDetails, yourName);
+        }
+
+        setEmailModal({
+            ...emailModal,
+            subject: subject,
+            body: body,
+            templateType: type
+        });
+    };
+
+    const handleSendEmail = async () => {
+        if (!id) return;
+        setSendingEmail(true);
+        try {
+            await api.post(`/estimates/${id}/send_email/`, {
+                to: emailModal.to,
+                cc: emailModal.cc,
+                bcc: emailModal.bcc,
+                subject: emailModal.subject,
+                body: emailModal.body
+            });
+            showNotification('mail sent successfully', 'success');
+            setEmailModal(prev => ({ ...prev, open: false }));
+
+            // If estimate is approved but not yet submitted, trigger the submit status change
+            if (estimate && estimate.status !== 'SUBMITTED' && estimate.approval_status === 'APPROVED') {
+                try {
+                    await api.post(`/estimates/${id}/submit/`);
+                    fetchEstimateDetails(); // Refresh details
+                } catch (subErr) {
+                    console.error('Status update failed after email', subErr);
+                }
+            }
+        } catch (error: any) {
+            console.error('Error sending email', error);
+            showNotification(error.response?.data?.error || 'Failed to send email', 'error');
+        } finally {
+            setSendingEmail(false);
+        }
+    };
+
+    const handleViewEmailPDF = async () => {
+        if (!id) return;
+        try {
+            const response = await api.get(`/estimates/${id}/download_pdf/`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+            window.open(url, '_blank');
+        } catch (error) {
+            showNotification('Failed to view PDF', 'error');
         }
     };
 
@@ -1653,9 +1784,6 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, s
 
             {/* Footer Actions (Outside Scroll Area) */}
             <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
                 background: 'rgba(255, 107, 0, 0.05)',
                 padding: '6px',
                 borderRadius: '12px',
@@ -1665,9 +1793,12 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, s
                 flexShrink: 0,
                 zIndex: 10,
                 marginTop: '10px',
-                marginLeft: 'auto'
+                marginLeft: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {id && (
                         <button
                             onClick={handlePreview}
@@ -1786,15 +1917,15 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, s
                 </div>
                 {
                     estimate?.status === 'PENDING_APPROVAL' && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <button
                                 onClick={handleApprove}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
-                                    padding: '6px 16px',
-                                    height: '32px',
+                                    padding: '0 20px',
+                                    height: '38px',
                                     borderRadius: '8px',
                                     border: 'none',
                                     background: '#00C853',
@@ -1817,8 +1948,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, s
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
-                                    padding: '6px 16px',
-                                    height: '32px',
+                                    padding: '0 20px',
+                                    height: '38px',
                                     borderRadius: '8px',
                                     border: '1px solid rgba(229, 62, 62, 0.4)',
                                     background: 'rgba(229, 62, 62, 0.06)',
@@ -1839,7 +1970,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, s
                 }
                 {
                     estimate?.approval_status === 'APPROVED' && (
-                        <div className="flex items-center gap-3">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <span style={{
                                 padding: '6px 16px',
                                 borderRadius: '8px',
@@ -1848,25 +1979,26 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, s
                                 fontWeight: 700,
                                 fontSize: '0.85rem',
                                 border: '1px solid #38A169',
+                                height: '38px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
                                 transition: 'all 0.2s'
                             }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = '#def7e5'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = '#E6F7ED'; }}
+                            onMouseEnter={(e: React.MouseEvent<HTMLSpanElement>) => { e.currentTarget.style.background = '#def7e5'; e.currentTarget.style.borderColor = '#2f855a'; }}
+                            onMouseLeave={(e: React.MouseEvent<HTMLSpanElement>) => { e.currentTarget.style.background = '#E6F7ED'; e.currentTarget.style.borderColor = '#38A169'; }}
                             >
                                 <CheckCircle2 size={18} /> Approved
                             </span>
                             {estimate?.is_latest && estimate?.version === 1 && (
                                 <button
                                     onClick={handleRewind}
-                                    disabled={saving}
                                     style={{
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '8px',
-                                        padding: '8px 20px',
+                                        height: '38px',
+                                        padding: '0 20px',
                                         borderRadius: '8px',
                                         background: '#EBF8FF',
                                         color: '#3182CE',
@@ -1876,14 +2008,64 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, s
                                         cursor: 'pointer',
                                         transition: 'all 0.2s'
                                     }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#DBEEFE'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = '#EBF8FF'; e.currentTarget.style.transform = 'scale(1)'; }}
-                                    onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
-                                    onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                    onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.background = '#DBEEFE'; }}
+                                    onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.background = '#EBF8FF'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                    onMouseDown={(e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+                                    onMouseUp={(e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.transform = 'scale(1)'; }}
                                 >
                                     <History size={18} /> Rewind (New Version)
                                 </button>
                             )}
+                            <button
+                                onClick={() => {
+                                    const companyName = "Automation Edge";
+                                    const subject = EMAIL_TEMPLATES.standard.subject(companyName, estimate.customer_name || '', estimate.estimate_id);
+                                    const yourName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || "Sales Team" : "Sales Team";
+
+                                    const estDate = estimate.estimate_date ? new Date(estimate.estimate_date) : new Date();
+                                    const expDate = new Date(estDate);
+                                    expDate.setDate(expDate.getDate() + 30);
+                                    const expirationDate = expDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                                    const body = EMAIL_TEMPLATES.standard.body(estimate.customer_name, estimate.project_name, companyName, expirationDate, yourName, estimate.estimate_id);
+                                    const proposals = estimate.proposals || [];
+                                    const latestProposal = proposals.length > 0 ? [...proposals].sort((a, b) => b.version - a.version)[0] : null;
+
+                                    setEmailModal({
+                                        ...emailModal,
+                                        open: true,
+                                        to: estimate.customer_email || '',
+                                        subject,
+                                        body,
+                                        templateType: 'standard',
+                                        has_proposal: !!latestProposal,
+                                        proposal_filename: latestProposal?.filename || ''
+                                    });
+                                }}
+                                style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        height: '38px',
+                                        padding: '0 20px',
+                                        borderRadius: '8px',
+                                        background: 'var(--theme-primary)',
+                                        color: 'white',
+                                        border: 'none',
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.background = 'var(--theme-primary)'; e.currentTarget.style.opacity = '0.9'; }}
+                                onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                onMouseDown={(e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+                                onMouseUp={(e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                title={estimate.status === 'SUBMITTED' ? "Resend Email" : "Send to User"}
+                            >
+                                {estimate.status === 'SUBMITTED' ? <Mails size={18} /> : <Mail size={18} />}
+                                {estimate.status === 'SUBMITTED' ? "Resend Email" : "Send to User"}
+                            </button>
                         </div>
                     )
                 }
@@ -2065,6 +2247,126 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ id, onBack, onSave, user, s
                     </div>
                 )
             }
+
+            {/* Email Modal rendered via Portal */}
+            {emailModal.open && createPortal(
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '5vh', zIndex: 9999 }}>
+                    <div style={{ background: 'white', padding: '24px 32px 32px 32px', borderRadius: '16px', width: '850px', maxWidth: '95%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1A202C', margin: 0 }}>Compose Proposal Email</h3>
+                                <p style={{ color: '#718096', fontSize: '0.85rem', marginTop: '4px' }}>Combined Estimate and Proposal will be attached automatically.</p>
+                            </div>
+                            <button onClick={() => setEmailModal({ ...emailModal, open: false })} style={{ padding: '8px', borderRadius: '50%', background: '#F7FAFC', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+                        </div>
+
+                        <div style={{ marginBottom: '24px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Select Template:</label>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                {(Object.keys(EMAIL_TEMPLATES) as Array<keyof typeof EMAIL_TEMPLATES>).map((type) => (
+                                    <button
+                                        key={type}
+                                        onClick={() => handleTemplateChange(type)}
+                                        style={{
+                                            padding: '8px 16px',
+                                            borderRadius: '8px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            border: '1.5px solid',
+                                            background: emailModal.templateType === type ? '#38A169' : 'white',
+                                            color: emailModal.templateType === type ? 'white' : '#4A5568',
+                                            borderColor: emailModal.templateType === type ? '#38A169' : '#E2E8F0'
+                                        }}
+                                    >
+                                        {EMAIL_TEMPLATES[type].name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-4" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
+                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>To:</label>
+                                <input className="ae-input" value={emailModal.to} onChange={(e) => setEmailModal({ ...emailModal, to: e.target.value })} placeholder="recipient@example.com" />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
+                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>CC:</label>
+                                <input className="ae-input" value={emailModal.cc} onChange={(e) => setEmailModal({ ...emailModal, cc: e.target.value })} placeholder="cc@example.com" />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '12px' }}>
+                                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Subject:</label>
+                                <input className="ae-input" value={emailModal.subject} onChange={(e) => setEmailModal({ ...emailModal, subject: e.target.value })} placeholder="Enter subject" />
+                            </div>
+                            <div style={{ marginTop: '16px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Message Body</label>
+                                <AutoExpandingTextarea
+                                    className="ae-input"
+                                    value={emailModal.body}
+                                    onChange={(e) => setEmailModal({ ...emailModal, body: e.target.value })}
+                                    style={{ minHeight: '180px', padding: '12px' }}
+                                    placeholder="Write your message here..."
+                                />
+                            </div>
+
+                            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', color: '#4A5568' }}>Attached Files:</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                    <Paperclip size={18} color="#64748b" />
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                                        <span
+                                            onClick={handleViewEmailPDF}
+                                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--theme-primary)', fontWeight: 600, textDecoration: 'underline' }}
+                                        >
+                                            <Eye size={14} /> Combined Estimate & Proposal PDF
+                                        </span>
+                                        {emailModal.has_proposal && (
+                                            <span
+                                                onClick={() => {
+                                                    const proposals = estimate?.proposals || [];
+                                                    const latestProposal = proposals.length > 0 ? [...proposals].sort((a, b) => b.version - a.version)[0] : null;
+                                                    if (latestProposal?.file) {
+                                                        const fileUrl = latestProposal.file_url || (latestProposal.file.startsWith('http') ? latestProposal.file : `${api.defaults.baseURL?.replace('/api', '')}${latestProposal.file.startsWith('/') ? '' : '/'}${latestProposal.file}`);
+                                                        window.open(fileUrl, '_blank');
+                                                    }
+                                                }}
+                                                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--theme-primary)', fontWeight: 600, textDecoration: 'underline' }}
+                                            >
+                                                <Eye size={14} /> {emailModal.proposal_filename}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '32px' }}>
+                            <button className="ae-btn-secondary" onClick={() => setEmailModal({ ...emailModal, open: false })} disabled={sendingEmail} style={{ padding: '10px 24px' }}>Cancel</button>
+                            <button 
+                                className="ae-btn-primary" 
+                                onClick={handleSendEmail} 
+                                disabled={sendingEmail} 
+                                style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '8px', 
+                                    padding: '10px 32px',
+                                    background: 'var(--theme-primary)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {sendingEmail ? <RefreshCw className="animate-spin" size={18} /> : <Mail size={18} />}
+                                {sendingEmail ? 'Sending...' : 'Send Now'}
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
     );
 };
