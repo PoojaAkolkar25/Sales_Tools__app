@@ -62,6 +62,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     project_name = serializers.SerializerMethodField()
     deal_no = serializers.CharField(source='deal.deal_id', read_only=True, required=False, allow_null=True)
     approved_by_name = serializers.CharField(source='approved_by.username', read_only=True, required=False, allow_null=True)
+    issuing_company_name = serializers.CharField(source='issuing_company.name', read_only=True, required=False, allow_null=True)
     so_no = serializers.SerializerMethodField()
     amount_inr = serializers.SerializerMethodField()
     
@@ -90,7 +91,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'project_name', 'deal_no', 'approved_by_name', 'sales_tax_rate', 'sales_tax_amount',
             'gst_declaration', 'lut_declaration', 'authorized_signatory', 
             'signature_image', 'company_seal', 'memo', 'irn', 'ack_no', 'ack_date', 'payment_terms_days',
-            'po_number', 'po_date', 'customer_country', 'customer', 'amount_inr'
+            'po_number', 'po_date', 'customer_country', 'customer', 'issuing_company', 'issuing_company_name'
         ]
 
     def get_so_no(self, obj):
@@ -108,10 +109,12 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def get_project_name(self, obj):
         if obj.lead and obj.lead.project_name:
             return obj.lead.project_name
-        if obj.milestone and obj.milestone.sales_order and obj.milestone.sales_order.project_name:
-            return obj.milestone.sales_order.project_name
-        if obj.sales_order and obj.sales_order.project_name:
-            return obj.sales_order.project_name
+        if obj.deal and obj.deal.deal_name:
+            return obj.deal.deal_name
+        if obj.milestone and obj.milestone.sales_order and obj.milestone.sales_order.estimate and obj.milestone.sales_order.estimate.deal:
+            return obj.milestone.sales_order.estimate.deal.deal_name
+        if obj.sales_order and obj.sales_order.estimate and obj.sales_order.estimate.deal:
+            return obj.sales_order.estimate.deal.deal_name
         return "Direct Invoice"
 
     def get_amount_inr(self, obj):
@@ -121,7 +124,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         # Handle empty strings for foreign keys from frontend
         data = data.copy()
-        for field in ['deal', 'milestone', 'sales_order', 'lead']:
+        for field in ['deal', 'milestone', 'sales_order', 'lead', 'customer', 'issuing_company']:
             if field in data and data[field] == '':
                 data[field] = None
         return super().to_internal_value(data)

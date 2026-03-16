@@ -8,7 +8,7 @@ try:
 except ImportError:
     pass
 
-from .models import Invoice, InvoiceType, CompanyProfile, StateMaster, BankConnection  # type: ignore
+from .models import Invoice, InvoiceType, CompanyProfile, StateMaster, BankConnection, CustomerPartner  # type: ignore
 
 class InvoiceService:
     @staticmethod
@@ -211,7 +211,7 @@ class InvoiceService:
     def number_to_words(number, currency='INR'):
         """
         Simple number to words converter for INR and USD.
-        Commas are stripped so the output reads cleanly (e.g. "Twenty Six Lakh" not "Twenty-Six Lakh,").
+        Prefuxes with currency code (e.g., INR, USD) to match images.
         """
         try:
             from num2words import num2words  # type: ignore
@@ -219,11 +219,12 @@ class InvoiceService:
                 words = num2words(int(number), lang='en_IN').title()
             else:
                 words = num2words(int(number), lang='en').title()
+            
             # Remove commas from the words output
             words = words.replace(',', '')
-            return words + " Only"
+            return f"{currency} {words} Only"
         except ImportError:
-            return f"{number} Only"
+            return f"{currency} {number} Only"
 
     @staticmethod
     def generate_pdf(invoice):
@@ -234,7 +235,15 @@ class InvoiceService:
         from io import BytesIO
         from xhtml2pdf import pisa  # type: ignore
         
-        company = CompanyProfile.objects.first()
+        company = invoice.issuing_company or CustomerPartner.objects.first()
+        
+        # Dynamic logo from company profile (uploaded via Company Management form)
+        logo_path = None
+        if company and company.logo:
+            try:
+                logo_path = company.logo.path
+            except Exception:
+                logo_path = None
         items = invoice.line_items.all().order_by('sr_no')
         
         bank = BankConnection.objects.filter(is_primary_for_invoices=True).first()
@@ -279,6 +288,7 @@ class InvoiceService:
             'items': items,
             'company': company,
             'bank': bank,
+            'logo_path': logo_path,
             'po_number': po_number,
             'po_date': po_date,
             'now': date.today(),
@@ -308,10 +318,38 @@ class InvoiceService:
         # Calculate taxes using existing logic
         calc_results = InvoiceService.calculate_taxes(invoice_data, line_items_data)
         
-        # Try to find the AutomationEdge profile or the first one
-        company = CompanyProfile.objects.filter(name__icontains='AutomationEdge').first()
+        # Determine Entity (AE India vs AE USA)
+        is_usa = invoice_data.get('invoice_type') == 'USA' or invoice_data.get('currency') == 'USD'
+        
+        # Select correct company profile based on issuing_company payload
+        issuing_company_id = invoice_data.get('issuing_company')
+        company = None
+        if issuing_company_id:
+            try:
+                company = CustomerPartner.objects.get(id=issuing_company_id)
+            except CustomerPartner.DoesNotExist:
+                pass
+        
         if not company:
-            company = CompanyProfile.objects.first()
+            # Fallback logic if no issuing company is provided
+            if is_usa:
+                company = CustomerPartner.objects.filter(name__icontains='INC').first() or \
+                          CustomerPartner.objects.filter(name__icontains='Technologies INC').first()
+            else:
+                company = CustomerPartner.objects.filter(name__icontains='PVT').first() or \
+                          CustomerPartner.objects.filter(name__icontains='Technologies PVT').first() or \
+                          CustomerPartner.objects.filter(name__icontains='AutomationEdge').first()
+                
+            if not company:
+                company = CustomerPartner.objects.first()
+
+        # Dynamic logo from company profile (uploaded via Company Management form)
+        logo_path = None
+        if company and company.logo:
+            try:
+                logo_path = company.logo.path
+            except Exception:
+                logo_path = None
         
         def safe_date(date_str):
             if not date_str:
@@ -376,7 +414,14 @@ class InvoiceService:
         for i, item in enumerate(processed_items):
             items_mock.append(SimpleNamespace(sr_no=i+1, **item))
 
-        bank = BankConnection.objects.filter(is_primary_for_invoices=True).first()
+        # Select correct bank based on entity
+        if is_usa:
+            bank = BankConnection.objects.filter(bank_name__icontains='America').first()
+        else:
+            bank = BankConnection.objects.filter(bank_name__icontains='ICICI').first()
+
+        if not bank:
+            bank = BankConnection.objects.filter(is_primary_for_invoices=True).first()
         if not bank:
             bank = BankConnection.objects.filter(is_active=True).first()
 
@@ -396,6 +441,7 @@ class InvoiceService:
             'items': items_mock,
             'company': company,
             'bank': bank,
+            'logo_path': logo_path,
             'po_number': invoice_data.get('po_number'),
             'po_date': safe_date(invoice_data.get('po_date')) if invoice_data.get('po_date') else None,
             'now': date.today(),

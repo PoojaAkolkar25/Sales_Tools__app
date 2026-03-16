@@ -268,7 +268,7 @@
     <!-- Buyer and Consignee Section -->
     <table class="section-table">
         <tr>
-            <td class="address-col">
+            <td class="address-col" style="width: 60%;">
                 <div class="address-title blue">Buyer</div>
                 <div class="bold">{{ estimate.deal.customer.name }}</div>
                 <div>{{ estimate.deal.customer.address|linebreaksbr|default:estimate.deal.customer.state|linebreaksbr }}</div>
@@ -285,7 +285,7 @@
                     estimate.deal.customer.state_code|default:estimate.deal.customer.state.code }}</div>
                 {% endif %}
             </td>
-            <td class="address-col">
+            <td class="address-col" style="width: 40%;">
                 <div class="address-title blue">Consignee</div>
                 <div class="bold">{{ estimate.deal.customer.name }}</div>
                 <div>{{ estimate.deal.customer.address|linebreaksbr|default:estimate.deal.customer.state|linebreaksbr }}</div>

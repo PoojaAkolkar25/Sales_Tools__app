@@ -140,6 +140,7 @@ class Invoice(models.Model):
     due_date = models.DateField()
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='invoices', null=True, blank=True)
     customer = models.ForeignKey(CompanyProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='customer_invoices')
+    issuing_company = models.ForeignKey('CustomerPartner', on_delete=models.SET_NULL, null=True, blank=True, related_name='issued_invoices')
     deal = models.ForeignKey('deals.Deal', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     milestone = models.ForeignKey('milestones.Milestone', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     sales_order = models.ForeignKey('sales_orders.SalesOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
@@ -507,6 +508,8 @@ class CustomerPartner(models.Model):
     code = models.CharField(max_length=50, unique=True, blank=True)
     name = models.CharField(max_length=255)
     logo = models.ImageField(upload_to='partners/logos/', blank=True, null=True)
+    signature_image = models.ImageField(upload_to='partners/signatures/', blank=True, null=True)
+    company_seal = models.ImageField(upload_to='partners/seals/', blank=True, null=True)
     
     # Address Details
     address_line_1 = models.TextField(blank=True, null=True)

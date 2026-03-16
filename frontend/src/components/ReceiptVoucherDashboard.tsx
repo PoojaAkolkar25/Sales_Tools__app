@@ -71,6 +71,7 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
         status: ''
     });
     const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const columnMenuRef = useRef<HTMLDivElement>(null);
     const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
         const saved = localStorage.getItem('receiptVoucherDashboard_colWidths');
         if (saved) return JSON.parse(saved);
@@ -126,6 +127,19 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
     }, [visibleColumns]);
 
     const ITEMS_PER_PAGE = 20;
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (columnMenuRef.current && !columnMenuRef.current.contains(event.target as Node)) {
+                setShowColumnMenu(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         fetchVouchers();
@@ -320,7 +334,7 @@ const ReceiptVoucherDashboard: React.FC<{ onCreateNew: () => void; onView: (id: 
                         >
                             <Plus size={16} /> Create Receipt
                         </button>
-                        <div style={{ position: 'relative', display: 'flex' }}>
+                        <div style={{ position: 'relative', display: 'flex' }} ref={columnMenuRef}>
                             <button
                                 onClick={() => setShowColumnMenu(!showColumnMenu)}
                                 style={{

@@ -29,6 +29,7 @@ const InvoiceForm: React.FC<{
     const [, setMilestones] = useState<any[]>([]);
     const [salesOrders, setSalesOrders] = useState<any[]>([]);
     const [companyProfiles, setCompanyProfiles] = useState<any[]>([]);
+    const [customerPartners, setCustomerPartners] = useState<any[]>([]);
     const [states, setStates] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [isReadOnly, setIsReadOnly] = useState(false);
@@ -70,6 +71,7 @@ const InvoiceForm: React.FC<{
         currency_symbol: '₹',
         memo: '',
         selected_company: '',
+        issuing_company: '',
         customer: '',
         customer_country: 'India',
         customer_name: ''
@@ -141,6 +143,7 @@ const InvoiceForm: React.FC<{
                 currency_symbol: '₹',
                 memo: '',
                 selected_company: '',
+                issuing_company: '',
                 customer: '',
                 customer_country: 'India',
                 customer_name: ''
@@ -222,15 +225,17 @@ const InvoiceForm: React.FC<{
 
     const fetchInitialData = async () => {
         try {
-            const [leadsRes, statesRes, soRes, cpRes] = await Promise.all([
+            const [leadsRes, statesRes, soRes, cpRes, partnersRes] = await Promise.all([
                 api.get('/leads/'),
                 api.get('/finance/state-masters/'),
                 api.get('/sales-orders/?status=APPROVED'),
-                api.get('/finance/company-profile/')
+                api.get('/finance/company-profile/'),
+                api.get('/finance/customer-partners/')
             ]);
             setStates(statesRes.data);
             setSalesOrders(soRes.data);
             setCompanyProfiles(cpRes.data);
+            setCustomerPartners(partnersRes.data);
 
             // If we are creating a new invoice and have an initial SO ID
             if (!invoiceId && initialSoId) {
@@ -337,6 +342,7 @@ const InvoiceForm: React.FC<{
                 currency_symbol: inv.currency === 'INR' ? '₹' : inv.currency === 'EUR' ? '€' : inv.currency === 'GBP' ? '£' : '$',
                 memo: inv.memo || '',
                 selected_company: inv.customer?.toString() || '',
+                issuing_company: inv.issuing_company?.toString() || '',
                 customer: inv.customer?.toString() || '',
                 customer_country: inv.customer_country || 'India',
                 customer_name: inv.customer_name || inv.lead_details?.customer_name || ''
@@ -403,6 +409,7 @@ const InvoiceForm: React.FC<{
                 ...prev,
                 selected_company: companyId.toString(),
                 customer: companyId.toString(),
+                issuing_company: cp.linked_company_profile?.toString() || prev.issuing_company,
                 lead: '',
                 customer_gstin: cp.gstin || prev.customer_gstin,
                 customer_state: cp.state?.toString() || prev.customer_state,
@@ -711,18 +718,33 @@ const InvoiceForm: React.FC<{
                     <SectionHeader title="Invoice Details" />
                     <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Name</label>
+                            {isReadOnly || invoiceId ? (
+                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
+                                    {(formData as any).customer_name || companyProfiles.find(cp => cp.id.toString() === formData.selected_company.toString())?.name || '---'}
+                                </div>
+                            ) : (
+                                <SearchableDropdown
+                                    options={companyProfiles.map(cp => ({ value: cp.id.toString(), label: cp.name || '' }))}
+                                    value={formData.selected_company}
+                                    onChange={(val) => handleCompanyChange(String(val))}
+                                    placeholder="Select Customer"
+                                />
+                            )}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice Date</label>
-                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.invoice_date)} style={{ background: '#f8fafc', height: '38px' }} />
+                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.invoice_date)} style={{ background: '#f8fafc' }} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Invoice No.</label>
-                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', height: '38px', cursor: 'default' }}>
+                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', cursor: 'default' }}>
                                 {formData.invoice_no || 'Auto-generated on Submit'}
                             </div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Date</label>
-                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.po_date)} style={{ background: '#f8fafc', height: '38px' }} />
+                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.po_date)} style={{ background: '#f8fafc' }} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>PO Number</label>
@@ -733,25 +755,29 @@ const InvoiceForm: React.FC<{
                                 value={formData.po_number}
                                 onChange={e => setFormData({ ...formData, po_number: e.target.value })}
                                 placeholder="Purchase Order Number"
-                                style={{ background: '#f8fafc', height: '38px' }}
+                                style={{ background: '#f8fafc' }}
                             />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Customer Name</label>
-                            {isReadOnly || invoiceId ? (
-                                <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', height: '38px' }}>
-                                    {(formData as any).customer_name || companyProfiles.find(cp => cp.id.toString() === formData.selected_company.toString())?.name || '---'}
-                                </div>
-                            ) : (
-                                <SearchableDropdown
-                                    options={companyProfiles.map(cp => ({ value: cp.id.toString(), label: cp.name || '' }))}
-                                    value={formData.selected_company}
-                                    onChange={(val) => handleCompanyChange(String(val))}
-                                    placeholder="Select Customer"
-                                    className="standard-height-dropdown"
-                                />
-                            )}
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Issuing Company</label>
+                            <div className="ae-input" style={{ background: '#f8fafc', display: 'flex', alignItems: 'center' }}>
+                                {customerPartners.find(cp => cp.id.toString() === formData.issuing_company.toString())?.name || '---'}
+                            </div>
                         </div>
+                    </div>
+
+                    <div className="ae-grid-responsive-5" style={{ marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment Terms</label>
+                            <input type="number" className="ae-input" disabled={isReadOnly} value={formData.payment_terms_days} onChange={e => setFormData({ ...formData, payment_terms_days: parseInt(e.target.value) || 0 })} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment due date</label>
+                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.due_date)} style={{ background: '#f8fafc' }} />
+                        </div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px', marginBottom: '16px' }}>
@@ -775,20 +801,6 @@ const InvoiceForm: React.FC<{
                                 placeholder="Shipping Address"
                             />
                         </div>
-                    </div>
-
-                    <div className="ae-grid-responsive-5" style={{ marginBottom: '0px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment Terms</label>
-                            <input type="number" className="ae-input" disabled={isReadOnly} value={formData.payment_terms_days} onChange={e => setFormData({ ...formData, payment_terms_days: parseInt(e.target.value) || 0 })} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Payment due date</label>
-                            <input type="text" className="ae-input" disabled value={formatToAppDate(formData.due_date)} style={{ background: '#f8fafc' }} />
-                        </div>
-                        <div></div>
-                        <div></div>
-                        <div></div>
                     </div>
                 </div>
 
