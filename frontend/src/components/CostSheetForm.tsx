@@ -243,7 +243,6 @@ const CostSheetForm: React.FC<CostSheetFormProps> = ({ id, onBack }) => {
         const code = cur.toUpperCase();
         switch (code) {
             case 'USD': return '$';
-            case 'EUR':
             case 'EUR': return '€';
             default: return '₹';
         }

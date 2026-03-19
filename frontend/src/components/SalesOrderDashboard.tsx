@@ -222,20 +222,8 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
     const [selectedStatus, setSelectedStatus] = useState('DRAFT');
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showColumnMenu, setShowColumnMenu] = useState(false);
-
-<<<<<<< HEAD
     const wrapperRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-                setShowExportMenu(false);
-                setShowColumnMenu(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-=======
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
@@ -250,7 +238,6 @@ const SalesOrderDashboard: React.FC<SalesOrderDashboardProps> = ({ onView, refre
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
->>>>>>> 54f95be8f6e719c9b451157ec484b89a8d760d83
     }, []);
 
     const filteredSalesOrders = salesOrders.filter((so: any) => {
